@@ -3,14 +3,14 @@ import uuid
 class Message(object):
     """AMQP message object"""
 
-    def __init__(self, body, headers={}):
+    def __init__(self, body, properties={}):
         """
         Create a Message object
         :param body: stream of octets
-        :param headers: AMQP headers to be sent along
+        :param properties: AMQP properties to be sent along
         """
         self.body = body
-        self.headers = headers
+        self.properties = properties
 
 
 class ReceivedMessage(Message):
@@ -18,14 +18,17 @@ class ReceivedMessage(Message):
     Message as received from AMQP system
     """
 
-    def __init__(self, body, cht, connect_id, headers={}, delivery_tag=None):
+    def __init__(self, body, cht, connect_id, exchange_name, routing_key, properties={}, delivery_tag=None):
         """
 
         :param body: message body. A stream of octets.
         :param cht: parent ClusterHandlerThread that emitted this message
         :param connect_id: connection ID. ClusterHandlerThread will check this in order
             not to ack messages that were received from a dead connection
-        :param headers: dictionary. Headers received from AMQP
+        :param exchange_name: name of exchange this message was submitted to
+        :param routing_key: routing key with which this message was sent
+        :param properties: dictionary. Headers received from AMQP
+
         :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message.
             leave None if auto-ack
         """
@@ -34,6 +37,8 @@ class ReceivedMessage(Message):
         self.cht = cht
         self.connect_id = connect_id
         self.delivery_tag = delivery_tag
+        self.exchange_name = exchange_name
+        self.routing_key = routing_key
 
     def nack(self, on_completed=None):
         """

@@ -1,1 +1,1 @@
-class AMQP
+from .pyamqp import PyAMQPBackend, AMQPError, RemoteAMQPError, ConnectionFailedError
