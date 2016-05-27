@@ -27,7 +27,7 @@ class ClusterNode(object):
             heartbeat - heartbeat interval in seconds
         """
 
-        self.heartbeat = kwargs.get('heartbeat', None)
+        self.heartbeat = kwargs.pop('heartbeat', None)
 
         if len(kwargs) > 0:
             # Prepare arguments for amqp.connection.Connection
