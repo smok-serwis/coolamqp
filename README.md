@@ -1,16 +1,8 @@
 coolamqp
 ========
 
-The one library to rule them all.
+When you're tired of fucking with AMQP reconnects.
 
-This is a fault-tolerant-able AMQP library.
-
-What other libraries don't, is reconnect to another node 
-in the cluster if one goes down, restore all queues that were
-listened to, and inform the user explicitly when connection goes down
-or up to orchestrate itself properly and prepare for eg. missing messages.
-
-tl;dr
------
-This spawns a thread in the background for every AMQP cluster you connect to. That
-thread performs all actions associated with it.
+When a connection made by CoolAMQP to your broker fails, it will pick another
+node, redeclare exchanges, queues, consumers and tell your application that
+a disconnect happened.
