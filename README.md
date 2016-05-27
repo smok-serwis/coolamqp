@@ -16,6 +16,7 @@ You only need to remember that:
 2. CoolAMQP will tell you when it senses losing broker connection.
  * It will also tell you when it regains the connection (that means that everything is redefined).
 3. Delivering messages multiple times may happen.
+ * Ensure you know when it happens. Keywords: message acknowledgement, amqp specification
 
 As the project is in it's infancy stages, but actively maintained and used in a commercial project,
 if you need a feature - just drop me a note or create a new issue here.
