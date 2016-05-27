@@ -10,8 +10,10 @@ a disconnect happened.
 CoolAMQP makes you forget about all the nasty corner cases about AMQP reconnection.
 
 You only need to remember that:
+
 1. Reconnects and redefinitions takes a while. Things will happen during that time. 
-2. CoolAMQP will tell you when it senses losing broker connection. It will also tell you when it regains the connection (that means that everything is redefined).
+2. CoolAMQP will tell you when it senses losing broker connection.
+ * It will also tell you when it regains the connection (that means that everything is redefined).
 3. Delivering messages multiple times may happen.
 
 As the project is in it's infancy stages, but actively maintained and used in a commercial project,
