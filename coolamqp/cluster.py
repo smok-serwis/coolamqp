@@ -1,7 +1,7 @@
 import itertools
 import Queue
 from coolamqp.backends import PyAMQPBackend
-from .orders import SendMessage, ConsumeQueue, DeclareExchange
+from .orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue
 from .messages import Exchange
 
 
@@ -94,6 +94,19 @@ class Cluster(object):
                                                        on_completed=on_completed,
                                                        on_failed=on_failed))
 
+
+    def cancel(self, queue, on_completed=None, on_failed=None):
+        """
+        Cancel consuming from a queue
+
+        :param queue: Queue to consume from
+        :param on_completed: callable/0 to call when this succeeds
+        :param on_failed: callable/1 to call when this fails with AMQPError instance
+        """
+        self.thread.order_queue.append(CancelQueue(queue,
+                                                   on_completed=on_completed,
+                                                   on_failed=on_failed))
+
     def consume(self, queue, on_completed=None, on_failed=None):
         """
         Start consuming from a queue
@@ -101,14 +114,13 @@ class Cluster(object):
         This queue will be declared to the broker. If this queue has any binds
         (.exchange field is not empty), queue will be binded to exchanges.
 
-        :param queue: Queue to consume from.
+        :param queue: Queue to consume from
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
         """
         self.thread.order_queue.append(ConsumeQueue(queue,
                                                     on_completed=on_completed,
                                                     on_failed=on_failed))
-
 
     def drain(self, wait=0):
         """

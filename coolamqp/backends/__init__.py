@@ -1,1 +1,2 @@
-from .pyamqp import PyAMQPBackend, AMQPError, RemoteAMQPError, ConnectionFailedError
+from .pyamqp import PyAMQPBackend
+from .base import AMQPError, ConnectionFailedError, RemoteAMQPError

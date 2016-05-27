@@ -2,7 +2,7 @@
 import amqp
 import socket
 import functools
-from .base import AMQPBackend, AMQPError, RemoteAMQPError, ConnectionFailedError
+from .base import AMQPBackend, RemoteAMQPError, ConnectionFailedError
 
 
 def translate_exceptions(fun):
@@ -53,7 +53,7 @@ class PyAMQPBackend(AMQPBackend):
 
     @translate_exceptions
     def basic_cancel(self, consumer_tag):
-        self.amqp_channel.basic_cancel(consumer_tag)
+        self.channel.basic_cancel(consumer_tag)
 
     @translate_exceptions
     def basic_publish(self, message, exchange, routing_key):
@@ -90,8 +90,6 @@ class PyAMQPBackend(AMQPBackend):
         """
         if queue.anonymous:
             queue.name = ''
-
-        print 'declaring queue that is %s %s %s %s' % (queue.name, queue.durable, queue.exclusive, queue.auto_delete)
 
         qname, mc, cc = self.channel.queue_declare(queue.name,
                                                    durable=queue.durable,

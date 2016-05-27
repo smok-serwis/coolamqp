@@ -107,7 +107,6 @@ class ClusterHandlerThread(threading.Thread):
 
                             self.backend.basic_consume(order.queue)
                             self.queues_by_consumer_tags[order.queue.consumer_tag] = order.queue
-
                         elif isinstance(order, CancelQueue):
                             try:
                                 q = self.queues_by_consumer_tags.pop(order.queue.consumer_tag)
