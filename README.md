@@ -1,4 +1,4 @@
-coolamqp
+CoolAMQP
 ========
 
 When you're tired of fucking with AMQP reconnects.
