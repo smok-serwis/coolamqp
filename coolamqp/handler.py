@@ -3,10 +3,11 @@ import Queue
 import logging
 import collections
 import time
-from .backends import PyAMQPBackend, ConnectionFailedError, RemoteAMQPError, AMQPError
+from .backends import ConnectionFailedError, RemoteAMQPError
 from .messages import Exchange
 from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, MessageReceived
-from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue
+from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue, \
+                    AcknowledgeMessage, NAcknowledgeMessage
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class ClusterHandlerThread(threading.Thread):
         """
         :param cluster: coolamqp.Cluster
         """
+        threading.Thread.__init__(self)
 
         self.cluster = cluster
         self.is_terminating = False
@@ -41,7 +43,7 @@ class ClusterHandlerThread(threading.Thread):
 
             self.connect_id += 1
             node = self.cluster.node_to_connect_to.next()
-            logger.info('Connecting to ', node)
+            logger.info('Connecting to %s', node)
 
             try:
                 self.backend = self.cluster.backend(node, self)
@@ -61,7 +63,7 @@ class ClusterHandlerThread(threading.Thread):
 
             except ConnectionFailedError as e:
                 # a connection failure happened :(
-                logger.warning('Connecting to ', node, 'failed due to ', e)
+                logger.warning('Connecting to %s failed due to %s', node, repr(e))
                 if self.backend is not None:
                     self.backend.shutdown()
                     self.backend = None # good policy to release resources before you sleep
@@ -75,7 +77,6 @@ class ClusterHandlerThread(threading.Thread):
                 else:
                     exponential_backoff_delay = 60
             else:
-                from .events import ConnectionUp
                 self.event_queue.put(ConnectionUp())
                 break   # we connected :)
 
@@ -93,6 +94,7 @@ class ClusterHandlerThread(threading.Thread):
                             self.backend.basic_publish(order.message, order.exchange, order.routing_key)
                         elif isinstance(order, DeclareExchange):
                             self.backend.exchange_declare(order.exchange)
+                            self.declared_exchanges.append(order.exchange)
                         elif isinstance(order, ConsumeQueue):
                             self.backend.queue_declare(order.queue)
 
@@ -104,6 +106,8 @@ class ClusterHandlerThread(threading.Thread):
                                         self.backend.queue_bind(order.queue, order.queue.exchange)
 
                             self.backend.basic_consume(order.queue)
+                            self.queues_by_consumer_tags[order.queue.consumer_tag] = order.queue
+
                         elif isinstance(order, CancelQueue):
                             try:
                                 q = self.queues_by_consumer_tags.pop(order.queue.consumer_tag)
@@ -112,7 +116,14 @@ class ClusterHandlerThread(threading.Thread):
                             else:
                                 self.backend.basic_cancel(order.queue.consumer_tag)
                                 self.event_queue.put(ConsumerCancelled(order.queue))
+                        elif isinstance(order, AcknowledgeMessage):
+                            if order.connect_id == self.connect_id:
+                                self.backend.basic_ack(order.delivery_tag)
+                        elif isinstance(order, NAcknowledgeMessage):
+                            if order.connect_id == self.connect_id:
+                                self.backend.basic_nack(order.delivery_tag)
                     except RemoteAMQPError as e:
+                        logger.error('Remote AMQP error: %s', e)
                         order.failed(e) # we are allowed to go on
                     except ConnectionFailedError:
                         self.order_queue.appendleft(order)
@@ -125,7 +136,7 @@ class ClusterHandlerThread(threading.Thread):
 
             except ConnectionFailedError as e:
                 logger.warning('Connection to broker lost')
-                self.event_queue.append(ConnectionDown())
+                self.event_queue.put(ConnectionDown())
                 self._reconnect()
 
 
@@ -137,7 +148,7 @@ class ClusterHandlerThread(threading.Thread):
         self.is_terminating = True
 
 
-        ## events called
+    ## events called
     def _on_recvmessage(self, body, exchange_name, routing_key, delivery_tag, properties):
         """
         Upon receiving a message
@@ -170,7 +181,9 @@ class ClusterHandlerThread(threading.Thread):
         :param receivedMessage: a ReceivedMessage object to ack
         :param on_completed: callable/0 to call when acknowledgemenet succeeded
         """
-        raise NotImplementedError
+        self.order_queue.append(AcknowledgeMessage(receivedMessage.connect_id,
+                                                   receivedMessage.delivery_tag,
+                                                   on_completed=on_completed))
 
 
     def _do_nackmessage(self, receivedMessage, on_completed=None):
@@ -179,4 +192,6 @@ class ClusterHandlerThread(threading.Thread):
         :param receivedMessage: a ReceivedMessage object to ack
         :param on_completed: callable/0 to call when acknowledgemenet succeeded
         """
-        raise NotImplementedError
+        self.order_queue.put(NAcknowledgeMessage(receivedMessage.connect_id,
+                                                 receivedMessage.delivery_tag,
+                                                 on_completed=on_completed))

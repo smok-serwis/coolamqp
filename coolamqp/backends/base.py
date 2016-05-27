@@ -75,6 +75,18 @@ class AMQPBackend(object):
         :param queue: Queue object
         """
 
+    def basic_ack(self, delivery_tag):
+        """
+        ACK a message.
+        :param delivery_tag: delivery tag to ack
+        """
+
+    def basic_nack(self, delivery_tag):
+        """
+        NACK a message.
+        :param delivery_tag: delivery tag to nack
+        """
+
     def basic_publish(self, message, exchange, routing_key):
         """
         Send a message

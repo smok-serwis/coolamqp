@@ -1,7 +1,8 @@
 import itertools
 import Queue
 from coolamqp.backends import PyAMQPBackend
-from .orders import SendMessage
+from .orders import SendMessage, ConsumeQueue, DeclareExchange
+from .messages import Exchange
 
 
 class ClusterNode(object):
@@ -17,14 +18,28 @@ class ClusterNode(object):
 
             a = ClusterNode(host='192.168.0.1', user='admin', password='password',
                             vhost='vhost')
+
+        or
+
+            a = ClusterNode('192.168.0.1', 'admin', 'password')
+
+        Additional keyword parameters that can be specified:
+            heartbeat - heartbeat interval in seconds
         """
 
-        if len(kwargs) == 0:
+        self.heartbeat = kwargs.get('heartbeat', None)
+
+        if len(kwargs) > 0:
             # Prepare arguments for amqp.connection.Connection
             self.host = kwargs['host']
             self.user = kwargs['user']
             self.password = kwargs['password']
             self.virtual_host = kwargs.get('virtual_host', '/')
+        elif len(args) == 3:
+            self.host, self.user, self.password = args
+            self.virtual_host = '/'
+        elif len(args) == 4:
+            self.host, self.user, self.password, self.virtual_host = args
         else:
             raise NotImplementedError #todo implement this
 
@@ -32,7 +47,6 @@ class ClusterNode(object):
         return '%s@%s/%s' % (self.host,
                              self.user,
                              self.virtual_host)
-
 
 
 class Cluster(object):
@@ -49,21 +63,23 @@ class Cluster(object):
         """
 
         self.backend = backend
-        self.node_to_connect_to = itertools.cycle(nodes)\
+        self.node_to_connect_to = itertools.cycle(nodes)
 
         from .handler import ClusterHandlerThread
         self.thread = ClusterHandlerThread(self)
 
-    def send(self, message, exchange, routing_key, on_completed=None, on_failed=None):
+    def send(self, message, exchange=None, routing_key='', on_completed=None, on_failed=None):
         """
         Schedule a message to be sent.
         :param message: Message object to send
-        :param exchange: Exchange to use
+        :param exchange: Exchange to use. Leave None to use the default exchange
         :param routing_key: routing key to use
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
         """
-        self.thread.order_queue.append(SendMessage(message, exchange, routing_key,
+        self.thread.order_queue.append(SendMessage(message,
+                                                   exchange or Exchange.direct,
+                                                   routing_key,
                                                    on_completed=on_completed,
                                                    on_failed=on_failed))
 
@@ -74,8 +90,11 @@ class Cluster(object):
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
         """
+        self.thread.order_queue.append(DeclareExchange(exchange,
+                                                       on_completed=on_completed,
+                                                       on_failed=on_failed))
 
-    def consume(self, queue):
+    def consume(self, queue, on_completed=None, on_failed=None):
         """
         Start consuming from a queue
 
@@ -83,8 +102,12 @@ class Cluster(object):
         (.exchange field is not empty), queue will be binded to exchanges.
 
         :param queue: Queue to consume from.
-        :return:
+        :param on_completed: callable/0 to call when this succeeds
+        :param on_failed: callable/1 to call when this fails with AMQPError instance
         """
+        self.thread.order_queue.append(ConsumeQueue(queue,
+                                                    on_completed=on_completed,
+                                                    on_failed=on_failed))
 
 
     def drain(self, wait=0):
@@ -97,14 +120,13 @@ class Cluster(object):
             0 to return immediately
         :return: a ClusterEvent instance or None
         """
-
-        if wait == 0:
-            try:
+        try:
+            if wait == 0:
                 return self.thread.event_queue.get(False)
-            except Queue.Empty:
-                return None
-        else:
-            return self.thread.event_queue.get(True, wait)
+            else:
+                return self.thread.event_queue.get(True, wait)
+        except Queue.Empty:
+            return None
 
     def start(self):
         """

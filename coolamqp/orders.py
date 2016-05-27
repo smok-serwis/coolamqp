@@ -28,11 +28,13 @@ class SendMessage(Order):
         self.exchange = exchange
         self.routing_key = routing_key
 
+
 class DeclareExchange(Order):
     """Declare an exchange"""
     def __init__(self, exchange, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.exchange = exchange
+
 
 class ConsumeQueue(Order):
     """Declare and consume from a queue"""
@@ -40,8 +42,25 @@ class ConsumeQueue(Order):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.queue = queue
 
+
 class CancelQueue(Order):
     """Cancel consuming from a queue"""
     def __init__(self, queue, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.queue = queue
+
+
+class AcknowledgeMessage(Order):
+    """ACK a message"""
+    def __init__(self, connect_id, delivery_tag, on_completed):
+        Order.__init__(self, on_completed=on_completed)
+        self.connect_id = connect_id
+        self.delivery_tag = delivery_tag
+
+
+class NAcknowledgeMessage(Order):
+    """NACK a message"""
+    def __init__(self, connect_id, delivery_tag, on_completed):
+        Order.__init__(self, on_completed=on_completed)
+        self.connect_id = connect_id
+        self.delivery_tag = delivery_tag

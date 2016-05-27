@@ -32,7 +32,7 @@ class ReceivedMessage(Message):
         :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message.
             leave None if auto-ack
         """
-        Message.__init__(self, body, headers=headers)
+        Message.__init__(self, body, properties=properties)
 
         self.cht = cht
         self.connect_id = connect_id
