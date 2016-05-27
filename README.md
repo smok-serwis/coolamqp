@@ -11,7 +11,8 @@ CoolAMQP makes you forget about all the nasty corner cases about AMQP reconnecti
 
 You only need to remember that:
 
-1. Reconnects and redefinitions takes a while. Things will happen during that time. 
+1. Reconnects and redefinitions take a while.
+ * Things will happen during that time. It is your responsibility to ensure that your distributed system is built to handle this
 2. CoolAMQP will tell you when it senses losing broker connection.
  * It will also tell you when it regains the connection (that means that everything is redefined).
 3. Delivering messages multiple times may happen.
