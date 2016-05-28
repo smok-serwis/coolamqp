@@ -128,4 +128,3 @@ class PyAMQPBackend(AMQPBackend):
                                                     message.delivery_info['routing_key'],
                                                     message.delivery_info['delivery_tag'],
                                                     message.properties)
-

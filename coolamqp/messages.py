@@ -107,4 +107,3 @@ class Queue(object):
         self.anonymous = name == ''  # if this queue is anonymous, it must be regenerated upon reconnect
 
         self.consumer_tag = name if name != '' else uuid.uuid4().hex    # consumer tag to use in AMQP comms
-
