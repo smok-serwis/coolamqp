@@ -77,6 +77,14 @@ class PyAMQPBackend(AMQPBackend):
         self.channel.basic_ack(delivery_tag, multiple=False)
 
     @translate_exceptions
+    def exchange_delete(self, exchange):
+        self.channel.exchange_delete(exchange.name)
+
+    @translate_exceptions
+    def queue_delete(self, queue):
+        self.channel.queue_delete(queue.name)
+
+    @translate_exceptions
     def basic_nack(self, delivery_tag):
         self.channel.basic_nack(delivery_tag, multiple=False)
 

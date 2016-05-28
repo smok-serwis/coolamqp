@@ -1,7 +1,8 @@
 import itertools
 import Queue
 from coolamqp.backends import PyAMQPBackend
-from .orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue
+from .orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue, DeleteQueue, \
+                    DeleteExchange
 from .messages import Exchange
 
 
@@ -94,6 +95,29 @@ class Cluster(object):
                                                        on_completed=on_completed,
                                                        on_failed=on_failed))
 
+
+    def delete_exchange(self, exchange, on_completed=None, on_failed=None):
+        """
+        Delete an exchange
+        :param exchange: Exchange to delete
+        :param on_completed: callable/0 to call when this succeeds
+        :param on_failed: callable/1 to call when this fails with AMQPError instance
+        """
+        self.thread.order_queue.append(DeleteExchange(exchange,
+                                                      on_completed=on_completed,
+                                                      on_failed=on_failed))
+
+
+    def delete_queue(self, queue, on_completed=None, on_failed=None):
+        """
+        Delete a queue
+        :param queue: Queue to delete
+        :param on_completed: callable/0 to call when this succeeds
+        :param on_failed: callable/1 to call when this fails with AMQPError instance
+        """
+        self.thread.order_queue.append(DeleteQueue(queue,
+                                                   on_completed=on_completed,
+                                                   on_failed=on_failed))
 
     def cancel(self, queue, on_completed=None, on_failed=None):
         """

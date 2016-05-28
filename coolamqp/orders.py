@@ -36,8 +36,22 @@ class DeclareExchange(Order):
         self.exchange = exchange
 
 
+class DeleteExchange(Order):
+    """Delete an exchange"""
+    def __init__(self, exchange, on_completed=None, on_failed=None):
+        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
+        self.exchange = exchange
+
+
 class ConsumeQueue(Order):
     """Declare and consume from a queue"""
+    def __init__(self, queue, on_completed=None, on_failed=None):
+        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
+        self.queue = queue
+
+
+class DeleteQueue(Order):
+    """Delete a queue"""
     def __init__(self, queue, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.queue = queue

@@ -7,7 +7,8 @@ from .backends import ConnectionFailedError, RemoteAMQPError
 from .messages import Exchange
 from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, MessageReceived
 from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue, \
-                    AcknowledgeMessage, NAcknowledgeMessage
+                    AcknowledgeMessage, NAcknowledgeMessage, DeleteQueue, \
+                    DeleteExchange
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,10 @@ class ClusterHandlerThread(threading.Thread):
                         elif isinstance(order, DeclareExchange):
                             self.backend.exchange_declare(order.exchange)
                             self.declared_exchanges.append(order.exchange)
+                        elif isinstance(order, DeleteExchange):
+                            self.backend.exchange_delete(order.exchange)
+                        elif isinstance(order, DeleteQueue):
+                            self.backend.queue_delete(order.queue)
                         elif isinstance(order, ConsumeQueue):
                             self.backend.queue_declare(order.queue)
 

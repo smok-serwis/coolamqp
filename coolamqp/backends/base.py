@@ -47,6 +47,12 @@ class AMQPBackend(object):
         :param exchange: Exchange object
         """
 
+    def exchange_delete(self, exchange):
+        """
+        Delete an exchange
+        :param exchange: Exchange object
+        """
+
     def queue_bind(self, queue, exchange, routing_key=''):
         """
         Bind a queue to an exchange
@@ -54,6 +60,14 @@ class AMQPBackend(object):
         :param exchange: Exchange object
         :param routing_key: routing key to use
         """
+
+    def queue_delete(self, queue):
+        """
+        Delete a queue.
+
+        :param queue: Queue
+        """
+
 
     def queue_declare(self, queue):
         """
