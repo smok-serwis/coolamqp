@@ -158,7 +158,6 @@ class ClusterHandlerThread(threading.Thread):
         """
         self.is_terminating = True
 
-
     ## events called
     def _on_recvmessage(self, body, exchange_name, routing_key, delivery_tag, properties):
         """

@@ -180,4 +180,3 @@ class Cluster(object):
         """
         self.thread.terminate()
         self.thread.join()
-        return
