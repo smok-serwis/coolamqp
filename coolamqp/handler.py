@@ -65,6 +65,7 @@ class ClusterHandlerThread(threading.Thread):
             except ConnectionFailedError as e:
                 # a connection failure happened :(
                 logger.warning('Connecting to %s failed due to %s', node, repr(e))
+                self.cluster.connected = False
                 if self.backend is not None:
                     self.backend.shutdown()
                     self.backend = None # good policy to release resources before you sleep
@@ -78,6 +79,7 @@ class ClusterHandlerThread(threading.Thread):
                 else:
                     exponential_backoff_delay = 60
             else:
+                self.cluster.connected = True
                 self.event_queue.put(ConnectionUp())
                 break   # we connected :)
 
@@ -140,6 +142,7 @@ class ClusterHandlerThread(threading.Thread):
 
             except ConnectionFailedError as e:
                 logger.warning('Connection to broker lost')
+                self.cluster.connected = True
                 self.event_queue.put(ConnectionDown())
                 self._reconnect()
 

@@ -66,6 +66,8 @@ class Cluster(object):
         self.backend = backend
         self.node_to_connect_to = itertools.cycle(nodes)
 
+        self.connected = False      #: public, is connected to broker?
+
         from .handler import ClusterHandlerThread
         self.thread = ClusterHandlerThread(self)
 
