@@ -49,7 +49,7 @@ class ClusterHandlerThread(threading.Thread):
             try:
                 self.backend = self.cluster.backend(node, self)
 
-                for exchange in self.declared_exchanges:
+                for exchange in self.declared_exchanges.itervalues():
                     self.backend.exchange_declare(exchange)
 
                 for queue in self.queues_by_consumer_tags.itervalues():
@@ -97,9 +97,11 @@ class ClusterHandlerThread(threading.Thread):
                             self.backend.basic_publish(order.message, order.exchange, order.routing_key)
                         elif isinstance(order, DeclareExchange):
                             self.backend.exchange_declare(order.exchange)
-                            self.declared_exchanges.append(order.exchange)
+                            self.declared_exchanges[order.exchange.name] = order.exchange
                         elif isinstance(order, DeleteExchange):
                             self.backend.exchange_delete(order.exchange)
+                            if order.exchange.name in self.declared_exchanges:
+                                del self.declared_exchanges[order.exchange.name]
                         elif isinstance(order, DeleteQueue):
                             self.backend.queue_delete(order.queue)
                         elif isinstance(order, ConsumeQueue):

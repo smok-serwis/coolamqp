@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='CoolAMQP',
-      version='0.1',
+      version='0.1rc0',
       description='The AMQP client library',
       author=u'Piotr Maślanka',
       author_email='piotrm@smok.co',

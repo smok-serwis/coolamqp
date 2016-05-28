@@ -1,5 +1,6 @@
 import uuid
 
+
 class Message(object):
     """AMQP message object"""
 
@@ -14,13 +15,10 @@ class Message(object):
 
 
 class ReceivedMessage(Message):
-    """
-    Message as received from AMQP system
-    """
+    """Message as received from AMQP system"""
 
     def __init__(self, body, cht, connect_id, exchange_name, routing_key, properties={}, delivery_tag=None):
         """
-
         :param body: message body. A stream of octets.
         :param cht: parent ClusterHandlerThread that emitted this message
         :param connect_id: connection ID. ClusterHandlerThread will check this in order
