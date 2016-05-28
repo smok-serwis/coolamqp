@@ -13,7 +13,7 @@ def translate_exceptions(fun):
             return fun(*args, **kwargs)
         except amqp.ChannelError as e:
             raise RemoteAMQPError(e.reply_code, e.reply_text)
-        except IOError as e:
+        except (IOError, amqp.ConnectionForced) as e:
             raise ConnectionFailedError(e.message)
     return q
 
