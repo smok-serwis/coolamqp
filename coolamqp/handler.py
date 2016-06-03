@@ -100,6 +100,9 @@ class ClusterHandlerThread(threading.Thread):
             elif isinstance(order, DeleteQueue):
                 self.backend.queue_delete(order.queue)
             elif isinstance(order, ConsumeQueue):
+                if order.queue.consumer_tag in self.queues_by_consumer_tags:
+                    return    # already consuming, belay that
+
                 self.backend.queue_declare(order.queue)
 
                 if order.queue.exchange is not None:
