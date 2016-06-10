@@ -79,12 +79,12 @@ class Cluster(object):
         :param routing_key: routing key to use
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
+        :return: a Future with this order's status
         """
-        self.thread.order_queue.append(SendMessage(message,
-                                                   exchange or Exchange.direct,
-                                                   routing_key,
-                                                   on_completed=on_completed,
-                                                   on_failed=on_failed))
+        a = SendMessage(message, exchange or Exchange.direct, routing_key,
+                        on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
 
     def declare_exchange(self, exchange, on_completed=None, on_failed=None):
         """
@@ -92,6 +92,7 @@ class Cluster(object):
         :param exchange: Exchange to declare
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
+        :return: a Future with this order's status
         """
         self.thread.order_queue.append(DeclareExchange(exchange,
                                                        on_completed=on_completed,
@@ -104,10 +105,11 @@ class Cluster(object):
         :param exchange: Exchange to delete
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
+        :return: a Future with this order's status
         """
-        self.thread.order_queue.append(DeleteExchange(exchange,
-                                                      on_completed=on_completed,
-                                                      on_failed=on_failed))
+        a = DeleteExchange(exchange, on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
 
 
     def delete_queue(self, queue, on_completed=None, on_failed=None):
@@ -116,10 +118,11 @@ class Cluster(object):
         :param queue: Queue to delete
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
+        :return: a Future with this order's status
         """
-        self.thread.order_queue.append(DeleteQueue(queue,
-                                                   on_completed=on_completed,
-                                                   on_failed=on_failed))
+        a = DeleteQueue(queue, on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
 
     def cancel(self, queue, on_completed=None, on_failed=None):
         """
@@ -128,10 +131,11 @@ class Cluster(object):
         :param queue: Queue to consume from
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
+        :return: a Future with this order's status
         """
-        self.thread.order_queue.append(CancelQueue(queue,
-                                                   on_completed=on_completed,
-                                                   on_failed=on_failed))
+        a = CancelQueue(queue, on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
 
     def consume(self, queue, on_completed=None, on_failed=None):
         """
@@ -143,10 +147,11 @@ class Cluster(object):
         :param queue: Queue to consume from
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
+        :return: a Future with this order's status
         """
-        self.thread.order_queue.append(ConsumeQueue(queue,
-                                                    on_completed=on_completed,
-                                                    on_failed=on_failed))
+        a = ConsumeQueue(queue, on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
 
     def drain(self, wait=0):
         """
