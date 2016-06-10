@@ -9,14 +9,14 @@ class Order(object):
     def __init__(self, on_completed=None, on_failed=None):
         self.on_completed = on_completed
         self.on_failed = on_failed
-        self.result = None  # None on non-completed
+        self._result = None  # None on non-completed
                             # True on completed OK
                             # exception instance on failed
         self.lock = Lock()
         self.lock.acquire()
 
     def completed(self):
-        self.result = True
+        self._result = True
         self.lock.release()
 
         if self.on_completed is not None:
@@ -26,7 +26,7 @@ class Order(object):
         """
         :param e: AMQPError instance
         """
-        self.result = e
+        self._result = e
         self.lock.release()
 
         if self.on_failed is not None:
@@ -35,7 +35,7 @@ class Order(object):
     def result(self):
         """Wait until this is completed and return a response"""
         self.lock.acquire()
-        return self.result
+        return self._result
 
 
 class SendMessage(Order):
