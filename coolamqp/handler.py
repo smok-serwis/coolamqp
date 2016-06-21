@@ -33,6 +33,7 @@ class ClusterHandlerThread(threading.Thread):
         self.queues_by_consumer_tags = {}   # listened queues, by their consumer tags
 
         self.backend = None
+        self.first_connect = True
 
     def _reconnect(self):
         exponential_backoff_delay = 1
@@ -80,7 +81,8 @@ class ClusterHandlerThread(threading.Thread):
                     exponential_backoff_delay = 60
             else:
                 self.cluster.connected = True
-                self.event_queue.put(ConnectionUp())
+                self.event_queue.put(ConnectionUp(initial=self.first_connect))
+                self.first_connect = False
                 break   # we connected :)
 
 

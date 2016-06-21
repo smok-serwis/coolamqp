@@ -6,7 +6,7 @@ QUEUE_NAME = 'f'
 
 logging.basicConfig()
 
-cluster = Cluster([ClusterNode('xx', 'xx', 'xx', 'xx', heartbeat=10)]).start()
+cluster = Cluster([ClusterNode('192.168.224.31:5672', 'smok', 'smok', 'smok', heartbeat=10)]).start()
 
 a_queue = Queue(QUEUE_NAME, auto_delete=True)
 cluster.consume(a_queue)

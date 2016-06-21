@@ -14,6 +14,9 @@ class ConnectionDown(ClusterEvent):
 class ConnectionUp(ClusterEvent):
     """Connection to broker has been (re)established"""
 
+    def __init__(self, initial=False):
+        self.initial = initial  #: public, is this first connection up in this cluster ever?
+
 
 class MessageReceived(ClusterEvent):
     """A message has been received from the broker"""
