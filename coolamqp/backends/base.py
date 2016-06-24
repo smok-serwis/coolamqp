@@ -102,10 +102,10 @@ class AMQPBackend(object):
         :param prefetch_count: prefetch window in terms of whole messages
         """
 
-    def basic_nack(self, delivery_tag):
+    def basic_reject(self, delivery_tag):
         """
-        NACK a message.
-        :param delivery_tag: delivery tag to nack
+        Reject a message
+        :param delivery_tag: delivery tag to reject
         """
 
     def basic_publish(self, message, exchange, routing_key):

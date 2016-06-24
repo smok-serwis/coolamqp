@@ -42,6 +42,9 @@ class ReceivedMessage(Message):
     def nack(self, on_completed=None):
         """
         Negative-acknowledge this message to the broker.
+
+        This internally results in a basic.reject
+
         :param on_completed: callable/0 to call on acknowledged. Callable will be executed in
             ClusterHandlerThread's context.
         """
