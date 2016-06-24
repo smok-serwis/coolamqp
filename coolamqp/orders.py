@@ -75,6 +75,12 @@ class DeleteQueue(Order):
         self.queue = queue
 
 
+class SetQoS(Order):
+    """Set QoS"""
+    def __init__(self, prefetch_window, prefetch_count):
+        self.qos = (prefetch_window, prefetch_count)
+
+
 class CancelQueue(Order):
     """Cancel consuming from a queue"""
     def __init__(self, queue, on_completed=None, on_failed=None):

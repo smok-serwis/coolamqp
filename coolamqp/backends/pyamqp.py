@@ -81,6 +81,10 @@ class PyAMQPBackend(AMQPBackend):
         self.channel.exchange_delete(exchange.name)
 
     @translate_exceptions
+    def basic_qos(self, prefetch_size, prefetch_count):
+        self.channel.basic_qos(prefetch_size, prefetch_count, True)
+
+    @translate_exceptions
     def queue_delete(self, queue):
         self.channel.queue_delete(queue.name)
 

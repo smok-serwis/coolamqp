@@ -10,6 +10,8 @@ cluster = Cluster([ClusterNode('192.168.224.31:5672', 'smok', 'smok', 'smok', he
 
 a_queue = Queue(QUEUE_NAME, auto_delete=True)
 cluster.consume(a_queue)
+cluster.qos(0, 1)
+
 
 q = time.time()
 while True:

@@ -8,7 +8,7 @@ from .messages import Exchange
 from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, MessageReceived
 from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue, \
                     AcknowledgeMessage, NAcknowledgeMessage, DeleteQueue, \
-                    DeleteExchange
+                    DeleteExchange, SetQoS
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,8 @@ class ClusterHandlerThread(threading.Thread):
         self.backend = None
         self.first_connect = True
 
+        self.qos = None # or tuple (prefetch_size, prefetch_count) if QoS set
+
     def _reconnect(self):
         exponential_backoff_delay = 1
 
@@ -49,6 +51,9 @@ class ClusterHandlerThread(threading.Thread):
 
             try:
                 self.backend = self.cluster.backend(node, self)
+
+                if self.qos is not None:
+                    self.backend.basic_qos(*self.qos)
 
                 for exchange in self.declared_exchanges.itervalues():
                     self.backend.exchange_declare(exchange)
@@ -92,6 +97,9 @@ class ClusterHandlerThread(threading.Thread):
         try:
             if isinstance(order, SendMessage):
                 self.backend.basic_publish(order.message, order.exchange, order.routing_key)
+            elif isinstance(order, SetQoS):
+                self.qos = order.qos
+                self.backend.basic_qos(*self.qos)
             elif isinstance(order, DeclareExchange):
                 self.backend.exchange_declare(order.exchange)
                 self.declared_exchanges[order.exchange.name] = order.exchange

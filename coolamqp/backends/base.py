@@ -95,6 +95,13 @@ class AMQPBackend(object):
         :param delivery_tag: delivery tag to ack
         """
 
+    def basic_qos(self, prefetch_size, prefetch_count):
+        """
+        Issue a basic.qos(prefetch_size, prefetch_count, True) against broker
+        :param prefetch_size: prefetch window size in octets
+        :param prefetch_count: prefetch window in terms of whole messages
+        """
+
     def basic_nack(self, delivery_tag):
         """
         NACK a message.

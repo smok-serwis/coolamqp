@@ -2,7 +2,7 @@ import itertools
 import Queue
 from coolamqp.backends import PyAMQPBackend
 from .orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue, DeleteQueue, \
-                    DeleteExchange
+                    DeleteExchange, SetQoS
 from .messages import Exchange
 
 
@@ -134,6 +134,11 @@ class Cluster(object):
         :return: a Future with this order's status
         """
         a = CancelQueue(queue, on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
+
+    def qos(self, prefetch_window, prefetch_count):
+        a = SetQoS(prefetch_window, prefetch_count)
         self.thread.order_queue.append(a)
         return a
 
