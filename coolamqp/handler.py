@@ -216,6 +216,6 @@ class ClusterHandlerThread(threading.Thread):
         :param receivedMessage: a ReceivedMessage object to ack
         :param on_completed: callable/0 to call when acknowledgemenet succeeded
         """
-        self.order_queue.put(NAcknowledgeMessage(receivedMessage.connect_id,
+        self.order_queue.append(NAcknowledgeMessage(receivedMessage.connect_id,
                                                  receivedMessage.delivery_tag,
                                                  on_completed=on_completed))
