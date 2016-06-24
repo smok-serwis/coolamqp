@@ -12,7 +12,7 @@ class Message(object):
         :param properties: AMQP properties to be sent along
         """
         self.body = body
-        self.properties = {} if properties is None else {}
+        self.properties = {} if properties is None else properties
 
 
 class ReceivedMessage(Message):
