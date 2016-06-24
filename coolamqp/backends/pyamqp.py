@@ -3,7 +3,10 @@
 import amqp
 import socket
 import functools
+import logging
 from .base import AMQPBackend, RemoteAMQPError, ConnectionFailedError
+
+logger = logging.getLogger(__name__)
 
 
 def translate_exceptions(fun):
