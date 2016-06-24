@@ -1,3 +1,4 @@
+#coding=UTF-8
 import threading
 import six.moves.queue as Queue
 import logging
@@ -55,17 +56,17 @@ class ClusterHandlerThread(threading.Thread):
                 if self.qos is not None:
                     self.backend.basic_qos(*self.qos)
 
-                for exchange in self.declared_exchanges.itervalues():
+                for exchange in self.declared_exchanges.values():
                     self.backend.exchange_declare(exchange)
 
-                for queue in self.queues_by_consumer_tags.itervalues():
+                for queue in self.queues_by_consumer_tags.values():
                     self.backend.queue_declare(queue)
                     if queue.exchange is not None:
                         if isinstance(queue.exchange, Exchange):
                             self.backend.queue_bind(queue, queue.exchange)
                         else:
                             for exchange in queue.exchange:
-                                self.backend.queue_bind(queue, queue.exchange)
+                                self.backend.queue_bind(queue, exchange)
                     self.backend.basic_consume(queue)
 
             except ConnectionFailedError as e:

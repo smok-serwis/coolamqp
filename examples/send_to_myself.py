@@ -1,3 +1,5 @@
+#coding=UTF-8
+from __future__ import print_function
 from coolamqp import Cluster, ClusterNode, Queue, Message, ConnectionUp, ConnectionDown, MessageReceived, ConsumerCancelled
 import logging
 import time
@@ -22,13 +24,13 @@ while True:
     evt = cluster.drain(2)
 
     if isinstance(evt, ConnectionUp):
-        print 'Connection is up'
+        print('Connection is up')
     elif isinstance(evt, ConnectionDown):
-        print 'Connection is down'
+        print('Connection is down')
     elif isinstance(evt, MessageReceived):
-        print 'Message is %s' % (evt.message.body, )
+        print('Message is %s' % (evt.message.body, ))
         evt.message.ack()
     elif isinstance(evt, ConsumerCancelled):
-        print 'Consumer %s cancelled' % (evt.queue.name, )
+        print('Consumer %s cancelled' % (evt.queue.name, ))
 
 

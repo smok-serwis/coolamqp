@@ -1,23 +1,24 @@
+#coding=UTF-8
 import uuid
 
 
 class Message(object):
     """AMQP message object"""
 
-    def __init__(self, body, properties={}):
+    def __init__(self, body, properties=None):
         """
         Create a Message object
         :param body: stream of octets
         :param properties: AMQP properties to be sent along
         """
         self.body = body
-        self.properties = properties
+        self.properties = {} if properties is None else {}
 
 
 class ReceivedMessage(Message):
     """Message as received from AMQP system"""
 
-    def __init__(self, body, cht, connect_id, exchange_name, routing_key, properties={}, delivery_tag=None):
+    def __init__(self, body, cht, connect_id, exchange_name, routing_key, properties=None, delivery_tag=None):
         """
         :param body: message body. A stream of octets.
         :param cht: parent ClusterHandlerThread that emitted this message
@@ -25,7 +26,7 @@ class ReceivedMessage(Message):
             not to ack messages that were received from a dead connection
         :param exchange_name: name of exchange this message was submitted to
         :param routing_key: routing key with which this message was sent
-        :param properties: dictionary. Headers received from AMQP
+        :param properties: dictionary. Headers received from AMQP or None for empty dict
 
         :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message.
             leave None if auto-ack

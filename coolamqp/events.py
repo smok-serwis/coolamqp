@@ -1,3 +1,4 @@
+#coding=UTF-8
 """
 Events emitted by Cluster
 """

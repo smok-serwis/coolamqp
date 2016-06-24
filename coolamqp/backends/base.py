@@ -1,11 +1,11 @@
-
-
+#coding=UTF-8
 class AMQPError(Exception):
     pass
 
 
 class ConnectionFailedError(AMQPError):
     """Connection to broker failed"""
+
 
 class RemoteAMQPError(AMQPError):
     """

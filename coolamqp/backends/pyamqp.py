@@ -1,3 +1,4 @@
+#coding=UTF-8
 """Backend using pyamqp"""
 import amqp
 import socket
@@ -115,7 +116,6 @@ class PyAMQPBackend(AMQPBackend):
         """
         Start consuming from a queue
         :param queue: Queue object
-        :param on_message: callable/1
         """
         self.channel.basic_consume(queue.name,
                                    consumer_tag=queue.consumer_tag,

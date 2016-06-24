@@ -1,5 +1,6 @@
+#coding=UTF-8
 import itertools
-import Queue
+from six.moves import queue as Queue
 from coolamqp.backends import PyAMQPBackend
 from .orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue, DeleteQueue, \
                     DeleteExchange, SetQoS

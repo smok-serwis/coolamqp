@@ -1,3 +1,4 @@
+#coding=UTF-8
 """
 Orders that can be dispatched to ClusterHandlerThread
 """
@@ -77,7 +78,8 @@ class DeleteQueue(Order):
 
 class SetQoS(Order):
     """Set QoS"""
-    def __init__(self, prefetch_window, prefetch_count):
+    def __init__(self, prefetch_window, prefetch_count, on_completed=None, on_failed=None):
+        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.qos = (prefetch_window, prefetch_count)
 
 
