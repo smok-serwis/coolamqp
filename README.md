@@ -22,6 +22,8 @@ As the project is in it's infancy stages, but actively maintained and used in a 
 if you need a feature - just drop me a note or create a new issue here.
 
 
+Now compatible with Python 3!
+
 todo
 ----
 * Allow binding queues with exchanges with a routing_key
