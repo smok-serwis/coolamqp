@@ -1,5 +1,5 @@
 import threading
-import Queue
+import six.moves.queue as Queue
 import logging
 import collections
 import time
