@@ -3,7 +3,7 @@ import itertools
 from six.moves import queue as Queue
 from coolamqp.backends import PyAMQPBackend
 from .orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue, DeleteQueue, \
-                    DeleteExchange, SetQoS
+                    DeleteExchange, SetQoS, DeclareQueue
 from .messages import Exchange
 
 
@@ -95,10 +95,21 @@ class Cluster(object):
         :param on_failed: callable/1 to call when this fails with AMQPError instance
         :return: a Future with this order's status
         """
-        self.thread.order_queue.append(DeclareExchange(exchange,
-                                                       on_completed=on_completed,
-                                                       on_failed=on_failed))
+        a = DeclareExchange(exchange, on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
 
+    def declare_queue(self, queue, on_completed=None, on_failed=None):
+        """
+        Declares a queue
+        :param queue: Queue to declare
+        :param on_completed: callable/0 to call when this succeeds
+        :param on_failed: callable/1 to call when this fails with AMQPError instance
+        :return: a Future with this order's status
+        """
+        a = DeclareQueue(queue, on_completed=on_completed, on_failed=on_failed)
+        self.thread.order_queue.append(a)
+        return a
 
     def delete_exchange(self, exchange, on_completed=None, on_failed=None):
         """

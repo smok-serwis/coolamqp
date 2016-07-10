@@ -9,7 +9,7 @@ from .messages import Exchange
 from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, MessageReceived
 from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue, \
                     AcknowledgeMessage, NAcknowledgeMessage, DeleteQueue, \
-                    DeleteExchange, SetQoS
+                    DeleteExchange, SetQoS, DeclareQueue
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +108,8 @@ class ClusterHandlerThread(threading.Thread):
                 self.backend.exchange_delete(order.exchange)
                 if order.exchange.name in self.declared_exchanges:
                     del self.declared_exchanges[order.exchange.name]
+            elif isinstance(order, DeclareQueue):
+                self.backend.queue_declare(order.queue)
             elif isinstance(order, DeleteQueue):
                 self.backend.queue_delete(order.queue)
             elif isinstance(order, ConsumeQueue):
@@ -138,7 +140,7 @@ class ClusterHandlerThread(threading.Thread):
                     self.backend.basic_ack(order.delivery_tag)
             elif isinstance(order, NAcknowledgeMessage):
                 if order.connect_id == self.connect_id:
-                    self.backend.basic_nack(order.delivery_tag)
+                    self.backend.basic_reject(order.delivery_tag)
         except RemoteAMQPError as e:
             logger.error('Remote AMQP error: %s', e)
             order.failed(e)  # we are allowed to go on

@@ -62,6 +62,13 @@ class DeleteExchange(Order):
         self.exchange = exchange
 
 
+class DeclareQueue(Order):
+    """Declare a a queue"""
+    def __init__(self, queue, on_completed=None, on_failed=None):
+        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
+        self.queue = queue
+
+
 class ConsumeQueue(Order):
     """Declare and consume from a queue"""
     def __init__(self, queue, on_completed=None, on_failed=None):
