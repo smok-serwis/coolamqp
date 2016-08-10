@@ -1,11 +1,13 @@
 #coding=UTF-8
 class AMQPError(Exception):
-    pass
+    """Connection errors and bawking of AMQP server"""
 
 
 class ConnectionFailedError(AMQPError):
     """Connection to broker failed"""
 
+class Cancelled(Exception):
+    """Cancel ordered by user"""
 
 class RemoteAMQPError(AMQPError):
     """

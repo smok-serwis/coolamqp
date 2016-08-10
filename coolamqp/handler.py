@@ -4,7 +4,7 @@ import six.moves.queue as Queue
 import logging
 import collections
 import time
-from .backends import ConnectionFailedError, RemoteAMQPError
+from .backends import ConnectionFailedError, RemoteAMQPError, Cancelled
 from .messages import Exchange
 from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, MessageReceived
 from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue, \
@@ -96,6 +96,10 @@ class ClusterHandlerThread(threading.Thread):
         order = self.order_queue.popleft()
 
         try:
+            if order.cancelled:
+                order.failed(Cancelled())
+                return
+
             if isinstance(order, SendMessage):
                 self.backend.basic_publish(order.message, order.exchange, order.routing_key)
             elif isinstance(order, SetQoS):

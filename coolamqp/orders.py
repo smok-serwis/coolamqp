@@ -15,6 +15,15 @@ class Order(object):
                             # exception instance on failed
         self.lock = Lock()
         self.lock.acquire()
+        self.cancelled = False
+
+    def has_finished(self):
+        """Return if this task has either completed or failed"""
+        return self._result is not None
+
+    def cancel(self):
+        """Cancel this order"""
+        self.cancelled = True
 
     def completed(self):
         self._result = True
@@ -25,7 +34,7 @@ class Order(object):
 
     def failed(self, e):
         """
-        :param e: AMQPError instance
+        :param e: AMQPError instance or Cancelled instance
         """
         self._result = e
         self.lock.release()
