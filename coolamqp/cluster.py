@@ -19,7 +19,7 @@ class ClusterNode(object):
         Create a cluster node definition.
 
             a = ClusterNode(host='192.168.0.1', user='admin', password='password',
-                            vhost='vhost')
+                            virtual_host='vhost')
 
         or
 
