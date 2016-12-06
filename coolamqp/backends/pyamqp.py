@@ -32,8 +32,10 @@ class PyAMQPBackend(AMQPBackend):
                                           password=node.password,
                                           virtual_host=node.virtual_host,
                                           heartbeat=node.heartbeat or 0)
-
-        self.connection.connect()     #todo what does this raise?
+        try:
+            self.connection.connect()     #todo what does this raise?
+        except AttributeError:
+            pass    # this does not always have to exist
         self.channel = self.connection.channel()
 
     def shutdown(self):
