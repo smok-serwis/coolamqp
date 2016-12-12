@@ -47,16 +47,18 @@ class ReceivedMessage(Message):
 
         :param on_completed: callable/0 to call on acknowledged. Callable will be executed in
             ClusterHandlerThread's context.
+        :return: an Order, that can ve waited upon for a result
         """
-        self.cht._do_nackmessage(self, on_completed=on_completed)
+        return self.cht._do_nackmessage(self, on_completed=on_completed)
 
     def ack(self, on_completed=None):
         """
         Acknowledge this message to the broker.
         :param on_completed: callable/0 to call on acknowledged. Callable will be executed in
             ClusterHandlerThread's context.
+        :return: an Order, that can ve waited upon for a result
         """
-        self.cht._do_ackmessage(self, on_completed=on_completed)
+        return self.cht._do_ackmessage(self, on_completed=on_completed)
 
 
 class Exchange(object):

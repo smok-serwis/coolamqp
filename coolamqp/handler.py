@@ -210,10 +210,13 @@ class ClusterHandlerThread(threading.Thread):
         Order acknowledging a message.
         :param receivedMessage: a ReceivedMessage object to ack
         :param on_completed: callable/0 to call when acknowledgemenet succeeded
+        :return: an AcknowledgeMess
         """
-        self.order_queue.append(AcknowledgeMessage(receivedMessage.connect_id,
+        a = AcknowledgeMessage(receivedMessage.connect_id,
                                                    receivedMessage.delivery_tag,
-                                                   on_completed=on_completed))
+                                                   on_completed=on_completed)
+        self.order_queue.append(a)
+        return a
 
 
     def _do_nackmessage(self, receivedMessage, on_completed=None):
@@ -222,6 +225,8 @@ class ClusterHandlerThread(threading.Thread):
         :param receivedMessage: a ReceivedMessage object to ack
         :param on_completed: callable/0 to call when acknowledgemenet succeeded
         """
-        self.order_queue.append(NAcknowledgeMessage(receivedMessage.connect_id,
-                                                 receivedMessage.delivery_tag,
-                                                 on_completed=on_completed))
+        a = NAcknowledgeMessage(receivedMessage.connect_id,
+                                receivedMessage.delivery_tag,
+                                on_completed=on_completed)
+        self.order_queue.append(a)
+        return a
