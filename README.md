@@ -1,5 +1,6 @@
 CoolAMQP
 ========
+[![PyPI version](https://badge.fury.io/py/CoolAMQP.svg)](https://badge.fury.io/py/CoolAMQP)
 
 When you're tired of fucking with AMQP reconnects.
 
