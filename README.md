@@ -1,7 +1,7 @@
 CoolAMQP
 ========
 [![PyPI version](https://badge.fury.io/py/CoolAMQP.svg)](https://badge.fury.io/py/CoolAMQP)
-[![Build Status](https://travis-ci.org/smok-serwis/CoolAMQP.svg)](https://travis-ci.org/smok-serwis/CoolAMQP)
+[![Build Status](https://travis-ci.org/smok-serwis/coolamqp.svg)](https://travis-ci.org/smok-serwis/coolamqp)
 [![PyPI](https://img.shields.io/pypi/pyversions/CoolAMQP.svg)]()
 [![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
 
