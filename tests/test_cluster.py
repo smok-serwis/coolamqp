@@ -25,13 +25,13 @@ class MyTestCase(unittest.TestCase):
         self.assertIsInstance(p, MessageReceived)
         self.assertEquals(p.message.body, b'what the fuck')
 
-#    def test_consumer_cancelled_on_queue_deletion(self):
-#        myq = Queue('myqueue', exclusive=True)
-#
-#        self.amqp.consume(myq)
-#        self.amqp.delete_queue(myq)
-#
-#        self.assertIsInstance(self.amqp.drain(wait=10), ConsumerCancelled)
+    def test_consumer_cancelled_on_queue_deletion(self):
+        myq = Queue('myqueue', exclusive=True)
+
+        self.amqp.consume(myq)
+        self.amqp.delete_queue(myq)
+
+        self.assertIsInstance(self.amqp.drain(wait=10), ConsumerCancelled)
 
     def test_consumer_cancelled_on_consumer_cancel(self):
         myq = Queue('myqueue', exclusive=True)
