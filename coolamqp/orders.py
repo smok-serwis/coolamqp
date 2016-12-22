@@ -106,17 +106,16 @@ class CancelQueue(Order):
         self.queue = queue
 
 
-class AcknowledgeMessage(Order):
+
+class _AcksAndNacks(Order):
+    """related to acking and nacking"""
+    def __init__(self, connect_id, delivery_tag, on_completed):
+        Order.__init__(self, on_completed=on_completed)
+        self.connect_id = connect_id
+        self.delivery_tag = delivery_tag
+
+class AcknowledgeMessage(_AcksAndNacks):
     """ACK a message"""
-    def __init__(self, connect_id, delivery_tag, on_completed):
-        Order.__init__(self, on_completed=on_completed)
-        self.connect_id = connect_id
-        self.delivery_tag = delivery_tag
 
-
-class NAcknowledgeMessage(Order):
+class NAcknowledgeMessage(_AcksAndNacks):
     """NACK a message"""
-    def __init__(self, connect_id, delivery_tag, on_completed):
-        Order.__init__(self, on_completed=on_completed)
-        self.connect_id = connect_id
-        self.delivery_tag = delivery_tag

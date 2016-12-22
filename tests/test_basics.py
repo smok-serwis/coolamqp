@@ -1,6 +1,7 @@
 #coding=UTF-8
 from __future__ import absolute_import, division, print_function
 import unittest
+import six
 
 from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp, \
     ConnectionDown, ConsumerCancelled, Message
@@ -19,7 +20,7 @@ class TestBasics(unittest.TestCase):
         myq = Queue('myqueue', exclusive=True)
 
         self.amqp.consume(myq)
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
+        self.amqp.send(Message('what the fuck'), '', routing_key='myqueue')
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
@@ -34,16 +35,16 @@ class TestBasics(unittest.TestCase):
         myq = Queue('myqueue', exclusive=True)
 
         self.amqp.consume(myq)
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
+        self.amqp.send(Message('what the fuck'), '', routing_key='myqueue')
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(p.message.body, b'what the fuck')
+        self.assertEquals(p.message.body, 'what the fuck')
         p.message.nack()
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(p.message.body, b'what the fuck')
+        self.assertEquals(six.binary_type(p.message.body), 'what the fuck')
 
         self.amqp.delete_queue(myq)
 
@@ -51,11 +52,11 @@ class TestBasics(unittest.TestCase):
         myq = Queue('myqueue', exclusive=True)
 
         self.amqp.consume(myq)
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
+        self.amqp.send(Message('what the fuck'), '', routing_key='myqueue')
 
         p = self.amqp.drain(wait=10)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(p.message.body, b'what the fuck')
+        self.assertEquals(p.message.body, 'what the fuck')
 
     def test_consumer_cancelled_on_queue_deletion(self):
         myq = Queue('myqueue', exclusive=True)
