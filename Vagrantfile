@@ -13,9 +13,9 @@ Vagrant.configure("2") do |config|
 
      /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management
      service rabbitmq-server restart
-     rabbitmqctl add_user guest guest
-     rabbitmqctl set_permissions -p / guest ".*" ".*" ".*"
-     rabbitmqctl set_user_tags guest administrator
+     rabbitmqctl add_user user user
+     rabbitmqctl set_permissions -p / user ".*" ".*" ".*"
+     rabbitmqctl set_user_tags user administrator
 
      # Install deps
      pip install -r /vagrant/requirements.txt
