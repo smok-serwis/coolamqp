@@ -1,6 +1,7 @@
 #coding=UTF-8
 import threading
 import six.moves.queue as Queue
+import six
 import logging
 import collections
 import time
@@ -47,7 +48,7 @@ class ClusterHandlerThread(threading.Thread):
                 self.backend = None
 
             self.connect_id += 1
-            node = self.cluster.node_to_connect_to.next()
+            node = six.next(self.cluster.node_to_connect_to)
             logger.info('Connecting to %s', node)
 
             try:
