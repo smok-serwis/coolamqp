@@ -7,10 +7,15 @@ from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp,
     ConnectionDown, ConsumerCancelled, Message
 
 
+def getamqp():
+    amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')])
+    amqp.start()
+    return amqp
+
+
 class TestBasics(unittest.TestCase):
     def setUp(self):
-        self.amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')])
-        self.amqp.start()
+        self.amqp = getamqp()
         self.assertIsInstance(self.amqp.drain(1), ConnectionUp)
 
     def tearDown(self):
@@ -29,8 +34,6 @@ class TestBasics(unittest.TestCase):
 
         self.assertIs(self.amqp.drain(wait=4), None)
 
-        self.amqp.delete_queue(myq)
-
     def test_nacknowledge(self):
         myq = Queue('myqueue', exclusive=True)
 
@@ -46,7 +49,24 @@ class TestBasics(unittest.TestCase):
         self.assertIsInstance(p, MessageReceived)
         self.assertEquals(six.binary_type(p.message.body), 'what the fuck')
 
-        self.amqp.delete_queue(myq)
+
+    def test_bug_hangs(self):
+        p = Queue('lol', exclusive=True)
+        self.amqp.consume(p)
+        self.amqp.consume(p).result()
+
+    def test_consume_twice(self):
+        """Spawn a second connection and try to consume an exclusive queue twice"""
+        amqp2 = getamqp()
+
+        has_failed = {'has_failed': False}
+
+        self.amqp.consume(Queue('lol', exclusive=True)).result()
+        amqp2.consume(Queue('lol', exclusive=True), on_failed=lambda e: has_failed.update({'has_failed': True})).result()
+
+        self.assertTrue(has_failed['has_failed'])
+
+        amqp2.shutdown()
 
     def test_send_and_receive(self):
         myq = Queue('myqueue', exclusive=True)
@@ -73,5 +93,3 @@ class TestBasics(unittest.TestCase):
         self.amqp.cancel(myq)
 
         self.assertIsInstance(self.amqp.drain(wait=10), ConsumerCancelled)
-
-        self.amqp.delete_queue(myq)

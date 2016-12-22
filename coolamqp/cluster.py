@@ -123,7 +123,6 @@ class Cluster(object):
         self.thread.order_queue.append(a)
         return a
 
-
     def delete_queue(self, queue, on_completed=None, on_failed=None):
         """
         Delete a queue
@@ -202,3 +201,8 @@ class Cluster(object):
         """
         self.thread.terminate()
         self.thread.join()
+
+        if self.connected:
+            self.backend.shutdown()
+            self.backend = None
+            self.connected = False

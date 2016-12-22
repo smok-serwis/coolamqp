@@ -119,6 +119,7 @@ class ClusterHandlerThread(threading.Thread):
                 self.backend.queue_delete(order.queue)
             elif isinstance(order, ConsumeQueue):
                 if order.queue.consumer_tag in self.queues_by_consumer_tags:
+                    order.completed()
                     return    # already consuming, belay that
 
                 self.backend.queue_declare(order.queue)
@@ -171,6 +172,13 @@ class ClusterHandlerThread(threading.Thread):
                 self.cluster.connected = True
                 self.event_queue.put(ConnectionDown())
                 self._reconnect()
+
+        if (not self.cluster.connected) or (self.backend is not None):
+            self.backend.shutdown()
+            self.backend = None
+            self.cluster.connected = False
+
+
 
     def terminate(self):
         """
