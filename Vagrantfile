@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
      pip install --upgrade pip setuptools
 
      /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management
-     service rabbitmq-server restart
+     sudo service rabbitmq-server restart
      rabbitmqctl add_user user user
      rabbitmqctl set_permissions -p / user ".*" ".*" ".*"
      rabbitmqctl set_user_tags user administrator

@@ -11,6 +11,10 @@ install:
  - pip install coverage
  - pip install codeclimate-test-reporter
  - pip install -r requirements.txt
+ - sudo rabbitmq-plugins enable rabbitmq_management
+ - sudo rabbitmqctl add_user user user
+ - sudo rabbitmqctl set_permissions -p / user ".*" ".*" ".*"
+ - sudo rabbitmqctl set_user_tags user administrator
 after_success:
  - CODECLIMATE_REPO_TOKEN=e8e05973a6c49139de5f98013cd285f9238b78d20f053f37f6e7deeab2c2c52f codeclimate-test-reporter
 services:

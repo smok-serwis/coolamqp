@@ -6,7 +6,7 @@ from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp,
     ConnectionDown, ConsumerCancelled, Message
 
 
-class MyTestCase(unittest.TestCase):
+class TestBasics(unittest.TestCase):
     def setUp(self):
         self.amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')])
         self.amqp.start()
@@ -15,23 +15,37 @@ class MyTestCase(unittest.TestCase):
     def tearDown(self):
         self.amqp.shutdown()
 
+    def test_acknowledge(self):
+        myq = Queue('myqueue', exclusive=True)
+
+        self.amqp.consume(myq)
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
+
+        p = self.amqp.drain(wait=4)
+        self.assertIsInstance(p, MessageReceived)
+        self.assertEquals(p.message.body, b'what the fuck')
+        p.message.ack()
+
+        self.assertIs(self.amqp.drain(wait=4), None)
+
+        self.amqp.delete_queue(myq)
+
     def test_nacknowledge(self):
         myq = Queue('myqueue', exclusive=True)
 
         self.amqp.consume(myq)
         self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
 
-        p = self.amqp.drain(wait=10)
+        p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
         self.assertEquals(p.message.body, b'what the fuck')
         p.message.nack()
 
-        p = self.amqp.drain(wait=10)
+        p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
         self.assertEquals(p.message.body, b'what the fuck')
 
         self.amqp.delete_queue(myq)
-
 
     def test_send_and_receive(self):
         myq = Queue('myqueue', exclusive=True)
