@@ -24,7 +24,7 @@ class TestBasics(unittest.TestCase):
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(p.message.body, b'what the fuck')
+        self.assertEquals(p.message.body, 'what the fuck')
         p.message.ack()
 
         self.assertIs(self.amqp.drain(wait=4), None)
