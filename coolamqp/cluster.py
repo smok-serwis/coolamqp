@@ -211,15 +211,15 @@ class Cluster(object):
         self.thread.start()
         return self
 
-    def shutdown(self, complete_outstanding_tasks=False):
+    def shutdown(self, complete_remaining_tasks=False):
         """
         Cleans everything and returns.
 
-        :param complete_outstanding_tasks: if set to True, pending operations will be completed.
+        :param complete_remaining_tasks_tasks: if set to True, pending operations will be completed.
             If False, thread will exit without completing them.
             This can mean that if the cluster doesn't come up online, shutdown MAY BLOCK FOREVER.
         """
-        self.thread.complete_outstanding_upon_termination = complete_outstanding_tasks
+        self.thread.complete_remaining_upon_termination = complete_remaining_tasks
         self.thread.terminate()
         self.thread.join()
         # thread closes the AMQP uplink for us

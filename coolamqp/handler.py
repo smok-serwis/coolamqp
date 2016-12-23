@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class _ImOuttaHere(Exception):
     """Thrown upon thread terminating.
-    Thrown only if complete_outstanding_upon_termination is False"""
+    Thrown only if complete_remaining_upon_termination is False"""
 
 
 class ClusterHandlerThread(threading.Thread):
@@ -32,7 +32,7 @@ class ClusterHandlerThread(threading.Thread):
 
         self.cluster = cluster
         self.is_terminating = False
-        self.complete_outstanding_upon_termination = False
+        self.complete_remaining_upon_termination = False
         self.order_queue = collections.deque()    # queue for inbound orders
         self.event_queue = queue.Queue()    # queue for tasks done
         self.connect_id = -1                # connectID of current connection
@@ -81,7 +81,7 @@ class ClusterHandlerThread(threading.Thread):
                     self.backend = None # good policy to release resources before you sleep
                 time.sleep(exponential_backoff_delay)
 
-                if self.is_terminating and (not self.complete_outstanding_upon_termination):
+                if self.is_terminating and (not self.complete_remaining_upon_termination):
                     raise _ImOuttaHere()
 
                 exponential_backoff_delay = min(60, exponential_backoff_delay * 2)
