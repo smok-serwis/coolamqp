@@ -57,39 +57,36 @@ class SendMessage(Order):
         self.routing_key = routing_key
 
 
-class DeclareExchange(Order):
+class _Exchange(Order):
+    """Things with exchanges"""
+    def __init__(self, exchange, on_completed=None, on_failed=None):
+        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
+        self.exchange = exchange
+
+class DeclareExchange(_Exchange):
     """Declare an exchange"""
-    def __init__(self, exchange, on_completed=None, on_failed=None):
-        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.exchange = exchange
 
-
-class DeleteExchange(Order):
+class DeleteExchange(_Exchange):
     """Delete an exchange"""
-    def __init__(self, exchange, on_completed=None, on_failed=None):
+
+
+class _Queue(Order):
+    """Things with queues"""
+    def __init__(self, queue, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.exchange = exchange
+        self.queue = queue
 
-
-class DeclareQueue(Order):
+class DeclareQueue(_Queue):
     """Declare a a queue"""
-    def __init__(self, queue, on_completed=None, on_failed=None):
-        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.queue = queue
 
-
-class ConsumeQueue(Order):
+class ConsumeQueue(_Queue):
     """Declare and consume from a queue"""
-    def __init__(self, queue, on_completed=None, on_failed=None):
-        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.queue = queue
 
-
-class DeleteQueue(Order):
+class DeleteQueue(_Queue):
     """Delete a queue"""
-    def __init__(self, queue, on_completed=None, on_failed=None):
-        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.queue = queue
+
+class CancelQueue(_Queue):
+    """Cancel consuming from a queue"""
 
 
 class SetQoS(Order):
@@ -97,14 +94,6 @@ class SetQoS(Order):
     def __init__(self, prefetch_window, prefetch_count, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.qos = (prefetch_window, prefetch_count)
-
-
-class CancelQueue(Order):
-    """Cancel consuming from a queue"""
-    def __init__(self, queue, on_completed=None, on_failed=None):
-        Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.queue = queue
-
 
 
 class _AcksAndNacks(Order):
