@@ -31,6 +31,7 @@ class ClusterHandlerThread(threading.Thread):
         threading.Thread.__init__(self)
 
         self.cluster = cluster
+        self.daemon = True      # if you don't explicitly wait for me, that means you don't need to
         self.is_terminating = False
         self.complete_remaining_upon_termination = False
         self.order_queue = collections.deque()    # queue for inbound orders
