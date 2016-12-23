@@ -1,4 +1,4 @@
-#coding=UTF-8
+# coding=UTF-8
 """
 Orders that can be dispatched to ClusterHandlerThread
 """

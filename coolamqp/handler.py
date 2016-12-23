@@ -1,6 +1,6 @@
 # coding=UTF-8
 import threading
-import six.moves.queue as Queue
+from six.moves import queue
 import six
 import logging
 import collections
@@ -34,7 +34,7 @@ class ClusterHandlerThread(threading.Thread):
         self.is_terminating = False
         self.complete_outstanding_upon_termination = False
         self.order_queue = collections.deque()    # queue for inbound orders
-        self.event_queue = Queue.Queue()    # queue for tasks done
+        self.event_queue = queue.Queue()    # queue for tasks done
         self.connect_id = -1                # connectID of current connection
 
         self.declared_exchanges = {}        # declared exchanges, by their names
