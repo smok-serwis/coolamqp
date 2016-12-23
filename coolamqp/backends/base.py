@@ -1,4 +1,4 @@
-#coding=UTF-8
+# coding=UTF-8
 class AMQPError(Exception):
     """Connection errors and bawking of AMQP server"""
 
