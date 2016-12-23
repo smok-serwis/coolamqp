@@ -63,11 +63,7 @@ class ClusterHandlerThread(threading.Thread):
                 for queue in self.queues_by_consumer_tags.values():
                     self.backend.queue_declare(queue)
                     if queue.exchange is not None:
-                        if isinstance(queue.exchange, Exchange):
-                            self.backend.queue_bind(queue, queue.exchange)
-                        else:
-                            for exchange in queue.exchange:
-                                self.backend.queue_bind(queue, exchange)
+                        self.backend.queue_bind(queue, queue.exchange)
                     self.backend.basic_consume(queue)
 
             except ConnectionFailedError as e:
@@ -82,10 +78,7 @@ class ClusterHandlerThread(threading.Thread):
                 if self.is_terminating:
                     raise SystemError('Thread was requested to terminate')
 
-                if exponential_backoff_delay < 60:
-                    exponential_backoff_delay *= 2
-                else:
-                    exponential_backoff_delay = 60
+                exponential_backoff_delay = max(60, exponential_backoff_delay * 2)
             else:
                 self.cluster.connected = True
                 self.event_queue.put(ConnectionUp(initial=self.first_connect))

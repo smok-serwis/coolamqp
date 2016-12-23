@@ -98,8 +98,7 @@ class Queue(object):
             reestablished, this name will CHANGE AGAIN, and be reflected in this object.
             This change will be done before CoolAMQP signals reconnection.
         :param durable: Is the queue durable?
-        :param exchange: Exchange(s) this queue is bound to. None for no binding.
-            This might be a single Exchange object, or an iterable of exchanges.
+        :param exchange: Exchange for this queue to bind to. None for no binding.
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
         """

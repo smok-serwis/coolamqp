@@ -21,7 +21,6 @@ class TestThings(unittest.TestCase):
         self.assertIsInstance(amqp.drain(1), ConnectionUp)
         amqp.shutdown()
 
-
 class TestBasics(unittest.TestCase):
     def setUp(self):
         self.amqp = getamqp()
@@ -144,4 +143,3 @@ class TestBasics(unittest.TestCase):
 
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
-
