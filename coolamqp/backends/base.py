@@ -9,6 +9,7 @@ class ConnectionFailedError(AMQPError):
 class Cancelled(Exception):
     """Cancel ordered by user"""
 
+
 class RemoteAMQPError(AMQPError):
     """
     Remote AMQP broker responded with an error code

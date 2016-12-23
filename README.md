@@ -8,8 +8,6 @@ CoolAMQP
 [![PyPI](https://img.shields.io/pypi/pyversions/CoolAMQP.svg)]()
 [![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
 
-**Support for Python 3 is suspended until I fix pending issues**
-
 When you're tired of fucking with AMQP reconnects.
 
 When a connection made by CoolAMQP to your broker fails, it will pick another

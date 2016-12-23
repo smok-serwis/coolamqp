@@ -3,6 +3,7 @@
 from __future__ import division
 import amqp
 import socket
+import six
 import functools
 import logging
 from .base import AMQPBackend, RemoteAMQPError, ConnectionFailedError
@@ -21,7 +22,8 @@ def translate_exceptions(fun):
         except amqp.RecoverableChannelError as e:
             raise RemoteAMQPError(e.reply_code, e.reply_text)
         except (IOError, amqp.ConnectionForced, amqp.IrrecoverableChannelError) as e:
-            raise ConnectionFailedError(e.message)
+            msg = e.message if six.PY2 else e.args[0]
+            raise ConnectionFailedError(msg)
     return q
 
 

@@ -13,8 +13,11 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "shell", inline: <<-SHELL
      apt-get update
-     apt-get install -y htop curl python python-setuptools python-pip python-dev build-essential rabbitmq-server
+
+     # Python
+     apt-get install -y htop curl python python-setuptools python-pip python-dev build-essential rabbitmq-server python3 python3-pip python3-setuptools
      pip install --upgrade pip setuptools
+     pip3 install --upgrade pip setuptools
 
      /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management
      sudo service rabbitmq-server restart
@@ -25,6 +28,8 @@ Vagrant.configure("2") do |config|
      # Install deps
      pip install -r /vagrant/requirements.txt
      pip install nose coverage
+     pip3 install -r /vagrant/requirements.txt
+     pip3 install nose coverage
 
      # HTTP server for viewing coverage reports
     apt-get -y install nginx

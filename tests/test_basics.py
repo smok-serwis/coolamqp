@@ -3,8 +3,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import six
 
-from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp, \
-    ConnectionDown, ConsumerCancelled, Message, Exchange
+from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp, ConsumerCancelled, Message, Exchange
 
 
 def getamqp():
@@ -55,7 +54,7 @@ class TestBasics(unittest.TestCase):
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(six.binary_type(p.message.body), 'what the fuck')
+        self.assertEquals(six.text_type(p.message.body), 'what the fuck')
 
     def test_bug_hangs(self):
         p = Queue('lol', exclusive=True)
