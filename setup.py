@@ -1,22 +1,25 @@
 #!/usr/bin/env python
-#coding=UTF-8
-from distutils.core import setup
+# coding=UTF-8
+from setuptools import setup
 
 setup(name='CoolAMQP',
-      version='0.6',
-      description=u'The reconnecting AMQP client',
+      version='0.7',
+      description=u'AMQP client with sane reconnects',
       author=u'DMS Serwis s.c.',
       author_email='piotrm@smok.co',
       url='https://github.com/smok-serwis/coolamqp',
-      download_url='https://github.com/smok-serwis/coolamqp/archive/master.zip',
+      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.7.zip',
       keywords=['amqp', 'pyamqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=['coolamqp', 'coolamqp.backends'],
       license='MIT License',
       long_description=u'The AMQP client that handles reconnection madness for you',
       requires=[
             "amqp",
-            "six"
+            "six",
+            "monotonic"
       ],
+      tests_require=["nose"],
+      test_suite='nose.collector',
       classifiers=[
             'Programming Language :: Python',
             'Programming Language :: Python :: 2.7',
