@@ -39,10 +39,10 @@ class TestFailures(unittest.TestCase):
         self.amqp.shutdown()
 
     def test_connection_down_and_up(self):
-        """are messages generated at all? does it reconnect?"""
+        """Are ConnectionUp/Down messages generated at all? does it reconnect?"""
         os.system("sudo service rabbitmq-server restart")
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionUp)
+        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionDown)
+        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
 
     def test_longer_disconnects(self):
         os.system("sudo service rabbitmq-server stop")
@@ -56,7 +56,7 @@ class TestFailures(unittest.TestCase):
 
         os.system("sudo service rabbitmq-server restart")
         self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionUp)
+        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
 
         self.amqp.consume(Queue('lol', exclusive=True)).result()
         self.amqp.send(Message('what the fuck'), '', routing_key='lol')
@@ -74,9 +74,8 @@ class TestFailures(unittest.TestCase):
         self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
         self.assertFalse(self.amqp.connected)
         os.system("sudo service rabbitmq-server start")
-        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionUp)
+        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
         self.assertTrue(self.amqp.connected)
-
 
     def test_sending_a_message_is_cancelled(self):
         """are messages generated at all? does it reconnect?"""
@@ -91,7 +90,7 @@ class TestFailures(unittest.TestCase):
 
         os.system("sudo service rabbitmq-server start")
 
-        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionUp)
+        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
         self.assertIsNone(self.amqp.drain(wait=6))    # message is NOT received
 
 
@@ -123,6 +122,6 @@ class TestFailures(unittest.TestCase):
 
         self.amqp.send(Message('hello'), xchg)
         self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionUp)
+        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)

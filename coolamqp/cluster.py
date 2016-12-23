@@ -1,4 +1,4 @@
-#coding=UTF-8
+# coding=UTF-8
 import itertools
 from six.moves import queue as Queue
 from coolamqp.backends import PyAMQPBackend
@@ -101,7 +101,10 @@ class Cluster(object):
 
     def declare_queue(self, queue, on_completed=None, on_failed=None):
         """
-        Declares a queue
+        Declares a queue.
+
+        NOTE THAT IF YOU declare
+
         :param queue: Queue to declare
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
@@ -195,10 +198,15 @@ class Cluster(object):
         self.thread.start()
         return self
 
-    def shutdown(self):
+    def shutdown(self, complete_outstanding_tasks=False):
         """
-        Cleans everything and returns
+        Cleans everything and returns.
+
+        :param complete_outstanding_tasks: if set to True, pending operations will be completed.
+            If False, thread will exit without completing them.
+            This can mean that if the cluster doesn't come up online, shutdown MAY BLOCK FOREVER.
         """
+        self.thread.complete_outstanding_upon_termination = complete_outstanding_tasks
         self.thread.terminate()
         self.thread.join()
         # thread closes the AMQP uplink for us

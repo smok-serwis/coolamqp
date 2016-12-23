@@ -1,4 +1,4 @@
-#coding=UTF-8
+# coding=UTF-8
 import threading
 import six.moves.queue as Queue
 import six
@@ -7,12 +7,18 @@ import collections
 import time
 from .backends import ConnectionFailedError, RemoteAMQPError, Cancelled
 from .messages import Exchange
-from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, MessageReceived
+from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, \
+                    MessageReceived
 from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue, \
                     AcknowledgeMessage, NAcknowledgeMessage, DeleteQueue, \
                     DeleteExchange, SetQoS, DeclareQueue
 
 logger = logging.getLogger(__name__)
+
+
+class _ImOuttaHere(Exception):
+    """Thrown upon thread terminating.
+    Thrown only if complete_outstanding_upon_termination is False"""
 
 
 class ClusterHandlerThread(threading.Thread):
@@ -27,12 +33,13 @@ class ClusterHandlerThread(threading.Thread):
 
         self.cluster = cluster
         self.is_terminating = False
+        self.complete_outstanding_upon_termination = False
         self.order_queue = collections.deque()    # queue for inbound orders
         self.event_queue = Queue.Queue()    # queue for tasks done
         self.connect_id = -1                # connectID of current connection
 
         self.declared_exchanges = {}        # declared exchanges, by their names
-        self.queues_by_consumer_tags = {}   # listened queues, by their consumer tags
+        self.queues_by_consumer_tags = {}   # subbed queues, by their consumer tags
 
         self.backend = None
         self.first_connect = True
@@ -42,7 +49,7 @@ class ClusterHandlerThread(threading.Thread):
     def _reconnect(self):
         exponential_backoff_delay = 1
 
-        while True:
+        while not self.cluster.connected:
             if self.backend is not None:
                 self.backend.shutdown()
                 self.backend = None
@@ -75,15 +82,14 @@ class ClusterHandlerThread(threading.Thread):
                     self.backend = None # good policy to release resources before you sleep
                 time.sleep(exponential_backoff_delay)
 
-                if self.is_terminating:
-                    raise SystemError('Thread was requested to terminate')
+                if self.is_terminating and (not self.complete_outstanding_upon_termination):
+                    raise _ImOuttaHere()
 
-                exponential_backoff_delay = max(60, exponential_backoff_delay * 2)
+                exponential_backoff_delay = min(60, exponential_backoff_delay * 2)
             else:
                 self.cluster.connected = True
                 self.event_queue.put(ConnectionUp(initial=self.first_connect))
                 self.first_connect = False
-                break   # we connected :)
 
 
     def perform_order(self):
@@ -152,25 +158,31 @@ class ClusterHandlerThread(threading.Thread):
     def run(self):
         self._reconnect()
 
-        while (not self.is_terminating) or len(self.order_queue) > 0:
+        # Loop while there are things to do
+        while (not self.is_terminating) or (len(self.order_queue) > 0):
             try:
                 while len(self.order_queue) > 0:
                     self.perform_order()
 
                 # just drain shit
-                self.backend.process(max_time=2)
-
+                self.backend.process(max_time=1)
+            except _ImOuttaHere: # thrown only if self.complete_outstanding_upon_termination
+                assert self.complete_outstanding_upon_termination
+                break
             except ConnectionFailedError as e:
                 logger.warning('Connection to broker lost')
-                self.cluster.connected = True
+                self.cluster.connected = False
                 self.event_queue.put(ConnectionDown())
-                self._reconnect()
+                try:
+                    self._reconnect()
+                except _ImOuttaHere:
+                    break
 
+        assert self.is_terminating
         if (not self.cluster.connected) or (self.backend is not None):
             self.backend.shutdown()
             self.backend = None
             self.cluster.connected = False
-
 
 
     def terminate(self):

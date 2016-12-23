@@ -25,10 +25,7 @@ You only need to remember that:
 3. Delivering messages multiple times may happen.
  * Ensure you know when it happens. Keywords: message acknowledgement, amqp specification
 
-The project is actively maintained, used in a commercial project and unit tested with high coverage.
+The project is actively maintained and used in a commercial project. Tests can run
+either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.
 
 Enjoy!
-
-todo
-----
-* Allow binding queues with exchanges with a routing_key
