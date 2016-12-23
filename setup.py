@@ -9,7 +9,7 @@ def reqs():
 
 
 setup(name='CoolAMQP',
-      version='0.7',
+      version='0.8',
       description='AMQP client with sane reconnects',
       author='DMS Serwis s.c.',
       author_email='piotrm@smok.co',
