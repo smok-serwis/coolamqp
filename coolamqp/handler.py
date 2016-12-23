@@ -7,8 +7,7 @@ import collections
 import time
 from .backends import ConnectionFailedError, RemoteAMQPError, Cancelled
 from .messages import Exchange
-from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, \
-                    MessageReceived
+from .events import ConnectionUp, ConnectionDown, ConsumerCancelled, MessageReceived
 from .orders import SendMessage, DeclareExchange, ConsumeQueue, CancelQueue, \
                     AcknowledgeMessage, NAcknowledgeMessage, DeleteQueue, \
                     DeleteExchange, SetQoS, DeclareQueue
@@ -124,11 +123,7 @@ class ClusterHandlerThread(threading.Thread):
                 self.backend.queue_declare(order.queue)
 
                 if order.queue.exchange is not None:
-                    if isinstance(order.queue.exchange, Exchange):
-                        self.backend.queue_bind(order.queue, order.queue.exchange)
-                    else:
-                        for exchange in order.queue.exchange:
-                            self.backend.queue_bind(order.queue, order.queue.exchange)
+                    self.backend.queue_bind(order.queue, order.queue.exchange)
 
                 self.backend.basic_consume(order.queue)
                 self.queues_by_consumer_tags[order.queue.consumer_tag] = order.queue
@@ -155,9 +150,7 @@ class ClusterHandlerThread(threading.Thread):
         else:
             order.completed()
 
-    def run(self):
-        self._reconnect()
-
+    def __run_wrap(self):   # throws _ImOuttaHere
         # Loop while there are things to do
         while (not self.is_terminating) or (len(self.order_queue) > 0):
             try:
@@ -166,24 +159,28 @@ class ClusterHandlerThread(threading.Thread):
 
                 # just drain shit
                 self.backend.process(max_time=1)
-            except _ImOuttaHere: # thrown only if self.complete_outstanding_upon_termination
-                assert self.complete_outstanding_upon_termination
-                break
             except ConnectionFailedError as e:
                 logger.warning('Connection to broker lost')
                 self.cluster.connected = False
                 self.event_queue.put(ConnectionDown())
-                try:
-                    self._reconnect()
-                except _ImOuttaHere:
-                    break
+                self._reconnect()
+
+    def run(self):
+        try:
+            self._reconnect()
+            self.__run_wrap()
+        except _ImOuttaHere:
+            pass
 
         assert self.is_terminating
-        if (not self.cluster.connected) or (self.backend is not None):
-            self.backend.shutdown()
+        if self.cluster.connected or (self.backend is not None):
+            try:
+                self.backend.shutdown()
+            except AttributeError:
+                pass # backend might be None - the if condition is "or" after all
+
             self.backend = None
             self.cluster.connected = False
-
 
     def terminate(self):
         """

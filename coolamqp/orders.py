@@ -5,14 +5,30 @@ Orders that can be dispatched to ClusterHandlerThread
 from threading import Lock
 
 
+_NOOP_COMP = lambda: None
+_NOOP_FAIL = lambda e: None
+
+
 class Order(object):
     """Base class for orders dispatched to ClusterHandlerThread"""
     def __init__(self, on_completed=None, on_failed=None):
-        self.on_completed = on_completed
-        self.on_failed = on_failed
+        """
+        Please note that callbacks will be executed BEFORE the lock is released,
+        but after .result is updated, ie. if
+        you have something like
+
+            amqp.send(.., on_completed=hello).result()
+            bye()
+
+        then hello() will be called BEFORE bye().
+        Callbacks are called from CoolAMQP's internal thread
+        """
+        self.on_completed = on_completed or _NOOP_COMP
+        self.on_failed = on_failed or _NOOP_FAIL
         self._result = None  # None on non-completed
                             # True on completed OK
                             # exception instance on failed
+                            # private
         self.lock = Lock()
         self.lock.acquire()
         self.cancelled = False
@@ -27,20 +43,16 @@ class Order(object):
 
     def completed(self):
         self._result = True
+        self.on_completed()
         self.lock.release()
-
-        if self.on_completed is not None:
-            self.on_completed()
 
     def failed(self, e):
         """
         :param e: AMQPError instance or Cancelled instance
         """
         self._result = e
+        self.on_failed(e)
         self.lock.release()
-
-        if self.on_failed is not None:
-            self.on_failed(e)
 
     def result(self):
         """Wait until this is completed and return a response"""

@@ -57,7 +57,6 @@ class TestBasics(unittest.TestCase):
         self.assertIsInstance(p, MessageReceived)
         self.assertEquals(six.binary_type(p.message.body), 'what the fuck')
 
-
     def test_bug_hangs(self):
         p = Queue('lol', exclusive=True)
         self.amqp.consume(p)
@@ -128,6 +127,11 @@ class TestBasics(unittest.TestCase):
         self.amqp.cancel(myq)
 
         self.assertIsInstance(self.amqp.drain(wait=10), ConsumerCancelled)
+
+    def test_delete_exchange(self):
+        xchg = Exchange('a_fanout', type='fanout')
+        self.amqp.declare_exchange(xchg)
+        self.amqp.delete_exchange(xchg).result()
 
     def test_exchanges(self):
         xchg = Exchange('a_fanout', type='fanout')

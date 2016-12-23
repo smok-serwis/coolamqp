@@ -53,7 +53,18 @@ class ClusterNode(object):
 
 class Cluster(object):
     """
-    Represents connection to an AMQP cluster. This internally connects only to one node.
+    Represents connection to an AMQP cluster. This internally connects only to one node, but
+    will select another one upon connection failing.
+
+    You can pass callbacks to most commands. They will also return an Order instance,
+    that you can wait for to know an operation has completed.
+
+    Callbacks are executed before Order is marked as complete (it's .result() returns), so if you do:
+
+        cluster.send(.., on_completed=hello).result()
+        bye()
+
+    hello will be called before bye is called.
     """
 
     def __init__(self, nodes, backend=PyAMQPBackend):
@@ -89,7 +100,8 @@ class Cluster(object):
 
     def declare_exchange(self, exchange, on_completed=None, on_failed=None):
         """
-        Declare an exchange
+        Declare an exchange. It will be re-declared upon reconnection.
+
         :param exchange: Exchange to declare
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
@@ -103,7 +115,8 @@ class Cluster(object):
         """
         Declares a queue.
 
-        NOTE THAT IF YOU declare
+        !!!! If you declare a queue and NOT consume from it, it will not be re-declared
+        upon reconnection !!!!
 
         :param queue: Queue to declare
         :param on_completed: callable/0 to call when this succeeds
