@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(name='CoolAMQP',
       version='0.6',
-      description='The angry AMQP client library',
+      description=u'The reconnecting AMQP client',
       author=u'DMS Serwis s.c.',
       author_email='piotrm@smok.co',
       url='https://github.com/smok-serwis/coolamqp',
@@ -12,7 +12,7 @@ setup(name='CoolAMQP',
       keywords=['amqp', 'pyamqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=['coolamqp', 'coolamqp.backends'],
       license='MIT License',
-      long_description='''The Python AMQP client library that makes you STOP FUCKING WITH AMQP RECONNECTION''',
+      long_description=u'The AMQP client that handles reconnection madness for you',
       requires=[
             "amqp",
             "six"

@@ -4,13 +4,22 @@ import unittest
 import six
 
 from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp, \
-    ConnectionDown, ConsumerCancelled, Message
+    ConnectionDown, ConsumerCancelled, Message, Exchange
 
 
 def getamqp():
     amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')])
     amqp.start()
     return amqp
+
+
+class TestThings(unittest.TestCase):
+    def test_different_constructor_for_clusternode(self):
+        cn = ClusterNode(host='127.0.0.1', user='guest', password='guest', virtual_host='/')
+        amqp = Cluster([cn])
+        amqp.start()
+        self.assertIsInstance(amqp.drain(1), ConnectionUp)
+        amqp.shutdown()
 
 
 class TestBasics(unittest.TestCase):
@@ -68,6 +77,20 @@ class TestBasics(unittest.TestCase):
 
         amqp2.shutdown()
 
+    def test_qos(self):
+        self.amqp.qos(0, 1)
+
+        self.amqp.consume(Queue('lol', exclusive=True)).result()
+        self.amqp.send(Message('what the fuck'), '', routing_key='lol')
+        self.amqp.send(Message('what the fuck'), '', routing_key='lol')
+
+        p = self.amqp.drain(wait=4)
+        self.assertIsInstance(p, MessageReceived)
+
+        self.assertIsNone(self.amqp.drain(wait=5))
+        p.message.ack()
+        self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
+
     def test_consume_twice(self):
         """Spawn a second connection and try to consume an exclusive queue twice"""
         amqp2 = getamqp()
@@ -106,3 +129,19 @@ class TestBasics(unittest.TestCase):
         self.amqp.cancel(myq)
 
         self.assertIsInstance(self.amqp.drain(wait=10), ConsumerCancelled)
+
+    def test_exchanges(self):
+        xchg = Exchange('a_fanout', type='fanout')
+        self.amqp.declare_exchange(xchg)
+
+        q1 = Queue('q1', exclusive=True, exchange=xchg)
+        q2 = Queue('q2', exclusive=True, exchange=xchg)
+
+        self.amqp.consume(q1)
+        self.amqp.consume(q2)
+
+        self.amqp.send(Message('hello'), xchg)
+
+        self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
+        self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
+
