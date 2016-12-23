@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ClusterHandlerThread(threading.Thread):
     """
-    Thread that does bookkeeping for a Cluster
+    Thread that does bookkeeping for a Cluster.
     """
     def __init__(self, cluster):
         """

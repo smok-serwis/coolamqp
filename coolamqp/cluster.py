@@ -201,8 +201,4 @@ class Cluster(object):
         """
         self.thread.terminate()
         self.thread.join()
-
-        if self.connected:
-            self.backend.shutdown()
-            self.backend = None
-            self.connected = False
+        # thread closes the AMQP uplink for us

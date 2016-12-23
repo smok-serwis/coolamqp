@@ -55,6 +55,19 @@ class TestBasics(unittest.TestCase):
         self.amqp.consume(p)
         self.amqp.consume(p).result()
 
+    def test_consume_declare(self):
+        """Spawn a second connection. One declares an exclusive queue, other tries to consume from it"""
+        amqp2 = getamqp()
+
+        has_failed = {'has_failed': False}
+
+        self.amqp.declare_queue(Queue('lol', exclusive=True)).result()
+        amqp2.consume(Queue('lol', exclusive=True), on_failed=lambda e: has_failed.update({'has_failed': True})).result()
+
+        self.assertTrue(has_failed['has_failed'])
+
+        amqp2.shutdown()
+
     def test_consume_twice(self):
         """Spawn a second connection and try to consume an exclusive queue twice"""
         amqp2 = getamqp()
