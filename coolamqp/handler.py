@@ -158,7 +158,7 @@ class ClusterHandlerThread(threading.Thread):
                     self.perform_order()
 
                 # just drain shit
-                self.backend.process(max_time=1)
+                self.backend.process(max_time=0.05)
             except ConnectionFailedError as e:
                 logger.warning('Connection to broker lost')
                 self.cluster.connected = False

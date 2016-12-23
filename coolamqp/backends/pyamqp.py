@@ -1,10 +1,13 @@
-#coding=UTF-8
+# coding=UTF-8
 """Backend using pyamqp"""
+from __future__ import division
 import amqp
 import socket
 import functools
 import logging
 from .base import AMQPBackend, RemoteAMQPError, ConnectionFailedError
+import monotonic
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +40,8 @@ class PyAMQPBackend(AMQPBackend):
         except AttributeError:
             pass    # this does not always have to exist
         self.channel = self.connection.channel()
+        self.heartbeat = node.heartbeat or 0
+        self.last_heartbeat_at = monotonic.monotonic()
 
     def shutdown(self):
         AMQPBackend.shutdown(self)
@@ -50,11 +55,14 @@ class PyAMQPBackend(AMQPBackend):
             pass
 
     @translate_exceptions
-    def process(self, max_time=10):
-        self.connection.heartbeat_tick()
+    def process(self, max_time=1):
         try:
-           self.connection.drain_events(max_time)
-        except socket.timeout:
+            if self.heartbeat > 0:
+                if monotonic.monotonic() - self.last_heartbeat_at > (self.heartbeat / 2):
+                    self.connection.heartbeat_tick(rate=self.heartbeat)
+                    self.last_heartbeat_at = monotonic.monotonic()
+            self.connection.drain_events(max_time)
+        except socket.timeout as e:
             pass
 
     @translate_exceptions

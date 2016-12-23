@@ -35,12 +35,12 @@ class TestBasics(unittest.TestCase):
         self.amqp.consume(myq)
         self.amqp.send(Message('what the fuck'), '', routing_key='myqueue')
 
-        p = self.amqp.drain(wait=4)
+        p = self.amqp.drain(wait=1)
         self.assertIsInstance(p, MessageReceived)
         self.assertEquals(p.message.body, 'what the fuck')
         p.message.ack()
 
-        self.assertIs(self.amqp.drain(wait=4), None)
+        self.assertIs(self.amqp.drain(wait=1), None)
 
     def test_nacknowledge(self):
         myq = Queue('myqueue', exclusive=True)
