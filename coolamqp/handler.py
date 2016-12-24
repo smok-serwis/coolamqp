@@ -39,7 +39,7 @@ class ClusterHandlerThread(threading.Thread):
         self.connect_id = -1                # connectID of current connection
 
         self.declared_exchanges = {}        # declared exchanges, by their names
-        self.queues_by_consumer_tags = {}   # subbed queues, by their consumer tags
+        self.queues_by_consumer_tags = {}   # tuple of (subbed queue, no_ack::bool), by consumer tags
 
         self.backend = None
         self.first_connect = True
@@ -67,11 +67,11 @@ class ClusterHandlerThread(threading.Thread):
                 for exchange in self.declared_exchanges.values():
                     self.backend.exchange_declare(exchange)
 
-                for queue in self.queues_by_consumer_tags.values():
+                for queue, no_ack in self.queues_by_consumer_tags.values():
                     self.backend.queue_declare(queue)
                     if queue.exchange is not None:
                         self.backend.queue_bind(queue, queue.exchange)
-                    self.backend.basic_consume(queue)
+                    self.backend.basic_consume(queue, no_ack=no_ack)
 
             except ConnectionFailedError as e:
                 # a connection failure happened :(
@@ -126,11 +126,11 @@ class ClusterHandlerThread(threading.Thread):
                 if order.queue.exchange is not None:
                     self.backend.queue_bind(order.queue, order.queue.exchange)
 
-                self.backend.basic_consume(order.queue)
-                self.queues_by_consumer_tags[order.queue.consumer_tag] = order.queue
+                self.backend.basic_consume(order.queue, no_ack=order.no_ack)
+                self.queues_by_consumer_tags[order.queue.consumer_tag] = order.queue, order.no_ack
             elif isinstance(order, CancelQueue):
                 try:
-                    q = self.queues_by_consumer_tags.pop(order.queue.consumer_tag)
+                    q, no_ack = self.queues_by_consumer_tags.pop(order.queue.consumer_tag)
                 except KeyError:
                     pass  # wat?
                 else:
@@ -209,7 +209,7 @@ class ClusterHandlerThread(threading.Thread):
         A consumer has been cancelled
         """
         try:
-            queue = self.queues_by_consumer_tags.pop(consumer_tag)
+            queue, no_ack = self.queues_by_consumer_tags.pop(consumer_tag)
         except KeyError:
             return  # what?
 

@@ -169,7 +169,7 @@ class Cluster(object):
         self.thread.order_queue.append(a)
         return a
 
-    def consume(self, queue, on_completed=None, on_failed=None):
+    def consume(self, queue, no_ack=False, on_completed=None, on_failed=None):
         """
         Start consuming from a queue
 
@@ -178,10 +178,11 @@ class Cluster(object):
 
         :param queue: Queue to consume from
         :param on_completed: callable/0 to call when this succeeds
+        :param no_ack: if True, you will not need to call .ack() for this queue
         :param on_failed: callable/1 to call when this fails with AMQPError instance
         :return: a Future with this order's status
         """
-        a = ConsumeQueue(queue, on_completed=on_completed, on_failed=on_failed)
+        a = ConsumeQueue(queue, no_ack=no_ack, on_completed=on_completed, on_failed=on_failed)
         self.thread.order_queue.append(a)
         return a
 

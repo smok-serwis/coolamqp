@@ -86,10 +86,11 @@ class AMQPBackend(object):
         :param consumer_tag: consumer_tag to cancel
         """
 
-    def basic_consume(self, queue):
+    def basic_consume(self, queue, no_ack=False):
         """
         Start consuming from a queue
         :param queue: Queue object
+        :param no_ack: Messages will not need to be ack()ed for this queue
         """
 
     def basic_ack(self, delivery_tag):

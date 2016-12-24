@@ -93,6 +93,9 @@ class DeclareQueue(_Queue):
 
 class ConsumeQueue(_Queue):
     """Declare and consume from a queue"""
+    def __init__(self, queue, no_ack=False, on_completed=None, on_failed=None):
+        _Queue.__init__(self, queue, on_completed=on_completed, on_failed=on_failed)
+        self.no_ack = no_ack
 
 class DeleteQueue(_Queue):
     """Delete a queue"""

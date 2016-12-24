@@ -128,7 +128,7 @@ class PyAMQPBackend(AMQPBackend):
             queue.name = qname
 
     @translate_exceptions
-    def basic_consume(self, queue):
+    def basic_consume(self, queue, no_ack=False):
         """
         Start consuming from a queue
         :param queue: Queue object
@@ -136,6 +136,7 @@ class PyAMQPBackend(AMQPBackend):
         self.channel.basic_consume(queue.name,
                                    consumer_tag=queue.consumer_tag,
                                    exclusive=queue.exclusive,
+                                   no_ack=no_ack,
                                    callback=self.__on_message,
                                    on_cancel=self.__on_consumercancelled)
 
