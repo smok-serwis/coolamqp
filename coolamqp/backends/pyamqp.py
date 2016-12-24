@@ -42,6 +42,7 @@ class PyAMQPBackend(AMQPBackend):
         except AttributeError:
             pass    # this does not always have to exist
         self.channel = self.connection.channel()
+        self.channel.auto_decode = False
         self.heartbeat = node.heartbeat or 0
         self.last_heartbeat_at = monotonic.monotonic()
 
@@ -142,6 +143,7 @@ class PyAMQPBackend(AMQPBackend):
         self.cluster_handler_thread._on_consumercancelled(consumer_tag)
 
     def __on_message(self, message):
+        assert isinstance(message.body, six.binary_type)
         self.cluster_handler_thread._on_recvmessage(six.binary_type(message.body),
                                                     message.delivery_info['exchange'],
                                                     message.delivery_info['routing_key'],
