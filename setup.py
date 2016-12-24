@@ -9,12 +9,12 @@ def reqs():
 
 
 setup(name='CoolAMQP',
-      version='0.8',
+      version='0.9',
       description='AMQP client with sane reconnects',
       author='DMS Serwis s.c.',
       author_email='piotrm@smok.co',
       url='https://github.com/smok-serwis/coolamqp',
-      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.8.zip',
+      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.9.zip',
       keywords=['amqp', 'pyamqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=['coolamqp', 'coolamqp.backends'],
       license='MIT License',
@@ -30,6 +30,9 @@ setup(name='CoolAMQP',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: Implementation :: CPython',
             'Programming Language :: Python :: Implementation :: PyPy',
-            'Operating System :: OS Independent'
+            'Operating System :: OS Independent',
+            'Development Status :: 5 - Production/Stable',
+            'License :: OSI Approved :: MIT License',
+            'Topic :: Software Development :: Libraries'
       ]
      )
