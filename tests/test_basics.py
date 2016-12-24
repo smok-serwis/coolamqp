@@ -45,6 +45,9 @@ class TestBasics(unittest.TestCase):
     def test_send_bullshit(self):
         self.assertRaises(TypeError, lambda: Message(u'what the fuck'))
 
+    def test_send_nonobvious_bullshit(self):
+        self.assertEquals(Message(bytearray(b'what the fuck')).body, b'what the fuck')
+
     def test_nacknowledge(self):
         myq = Queue('myqueue', exclusive=True)
 
