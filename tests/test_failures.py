@@ -85,7 +85,7 @@ class TestFailures(unittest.TestCase):
 
         os.system("sudo service rabbitmq-server stop")
         self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        result = self.amqp.send(Message('what the fuck'), '', routing_key='wtf1')
+        result = self.amqp.send(Message(b'what the fuck'), '', routing_key='wtf1')
         result.cancel()
 
         os.system("sudo service rabbitmq-server start")
@@ -120,7 +120,7 @@ class TestFailures(unittest.TestCase):
 
         os.system('sudo service rabbitmq-server restart')
 
-        self.amqp.send(Message('hello'), xchg)
+        self.amqp.send(Message(b'hello'), xchg)
         self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
         self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)

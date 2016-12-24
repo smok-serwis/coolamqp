@@ -16,12 +16,10 @@ your application that a disconnect happened.
 
 You only need to remember that:
 
-1. Reconnects and redefinitions take a while.
- * Things will happen during that time. It is your responsibility to ensure that your distributed system is built to handle this
-2. CoolAMQP will tell you when it senses losing broker connection.
- * It will also tell you when it regains the connection (that means that everything is redefined and ready to go)
-3. Delivering messages multiple times may happen.
- * Ensure you know when it happens. Keywords: message acknowledgement, amqp specification
+1. Reconnects and redefinitions take a while. Things will happen during that time. It is your responsibility to ensure that your distributed system is built to handle this
+2. CoolAMQP will tell you when it senses losing broker connection. It will also tell you when it regains the connection (that means that everything is redefined and ready to go)
+3. Delivering messages multiple times may happen. Ensure you know when it happens. Keywords: message acknowledgement, amqp specification
+4. CoolAMQP won't unserialize your messages. You send bags of bytes and properties, you get bags of bytes and their properties.
 
 The project is actively maintained and used in a commercial project. Tests can run
 either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.

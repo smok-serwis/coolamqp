@@ -42,6 +42,9 @@ class TestBasics(unittest.TestCase):
 
         self.assertIs(self.amqp.drain(wait=1), None)
 
+    def test_send_bullshit(self):
+        self.assertRaises(TypeError, lambda: Message(u'what the fuck'))
+
     def test_nacknowledge(self):
         myq = Queue('myqueue', exclusive=True)
 
