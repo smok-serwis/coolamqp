@@ -144,7 +144,7 @@ class PyAMQPBackend(AMQPBackend):
 
     def __on_message(self, message):
         assert isinstance(message.body, six.binary_type)
-        self.cluster_handler_thread._on_recvmessage(six.binary_type(message.body),
+        self.cluster_handler_thread._on_recvmessage(message.body,
                                                     message.delivery_info['exchange'],
                                                     message.delivery_info['routing_key'],
                                                     message.delivery_info['delivery_tag'],

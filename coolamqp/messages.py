@@ -1,5 +1,6 @@
 # coding=UTF-8
 import uuid
+import six
 
 
 class Message(object):
@@ -9,8 +10,10 @@ class Message(object):
         """
         Create a Message object
         :param body: stream of octets
+        :type body: str (py2) or bytes (py3)
         :param properties: AMQP properties to be sent along
         """
+        assert isinstance(body, six.binary_type)
         self.body = body
         self.properties = {} if properties is None else properties
 
@@ -21,6 +24,7 @@ class ReceivedMessage(Message):
     def __init__(self, body, cht, connect_id, exchange_name, routing_key, properties=None, delivery_tag=None):
         """
         :param body: message body. A stream of octets.
+        :type body: str (py2) or bytes (py3)
         :param cht: parent ClusterHandlerThread that emitted this message
         :param connect_id: connection ID. ClusterHandlerThread will check this in order
             not to ack messages that were received from a dead connection

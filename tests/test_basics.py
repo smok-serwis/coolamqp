@@ -55,7 +55,7 @@ class TestBasics(unittest.TestCase):
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(six.text_type(p.message.body), b'what the fuck')
+        self.assertEquals(p.message.body, b'what the fuck')
 
     def test_bug_hangs(self):
         p = Queue('lol', exclusive=True)

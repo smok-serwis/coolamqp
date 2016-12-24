@@ -86,7 +86,7 @@ class Cluster(object):
     def send(self, message, exchange='', routing_key='', on_completed=None, on_failed=None):
         """
         Schedule a message to be sent.
-        :param message: Message object to send
+        :param message: Message object to send.
         :param exchange: Exchange to use. Leave None to use the default exchange
         :param routing_key: routing key to use
         :param on_completed: callable/0 to call when this succeeds
