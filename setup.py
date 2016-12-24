@@ -16,10 +16,13 @@ setup(name='CoolAMQP',
       url='https://github.com/smok-serwis/coolamqp',
       download_url='https://github.com/smok-serwis/coolamqp/archive/v0.9.zip',
       keywords=['amqp', 'pyamqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
-      packages=['coolamqp', 'coolamqp.backends'],
+      packages=[
+          'coolamqp',
+          'coolamqp.backends'
+      ],
       license='MIT License',
       long_description=u'The AMQP client that handles reconnection madness for you',
-      requires=reqs(),
+      requires=['amqp', 'six', 'monotonic'],
       tests_require=["nose"],
       test_suite='nose.collector',
       classifiers=[
