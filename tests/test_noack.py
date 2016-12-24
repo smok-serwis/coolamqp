@@ -78,7 +78,7 @@ class TestNoAcknowledge(unittest.TestCase):
         self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue2')
 
         our_message = None
-        for i in xrange(0, 4):
+        for i in range(4):
             mer = self.amqp.drain(wait=1)
             self.assertIsInstance(mer, MessageReceived)
             if mer.message.routing_key == 'myqueue2':
