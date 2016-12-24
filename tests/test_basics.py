@@ -32,11 +32,12 @@ class TestBasics(unittest.TestCase):
         myq = Queue('myqueue', exclusive=True)
 
         self.amqp.consume(myq)
-        self.amqp.send(Message('what the fuck'), '', routing_key='myqueue')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
 
         p = self.amqp.drain(wait=1)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(p.message.body, 'what the fuck')
+        self.assertEquals(p.message.body, b'what the fuck')
+        self.assertIsInstance(p.message.body, six.binary_type)
         p.message.ack()
 
         self.assertIs(self.amqp.drain(wait=1), None)
@@ -45,16 +46,16 @@ class TestBasics(unittest.TestCase):
         myq = Queue('myqueue', exclusive=True)
 
         self.amqp.consume(myq)
-        self.amqp.send(Message('what the fuck'), '', routing_key='myqueue')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(p.message.body, 'what the fuck')
+        self.assertEquals(p.message.body, b'what the fuck')
         p.message.nack()
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(six.text_type(p.message.body), 'what the fuck')
+        self.assertEquals(six.text_type(p.message.body), b'what the fuck')
 
     def test_bug_hangs(self):
         p = Queue('lol', exclusive=True)
@@ -78,8 +79,8 @@ class TestBasics(unittest.TestCase):
         self.amqp.qos(0, 1)
 
         self.amqp.consume(Queue('lol', exclusive=True)).result()
-        self.amqp.send(Message('what the fuck'), '', routing_key='lol')
-        self.amqp.send(Message('what the fuck'), '', routing_key='lol')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
@@ -105,11 +106,11 @@ class TestBasics(unittest.TestCase):
         myq = Queue('myqueue', exclusive=True)
 
         self.amqp.consume(myq)
-        self.amqp.send(Message('what the fuck'), '', routing_key='myqueue')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
 
         p = self.amqp.drain(wait=10)
         self.assertIsInstance(p, MessageReceived)
-        self.assertEquals(p.message.body, 'what the fuck')
+        self.assertEquals(p.message.body, b'what the fuck')
 
     def test_consumer_cancelled_on_queue_deletion(self):
         myq = Queue('myqueue', exclusive=True)
@@ -142,7 +143,7 @@ class TestBasics(unittest.TestCase):
         self.amqp.consume(q1)
         self.amqp.consume(q2)
 
-        self.amqp.send(Message('hello'), xchg)
+        self.amqp.send(Message(b'hello'), xchg)
 
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)

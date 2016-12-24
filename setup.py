@@ -3,12 +3,12 @@
 from setuptools import setup
 
 setup(name='CoolAMQP',
-      version='0.9',
+      version='0.10',
       description='AMQP client with sane reconnects',
       author='DMS Serwis s.c.',
       author_email='piotrm@smok.co',
       url='https://github.com/smok-serwis/coolamqp',
-      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.9.zip',
+      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.10.zip',
       keywords=['amqp', 'pyamqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=[
           'coolamqp',

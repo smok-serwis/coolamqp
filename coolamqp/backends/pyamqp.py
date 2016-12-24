@@ -74,7 +74,7 @@ class PyAMQPBackend(AMQPBackend):
     @translate_exceptions
     def basic_publish(self, message, exchange, routing_key):
         # convert this to pyamqp's Message
-        a = amqp.Message(message.body,
+        a = amqp.Message(six.binary_type(message.body),
                          **message.properties)
 
         self.channel.basic_publish(a, exchange=exchange.name, routing_key=routing_key)
@@ -142,7 +142,7 @@ class PyAMQPBackend(AMQPBackend):
         self.cluster_handler_thread._on_consumercancelled(consumer_tag)
 
     def __on_message(self, message):
-        self.cluster_handler_thread._on_recvmessage(message.body,
+        self.cluster_handler_thread._on_recvmessage(six.binary_type(message.body),
                                                     message.delivery_info['exchange'],
                                                     message.delivery_info['routing_key'],
                                                     message.delivery_info['delivery_tag'],

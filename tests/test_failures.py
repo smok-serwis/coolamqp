@@ -59,8 +59,8 @@ class TestFailures(unittest.TestCase):
         self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
 
         self.amqp.consume(Queue('lol', exclusive=True)).result()
-        self.amqp.send(Message('what the fuck'), '', routing_key='lol')
-        self.amqp.send(Message('what the fuck'), '', routing_key='lol')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
 
         p = self.amqp.drain(wait=4)
         self.assertIsInstance(p, MessageReceived)
@@ -104,7 +104,7 @@ class TestFailures(unittest.TestCase):
         self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
         self.assertIsInstance(self.amqp.drain(wait=6), ConnectionUp)
 
-        self.amqp.send(Message('what the fuck'), '', routing_key='wtf1')
+        self.amqp.send(Message(b'what the fuck'), '', routing_key='wtf1')
 
         self.assertIsInstance(self.amqp.drain(wait=10), MessageReceived)
 

@@ -42,5 +42,5 @@ class TestBasics(unittest.TestCase):
     def test_sending_a_message(self):
 
         with self.takes_less_than(0.5):
-            self.amqp.send(Message(''), routing_key='nowhere').result()
+            self.amqp.send(Message(b''), routing_key='nowhere').result()
 
