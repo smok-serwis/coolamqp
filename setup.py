@@ -2,12 +2,6 @@
 # coding=UTF-8
 from setuptools import setup
 
-
-def reqs():
-      with open('requirements.txt', 'r') as fin:
-            return [q.strip() for q in fin.readlines() if len(q.strip()) > 0]
-
-
 setup(name='CoolAMQP',
       version='0.9',
       description='AMQP client with sane reconnects',

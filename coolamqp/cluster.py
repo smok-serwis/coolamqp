@@ -83,7 +83,7 @@ class Cluster(object):
         from .handler import ClusterHandlerThread
         self.thread = ClusterHandlerThread(self)
 
-    def send(self, message, exchange=None, routing_key='', on_completed=None, on_failed=None):
+    def send(self, message, exchange='', routing_key='', on_completed=None, on_failed=None):
         """
         Schedule a message to be sent.
         :param message: Message object to send
