@@ -164,8 +164,8 @@ class Cluster(object):
         self.thread.order_queue.append(a)
         return a
 
-    def qos(self, prefetch_window, prefetch_count):
-        a = SetQoS(prefetch_window, prefetch_count)
+    def qos(self, prefetch_window, prefetch_count, global_=True):
+        a = SetQoS(prefetch_window, prefetch_count, global_)
         self.thread.order_queue.append(a)
         return a
 

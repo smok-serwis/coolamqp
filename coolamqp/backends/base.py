@@ -99,7 +99,7 @@ class AMQPBackend(object):
         :param delivery_tag: delivery tag to ack
         """
 
-    def basic_qos(self, prefetch_size, prefetch_count):
+    def basic_qos(self, prefetch_size, prefetch_count, global_):
         """
         Issue a basic.qos(prefetch_size, prefetch_count, True) against broker
         :param prefetch_size: prefetch window size in octets

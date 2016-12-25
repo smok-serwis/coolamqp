@@ -20,7 +20,7 @@ class TestNoAcknowledge(unittest.TestCase):
     def test_noack_works(self):
         myq = Queue('myqueue', exclusive=True)
 
-        self.amqp.qos(0,1 )
+        self.amqp.qos(0, 1, False)
 
         self.amqp.consume(myq, no_ack=True)
 
@@ -35,7 +35,7 @@ class TestNoAcknowledge(unittest.TestCase):
     def test_noack_works_after_restart(self):
         myq = Queue('myqueue', exclusive=True)
 
-        self.amqp.qos(0, 1)
+        self.amqp.qos(0, 1, False)
 
         self.amqp.consume(myq, no_ack=True)
 
@@ -59,23 +59,24 @@ class TestNoAcknowledge(unittest.TestCase):
         self.assertIsInstance(self.amqp.drain(wait=0.3), MessageReceived)
         self.assertIsInstance(self.amqp.drain(wait=0.3), MessageReceived)
 
-
     def test_noack_coexists(self):
         myq = Queue('myqueue', exclusive=True)
         my2 = Queue('myqueue2', exclusive=True)
 
-        self.amqp.qos(0, 1)
+        self.amqp.qos(0, 1, False)
 
         self.amqp.consume(myq, no_ack=True)
-        self.amqp.consume(my2).result()
+        self.amqp.consume(my2)
 
-        self.amqp.send(Message(b''), routing_key='myqueue')
-        self.amqp.send(Message(b''), routing_key='myqueue')
-        self.amqp.send(Message(b''), routing_key='myqueue')
+        msg = Message(b'')
 
-        self.amqp.send(Message(b''), routing_key='myqueue2')
-        self.amqp.send(Message(b''), routing_key='myqueue2')
-        self.amqp.send(Message(b''), routing_key='myqueue2')
+        self.amqp.send(msg, routing_key='myqueue')
+        self.amqp.send(msg, routing_key='myqueue')
+        self.amqp.send(msg, routing_key='myqueue')
+
+        self.amqp.send(msg, routing_key='myqueue2')
+        self.amqp.send(msg, routing_key='myqueue2')
+        self.amqp.send(msg, routing_key='myqueue2').result()
 
         our_message = None
         for i in range(4):
@@ -84,6 +85,7 @@ class TestNoAcknowledge(unittest.TestCase):
             if mer.message.routing_key == 'myqueue2':
                 self.assertIsNone(our_message)
                 our_message = mer
+        self.assertIsNotNone(our_message)
 
         # Should receive nothing, since not acked
         self.assertIsNone(self.amqp.drain(wait=2))

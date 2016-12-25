@@ -113,9 +113,9 @@ class CancelQueue(_Queue):
 
 class SetQoS(Order):
     """Set QoS"""
-    def __init__(self, prefetch_window, prefetch_count, on_completed=None, on_failed=None):
+    def __init__(self, prefetch_window, prefetch_count, global_, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.qos = prefetch_window, prefetch_count
+        self.qos = prefetch_window, prefetch_count, global_
 1
 
 class _AcksAndNacks(Order):
