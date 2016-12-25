@@ -114,6 +114,8 @@ class TestNoAcknowledge(unittest.TestCase):
             self.amqp.send(msg, routing_key='myqueue')
             self.amqp.send(msg, routing_key='myqueue2')
 
+        # And here connection with the broker snaps .....
+
         mq2s = []
         for i in range(4):
             # I should have received 3 messages from myqueue, and 2 from myqueue2
