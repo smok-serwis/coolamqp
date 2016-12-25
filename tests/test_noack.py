@@ -67,19 +67,19 @@ class TestNoAcknowledge(unittest.TestCase):
         self.amqp.qos(0, 1)
 
         self.amqp.consume(myq, no_ack=True)
-        self.amqp.consume(my2)
+        self.amqp.consume(my2).result()
 
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
+        self.amqp.send(Message(b''), routing_key='myqueue')
+        self.amqp.send(Message(b''), routing_key='myqueue')
+        self.amqp.send(Message(b''), routing_key='myqueue')
 
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue2')
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue2')
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue2')
+        self.amqp.send(Message(b''), routing_key='myqueue2')
+        self.amqp.send(Message(b''), routing_key='myqueue2')
+        self.amqp.send(Message(b''), routing_key='myqueue2')
 
         our_message = None
         for i in range(4):
-            mer = self.amqp.drain(wait=1)
+            mer = self.amqp.drain(wait=2)
             self.assertIsInstance(mer, MessageReceived)
             if mer.message.routing_key == 'myqueue2':
                 self.assertIsNone(our_message)

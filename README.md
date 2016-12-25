@@ -25,3 +25,7 @@ The project is actively maintained and used in a commercial project. Tests can r
 either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.
 
 Enjoy!
+
+# Changelog
+
+* v0.11 - added *no_ack* to *consume*, can pass other non-text types to Message
