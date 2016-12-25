@@ -104,7 +104,8 @@ class Cluster(object):
             on_failed(Discarded())
             return o
             # discard at once if no point in sending
-            self.thread.order_queue.append(a)
+
+        self.thread.order_queue.append(a)
         return a
 
     def declare_exchange(self, exchange, on_completed=None, on_failed=None):
