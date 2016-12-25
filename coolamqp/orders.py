@@ -75,8 +75,10 @@ class _Exchange(Order):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.exchange = exchange
 
+
 class DeclareExchange(_Exchange):
     """Declare an exchange"""
+
 
 class DeleteExchange(_Exchange):
     """Delete an exchange"""
@@ -88,8 +90,10 @@ class _Queue(Order):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.queue = queue
 
+
 class DeclareQueue(_Queue):
     """Declare a a queue"""
+
 
 class ConsumeQueue(_Queue):
     """Declare and consume from a queue"""
@@ -97,8 +101,11 @@ class ConsumeQueue(_Queue):
         _Queue.__init__(self, queue, on_completed=on_completed, on_failed=on_failed)
         self.no_ack = no_ack
 
+
+
 class DeleteQueue(_Queue):
     """Delete a queue"""
+
 
 class CancelQueue(_Queue):
     """Cancel consuming from a queue"""
@@ -108,8 +115,8 @@ class SetQoS(Order):
     """Set QoS"""
     def __init__(self, prefetch_window, prefetch_count, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
-        self.qos = (prefetch_window, prefetch_count)
-
+        self.qos = prefetch_window, prefetch_count
+1
 
 class _AcksAndNacks(Order):
     """related to acking and nacking"""
@@ -118,8 +125,10 @@ class _AcksAndNacks(Order):
         self.connect_id = connect_id
         self.delivery_tag = delivery_tag
 
+
 class AcknowledgeMessage(_AcksAndNacks):
     """ACK a message"""
+
 
 class NAcknowledgeMessage(_AcksAndNacks):
     """NACK a message"""

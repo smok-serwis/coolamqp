@@ -23,7 +23,7 @@ class TestThings(unittest.TestCase):
 class TestBasics(unittest.TestCase):
     def setUp(self):
         self.amqp = getamqp()
-        self.assertIsInstance(self.amqp.drain(1), ConnectionUp)
+        self.assertIsInstance(self.amqp.drain(2), ConnectionUp)
 
     def tearDown(self):
         self.amqp.shutdown()

@@ -35,7 +35,7 @@ class TestNoAcknowledge(unittest.TestCase):
     def test_noack_works_after_restart(self):
         myq = Queue('myqueue', exclusive=True)
 
-        self.amqp.qos(0,1 )
+        self.amqp.qos(0, 1)
 
         self.amqp.consume(myq, no_ack=True)
 

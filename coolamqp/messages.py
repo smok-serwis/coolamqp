@@ -13,6 +13,8 @@ class Message(object):
         :type body: str (py2) or bytes (py3)
         :param properties: AMQP properties to be sent along
         """
+        if isinstance(body, six.text_type):
+            raise TypeError('body cannot be a text type!')
         self.body = six.binary_type(body)
         self.properties = {} if properties is None else properties
 
