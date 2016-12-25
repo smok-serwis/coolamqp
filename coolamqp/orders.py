@@ -3,6 +3,7 @@
 Orders that can be dispatched to ClusterHandlerThread
 """
 from threading import Lock
+import warnings
 
 
 _NOOP_COMP = lambda: None
@@ -21,7 +22,13 @@ class Order(object):
             bye()
 
         then hello() will be called BEFORE bye().
-        Callbacks are called from CoolAMQP's internal thread
+        Callbacks are called from CoolAMQP's internal thread.
+
+        If this fails, then property .error_code can be read to get the error code.
+        and .reply_text has the reply of the server or some other reason. These are set before
+        callbacks are called.
+        Error code is None, if not available, or AMQP constants describing errors,
+        eg. 502 for syntax error.
         """
         self.on_completed = on_completed or _NOOP_COMP
         self.on_failed = on_failed or _NOOP_FAIL
@@ -31,7 +38,10 @@ class Order(object):
                             # private
         self.lock = Lock()
         self.lock.acquire()
-        self.cancelled = False
+        self.cancelled = False          #: public
+        self.discarded = False          #: public
+        self.error_code = None
+        self.reply_text = None
 
     def has_finished(self):
         """Return if this task has either completed or failed"""
@@ -41,23 +51,46 @@ class Order(object):
         """Cancel this order"""
         self.cancelled = True
 
-    def completed(self):
+    def _completed(self):       # called by handler
         self._result = True
         self.on_completed()
         self.lock.release()
 
-    def failed(self, e):
+    def _failed(self, e):       # called by handler
         """
         :param e: AMQPError instance or Cancelled instance
         """
+        from coolamqp.backends import Cancelled
         self._result = e
+        if not isinstance(e, Cancelled):    # a true error
+            self.error_code = e.code
+            self.reply_text = e.reply_text
+
         self.on_failed(e)
         self.lock.release()
 
+    def wait(self):
+        """Wait until this is completed and return whether the order succeeded"""
+        self.lock.acquire()
+        return self._result is True
+
+    def has_failed(self):
+        """Return whether the operation failed, ie. completed but with an error code.
+        User-cancelled operations are not failed.
+        This assumes that this order has been .wait()ed upon"""
+        assert self._result is not None
+        return not (self.cancelled or self._result is True)
+
     def result(self):
         """Wait until this is completed and return a response"""
+        warnings.warn('Use .wait() instead', PendingDeprecationWarning)
         self.lock.acquire()
         return self._result
+
+    @staticmethod
+    def _discarded(on_completed=None, on_failed=None):   # return order for a discarded message
+        o = Order(on_completed=on_completed, on_failed=on_failed)
+        self.on_completed()
 
 
 class SendMessage(Order):

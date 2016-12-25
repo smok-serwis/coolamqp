@@ -1,3 +1,3 @@
 # coding=UTF-8
-from .pyamqp import PyAMQPBackend
-from .base import AMQPError, ConnectionFailedError, RemoteAMQPError, Cancelled
+from coolamqp.backends.pyamqp import PyAMQPBackend
+from coolamqp.backends.base import AMQPError, ConnectionFailedError, RemoteAMQPError, Cancelled

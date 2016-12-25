@@ -2,9 +2,9 @@
 import itertools
 from six.moves import queue as Queue
 from coolamqp.backends import PyAMQPBackend
-from .orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue, DeleteQueue, \
-                    DeleteExchange, SetQoS, DeclareQueue
-from .messages import Exchange
+from coolamqp.orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue, DeleteQueue, \
+                    DeleteExchange, SetQoS, DeclareQueue, Order
+from coolamqp.messages import Exchange
 
 
 class ClusterNode(object):
@@ -83,19 +83,28 @@ class Cluster(object):
         from .handler import ClusterHandlerThread
         self.thread = ClusterHandlerThread(self)
 
-    def send(self, message, exchange='', routing_key='', on_completed=None, on_failed=None):
+    def send(self, message, exchange='', routing_key='', discard_on_fail=False, on_completed=None, on_failed=None):
         """
         Schedule a message to be sent.
         :param message: Message object to send.
         :param exchange: Exchange to use. Leave None to use the default exchange
         :param routing_key: routing key to use
+        :param discard_on_fail: if True, then message is valid for sending ONLY with current connection.
+            Will be discarded upon fail.
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
         :return: a Future with this order's status
         """
         a = SendMessage(message, exchange or Exchange.direct, routing_key,
+                        discard_on_fail=discard_on_fail,
                         on_completed=on_completed, on_failed=on_failed)
-        self.thread.order_queue.append(a)
+        if discard_on_fail and self.thread.backend is None:
+            o = Order()
+            o.discarded = True
+            on_failed(Discarded())
+            return o
+            # discard at once if no point in sending
+            self.thread.order_queue.append(a)
         return a
 
     def declare_exchange(self, exchange, on_completed=None, on_failed=None):

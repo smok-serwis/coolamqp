@@ -27,7 +27,11 @@ either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.
 Enjoy!
 
 # Changelog
-
+## v0.12
+* ACCESS_REFUSED/RESOURCE_LOCKED on reconnect is properly handled
+* reason for consumer cancel is provided
+* can read error code and reply text from failed orders
+* test suite refactored and improved
 ## v0.11
 * added *no_ack* to *consume*
 * can pass other non-text types to Message

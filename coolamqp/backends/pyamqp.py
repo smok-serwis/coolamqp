@@ -6,7 +6,7 @@ import socket
 import six
 import functools
 import logging
-from .base import AMQPBackend, RemoteAMQPError, ConnectionFailedError
+from coolamqp.backends.base import AMQPBackend, RemoteAMQPError, ConnectionFailedError
 import monotonic
 
 
@@ -14,16 +14,24 @@ logger = logging.getLogger(__name__)
 
 
 def translate_exceptions(fun):
-    """Translates pyamqp's exceptions to CoolAMQP's"""
+    """
+    Translates pyamqp's exceptions to CoolAMQP's
+
+    py-amqp's exceptions are less than intuitive, so expect many special cases
+    """
     @functools.wraps(fun)
     def q(*args, **kwargs):
         try:
             return fun(*args, **kwargs)
-        except amqp.RecoverableChannelError as e:
+        except (amqp.RecoverableChannelError,
+                amqp.exceptions.NotFound,
+                amqp.exceptions.AccessRefused) as e:
             raise RemoteAMQPError(e.reply_code, e.reply_text)
-        except (IOError, amqp.ConnectionForced, amqp.IrrecoverableChannelError, amqp.exceptions.UnexpectedFrame) as e:
-            msg = e.message if six.PY2 else e.args[0]
-            raise ConnectionFailedError(msg)
+        except (IOError,
+                amqp.ConnectionForced,
+                amqp.IrrecoverableChannelError,
+                amqp.exceptions.UnexpectedFrame) as e:
+            raise ConnectionFailedError(e.message if six.PY2 else e.args[0])
     return q
 
 

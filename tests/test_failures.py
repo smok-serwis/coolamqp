@@ -10,6 +10,8 @@ from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp,
 
 NODE = ClusterNode('127.0.0.1', 'guest', 'guest')
 
+from tests.utils import CoolAMQPTestCase
+
 
 class TestSpecialCases(unittest.TestCase):
     def test_termination_while_disconnect(self):
@@ -28,47 +30,30 @@ class TestSpecialCases(unittest.TestCase):
         os.system("sudo service rabbitmq-server start")
 
 
-class TestFailures(unittest.TestCase):
-
-    def setUp(self):
-        self.amqp = Cluster([NODE])
-        self.amqp.start()
-        self.assertIsInstance(self.amqp.drain(1), ConnectionUp)
-
-    def tearDown(self):
-        self.amqp.shutdown()
+class TestFailures(CoolAMQPTestCase):
 
     def test_cancel_not_consumed_queue(self):
         self.amqp.cancel(Queue('hello world')).result()
 
-    def test_connection_down_and_up(self):
-        """Are ConnectionUp/Down messages generated at all? does it reconnect?"""
-        os.system("sudo service rabbitmq-server restart")
-        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
-
     def test_longer_disconnects(self):
         os.system("sudo service rabbitmq-server stop")
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
+        self.drainTo(ConnectionDown, 4)
         time.sleep(12)
         os.system("sudo service rabbitmq-server start")
-        self.assertIsInstance(self.amqp.drain(wait=30), ConnectionUp)
+        self.drainTo(ConnectionUp, 35)
 
     def test_qos_redeclared_on_fail(self):
         self.amqp.qos(0, 1).result()
 
-        os.system("sudo service rabbitmq-server restart")
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
+        self.restart_rmq()
 
         self.amqp.consume(Queue('lol', exclusive=True)).result()
         self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
         self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
 
-        p = self.amqp.drain(wait=4)
-        self.assertIsInstance(p, MessageReceived)
+        p = self.drainTo(MessageReceived, 4)
 
-        self.assertIs(self.amqp.drain(wait=5), None)
+        self.drainToNone(5)
         p.message.ack()
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
 
@@ -77,24 +62,24 @@ class TestFailures(unittest.TestCase):
         self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
         self.assertFalse(self.amqp.connected)
         os.system("sudo service rabbitmq-server start")
-        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
+        self.assertIsInstance(self.amqp.drain(wait=20), ConnectionUp)
         self.assertTrue(self.amqp.connected)
 
     def test_sending_a_message_is_cancelled(self):
         """are messages generated at all? does it reconnect?"""
 
-        q1 = Queue('wtf1', exclusive=True)
-        self.amqp.consume(q1).result()
+        self.amqp.consume(Queue('wtf1', exclusive=True))
 
         os.system("sudo service rabbitmq-server stop")
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        result = self.amqp.send(Message(b'what the fuck'), '', routing_key='wtf1')
-        result.cancel()
+        self.drainTo(ConnectionDown, 5)
+
+        p = self.amqp.send(Message(b'what the fuck'), routing_key='wtf1')
+        p.cancel()
+        self.assertTrue(p.wait())
+        self.assertFalse(p.has_failed())
 
         os.system("sudo service rabbitmq-server start")
-
-        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
-        self.assertIsNone(self.amqp.drain(wait=6))    # message is NOT received
+        self.drainToAny([ConnectionUp], 30, forbidden=[MessageReceived])
 
     def test_qos_after_failure(self):
         self.amqp.qos(0, 1)
@@ -110,19 +95,16 @@ class TestFailures(unittest.TestCase):
         p.message.ack()
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
 
-        os.system("sudo service rabbitmq-server restart")
-        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionUp)
+        self.restart_rmq()
 
         self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
         self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
 
-        p = self.amqp.drain(wait=4)
-        self.assertIsInstance(p, MessageReceived)
+        p = self.drainTo(MessageReceived, 4)
 
-        self.assertIsNone(self.amqp.drain(wait=5))
+        self.drainToNone(5)
         p.message.ack()
-        self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
+        self.drainTo(MessageReceived, 4)
 
     def test_connection_down_and_up_redeclare_queues(self):
         """are messages generated at all? does it reconnect?"""
@@ -130,13 +112,11 @@ class TestFailures(unittest.TestCase):
         q1 = Queue('wtf1', exclusive=True)
         self.amqp.consume(q1).result()
 
-        os.system("sudo service rabbitmq-server restart")
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=6), ConnectionUp)
+        self.restart_rmq()
 
-        self.amqp.send(Message(b'what the fuck'), '', routing_key='wtf1')
+        self.amqp.send(Message(b'what the fuck'), routing_key='wtf1')
 
-        self.assertIsInstance(self.amqp.drain(wait=10), MessageReceived)
+        self.drainTo(MessageReceived, 20)
 
     def test_exchanges_are_redeclared(self):
         xchg = Exchange('a_fanout', type='fanout')
@@ -148,10 +128,19 @@ class TestFailures(unittest.TestCase):
         self.amqp.consume(q1)
         self.amqp.consume(q2).result()
 
-        os.system('sudo service rabbitmq-server restart')
+        self.restart_rmq()
 
         self.amqp.send(Message(b'hello'), xchg)
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=10), ConnectionUp)
-        self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
-        self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
+        self.drainTo([MessageReceived, MessageReceived], 20)
+
+    def test_consuming_exclusive_queue(self):
+        # declare and eat
+        q1 = Queue('q1', exclusive=True)
+
+        self.amqp.consume(q1).wait()
+
+        with self.new_amqp_connection() as amqp2:
+            q2 = Queue('q1', exclusive=True)
+
+            r = amqp2.consume(q2)
+            self.assertFalse(r.wait())

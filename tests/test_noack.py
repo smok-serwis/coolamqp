@@ -1,30 +1,13 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import unittest
 import six
 import os
 import time
 
+from tests.utils import CoolAMQPTestCase
 from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp, ConnectionDown, ConsumerCancelled, Message, Exchange
 
-class TestNoAcknowledge(unittest.TestCase):
-
-    def drainTo(self, type_, timeout=20):
-        start = time.time()
-        while time.time() - start < timeout:
-            q = self.amqp.drain(1)
-            if isinstance(q, type_):
-                return q
-        self.fail('Did not find %s' % (type_, ))
-
-    def setUp(self):
-        self.amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')])
-        self.amqp.start()
-        self.drainTo(ConnectionUp, timeout=1)
-
-    def tearDown(self):
-        self.amqp.shutdown()
-
+class TestNoAcknowledge(CoolAMQPTestCase):
     def test_noack_works(self):
         myq = Queue('myqueue', exclusive=True)
 
@@ -36,9 +19,7 @@ class TestNoAcknowledge(unittest.TestCase):
         self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
         self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
 
-        self.drainTo(MessageReceived)
-        self.drainTo(MessageReceived)
-        self.drainTo(MessageReceived)
+        self.drainTo([MessageReceived, MessageReceived, MessageReceived], [3, 3, 3])
 
     def test_noack_works_after_restart(self):
         myq = Queue('myqueue', exclusive=True)
@@ -51,21 +32,15 @@ class TestNoAcknowledge(unittest.TestCase):
         self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
         self.amqp.send(Message(b'what the fuck'), '', routing_key='myqueue')
 
-        self.assertIsInstance(self.amqp.drain(wait=1), MessageReceived)
-        self.assertIsInstance(self.amqp.drain(wait=0.3), MessageReceived)
-        self.assertIsInstance(self.amqp.drain(wait=0.3), MessageReceived)
+        self.drainTo([MessageReceived, MessageReceived, MessageReceived], [3, 3, 3])
 
-        os.system("sudo service rabbitmq-server restart")
-        self.assertIsInstance(self.amqp.drain(wait=5), ConnectionDown)
-        self.assertIsInstance(self.amqp.drain(wait=5), ConnectionUp)
+        self.restart_rmq()
 
         self.amqp.send(Message(b'what the fuck'), routing_key='myqueue')
         self.amqp.send(Message(b'what the fuck'), routing_key='myqueue')
         self.amqp.send(Message(b'what the fuck'), routing_key='myqueue')
 
-        self.assertIsInstance(self.amqp.drain(wait=1), MessageReceived)
-        self.assertIsInstance(self.amqp.drain(wait=0.3), MessageReceived)
-        self.assertIsInstance(self.amqp.drain(wait=0.3), MessageReceived)
+        self.drainTo([MessageReceived, MessageReceived, MessageReceived], [3, 3, 3])
 
     def test_noack_coexists(self):
         self.amqp.qos(0, 1, False)
@@ -94,12 +69,8 @@ class TestNoAcknowledge(unittest.TestCase):
 
         # ack and receive
         for me in mq2s: me.ack()
-        mer = self.amqp.drain(wait=1)       # 2nd
-        self.assertIsInstance(mer, MessageReceived)
-        mer.message.ack()
-        mer = self.amqp.drain(wait=1)       # 3rd
-        self.assertIsInstance(mer, MessageReceived)
-        mer.message.ack()
+        self.drainTo(MessageReceived, 1).message.ack() # 2nd
+        self.drainTo(MessageReceived, 1).message.ack() # 3rd
 
     @unittest.skip('demonstrates a py-amqp bug')
     def test_noack_coexists_empty_message_body(self):

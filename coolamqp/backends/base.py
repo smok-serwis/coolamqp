@@ -1,10 +1,24 @@
 # coding=UTF-8
 class AMQPError(Exception):
     """Connection errors and bawking of AMQP server"""
+    code = None
+    reply_text = 'AMQP error'
+
+    def __repr__(self):
+        return u'AMQPError()'
 
 
 class ConnectionFailedError(AMQPError):
     """Connection to broker failed"""
+    reply_text = 'failed connecting to broker'
+
+    def __repr__(self):
+        return u'ConnectionFailedError("%s")' % map(repr, (self.reply_text, ))
+
+
+class Discarded(Exception):
+    """send() for this message had discard_on_retry"""
+
 
 class Cancelled(Exception):
     """Cancel ordered by user"""
@@ -21,7 +35,10 @@ class RemoteAMQPError(AMQPError):
         """
         AMQPError.__init__(self, text)
         self.code = code
+        self.text = text or 'server sent back an error'
 
+    def __repr__(self):
+        return u'RemoteAMQPError(%s, %s)' % map(repr, (self.code, self.text))
 
 class AMQPBackend(object):
     """

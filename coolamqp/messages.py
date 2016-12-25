@@ -99,7 +99,8 @@ class Queue(object):
 
     def __init__(self, name='', durable=False, exchange=None, exclusive=False, auto_delete=False):
         """
-        Create a queue definition
+        Create a queue definition.
+
         :param name: name of the queue.
             Take special care if this is empty. If empty, this will be filled-in by the broker
             upon declaration. If a disconnect happens, and connection to other node is

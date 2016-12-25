@@ -68,11 +68,22 @@ class ClusterHandlerThread(threading.Thread):
                 for exchange in self.declared_exchanges.values():
                     self.backend.exchange_declare(exchange)
 
+                failed_queues = []
                 for queue, no_ack in self.queues_by_consumer_tags.values():
-                    self.backend.queue_declare(queue)
-                    if queue.exchange is not None:
-                        self.backend.queue_bind(queue, queue.exchange)
-                    self.backend.basic_consume(queue, no_ack=no_ack)
+                    try:
+                        self.backend.queue_declare(queue)
+                        if queue.exchange is not None:
+                            self.backend.queue_bind(queue, queue.exchange)
+                        self.backend.basic_consume(queue, no_ack=no_ack)
+                    except RemoteAMQPError as e:
+                        if e.code in (403, 405): # access refused, resource locked
+                            self.event_queue.put(ConsumerCancelled(queue, ConsumerCancelled.REFUSED_ON_RECONNECT))
+                            failed_queues.append(queue)
+                    else:
+                        raise
+
+                for failed_queue in failed_queues:
+                    del self.queues_by_consumer_tags[failed_queue.consumer_tag]
 
             except ConnectionFailedError as e:
                 # a connection failure happened :(
@@ -98,7 +109,8 @@ class ClusterHandlerThread(threading.Thread):
 
         try:
             if order.cancelled:
-                order.failed(Cancelled())
+                logger.debug('Order %s was cancelled', order)
+                order._failed(Cancelled())
                 return
 
             if isinstance(order, SendMessage):
@@ -120,7 +132,7 @@ class ClusterHandlerThread(threading.Thread):
                 self.backend.queue_delete(order.queue)
             elif isinstance(order, ConsumeQueue):
                 if order.queue.consumer_tag in self.queues_by_consumer_tags:
-                    order.completed()
+                    order._completed()
                     return    # already consuming, belay that
 
                 self.backend.queue_declare(order.queue)
@@ -137,7 +149,7 @@ class ClusterHandlerThread(threading.Thread):
                     pass  # wat?
                 else:
                     self.backend.basic_cancel(order.queue.consumer_tag)
-                    self.event_queue.put(ConsumerCancelled(order.queue))
+                    self.event_queue.put(ConsumerCancelled(order.queue, ConsumerCancelled.USER_CANCEL))
             elif isinstance(order, AcknowledgeMessage):
                 if order.connect_id == self.connect_id:
                     self.backend.basic_ack(order.delivery_tag)
@@ -146,12 +158,12 @@ class ClusterHandlerThread(threading.Thread):
                     self.backend.basic_reject(order.delivery_tag)
         except RemoteAMQPError as e:
             logger.error('Remote AMQP error: %s', e)
-            order.failed(e)  # we are allowed to go on
+            order._failed(e)  # we are allowed to go on
         except ConnectionFailedError:
             self.order_queue.appendleft(order)
             raise
         else:
-            order.completed()
+            order._completed()
 
     def __run_wrap(self):   # throws _ImOuttaHere
         # Loop while there are things to do
@@ -163,7 +175,7 @@ class ClusterHandlerThread(threading.Thread):
                 # just drain shit
                 self.backend.process(max_time=0.05)
             except ConnectionFailedError as e:
-                logger.warning('Connection to broker lost')
+                logger.warning('Connection to broker lost: %s', e)
                 self.cluster.connected = False
                 self.event_queue.put(ConnectionDown())
                 self._reconnect()
@@ -213,7 +225,7 @@ class ClusterHandlerThread(threading.Thread):
         except KeyError:
             return  # what?
 
-        self.event_queue.put(ConsumerCancelled(queue))
+        self.event_queue.put(ConsumerCancelled(queue, ConsumerCancelled.BROKER_CANCEL))
 
     ## methods to enqueue something into CHT to execute
 
