@@ -8,7 +8,10 @@ class Message(object):
 
     def __init__(self, body, properties=None):
         """
-        Create a Message object
+        Create a Message object.
+
+        Please take care with passing empty bodies, as py-amqp has some failure on it.
+
         :param body: stream of octets
         :type body: str (py2) or bytes (py3)
         :param properties: AMQP properties to be sent along
@@ -16,7 +19,7 @@ class Message(object):
         if isinstance(body, six.text_type):
             raise TypeError('body cannot be a text type!')
         self.body = six.binary_type(body)
-        self.properties = {} if properties is None else properties
+        self.properties = properties or {}
 
 
 class ReceivedMessage(Message):

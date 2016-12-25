@@ -62,7 +62,8 @@ class ClusterHandlerThread(threading.Thread):
                 self.backend = self.cluster.backend(node, self)
 
                 if self.qos is not None:
-                    self.backend.basic_qos(*self.qos)
+                    pre_siz, pre_cou, glob = self.qos
+                    self.backend.basic_qos(pre_siz, pre_cou, glob)
 
                 for exchange in self.declared_exchanges.values():
                     self.backend.exchange_declare(exchange)
@@ -104,7 +105,8 @@ class ClusterHandlerThread(threading.Thread):
                 self.backend.basic_publish(order.message, order.exchange, order.routing_key)
             elif isinstance(order, SetQoS):
                 self.qos = order.qos
-                self.backend.basic_qos(*self.qos)
+                pre_siz, pre_cou, glob = order.qos
+                self.backend.basic_qos(pre_siz, pre_cou, glob)
             elif isinstance(order, DeclareExchange):
                 self.backend.exchange_declare(order.exchange)
                 self.declared_exchanges[order.exchange.name] = order.exchange
@@ -175,12 +177,10 @@ class ClusterHandlerThread(threading.Thread):
 
         assert self.is_terminating
         if self.cluster.connected or (self.backend is not None):
-            try:
+            if self.backend is not None:
                 self.backend.shutdown()
-            except AttributeError:
-                pass # backend might be None - the if condition is "or" after all
+                self.backend = None
 
-            self.backend = None
             self.cluster.connected = False
 
     def terminate(self):

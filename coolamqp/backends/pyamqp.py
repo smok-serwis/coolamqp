@@ -21,7 +21,7 @@ def translate_exceptions(fun):
             return fun(*args, **kwargs)
         except amqp.RecoverableChannelError as e:
             raise RemoteAMQPError(e.reply_code, e.reply_text)
-        except (IOError, amqp.ConnectionForced, amqp.IrrecoverableChannelError) as e:
+        except (IOError, amqp.ConnectionForced, amqp.IrrecoverableChannelError, amqp.exceptions.UnexpectedFrame) as e:
             msg = e.message if six.PY2 else e.args[0]
             raise ConnectionFailedError(msg)
     return q

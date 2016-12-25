@@ -38,6 +38,9 @@ class TestFailures(unittest.TestCase):
     def tearDown(self):
         self.amqp.shutdown()
 
+    def test_cancel_not_consumed_queue(self):
+        self.amqp.cancel(Queue('hello world')).result()
+
     def test_connection_down_and_up(self):
         """Are ConnectionUp/Down messages generated at all? does it reconnect?"""
         os.system("sudo service rabbitmq-server restart")

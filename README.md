@@ -28,4 +28,7 @@ Enjoy!
 
 # Changelog
 
-* v0.11 - added *no_ack* to *consume*, can pass other non-text types to Message
+## v0.11
+* added *no_ack* to *consume*
+* can pass other non-text types to Message
+* can set global bit in *qos*
