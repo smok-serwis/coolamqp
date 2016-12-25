@@ -2,6 +2,7 @@
 import itertools
 from six.moves import queue as Queue
 from coolamqp.backends import PyAMQPBackend
+from coolamqp.backends.base import Discarded
 from coolamqp.orders import SendMessage, ConsumeQueue, DeclareExchange, CancelQueue, DeleteQueue, \
                     DeleteExchange, SetQoS, DeclareQueue, Order
 from coolamqp.messages import Exchange
@@ -83,7 +84,7 @@ class Cluster(object):
         from .handler import ClusterHandlerThread
         self.thread = ClusterHandlerThread(self)
 
-    def send(self, message, exchange='', routing_key='', discard_on_fail=False, on_completed=None, on_failed=None):
+    def send(self, message, exchange=None, routing_key='', discard_on_fail=False, on_completed=None, on_failed=None):
         """
         Schedule a message to be sent.
         :param message: Message object to send.
@@ -98,6 +99,7 @@ class Cluster(object):
         a = SendMessage(message, exchange or Exchange.direct, routing_key,
                         discard_on_fail=discard_on_fail,
                         on_completed=on_completed, on_failed=on_failed)
+
         if discard_on_fail and self.thread.backend is None:
             o = Order()
             o.discarded = True
