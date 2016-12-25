@@ -95,10 +95,11 @@ class Order(object):
 
 class SendMessage(Order):
     """Send a message"""
-    def __init__(self, message, exchange, routing_key, on_completed=None, on_failed=None):
+    def __init__(self, message, exchange, routing_key, discard_on_fail=False, on_completed=None, on_failed=None):
         Order.__init__(self, on_completed=on_completed, on_failed=on_failed)
         self.message = message
         self.exchange = exchange
+        self.discard_on_fail = discard_on_fail
         self.routing_key = routing_key
 
 

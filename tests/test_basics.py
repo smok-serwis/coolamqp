@@ -17,6 +17,8 @@ class TestThings(CoolAMQPTestCase):
         amqp.shutdown()
 
 
+#todo discard on fail needs tests
+
 class TestBasics(CoolAMQPTestCase):
 
     def test_acknowledge(self):
