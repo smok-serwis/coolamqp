@@ -240,7 +240,7 @@ class ConnectionOpen(AMQPMethod):
             parts of the arguments section.
         :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        out(struct.pack('!pp?', self.virtual_host, u'', 0))
+        out(struct.pack('!p?', self.virtual_host, 0))
 
 
 class ConnectionOpenOk(AMQPMethod):
@@ -277,7 +277,6 @@ class ConnectionOpenOk(AMQPMethod):
             parts of the arguments section.
         :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        out(struct.pack('!p', u''))
 
 
 class ConnectionStart(AMQPMethod):
@@ -837,7 +836,6 @@ class ChannelOpen(AMQPMethod):
             parts of the arguments section.
         :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        out(struct.pack('!p', u''))
 
 
 class ChannelOpenOk(AMQPMethod):
@@ -2029,7 +2027,6 @@ class BasicGetEmpty(AMQPMethod):
             parts of the arguments section.
         :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        out(struct.pack('!p', u''))
 
 
 class BasicPublish(AMQPMethod):

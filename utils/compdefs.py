@@ -269,7 +269,12 @@ class AMQPMethod(object):
                             if tp == 'longstr':
                                 line('        out(self.'+name_field(field.name)+')\n')
                         else:
-                            good_structs.append((BASIC_TYPES[tp][1], 'self.'+name_field(field.name) if not field.reserved else frepr(BASIC_TYPES[tp][2])))
+                            # special case - empty string
+                            if tp == 'shortstr' and field.reserved:
+                                continue    # just skip :)
+
+                            val = 'self.'+name_field(field.name) if not field.reserved else frepr(BASIC_TYPES[tp][2], sop=six.binary_type)
+                            good_structs.append((BASIC_TYPES[tp][1], val))
                     emit_structs(good_structs)
                     line('\n')
 
