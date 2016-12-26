@@ -13,6 +13,48 @@ Method = namedtuple('Method', ('name', 'synchronous', 'index', 'label', 'docs', 
 Class_ = namedtuple('Class_', ('name', 'index', 'docs', 'methods'))   # label is int
 Domain = namedtuple('Domain', ('name', 'type', 'elementary'))   # elementary is bool
 
+            # name => (length|None, struct ID|None, reserved-field-value : for struct if structable, bytes else)
+BASIC_TYPES = {'bit': (1, '?', 0),
+               'octet': (1, 'B', 0),
+               'short': (2, 'H', 0),
+               'long': (4, 'I', 0),
+               'longlong': (8, 'L', 0),
+               'timestamp': (8, 'L', 0),
+               'table': (None, None, b'\x00\x00\x00\x00'),
+               'longstr': (None, None, b'\x00\x00\x00\x00'),
+               'shortstr': (None, 'p', '')
+               }
+
+
+class Method(object):
+    def __init__(self, name, synchronous, index, label, docs, fields, response):
+        self.name = name
+        self.synchronous = synchronous
+        self.index = index
+        self.fields = fields
+        self.response = response
+        self.label = label
+        self.docs = docs
+
+    def get_size(self, domain_to_type): # for static methods
+        size = 0
+        for field in self.fields:
+            tp = field.type
+            while tp in domain_to_type:
+                tp = domain_to_type[tp]
+            if BASIC_TYPES[tp] is None:
+                raise TypeError()
+            size += BASIC_TYPES[tp]
+        return size
+
+    def is_static(self, domain_to_type):    # is size constant?
+        try:
+            self.get_size(domain_to_type)
+        except TypeError:
+            return False
+        return True
+
+
 
 def get_docs(elem):
     for kid in elem.getchildren():

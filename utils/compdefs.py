@@ -3,15 +3,16 @@ import collections
 import struct
 import six
 
-from getp import get_constants, get_classes, get_domains, byname, name_class, name_method, name_field
+from getp import get_constants, get_classes, get_domains, byname, name_class, name_method, name_field, \
+                 BASIC_TYPES
 
-def frepr(p):
+def frepr(p, sop=six.text_type):
     if isinstance(p, basestring):
-        p = six.text_type(p)
+        p = sop(p)
     s = repr(p)
 
     if isinstance(p, basestring) and not s.startswith('u'):
-        return 'u' + s
+        return ('u' if sop == six.text_type else 'b') + s
     else:
         return s
 
@@ -26,24 +27,25 @@ def infertype(p):
 
 def doxify(label, doc, prefix=4, blank=True): # output a full docstring section
     label = [] if label is None else [label]
-    doc = [] if doc is None else doc.split(u'\n')
+    doc = [] if doc is None else [q.strip() for q in doc.split(u'\n') if len(q.strip()) > 0]
     pre = u' '*prefix
 
     doc = label + doc
 
     if len(doc) == 0:
-        return u'\n'
+        return u''
 
     doc[0] = doc[0].capitalize()
 
     if len(doc) == 1:
-        return pre + doc[0] + u'\n'
+        return doc[0]
+
+    doc = filter(lambda p: len(p.strip()) > 0, doc)
 
     if blank:
         doc = [doc[0], u''] + doc[1:]
 
     f = (u'\n'.join(pre + lin for lin in doc))[prefix:]
-    print(repr(f))
     return f
 
 def ffmt(data, *args, **kwargs):
@@ -62,7 +64,7 @@ def compile_definitions(xml_file='resources/amqp0-9-1.xml', out_file='coolamqp/f
         out.write('''# coding=UTF-8
 from __future__ import print_function, absolute_import
 """
-Constants used in AMQP protocol.
+A Python version of the AMQP machine-readable specification.
 
 Generated automatically by CoolAMQP from AMQP machine-readable specification.
 See utils/compdefs.py for the tool
@@ -70,6 +72,8 @@ See utils/compdefs.py for the tool
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 """
+
+import struct
 
 ''')
 
@@ -110,13 +114,22 @@ class AMQPClass(object):
 class AMQPMethod(object):
     RESPONSE_TO = None
     REPLY_WITH = []
+    FIELDS = []
 
+    def write_arguments(self, out):
+        """
+        Write the argument portion of this frame into out.
+
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
+        """
 
 ''')
 
         # Output classes
         for cls in get_classes(xml):
-            line('''class %s(AMQPClass):
+            line('''\nclass %s(AMQPClass):
     """
     %s
     """
@@ -127,6 +140,9 @@ class AMQPMethod(object):
 
             for method in cls.methods:
 
+                is_static = method.is_static(domain_to_basic_type)
+                if is_static:
+                    static_size = method.get_size(domain_to_basic_type)
 
                 line('''\nclass %s%s(AMQPMethod):
     """
@@ -140,6 +156,8 @@ class AMQPMethod(object):
     FULLNAME = %s
     SYNCHRONOUS = %s
     REPLY_WITH = [%s]
+    BINARY_HEADER = b'%s'
+    IS_SIZE_STATIC = %s
 ''',
                      name_class(cls.name), name_method(method.name),
                      doxify(method.label, method.docs),
@@ -150,39 +168,51 @@ class AMQPMethod(object):
                      frepr(method.index),
                      frepr(cls.name + '.' + method.name),
                      repr(method.synchronous),
-                     str(', '.join([name_class(cls.name)+name_method(kidname) for kidname in method.response])),
+                     u', '.join([name_class(cls.name)+name_method(kidname) for kidname in method.response]),
+                     u''.join(map(lambda x: u'\\x'+(('0'+hex(x)[2:] if x < 16 else hex(x)[2:]).upper()),
+                                        [cls.index, method.index])),
+                     repr(is_static)
                      )
+
+                # Static size
+                if is_static:
+                    line('    STATIC_ARGUMENT_SIZE = %s # length of arguments (as binary) is constant here\n', static_size)
 
                 # Am I a response somewhere?
                 for paren in cls.methods:
                     if method.name in paren.response:
-                        line('    RESPONSE_TO = %s%s\n', name_class(cls.name), name_method(paren.name))
+                        line('    RESPONSE_TO = %s%s # this is sent in response to %s\n', name_class(cls.name), name_method(paren.name),
+                             cls.name+'.'+paren.name
+                             )
 
                 # fields
-                line('    FIELDS = [')
-                for field in method.fields:
-                    tp = field.type
-                    while tp in domain_to_basic_type:
-                        tp = domain_to_basic_type[tp]
+                if len(method.fields) > 0:
+                    line('    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)')
 
-                    line('\n        (%s, %s, %s), ', frepr(field.name), frepr(field.type), frepr(tp))
-                    if field.label:
-                        line(' # '+field.label)
+                    for field in method.fields:
+                        tp = field.type
+                        while tp in domain_to_basic_type:
+                            tp = domain_to_basic_type[tp]
 
-                line('\n    ]\n\n')
+                        line('\n        (%s, %s, %s, %s), ', frepr(field.name), frepr(field.type), frepr(tp), repr(field.reserved))
+                        if field.label:
+                            line(' # '+field.label)
+
+                    line('\n    ]\n')
 
                 non_reserved_fields = [field for field in method.fields if not field.reserved]
 
                 # constructor
-                line('''    def __init__(%s):
+                line('''\n    def __init__(%s):
         """
         Create frame %s
-
 ''',
                      u', '.join(['self'] + [name_field(field.name) for field in non_reserved_fields]),
                      cls.name + '.' + method.name,
                      )
 
+                if len(non_reserved_fields) > 0:
+                    line('\n')
                 for field in non_reserved_fields:
                     tp = field.type
                     while tp in domain_to_basic_type:
@@ -198,16 +228,50 @@ class AMQPMethod(object):
                 for field in non_reserved_fields:
                     line('        self.%s = %s\n', name_field(field.name), name_field(field.name))
 
+
                 # end
-                line('''\n    def to_frame(self):
+                if len(method.fields) > 0:
+                    line('''\n    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
-
 ''')
+                    def emit_structs(su):
+                        if len(su) == 0:
+                            return
+                        line("        out(struct.pack('!")
+                        line(''.join(a for a, b in su))
+                        line("', ")
+                        line(', '.join(b for a, b in su))
+                        line('))\n')
+
+                    good_structs = []
+                    for field in method.fields:
+                        if field.type not in BASIC_TYPES:
+                            tp = domain_to_basic_type[field.type]
+                        else:
+                            tp = field.type
+
+                        if BASIC_TYPES[tp][1] is None:
+                            # struct can't do it
+
+                            if tp == 'longstr':
+                                good_structs.append(('L', 'len(self.'+name_field(field.name)+')'))
+
+                            emit_structs(good_structs)
+                            good_structs = []
+
+                            # emit ours
+                            if tp == 'longstr':
+                                line('        out(self.'+name_field(field.name)+')\n')
+                        else:
+                            good_structs.append((BASIC_TYPES[tp][1], 'self.'+name_field(field.name) if not field.reserved else frepr(BASIC_TYPES[tp][2])))
+                    emit_structs(good_structs)
+                    line('\n')
 
 
 

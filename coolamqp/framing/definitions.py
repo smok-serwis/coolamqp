@@ -1,7 +1,7 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import
 """
-Constants used in AMQP protocol.
+A Python version of the AMQP machine-readable specification.
 
 Generated automatically by CoolAMQP from AMQP machine-readable specification.
 See utils/compdefs.py for the tool
@@ -9,6 +9,8 @@ See utils/compdefs.py for the tool
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 """
+
+import struct
 
 # Core frame types
 FRAME_METHOD = 1
@@ -92,6 +94,16 @@ class AMQPClass(object):
 class AMQPMethod(object):
     RESPONSE_TO = None
     REPLY_WITH = []
+    FIELDS = []
+
+    def write_arguments(self, out):
+        """
+        Write the argument portion of this frame into out.
+
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
+        """
 
 
 class Connection(AMQPClass):
@@ -121,11 +133,13 @@ class ConnectionClose(AMQPMethod):
     FULLNAME = u'connection.close'
     SYNCHRONOUS = True
     REPLY_WITH = [ConnectionCloseOk]
-    FIELDS = [
-        (u'reply-code', u'reply-code', u'short'), 
-        (u'reply-text', u'reply-text', u'shortstr'), 
-        (u'class-id', u'class-id', u'short'),  # failing method class
-        (u'method-id', u'method-id', u'short'),  # failing method ID
+    BINARY_HEADER = b'\x0A\x32'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reply-code', u'reply-code', u'short', False), 
+        (u'reply-text', u'reply-text', u'shortstr', False), 
+        (u'class-id', u'class-id', u'short', False),  # failing method class
+        (u'method-id', u'method-id', u'short', False),  # failing method ID
     ]
 
     def __init__(self, reply_code, reply_text, class_id, method_id):
@@ -147,13 +161,15 @@ class ConnectionClose(AMQPMethod):
         self.class_id = class_id
         self.method_id = method_id
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!HpHH', self.reply_code, self.reply_text, self.class_id, self.method_id))
 
 
 class ConnectionCloseOk(AMQPMethod):
@@ -171,24 +187,15 @@ class ConnectionCloseOk(AMQPMethod):
     FULLNAME = u'connection.close-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ConnectionClose
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x0A\x33'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = ConnectionClose # this is sent in response to connection.close
 
     def __init__(self):
         """
         Create frame connection.close-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class ConnectionOpen(AMQPMethod):
     """
@@ -207,10 +214,12 @@ class ConnectionOpen(AMQPMethod):
     FULLNAME = u'connection.open'
     SYNCHRONOUS = True
     REPLY_WITH = [ConnectionOpenOk]
-    FIELDS = [
-        (u'virtual-host', u'path', u'shortstr'),  # virtual host name
-        (u'reserved-1', u'shortstr', u'shortstr'), 
-        (u'reserved-2', u'bit', u'bit'), 
+    BINARY_HEADER = b'\x0A\x28'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'virtual-host', u'path', u'shortstr', False),  # virtual host name
+        (u'reserved-1', u'shortstr', u'shortstr', True), 
+        (u'reserved-2', u'bit', u'bit', True), 
     ]
 
     def __init__(self, virtual_host):
@@ -223,13 +232,15 @@ class ConnectionOpen(AMQPMethod):
         """
         self.virtual_host = virtual_host
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!pp?', self.virtual_host, u'', 0))
 
 
 class ConnectionOpenOk(AMQPMethod):
@@ -246,24 +257,27 @@ class ConnectionOpenOk(AMQPMethod):
     FULLNAME = u'connection.open-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ConnectionOpen
-    FIELDS = [
-        (u'reserved-1', u'shortstr', u'shortstr'), 
+    BINARY_HEADER = b'\x0A\x29'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = ConnectionOpen # this is sent in response to connection.open
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'shortstr', u'shortstr', True), 
     ]
 
     def __init__(self):
         """
         Create frame connection.open-ok
-
         """
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!p', u''))
 
 
 class ConnectionStart(AMQPMethod):
@@ -282,12 +296,14 @@ class ConnectionStart(AMQPMethod):
     FULLNAME = u'connection.start'
     SYNCHRONOUS = True
     REPLY_WITH = [ConnectionStartOk]
-    FIELDS = [
-        (u'version-major', u'octet', u'octet'),  # protocol major version
-        (u'version-minor', u'octet', u'octet'),  # protocol minor version
-        (u'server-properties', u'peer-properties', u'table'),  # server properties
-        (u'mechanisms', u'longstr', u'longstr'),  # available security mechanisms
-        (u'locales', u'longstr', u'longstr'),  # available message locales
+    BINARY_HEADER = b'\x0A\x0A'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'version-major', u'octet', u'octet', False),  # protocol major version
+        (u'version-minor', u'octet', u'octet', False),  # protocol minor version
+        (u'server-properties', u'peer-properties', u'table', False),  # server properties
+        (u'mechanisms', u'longstr', u'longstr', False),  # available security mechanisms
+        (u'locales', u'longstr', u'longstr', False),  # available message locales
     ]
 
     def __init__(self, version_major, version_minor, server_properties, mechanisms, locales):
@@ -323,13 +339,19 @@ class ConnectionStart(AMQPMethod):
         self.mechanisms = mechanisms
         self.locales = locales
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!BB', self.version_major, self.version_minor))
+        out(struct.pack('!L', len(self.mechanisms)))
+        out(self.mechanisms)
+        out(struct.pack('!L', len(self.locales)))
+        out(self.locales)
 
 
 class ConnectionSecure(AMQPMethod):
@@ -348,8 +370,10 @@ class ConnectionSecure(AMQPMethod):
     FULLNAME = u'connection.secure'
     SYNCHRONOUS = True
     REPLY_WITH = [ConnectionSecureOk]
-    FIELDS = [
-        (u'challenge', u'longstr', u'longstr'),  # security challenge data
+    BINARY_HEADER = b'\x0A\x14'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'challenge', u'longstr', u'longstr', False),  # security challenge data
     ]
 
     def __init__(self, challenge):
@@ -363,13 +387,16 @@ class ConnectionSecure(AMQPMethod):
         """
         self.challenge = challenge
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!L', len(self.challenge)))
+        out(self.challenge)
 
 
 class ConnectionStartOk(AMQPMethod):
@@ -386,12 +413,14 @@ class ConnectionStartOk(AMQPMethod):
     FULLNAME = u'connection.start-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ConnectionStart
-    FIELDS = [
-        (u'client-properties', u'peer-properties', u'table'),  # client properties
-        (u'mechanism', u'shortstr', u'shortstr'),  # selected security mechanism
-        (u'response', u'longstr', u'longstr'),  # security response data
-        (u'locale', u'shortstr', u'shortstr'),  # selected message locale
+    BINARY_HEADER = b'\x0A\x0B'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = ConnectionStart # this is sent in response to connection.start
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'client-properties', u'peer-properties', u'table', False),  # client properties
+        (u'mechanism', u'shortstr', u'shortstr', False),  # selected security mechanism
+        (u'response', u'longstr', u'longstr', False),  # security response data
+        (u'locale', u'shortstr', u'shortstr', False),  # selected message locale
     ]
 
     def __init__(self, client_properties, mechanism, response, locale):
@@ -422,13 +451,17 @@ class ConnectionStartOk(AMQPMethod):
         self.response = response
         self.locale = locale
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!pL', self.mechanism, len(self.response)))
+        out(self.response)
+        out(struct.pack('!p', self.locale))
 
 
 class ConnectionSecureOk(AMQPMethod):
@@ -446,9 +479,11 @@ class ConnectionSecureOk(AMQPMethod):
     FULLNAME = u'connection.secure-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ConnectionSecure
-    FIELDS = [
-        (u'response', u'longstr', u'longstr'),  # security response data
+    BINARY_HEADER = b'\x0A\x15'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = ConnectionSecure # this is sent in response to connection.secure
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'response', u'longstr', u'longstr', False),  # security response data
     ]
 
     def __init__(self, response):
@@ -462,13 +497,16 @@ class ConnectionSecureOk(AMQPMethod):
         """
         self.response = response
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!L', len(self.response)))
+        out(self.response)
 
 
 class ConnectionTune(AMQPMethod):
@@ -486,10 +524,12 @@ class ConnectionTune(AMQPMethod):
     FULLNAME = u'connection.tune'
     SYNCHRONOUS = True
     REPLY_WITH = [ConnectionTuneOk]
-    FIELDS = [
-        (u'channel-max', u'short', u'short'),  # proposed maximum channels
-        (u'frame-max', u'long', u'long'),  # proposed maximum frame size
-        (u'heartbeat', u'short', u'short'),  # desired heartbeat delay
+    BINARY_HEADER = b'\x0A\x1E'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'channel-max', u'short', u'short', False),  # proposed maximum channels
+        (u'frame-max', u'long', u'long', False),  # proposed maximum frame size
+        (u'heartbeat', u'short', u'short', False),  # desired heartbeat delay
     ]
 
     def __init__(self, channel_max, frame_max, heartbeat):
@@ -515,13 +555,15 @@ class ConnectionTune(AMQPMethod):
         self.frame_max = frame_max
         self.heartbeat = heartbeat
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
 
 
 class ConnectionTuneOk(AMQPMethod):
@@ -539,11 +581,13 @@ class ConnectionTuneOk(AMQPMethod):
     FULLNAME = u'connection.tune-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ConnectionTune
-    FIELDS = [
-        (u'channel-max', u'short', u'short'),  # negotiated maximum channels
-        (u'frame-max', u'long', u'long'),  # negotiated maximum frame size
-        (u'heartbeat', u'short', u'short'),  # desired heartbeat delay
+    BINARY_HEADER = b'\x0A\x1F'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = ConnectionTune # this is sent in response to connection.tune
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'channel-max', u'short', u'short', False),  # negotiated maximum channels
+        (u'frame-max', u'long', u'long', False),  # negotiated maximum frame size
+        (u'heartbeat', u'short', u'short', False),  # desired heartbeat delay
     ]
 
     def __init__(self, channel_max, frame_max, heartbeat):
@@ -569,13 +613,16 @@ class ConnectionTuneOk(AMQPMethod):
         self.frame_max = frame_max
         self.heartbeat = heartbeat
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
+
 
 class Channel(AMQPClass):
     """
@@ -604,11 +651,13 @@ class ChannelClose(AMQPMethod):
     FULLNAME = u'channel.close'
     SYNCHRONOUS = True
     REPLY_WITH = [ChannelCloseOk]
-    FIELDS = [
-        (u'reply-code', u'reply-code', u'short'), 
-        (u'reply-text', u'reply-text', u'shortstr'), 
-        (u'class-id', u'class-id', u'short'),  # failing method class
-        (u'method-id', u'method-id', u'short'),  # failing method ID
+    BINARY_HEADER = b'\x14\x28'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reply-code', u'reply-code', u'short', False), 
+        (u'reply-text', u'reply-text', u'shortstr', False), 
+        (u'class-id', u'class-id', u'short', False),  # failing method class
+        (u'method-id', u'method-id', u'short', False),  # failing method ID
     ]
 
     def __init__(self, reply_code, reply_text, class_id, method_id):
@@ -630,13 +679,15 @@ class ChannelClose(AMQPMethod):
         self.class_id = class_id
         self.method_id = method_id
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!HpHH', self.reply_code, self.reply_text, self.class_id, self.method_id))
 
 
 class ChannelCloseOk(AMQPMethod):
@@ -654,24 +705,15 @@ class ChannelCloseOk(AMQPMethod):
     FULLNAME = u'channel.close-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ChannelClose
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x14\x29'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = ChannelClose # this is sent in response to channel.close
 
     def __init__(self):
         """
         Create frame channel.close-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class ChannelFlow(AMQPMethod):
     """
@@ -691,8 +733,10 @@ class ChannelFlow(AMQPMethod):
     FULLNAME = u'channel.flow'
     SYNCHRONOUS = True
     REPLY_WITH = [ChannelFlowOk]
-    FIELDS = [
-        (u'active', u'bit', u'bit'),  # start/stop content frames
+    BINARY_HEADER = b'\x14\x14'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'active', u'bit', u'bit', False),  # start/stop content frames
     ]
 
     def __init__(self, active):
@@ -706,13 +750,15 @@ class ChannelFlow(AMQPMethod):
         """
         self.active = active
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!?', self.active))
 
 
 class ChannelFlowOk(AMQPMethod):
@@ -729,9 +775,11 @@ class ChannelFlowOk(AMQPMethod):
     FULLNAME = u'channel.flow-ok'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    RESPONSE_TO = ChannelFlow
-    FIELDS = [
-        (u'active', u'bit', u'bit'),  # current flow setting
+    BINARY_HEADER = b'\x14\x15'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = ChannelFlow # this is sent in response to channel.flow
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'active', u'bit', u'bit', False),  # current flow setting
     ]
 
     def __init__(self, active):
@@ -745,13 +793,15 @@ class ChannelFlowOk(AMQPMethod):
         """
         self.active = active
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!?', self.active))
 
 
 class ChannelOpen(AMQPMethod):
@@ -768,23 +818,26 @@ class ChannelOpen(AMQPMethod):
     FULLNAME = u'channel.open'
     SYNCHRONOUS = True
     REPLY_WITH = [ChannelOpenOk]
-    FIELDS = [
-        (u'reserved-1', u'shortstr', u'shortstr'), 
+    BINARY_HEADER = b'\x14\x0A'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'shortstr', u'shortstr', True), 
     ]
 
     def __init__(self):
         """
         Create frame channel.open
-
         """
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!p', u''))
 
 
 class ChannelOpenOk(AMQPMethod):
@@ -801,24 +854,29 @@ class ChannelOpenOk(AMQPMethod):
     FULLNAME = u'channel.open-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ChannelOpen
-    FIELDS = [
-        (u'reserved-1', u'longstr', u'longstr'), 
+    BINARY_HEADER = b'\x14\x0B'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = ChannelOpen # this is sent in response to channel.open
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'longstr', u'longstr', True), 
     ]
 
     def __init__(self):
         """
         Create frame channel.open-ok
-
         """
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!L', len(self.reserved_1)))
+        out(self.reserved_1)
+
 
 class Exchange(AMQPClass):
     """
@@ -845,16 +903,18 @@ class ExchangeDeclare(AMQPMethod):
     FULLNAME = u'exchange.declare'
     SYNCHRONOUS = True
     REPLY_WITH = [ExchangeDeclareOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'exchange', u'exchange-name', u'shortstr'), 
-        (u'type', u'shortstr', u'shortstr'),  # exchange type
-        (u'passive', u'bit', u'bit'),  # do not create exchange
-        (u'durable', u'bit', u'bit'),  # request a durable exchange
-        (u'reserved-2', u'bit', u'bit'), 
-        (u'reserved-3', u'bit', u'bit'), 
-        (u'no-wait', u'no-wait', u'bit'), 
-        (u'arguments', u'table', u'table'),  # arguments for declaration
+    BINARY_HEADER = b'\x28\x0A'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'exchange', u'exchange-name', u'shortstr', False), 
+        (u'type', u'shortstr', u'shortstr', False),  # exchange type
+        (u'passive', u'bit', u'bit', False),  # do not create exchange
+        (u'durable', u'bit', u'bit', False),  # request a durable exchange
+        (u'reserved-2', u'bit', u'bit', True), 
+        (u'reserved-3', u'bit', u'bit', True), 
+        (u'no-wait', u'no-wait', u'bit', False), 
+        (u'arguments', u'table', u'table', False),  # arguments for declaration
     ]
 
     def __init__(self, exchange, type, passive, durable, no_wait, arguments):
@@ -897,13 +957,15 @@ class ExchangeDeclare(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hpp?????', 0, self.exchange, self.type, self.passive, self.durable, 0, 0, self.no_wait))
 
 
 class ExchangeDelete(AMQPMethod):
@@ -921,19 +983,20 @@ class ExchangeDelete(AMQPMethod):
     FULLNAME = u'exchange.delete'
     SYNCHRONOUS = True
     REPLY_WITH = [ExchangeDeleteOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'exchange', u'exchange-name', u'shortstr'), 
-        (u'if-unused', u'bit', u'bit'),  # delete only if unused
-        (u'no-wait', u'no-wait', u'bit'), 
+    BINARY_HEADER = b'\x28\x14'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'exchange', u'exchange-name', u'shortstr', False), 
+        (u'if-unused', u'bit', u'bit', False),  # delete only if unused
+        (u'no-wait', u'no-wait', u'bit', False), 
     ]
 
     def __init__(self, exchange, if_unused, no_wait):
         """
         Create frame exchange.delete
 
-        :param exchange:             The client must not attempt to delete an exchange that does not exist.
-
+        :param exchange: The client must not attempt to delete an exchange that does not exist.
         :type exchange: exchange-name (as shortstr)
         :param if_unused: Delete only if unused
             If set, the server will only delete the exchange if it has no queue bindings. If
@@ -946,13 +1009,15 @@ class ExchangeDelete(AMQPMethod):
         self.if_unused = if_unused
         self.no_wait = no_wait
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hp??', 0, self.exchange, self.if_unused, self.no_wait))
 
 
 class ExchangeDeclareOk(AMQPMethod):
@@ -970,24 +1035,15 @@ class ExchangeDeclareOk(AMQPMethod):
     FULLNAME = u'exchange.declare-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ExchangeDeclare
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x28\x0B'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = ExchangeDeclare # this is sent in response to exchange.declare
 
     def __init__(self):
         """
         Create frame exchange.declare-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class ExchangeDeleteOk(AMQPMethod):
     """
@@ -1003,23 +1059,15 @@ class ExchangeDeleteOk(AMQPMethod):
     FULLNAME = u'exchange.delete-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = ExchangeDelete
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x28\x15'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = ExchangeDelete # this is sent in response to exchange.delete
 
     def __init__(self):
         """
         Create frame exchange.delete-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
 
 class Queue(AMQPClass):
     """
@@ -1049,21 +1097,22 @@ class QueueBind(AMQPMethod):
     FULLNAME = u'queue.bind'
     SYNCHRONOUS = True
     REPLY_WITH = [QueueBindOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'exchange', u'exchange-name', u'shortstr'),  # name of the exchange to bind to
-        (u'routing-key', u'shortstr', u'shortstr'),  # message routing key
-        (u'no-wait', u'no-wait', u'bit'), 
-        (u'arguments', u'table', u'table'),  # arguments for binding
+    BINARY_HEADER = b'\x32\x14'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'exchange', u'exchange-name', u'shortstr', False),  # name of the exchange to bind to
+        (u'routing-key', u'shortstr', u'shortstr', False),  # message routing key
+        (u'no-wait', u'no-wait', u'bit', False), 
+        (u'arguments', u'table', u'table', False),  # arguments for binding
     ]
 
     def __init__(self, queue, exchange, routing_key, no_wait, arguments):
         """
         Create frame queue.bind
 
-        :param queue:             Specifies the name of the queue to bind.
-
+        :param queue: Specifies the name of the queue to bind.
         :type queue: queue-name (as shortstr)
         :param exchange: Name of the exchange to bind to
             A client MUST NOT be allowed to bind a queue to a non-existent exchange.
@@ -1090,13 +1139,15 @@ class QueueBind(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hppp?', 0, self.queue, self.exchange, self.routing_key, self.no_wait))
 
 
 class QueueBindOk(AMQPMethod):
@@ -1113,24 +1164,15 @@ class QueueBindOk(AMQPMethod):
     FULLNAME = u'queue.bind-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = QueueBind
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x32\x15'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = QueueBind # this is sent in response to queue.bind
 
     def __init__(self):
         """
         Create frame queue.bind-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class QueueDeclare(AMQPMethod):
     """
@@ -1148,15 +1190,17 @@ class QueueDeclare(AMQPMethod):
     FULLNAME = u'queue.declare'
     SYNCHRONOUS = True
     REPLY_WITH = [QueueDeclareOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'passive', u'bit', u'bit'),  # do not create queue
-        (u'durable', u'bit', u'bit'),  # request a durable queue
-        (u'exclusive', u'bit', u'bit'),  # request an exclusive queue
-        (u'auto-delete', u'bit', u'bit'),  # auto-delete queue when unused
-        (u'no-wait', u'no-wait', u'bit'), 
-        (u'arguments', u'table', u'table'),  # arguments for declaration
+    BINARY_HEADER = b'\x32\x0A'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'passive', u'bit', u'bit', False),  # do not create queue
+        (u'durable', u'bit', u'bit', False),  # request a durable queue
+        (u'exclusive', u'bit', u'bit', False),  # request an exclusive queue
+        (u'auto-delete', u'bit', u'bit', False),  # auto-delete queue when unused
+        (u'no-wait', u'no-wait', u'bit', False), 
+        (u'arguments', u'table', u'table', False),  # arguments for declaration
     ]
 
     def __init__(self, queue, passive, durable, exclusive, auto_delete, no_wait, arguments):
@@ -1207,13 +1251,15 @@ class QueueDeclare(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hp?????', 0, self.queue, self.passive, self.durable, self.exclusive, self.auto_delete, self.no_wait))
 
 
 class QueueDelete(AMQPMethod):
@@ -1232,20 +1278,21 @@ class QueueDelete(AMQPMethod):
     FULLNAME = u'queue.delete'
     SYNCHRONOUS = True
     REPLY_WITH = [QueueDeleteOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'if-unused', u'bit', u'bit'),  # delete only if unused
-        (u'if-empty', u'bit', u'bit'),  # delete only if empty
-        (u'no-wait', u'no-wait', u'bit'), 
+    BINARY_HEADER = b'\x32\x28'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'if-unused', u'bit', u'bit', False),  # delete only if unused
+        (u'if-empty', u'bit', u'bit', False),  # delete only if empty
+        (u'no-wait', u'no-wait', u'bit', False), 
     ]
 
     def __init__(self, queue, if_unused, if_empty, no_wait):
         """
         Create frame queue.delete
 
-        :param queue:             Specifies the name of the queue to delete.
-
+        :param queue: Specifies the name of the queue to delete.
         :type queue: queue-name (as shortstr)
         :param if_unused: Delete only if unused
             If set, the server will only delete the queue if it has no consumers. If the
@@ -1262,13 +1309,15 @@ class QueueDelete(AMQPMethod):
         self.if_empty = if_empty
         self.no_wait = no_wait
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hp???', 0, self.queue, self.if_unused, self.if_empty, self.no_wait))
 
 
 class QueueDeclareOk(AMQPMethod):
@@ -1286,11 +1335,13 @@ class QueueDeclareOk(AMQPMethod):
     FULLNAME = u'queue.declare-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = QueueDeclare
-    FIELDS = [
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'message-count', u'message-count', u'long'), 
-        (u'consumer-count', u'long', u'long'),  # number of consumers
+    BINARY_HEADER = b'\x32\x0B'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = QueueDeclare # this is sent in response to queue.declare
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'message-count', u'message-count', u'long', False), 
+        (u'consumer-count', u'long', u'long', False),  # number of consumers
     ]
 
     def __init__(self, queue, message_count, consumer_count):
@@ -1310,13 +1361,15 @@ class QueueDeclareOk(AMQPMethod):
         self.message_count = message_count
         self.consumer_count = consumer_count
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!pII', self.queue, self.message_count, self.consumer_count))
 
 
 class QueueDeleteOk(AMQPMethod):
@@ -1333,28 +1386,31 @@ class QueueDeleteOk(AMQPMethod):
     FULLNAME = u'queue.delete-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = QueueDelete
-    FIELDS = [
-        (u'message-count', u'message-count', u'long'), 
+    BINARY_HEADER = b'\x32\x29'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = QueueDelete # this is sent in response to queue.delete
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'message-count', u'message-count', u'long', False), 
     ]
 
     def __init__(self, message_count):
         """
         Create frame queue.delete-ok
 
-        :param message_count:             Reports the number of messages deleted.
-
+        :param message_count: Reports the number of messages deleted.
         :type message_count: message-count (as long)
         """
         self.message_count = message_count
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!I', self.message_count))
 
 
 class QueuePurge(AMQPMethod):
@@ -1372,31 +1428,34 @@ class QueuePurge(AMQPMethod):
     FULLNAME = u'queue.purge'
     SYNCHRONOUS = True
     REPLY_WITH = [QueuePurgeOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'no-wait', u'no-wait', u'bit'), 
+    BINARY_HEADER = b'\x32\x1E'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'no-wait', u'no-wait', u'bit', False), 
     ]
 
     def __init__(self, queue, no_wait):
         """
         Create frame queue.purge
 
-        :param queue:             Specifies the name of the queue to purge.
-
+        :param queue: Specifies the name of the queue to purge.
         :type queue: queue-name (as shortstr)
         :type no_wait: no-wait (as bit)
         """
         self.queue = queue
         self.no_wait = no_wait
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hp?', 0, self.queue, self.no_wait))
 
 
 class QueuePurgeOk(AMQPMethod):
@@ -1413,28 +1472,31 @@ class QueuePurgeOk(AMQPMethod):
     FULLNAME = u'queue.purge-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = QueuePurge
-    FIELDS = [
-        (u'message-count', u'message-count', u'long'), 
+    BINARY_HEADER = b'\x32\x1F'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = QueuePurge # this is sent in response to queue.purge
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'message-count', u'message-count', u'long', False), 
     ]
 
     def __init__(self, message_count):
         """
         Create frame queue.purge-ok
 
-        :param message_count:             Reports the number of messages purged.
-
+        :param message_count: Reports the number of messages purged.
         :type message_count: message-count (as long)
         """
         self.message_count = message_count
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!I', self.message_count))
 
 
 class QueueUnbind(AMQPMethod):
@@ -1451,23 +1513,23 @@ class QueueUnbind(AMQPMethod):
     FULLNAME = u'queue.unbind'
     SYNCHRONOUS = True
     REPLY_WITH = [QueueUnbindOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'exchange', u'exchange-name', u'shortstr'), 
-        (u'routing-key', u'shortstr', u'shortstr'),  # routing key of binding
-        (u'arguments', u'table', u'table'),  # arguments of binding
+    BINARY_HEADER = b'\x32\x32'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'exchange', u'exchange-name', u'shortstr', False), 
+        (u'routing-key', u'shortstr', u'shortstr', False),  # routing key of binding
+        (u'arguments', u'table', u'table', False),  # arguments of binding
     ]
 
     def __init__(self, queue, exchange, routing_key, arguments):
         """
         Create frame queue.unbind
 
-        :param queue:             Specifies the name of the queue to unbind.
-
+        :param queue: Specifies the name of the queue to unbind.
         :type queue: queue-name (as shortstr)
-        :param exchange:             The name of the exchange to unbind from.
-
+        :param exchange: The name of the exchange to unbind from.
         :type exchange: exchange-name (as shortstr)
         :param routing_key: Routing key of binding
             Specifies the routing key of the binding to unbind.
@@ -1481,13 +1543,15 @@ class QueueUnbind(AMQPMethod):
         self.routing_key = routing_key
         self.arguments = arguments
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hppp', 0, self.queue, self.exchange, self.routing_key))
 
 
 class QueueUnbindOk(AMQPMethod):
@@ -1504,28 +1568,19 @@ class QueueUnbindOk(AMQPMethod):
     FULLNAME = u'queue.unbind-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = QueueUnbind
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x32\x33'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = QueueUnbind # this is sent in response to queue.unbind
 
     def __init__(self):
         """
         Create frame queue.unbind-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
 
 class Basic(AMQPClass):
     """
-        The basic class provides methods that support an industry-standard messaging model.
-
+    The basic class provides methods that support an industry-standard messaging model.
     """
     NAME = u'basic'
     INDEX = 60
@@ -1547,9 +1602,11 @@ class BasicAck(AMQPMethod):
     FULLNAME = u'basic.ack'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    FIELDS = [
-        (u'delivery-tag', u'delivery-tag', u'longlong'), 
-        (u'multiple', u'bit', u'bit'),  # acknowledge multiple messages
+    BINARY_HEADER = b'\x3C\x50'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'delivery-tag', u'delivery-tag', u'longlong', False), 
+        (u'multiple', u'bit', u'bit', False),  # acknowledge multiple messages
     ]
 
     def __init__(self, delivery_tag, multiple):
@@ -1567,13 +1624,15 @@ class BasicAck(AMQPMethod):
         self.delivery_tag = delivery_tag
         self.multiple = multiple
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!L?', self.delivery_tag, self.multiple))
 
 
 class BasicConsume(AMQPMethod):
@@ -1592,23 +1651,24 @@ class BasicConsume(AMQPMethod):
     FULLNAME = u'basic.consume'
     SYNCHRONOUS = True
     REPLY_WITH = [BasicConsumeOk]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'consumer-tag', u'consumer-tag', u'shortstr'), 
-        (u'no-local', u'no-local', u'bit'), 
-        (u'no-ack', u'no-ack', u'bit'), 
-        (u'exclusive', u'bit', u'bit'),  # request exclusive access
-        (u'no-wait', u'no-wait', u'bit'), 
-        (u'arguments', u'table', u'table'),  # arguments for declaration
+    BINARY_HEADER = b'\x3C\x14'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
+        (u'no-local', u'no-local', u'bit', False), 
+        (u'no-ack', u'no-ack', u'bit', False), 
+        (u'exclusive', u'bit', u'bit', False),  # request exclusive access
+        (u'no-wait', u'no-wait', u'bit', False), 
+        (u'arguments', u'table', u'table', False),  # arguments for declaration
     ]
 
     def __init__(self, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments):
         """
         Create frame basic.consume
 
-        :param queue:             Specifies the name of the queue to consume from.
-
+        :param queue: Specifies the name of the queue to consume from.
         :type queue: queue-name (as shortstr)
         :param consumer_tag: Specifies the identifier for the consumer. the consumer tag is local to a
             channel, so two clients can use the same consumer tags. If this field is
@@ -1634,13 +1694,15 @@ class BasicConsume(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hpp????', 0, self.queue, self.consumer_tag, self.no_local, self.no_ack, self.exclusive, self.no_wait))
 
 
 class BasicCancel(AMQPMethod):
@@ -1660,9 +1722,11 @@ class BasicCancel(AMQPMethod):
     FULLNAME = u'basic.cancel'
     SYNCHRONOUS = True
     REPLY_WITH = [BasicCancelOk]
-    FIELDS = [
-        (u'consumer-tag', u'consumer-tag', u'shortstr'), 
-        (u'no-wait', u'no-wait', u'bit'), 
+    BINARY_HEADER = b'\x3C\x1E'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
+        (u'no-wait', u'no-wait', u'bit', False), 
     ]
 
     def __init__(self, consumer_tag, no_wait):
@@ -1675,13 +1739,15 @@ class BasicCancel(AMQPMethod):
         self.consumer_tag = consumer_tag
         self.no_wait = no_wait
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!p?', self.consumer_tag, self.no_wait))
 
 
 class BasicConsumeOk(AMQPMethod):
@@ -1699,28 +1765,31 @@ class BasicConsumeOk(AMQPMethod):
     FULLNAME = u'basic.consume-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = BasicConsume
-    FIELDS = [
-        (u'consumer-tag', u'consumer-tag', u'shortstr'), 
+    BINARY_HEADER = b'\x3C\x15'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = BasicConsume # this is sent in response to basic.consume
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
     ]
 
     def __init__(self, consumer_tag):
         """
         Create frame basic.consume-ok
 
-        :param consumer_tag:             Holds the consumer tag specified by the client or provided by the server.
-
+        :param consumer_tag: Holds the consumer tag specified by the client or provided by the server.
         :type consumer_tag: consumer-tag (as shortstr)
         """
         self.consumer_tag = consumer_tag
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!p', self.consumer_tag))
 
 
 class BasicCancelOk(AMQPMethod):
@@ -1737,9 +1806,11 @@ class BasicCancelOk(AMQPMethod):
     FULLNAME = u'basic.cancel-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = BasicCancel
-    FIELDS = [
-        (u'consumer-tag', u'consumer-tag', u'shortstr'), 
+    BINARY_HEADER = b'\x3C\x1F'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = BasicCancel # this is sent in response to basic.cancel
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
     ]
 
     def __init__(self, consumer_tag):
@@ -1750,13 +1821,15 @@ class BasicCancelOk(AMQPMethod):
         """
         self.consumer_tag = consumer_tag
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!p', self.consumer_tag))
 
 
 class BasicDeliver(AMQPMethod):
@@ -1776,12 +1849,14 @@ class BasicDeliver(AMQPMethod):
     FULLNAME = u'basic.deliver'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    FIELDS = [
-        (u'consumer-tag', u'consumer-tag', u'shortstr'), 
-        (u'delivery-tag', u'delivery-tag', u'longlong'), 
-        (u'redelivered', u'redelivered', u'bit'), 
-        (u'exchange', u'exchange-name', u'shortstr'), 
-        (u'routing-key', u'shortstr', u'shortstr'),  # Message routing key
+    BINARY_HEADER = b'\x3C\x3C'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
+        (u'delivery-tag', u'delivery-tag', u'longlong', False), 
+        (u'redelivered', u'redelivered', u'bit', False), 
+        (u'exchange', u'exchange-name', u'shortstr', False), 
+        (u'routing-key', u'shortstr', u'shortstr', False),  # Message routing key
     ]
 
     def __init__(self, consumer_tag, delivery_tag, redelivered, exchange, routing_key):
@@ -1804,13 +1879,15 @@ class BasicDeliver(AMQPMethod):
         self.exchange = exchange
         self.routing_key = routing_key
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!pL?pp', self.consumer_tag, self.delivery_tag, self.redelivered, self.exchange, self.routing_key))
 
 
 class BasicGet(AMQPMethod):
@@ -1829,31 +1906,34 @@ class BasicGet(AMQPMethod):
     FULLNAME = u'basic.get'
     SYNCHRONOUS = True
     REPLY_WITH = [BasicGetOk, BasicGetEmpty]
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'queue', u'queue-name', u'shortstr'), 
-        (u'no-ack', u'no-ack', u'bit'), 
+    BINARY_HEADER = b'\x3C\x46'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'queue', u'queue-name', u'shortstr', False), 
+        (u'no-ack', u'no-ack', u'bit', False), 
     ]
 
     def __init__(self, queue, no_ack):
         """
         Create frame basic.get
 
-        :param queue:             Specifies the name of the queue to get a message from.
-
+        :param queue: Specifies the name of the queue to get a message from.
         :type queue: queue-name (as shortstr)
         :type no_ack: no-ack (as bit)
         """
         self.queue = queue
         self.no_ack = no_ack
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hp?', 0, self.queue, self.no_ack))
 
 
 class BasicGetOk(AMQPMethod):
@@ -1872,13 +1952,15 @@ class BasicGetOk(AMQPMethod):
     FULLNAME = u'basic.get-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = BasicGet
-    FIELDS = [
-        (u'delivery-tag', u'delivery-tag', u'longlong'), 
-        (u'redelivered', u'redelivered', u'bit'), 
-        (u'exchange', u'exchange-name', u'shortstr'), 
-        (u'routing-key', u'shortstr', u'shortstr'),  # Message routing key
-        (u'message-count', u'message-count', u'long'), 
+    BINARY_HEADER = b'\x3C\x47'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = BasicGet # this is sent in response to basic.get
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'delivery-tag', u'delivery-tag', u'longlong', False), 
+        (u'redelivered', u'redelivered', u'bit', False), 
+        (u'exchange', u'exchange-name', u'shortstr', False), 
+        (u'routing-key', u'shortstr', u'shortstr', False),  # Message routing key
+        (u'message-count', u'message-count', u'long', False), 
     ]
 
     def __init__(self, delivery_tag, redelivered, exchange, routing_key, message_count):
@@ -1901,13 +1983,15 @@ class BasicGetOk(AMQPMethod):
         self.routing_key = routing_key
         self.message_count = message_count
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!L?ppI', self.delivery_tag, self.redelivered, self.exchange, self.routing_key, self.message_count))
 
 
 class BasicGetEmpty(AMQPMethod):
@@ -1925,24 +2009,27 @@ class BasicGetEmpty(AMQPMethod):
     FULLNAME = u'basic.get-empty'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = BasicGet
-    FIELDS = [
-        (u'reserved-1', u'shortstr', u'shortstr'), 
+    BINARY_HEADER = b'\x3C\x48'
+    IS_SIZE_STATIC = False
+    RESPONSE_TO = BasicGet # this is sent in response to basic.get
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'shortstr', u'shortstr', True), 
     ]
 
     def __init__(self):
         """
         Create frame basic.get-empty
-
         """
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!p', u''))
 
 
 class BasicPublish(AMQPMethod):
@@ -1961,12 +2048,14 @@ class BasicPublish(AMQPMethod):
     FULLNAME = u'basic.publish'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    FIELDS = [
-        (u'reserved-1', u'short', u'short'), 
-        (u'exchange', u'exchange-name', u'shortstr'), 
-        (u'routing-key', u'shortstr', u'shortstr'),  # Message routing key
-        (u'mandatory', u'bit', u'bit'),  # indicate mandatory routing
-        (u'immediate', u'bit', u'bit'),  # request immediate delivery
+    BINARY_HEADER = b'\x3C\x28'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reserved-1', u'short', u'short', True), 
+        (u'exchange', u'exchange-name', u'shortstr', False), 
+        (u'routing-key', u'shortstr', u'shortstr', False),  # Message routing key
+        (u'mandatory', u'bit', u'bit', False),  # indicate mandatory routing
+        (u'immediate', u'bit', u'bit', False),  # request immediate delivery
     ]
 
     def __init__(self, exchange, routing_key, mandatory, immediate):
@@ -1998,13 +2087,15 @@ class BasicPublish(AMQPMethod):
         self.mandatory = mandatory
         self.immediate = immediate
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hpp??', 0, self.exchange, self.routing_key, self.mandatory, self.immediate))
 
 
 class BasicQos(AMQPMethod):
@@ -2025,10 +2116,12 @@ class BasicQos(AMQPMethod):
     FULLNAME = u'basic.qos'
     SYNCHRONOUS = True
     REPLY_WITH = [BasicQosOk]
-    FIELDS = [
-        (u'prefetch-size', u'long', u'long'),  # prefetch window in octets
-        (u'prefetch-count', u'short', u'short'),  # prefetch window in messages
-        (u'global', u'bit', u'bit'),  # apply to entire connection
+    BINARY_HEADER = b'\x3C\x0A'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'prefetch-size', u'long', u'long', False),  # prefetch window in octets
+        (u'prefetch-count', u'short', u'short', False),  # prefetch window in messages
+        (u'global', u'bit', u'bit', False),  # apply to entire connection
     ]
 
     def __init__(self, prefetch_size, prefetch_count, global_):
@@ -2060,13 +2153,15 @@ class BasicQos(AMQPMethod):
         self.prefetch_count = prefetch_count
         self.global_ = global_
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!IH?', self.prefetch_size, self.prefetch_count, self.global_))
 
 
 class BasicQosOk(AMQPMethod):
@@ -2085,24 +2180,15 @@ class BasicQosOk(AMQPMethod):
     FULLNAME = u'basic.qos-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = BasicQos
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x3C\x0B'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = BasicQos # this is sent in response to basic.qos
 
     def __init__(self):
         """
         Create frame basic.qos-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class BasicReturn(AMQPMethod):
     """
@@ -2121,11 +2207,13 @@ class BasicReturn(AMQPMethod):
     FULLNAME = u'basic.return'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    FIELDS = [
-        (u'reply-code', u'reply-code', u'short'), 
-        (u'reply-text', u'reply-text', u'shortstr'), 
-        (u'exchange', u'exchange-name', u'shortstr'), 
-        (u'routing-key', u'shortstr', u'shortstr'),  # Message routing key
+    BINARY_HEADER = b'\x3C\x32'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'reply-code', u'reply-code', u'short', False), 
+        (u'reply-text', u'reply-text', u'shortstr', False), 
+        (u'exchange', u'exchange-name', u'shortstr', False), 
+        (u'routing-key', u'shortstr', u'shortstr', False),  # Message routing key
     ]
 
     def __init__(self, reply_code, reply_text, exchange, routing_key):
@@ -2146,13 +2234,15 @@ class BasicReturn(AMQPMethod):
         self.exchange = exchange
         self.routing_key = routing_key
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!Hppp', self.reply_code, self.reply_text, self.exchange, self.routing_key))
 
 
 class BasicReject(AMQPMethod):
@@ -2171,9 +2261,11 @@ class BasicReject(AMQPMethod):
     FULLNAME = u'basic.reject'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    FIELDS = [
-        (u'delivery-tag', u'delivery-tag', u'longlong'), 
-        (u'requeue', u'bit', u'bit'),  # requeue the message
+    BINARY_HEADER = b'\x3C\x5A'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'delivery-tag', u'delivery-tag', u'longlong', False), 
+        (u'requeue', u'bit', u'bit', False),  # requeue the message
     ]
 
     def __init__(self, delivery_tag, requeue):
@@ -2189,13 +2281,15 @@ class BasicReject(AMQPMethod):
         self.delivery_tag = delivery_tag
         self.requeue = requeue
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!L?', self.delivery_tag, self.requeue))
 
 
 class BasicRecoverAsync(AMQPMethod):
@@ -2214,8 +2308,10 @@ class BasicRecoverAsync(AMQPMethod):
     FULLNAME = u'basic.recover-async'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    FIELDS = [
-        (u'requeue', u'bit', u'bit'),  # requeue the message
+    BINARY_HEADER = b'\x3C\x64'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'requeue', u'bit', u'bit', False),  # requeue the message
     ]
 
     def __init__(self, requeue):
@@ -2230,13 +2326,15 @@ class BasicRecoverAsync(AMQPMethod):
         """
         self.requeue = requeue
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!?', self.requeue))
 
 
 class BasicRecover(AMQPMethod):
@@ -2255,8 +2353,10 @@ class BasicRecover(AMQPMethod):
     FULLNAME = u'basic.recover'
     SYNCHRONOUS = False
     REPLY_WITH = []
-    FIELDS = [
-        (u'requeue', u'bit', u'bit'),  # requeue the message
+    BINARY_HEADER = b'\x3C\x6E'
+    IS_SIZE_STATIC = False
+    FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
+        (u'requeue', u'bit', u'bit', False),  # requeue the message
     ]
 
     def __init__(self, requeue):
@@ -2271,13 +2371,15 @@ class BasicRecover(AMQPMethod):
         """
         self.requeue = requeue
 
-    def to_frame(self):
+    def write_arguments(self, out):
         """
-        Return self as bytes
+        Return this method frame as binary
 
-        :return: AMQP frame payload
+        :param out: a callable that will be invoked (possibly many times) with
+            parts of the arguments section.
+        :type out: callable(part_of_frame: binary type) -> nevermind
         """
-        raise NotImplementedError()
+        out(struct.pack('!?', self.requeue))
 
 
 class BasicRecoverOk(AMQPMethod):
@@ -2294,22 +2396,14 @@ class BasicRecoverOk(AMQPMethod):
     FULLNAME = u'basic.recover-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x3C\x6F'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
 
     def __init__(self):
         """
         Create frame basic.recover-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
 
 class Tx(AMQPClass):
     """
@@ -2343,23 +2437,14 @@ class TxCommit(AMQPMethod):
     FULLNAME = u'tx.commit'
     SYNCHRONOUS = True
     REPLY_WITH = [TxCommitOk]
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x5A\x14'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
 
     def __init__(self):
         """
         Create frame tx.commit
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class TxCommitOk(AMQPMethod):
     """
@@ -2376,24 +2461,15 @@ class TxCommitOk(AMQPMethod):
     FULLNAME = u'tx.commit-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = TxCommit
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x5A\x15'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = TxCommit # this is sent in response to tx.commit
 
     def __init__(self):
         """
         Create frame tx.commit-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class TxRollback(AMQPMethod):
     """
@@ -2412,23 +2488,14 @@ class TxRollback(AMQPMethod):
     FULLNAME = u'tx.rollback'
     SYNCHRONOUS = True
     REPLY_WITH = [TxRollbackOk]
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x5A\x1E'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
 
     def __init__(self):
         """
         Create frame tx.rollback
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class TxRollbackOk(AMQPMethod):
     """
@@ -2445,24 +2512,15 @@ class TxRollbackOk(AMQPMethod):
     FULLNAME = u'tx.rollback-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = TxRollback
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x5A\x1F'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = TxRollback # this is sent in response to tx.rollback
 
     def __init__(self):
         """
         Create frame tx.rollback-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class TxSelect(AMQPMethod):
     """
@@ -2479,23 +2537,14 @@ class TxSelect(AMQPMethod):
     FULLNAME = u'tx.select'
     SYNCHRONOUS = True
     REPLY_WITH = [TxSelectOk]
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x5A\x0A'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
 
     def __init__(self):
         """
         Create frame tx.select
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 class TxSelectOk(AMQPMethod):
     """
@@ -2512,24 +2561,15 @@ class TxSelectOk(AMQPMethod):
     FULLNAME = u'tx.select-ok'
     SYNCHRONOUS = True
     REPLY_WITH = []
-    RESPONSE_TO = TxSelect
-    FIELDS = [
-    ]
+    BINARY_HEADER = b'\x5A\x0B'
+    IS_SIZE_STATIC = True
+    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+    RESPONSE_TO = TxSelect # this is sent in response to tx.select
 
     def __init__(self):
         """
         Create frame tx.select-ok
-
         """
-
-    def to_frame(self):
-        """
-        Return self as bytes
-
-        :return: AMQP frame payload
-        """
-        raise NotImplementedError()
-
 
 IDENT_TO_METHOD = {
     (90, 21): TxCommitOk,
