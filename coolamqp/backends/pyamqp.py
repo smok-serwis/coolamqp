@@ -34,14 +34,14 @@ def translate_exceptions(fun):
                 amqp.exceptions.ResourceError,
                 amqp.exceptions.ResourceLocked,
                 amqp.exceptions.AccessRefused) as e:
-            logger.warn('py-amqp: backend reports %s:%s', e.reply_code, e.reply_text)
+            logger.warn('py-amqp: backend reports %s', repr(e))
             raise RemoteAMQPError(e.reply_code, e.reply_text)
         except (IOError,
                 amqp.ConnectionForced,
                 amqp.exceptions.InvalidPath,
                 amqp.IrrecoverableChannelError,
                 amqp.exceptions.UnexpectedFrame) as e:
-            logger.warn('py-amqp: backend reports %s:%s', e.reply_code, e.reply_text)
+            logger.warn('py-amqp: backend reports %s', repr(e))
             raise ConnectionFailedError(e.message if six.PY2 else e.args[0])
     return q
 
