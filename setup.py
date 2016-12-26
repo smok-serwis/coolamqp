@@ -12,7 +12,8 @@ setup(name='CoolAMQP',
       keywords=['amqp', 'pyamqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=[
           'coolamqp',
-          'coolamqp.backends'
+          'coolamqp.backends',
+          'coolamqp.framing',
       ],
       license='MIT License',
       long_description=u'The AMQP client that handles reconnection madness for you',
