@@ -27,8 +27,11 @@ class Order(object):
         If this fails, then property .error_code can be read to get the error code.
         and .reply_text has the reply of the server or some other reason. These are set before
         callbacks are called.
+
         Error code is None, if not available, or AMQP constants describing errors,
         eg. 502 for syntax error.
+
+        A discarded or cancelled order is considered FAILED
         """
         self.on_completed = on_completed or _NOOP_COMP
         self.on_failed = on_failed or _NOOP_FAIL
@@ -56,6 +59,12 @@ class Order(object):
         self.on_completed()
         self.lock.release()
 
+    def _discard(self):     # called by handler
+        from coolamqp.backends.base import Discarded
+        self.discarded = True
+        self.on_failed(Discarded())
+        self.lock.release()
+
     def _failed(self, e):       # called by handler
         """
         :param e: AMQPError instance or Cancelled instance
@@ -76,10 +85,9 @@ class Order(object):
 
     def has_failed(self):
         """Return whether the operation failed, ie. completed but with an error code.
-        User-cancelled operations are not failed.
+        Cancelled and discarded ops are considered failed.
         This assumes that this order has been .wait()ed upon"""
-        assert self._result is not None
-        return not (self.cancelled or self._result is True)
+        return self._result is True
 
     def result(self):
         """Wait until this is completed and return a response"""
@@ -134,7 +142,6 @@ class ConsumeQueue(_Queue):
     def __init__(self, queue, no_ack=False, on_completed=None, on_failed=None):
         _Queue.__init__(self, queue, on_completed=on_completed, on_failed=on_failed)
         self.no_ack = no_ack
-
 
 
 class DeleteQueue(_Queue):

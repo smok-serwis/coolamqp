@@ -1,13 +1,13 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 import unittest
-from threading import Lock
 import time
+import socket
 import collections
-import os
 import monotonic
 
 from coolamqp import Cluster, ClusterNode, ConnectionUp, ConnectionDown, ConnectionUp, ConsumerCancelled
+from coolamqp.backends.base import AMQPBackend, ConnectionFailedError
 
 
 def getamqp():
@@ -23,47 +23,15 @@ class CoolAMQPTestCase(unittest.TestCase):
     """
     INIT_AMQP = True      # override on child classes
 
-
-    def new_amqp_connection(self, consume_connectionup=True):
-        obj = self
-
-        class CM(object):
-            """Context manager. Get new AMQP uplink. Consume ConnectionUp if consume_connectionup
-
-            Use like:
-
-                with self.new_amqp_connection() as amqp2:
-                    amqp2.consume(...)
-
-            """
-            def __enter__(self):
-                self.amqp = getamqp()
-                if consume_connectionup:
-                    obj.assertIsInstance(self.amqp.drain(3), ConnectionUp)
-                return self.amqp
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                self.amqp.shutdown()
-                return False
-        return CM()
-    def restart_rmq(self):
-        # forcibly reset the connection
-        class FailbowlSocket(object):
-            def __getattr__(self, name):
-                import socket
-                raise socket.error()
-
-        self.amqp.thread.backend.channel.connection.transport.sock = FailbowlSocket()
-
-        self.drainTo([ConnectionDown, ConnectionUp], [5, 10])
-
     def setUp(self):
         if self.INIT_AMQP:
-            os.system('sudo service rabbitmq-server start') # if someone killed it
             self.__newam = self.new_amqp_connection()
             self.amqp = self.__newam.__enter__()
 
     def tearDown(self):
+        # if you didn't unfail AMQP, that means you don't know what you doing
+        self.assertRaises(AttributeError, lambda: self.old_backend)
+
         if self.INIT_AMQP:
             self.__newam.__exit__(None, None, None)
 
@@ -116,14 +84,92 @@ class CoolAMQPTestCase(unittest.TestCase):
 
         :param max_time: in seconds
         """
-        test = self
+        return TakesLessThanCM(self, max_time)
 
-        class CM(object):
-            def __enter__(self):
-                self.started_at = time.time()
+    # ======failures
+    def single_fail_amqp(self):    # insert single failure
+        sock = self.amqp.thread.backend.channel.connection.transport.sock
+        self.amqp.thread.backend.channel.connection.transport.sock = FailbowlSocket()
+        self.amqp.thread.backend.channel.connection = None  # 'connection already closed' or sth like that
 
-            def __exit__(self, tp, v, tb):
-                test.assertLess(time.time() - self.started_at, max_time)
-                return False
+        sock.close()
 
-        return CM()
+    def fail_amqp(self):    # BROKER DEAD: SWITCH ON
+
+        self.old_backend = self.amqp.backend
+        self.amqp.backend = FailbowlBackend
+
+    def unfail_amqp(self):  # BROKER DEAD: SWITCH OFF
+        self.amqp.backend = self.old_backend
+        del self.old_backend
+
+    def restart_rmq(self):  # simulate a broker restart
+       self.fail_amqp()
+       self.single_fail_amqp()
+       time.sleep(3)
+       self.unfail_amqp()
+
+       self.drainTo([ConnectionDown, ConnectionUp], [5, 20])
+
+    def new_amqp_connection(self, consume_connectionup=True):
+       return AMQPConnectionCM(self, consume_connectionup=consume_connectionup)
+
+
+class TakesLessThanCM(object):
+    def __init__(self, testCase, max_time):
+        self.test = testCase
+        self.max_time = max_time
+
+    def __enter__(self, testCase, max_time):
+        self.started_at = time.time()
+        return lambda: time.time() - self.started_at > self.max_time    # is_late
+
+    def __exit__(self, tp, v, tb):
+        self.test.assertLess(time.time() - self.started_at, self.max_time)
+        return False
+
+
+class AMQPConnectionCM(object):
+    """Context manager. Get new AMQP uplink. Consume ConnectionUp if consume_connectionup
+
+    Use like:
+
+        with self.new_amqp_connection() as amqp2:
+            amqp2.consume(...)
+
+    """
+    def __init__(self, testCase, consume_connectionup):
+        self.test = testCase
+        self.consume_connectionup = consume_connectionup
+
+    def __enter__(self):
+        self.amqp = getamqp()
+        if self.consume_connectionup:
+            self.test.assertIsInstance(self.amqp.drain(3), ConnectionUp)
+        return self.amqp
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.amqp.shutdown()
+        return False
+
+
+class FailbowlBackend(AMQPBackend):
+    def __init__(self, node, thread):
+        AMQPBackend.__init__(self, node, thread)
+        raise ConnectionFailedError('Failbowl')
+
+
+class FailbowlSocket(object):
+    def __getattr__(self, item):
+        def failbowl(*args, **kwargs):
+            time.sleep(1)   # hang and fail
+            raise socket.error
+
+        def sleeper(*args, **kwargs):
+            time.sleep(1)  # hang and fail
+
+        if item in ('close', 'shutdown'):
+            return sleeper
+        else:
+            return failbowl
+

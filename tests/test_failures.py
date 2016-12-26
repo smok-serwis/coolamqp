@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
-import os
 import time
 from coolamqp import Cluster, ClusterNode, Queue, MessageReceived, ConnectionUp, \
     ConnectionDown, ConsumerCancelled, Message, Exchange
@@ -13,13 +12,15 @@ NODE = ClusterNode('127.0.0.1', 'guest', 'guest')
 from tests.utils import CoolAMQPTestCase
 
 
-class TestSpecialCases(unittest.TestCase):
+class TestSpecialCases(CoolAMQPTestCase):
+    INIT_AMQP = False
+
     def test_termination_while_disconnect(self):
         self.amqp = Cluster([NODE])
         self.amqp.start()
         self.assertIsInstance(self.amqp.drain(wait=1), ConnectionUp)
 
-        os.system("sudo service rabbitmq-server stop")
+        self.fail_amqp()
         time.sleep(5)
         self.assertIsInstance(self.amqp.drain(wait=1), ConnectionDown)
 
@@ -27,7 +28,7 @@ class TestSpecialCases(unittest.TestCase):
         self.assertIsNone(self.amqp.thread.backend)
         self.assertFalse(self.amqp.connected)
 
-        os.system("sudo service rabbitmq-server start")
+        self.unfail_amqp()
 
 
 class TestFailures(CoolAMQPTestCase):
@@ -36,10 +37,11 @@ class TestFailures(CoolAMQPTestCase):
         self.amqp.cancel(Queue('hello world')).result()
 
     def test_longer_disconnects(self):
-        os.system("sudo service rabbitmq-server stop")
+        self.fail_amqp()
+        time.sleep(3)
         self.drainTo(ConnectionDown, 4)
         time.sleep(12)
-        os.system("sudo service rabbitmq-server start")
+        self.unfail_amqp()
         self.drainTo(ConnectionUp, 35)
 
     def test_qos_redeclared_on_fail(self):
@@ -58,11 +60,11 @@ class TestFailures(CoolAMQPTestCase):
         self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
 
     def test_connection_flags_are_okay(self):
-        os.system("sudo service rabbitmq-server stop")
-        self.assertIsInstance(self.amqp.drain(wait=4), ConnectionDown)
+        self.fail_amqp()
+        self.drainTo(ConnectionDown, 8)
         self.assertFalse(self.amqp.connected)
-        os.system("sudo service rabbitmq-server start")
-        self.assertIsInstance(self.amqp.drain(wait=20), ConnectionUp)
+        self.unfail_amqp()
+        self.drainTo(ConnectionUp, 5)
         self.assertTrue(self.amqp.connected)
 
     def test_sending_a_message_is_cancelled(self):
@@ -70,7 +72,7 @@ class TestFailures(CoolAMQPTestCase):
 
         self.amqp.consume(Queue('wtf1', exclusive=True))
 
-        os.system("sudo service rabbitmq-server stop")
+        self.fail_amqp()
         self.drainTo(ConnectionDown, 5)
 
         p = self.amqp.send(Message(b'what the fuck'), routing_key='wtf1')
@@ -78,7 +80,7 @@ class TestFailures(CoolAMQPTestCase):
         self.assertTrue(p.wait())
         self.assertFalse(p.has_failed())
 
-        os.system("sudo service rabbitmq-server start")
+        self.fail_unamqp()
         self.drainToAny([ConnectionUp], 30, forbidden=[MessageReceived])
 
     def test_qos_after_failure(self):
@@ -88,12 +90,11 @@ class TestFailures(CoolAMQPTestCase):
         self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
         self.amqp.send(Message(b'what the fuck'), '', routing_key='lol')
 
-        p = self.amqp.drain(wait=4)
-        self.assertIsInstance(p, MessageReceived)
+        p = self.drainTo(MessageReceived, 4)
 
         self.assertIsNone(self.amqp.drain(wait=5))
         p.message.ack()
-        self.assertIsInstance(self.amqp.drain(wait=4), MessageReceived)
+        self.drainTo(MessageReceived, 4)
 
         self.restart_rmq()
 
@@ -108,15 +109,14 @@ class TestFailures(CoolAMQPTestCase):
 
     def test_connection_down_and_up_redeclare_queues(self):
         """are messages generated at all? does it reconnect?"""
-
-        q1 = Queue('wtf1', exclusive=True)
+        q1 = Queue('wtf1', exclusive=True, auto_delete=True)
         self.amqp.consume(q1).result()
 
         self.restart_rmq()
 
         self.amqp.send(Message(b'what the fuck'), routing_key='wtf1')
 
-        self.drainTo(MessageReceived, 20)
+        self.drainTo(MessageReceived, 10)
 
     def test_exchanges_are_redeclared(self):
         xchg = Exchange('a_fanout', type='fanout')

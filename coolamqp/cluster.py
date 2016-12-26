@@ -94,6 +94,8 @@ class Cluster(object):
             Will be discarded upon fail.
         :param on_completed: callable/0 to call when this succeeds
         :param on_failed: callable/1 to call when this fails with AMQPError instance
+            or Cancelled instance if user cancelled this order
+            or Discarded instance if message discarded due to 'discard_on_fail'
         :return: a Future with this order's status
         """
         a = SendMessage(message, exchange or Exchange.direct, routing_key,

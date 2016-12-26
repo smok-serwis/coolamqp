@@ -46,48 +46,67 @@ class ClusterHandlerThread(threading.Thread):
 
         self.qos = None # or tuple (prefetch_size, prefetch_count) if QoS set
 
+    def _reconnect_attempt(self):
+        """Single attempt to regain connectivity. May raise ConnectionFailedError"""
+        self.backend = None
+        if self.backend is not None:
+            self.backend.shutdown()
+            self.backend = None
+
+        self.connect_id += 1
+        node = six.next(self.cluster.node_to_connect_to)
+        logger.info('Connecting to %s', node)
+
+        self.backend = self.cluster.backend(node, self)
+
+        if self.qos is not None:
+            pre_siz, pre_cou, glob = self.qos
+            self.backend.basic_qos(pre_siz, pre_cou, glob)
+
+        for exchange in self.declared_exchanges.values():
+            self.backend.exchange_declare(exchange)
+
+        failed_queues = []
+        for queue, no_ack in self.queues_by_consumer_tags.values():
+            while True:
+                try:
+                    self.backend.queue_declare(queue)
+                    if queue.exchange is not None:
+                        self.backend.queue_bind(queue, queue.exchange)
+                    self.backend.basic_consume(queue, no_ack=no_ack)
+                    logger.info('Consuming from %s no_ack=%s', queue, no_ack)
+                except RemoteAMQPError as e:
+                    if e.code in (403, 405):  # access refused, resource locked
+                        # Ok, queue, what should we do?
+                        if queue.locked_after_reconnect == 'retry':
+                            time.sleep(0.1)
+                            continue    # retry until works
+                        elif queue.locked_after_reconnect == 'cancel':
+                            self.event_queue.put(ConsumerCancelled(queue, ConsumerCancelled.REFUSED_ON_RECONNECT))
+                            failed_queues.append(queue)
+                        elif queue.locked_after_reconnect == 'defer':
+                            self.order_queue.append(ConsumeQueue(queue, no_ack=no_ack))
+                            failed_queues.append(queue)
+                        else:
+                            raise Exception('wtf')
+                    else:
+                        raise  # idk
+                break
+
+        for failed_queue in failed_queues:
+            del self.queues_by_consumer_tags[failed_queue.consumer_tag]
+
     def _reconnect(self):
+        """Regain connectivity to cluster. May block for a very long time,
+        as it will not """
         exponential_backoff_delay = 1
 
         while not self.cluster.connected:
-            if self.backend is not None:
-                self.backend.shutdown()
-                self.backend = None
-
-            self.connect_id += 1
-            node = six.next(self.cluster.node_to_connect_to)
-            logger.info('Connecting to %s', node)
-
             try:
-                self.backend = self.cluster.backend(node, self)
-
-                if self.qos is not None:
-                    pre_siz, pre_cou, glob = self.qos
-                    self.backend.basic_qos(pre_siz, pre_cou, glob)
-
-                for exchange in self.declared_exchanges.values():
-                    self.backend.exchange_declare(exchange)
-
-                failed_queues = []
-                for queue, no_ack in self.queues_by_consumer_tags.values():
-                    try:
-                        self.backend.queue_declare(queue)
-                        if queue.exchange is not None:
-                            self.backend.queue_bind(queue, queue.exchange)
-                        self.backend.basic_consume(queue, no_ack=no_ack)
-                    except RemoteAMQPError as e:
-                        if e.code in (403, 405): # access refused, resource locked
-                            self.event_queue.put(ConsumerCancelled(queue, ConsumerCancelled.REFUSED_ON_RECONNECT))
-                            failed_queues.append(queue)
-                    else:
-                        raise
-
-                for failed_queue in failed_queues:
-                    del self.queues_by_consumer_tags[failed_queue.consumer_tag]
-
+                self._reconnect_attempt()
             except ConnectionFailedError as e:
                 # a connection failure happened :(
-                logger.warning('Connecting to %s failed due to %s', node, repr(e))
+                logger.warning('Connecting failed due to %s while connecting and initial setup', repr(e))
                 self.cluster.connected = False
                 if self.backend is not None:
                     self.backend.shutdown()
@@ -99,6 +118,7 @@ class ClusterHandlerThread(threading.Thread):
 
                 exponential_backoff_delay = min(60, exponential_backoff_delay * 2)
             else:
+                logger.info('Connected to AMQP broker via %s', self.backend)
                 self.cluster.connected = True
                 self.event_queue.put(ConnectionUp(initial=self.first_connect))
                 self.first_connect = False
@@ -159,7 +179,8 @@ class ClusterHandlerThread(threading.Thread):
         except RemoteAMQPError as e:
             logger.error('Remote AMQP error: %s', e)
             order._failed(e)  # we are allowed to go on
-        except ConnectionFailedError:
+        except ConnectionFailedError as e:
+            logger.error('Connection failed while %s: %s', order, e)
             self.order_queue.appendleft(order)
             raise
         else:
@@ -178,7 +199,24 @@ class ClusterHandlerThread(threading.Thread):
                 logger.warning('Connection to broker lost: %s', e)
                 self.cluster.connected = False
                 self.event_queue.put(ConnectionDown())
-                self._reconnect()
+
+                # =========================== remove SendMessagees with discard_on_fail
+                my_orders = []      # because order_queue is used by many threads
+                while len(self.order_queue) > 0:
+                    order = self.order_queue.popleft()
+                    if isinstance(order, SendMessage):
+                        if order.message.discard_on_fail:
+                            order._discard()
+                            continue
+
+                    my_orders.append(order)
+
+                # Ok, we have them in order of execution. Append-left in reverse order
+                # to preserve previous order
+                for order in reversed(my_orders):
+                    my_orders.appendleft(order)
+
+            self._reconnect()
 
     def run(self):
         try:

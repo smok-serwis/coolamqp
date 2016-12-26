@@ -23,9 +23,22 @@ def translate_exceptions(fun):
     def q(*args, **kwargs):
         try:
             return fun(*args, **kwargs)
+        except (amqp.exceptions.ConsumerCancelled):
+            # I did not expect those here. Channel must be really bad.
+            raise ConnectionFailedError('WTF: '+(e.message if six.PY2 else e.args[0]))
+        except (amqp.exceptions.Blocked, ) as e:
+            pass    # too bad
         except (amqp.RecoverableChannelError,
                 amqp.exceptions.NotFound,
                 amqp.exceptions.AccessRefused) as e:
+
+            try:
+                e.reply_code
+            except AttributeError:
+
+
+            if e.
+
             raise RemoteAMQPError(e.reply_code, e.reply_text)
         except (IOError,
                 amqp.ConnectionForced,
@@ -56,6 +69,7 @@ class PyAMQPBackend(AMQPBackend):
 
     def shutdown(self):
         AMQPBackend.shutdown(self)
+        print 'BACKEND SHUTDOWN START'
         try:
             self.channel.close()
         except:
@@ -64,6 +78,7 @@ class PyAMQPBackend(AMQPBackend):
             self.connection.close()
         except:
             pass
+        print 'BACKEND SHUTDOWN COMPLETE'
 
     @translate_exceptions
     def process(self, max_time=1):

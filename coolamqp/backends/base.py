@@ -140,6 +140,6 @@ class AMQPBackend(object):
     def shutdown(self):
         """
         Close this connection.
-        This is not allowed to return anything.
+        This is not allowed to return anything or raise
         """
         self.cluster_handler_thread = None  # break GC cycles
