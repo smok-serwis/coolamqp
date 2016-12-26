@@ -162,13 +162,6 @@ class ConnectionClose(AMQPMethod):
         self.method_id = method_id
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!HpHH', self.reply_code, self.reply_text, self.class_id, self.method_id))
 
 
@@ -233,13 +226,6 @@ class ConnectionOpen(AMQPMethod):
         self.virtual_host = virtual_host
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!p?', self.virtual_host, 0))
 
 
@@ -270,13 +256,7 @@ class ConnectionOpenOk(AMQPMethod):
         """
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
+        pass # this has a frame, but its only default shortstrs
 
 
 class ConnectionStart(AMQPMethod):
@@ -339,18 +319,12 @@ class ConnectionStart(AMQPMethod):
         self.locales = locales
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!BB', self.version_major, self.version_minor))
         out(struct.pack('!L', len(self.mechanisms)))
         out(self.mechanisms)
         out(struct.pack('!L', len(self.locales)))
         out(self.locales)
+        pass # this has a frame, but its only default shortstrs
 
 
 class ConnectionSecure(AMQPMethod):
@@ -387,15 +361,9 @@ class ConnectionSecure(AMQPMethod):
         self.challenge = challenge
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!L', len(self.challenge)))
         out(self.challenge)
+        pass # this has a frame, but its only default shortstrs
 
 
 class ConnectionStartOk(AMQPMethod):
@@ -451,13 +419,6 @@ class ConnectionStartOk(AMQPMethod):
         self.locale = locale
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!pL', self.mechanism, len(self.response)))
         out(self.response)
         out(struct.pack('!p', self.locale))
@@ -497,15 +458,9 @@ class ConnectionSecureOk(AMQPMethod):
         self.response = response
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!L', len(self.response)))
         out(self.response)
+        pass # this has a frame, but its only default shortstrs
 
 
 class ConnectionTune(AMQPMethod):
@@ -555,13 +510,6 @@ class ConnectionTune(AMQPMethod):
         self.heartbeat = heartbeat
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
 
 
@@ -613,13 +561,6 @@ class ConnectionTuneOk(AMQPMethod):
         self.heartbeat = heartbeat
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
 
 
@@ -679,13 +620,6 @@ class ChannelClose(AMQPMethod):
         self.method_id = method_id
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!HpHH', self.reply_code, self.reply_text, self.class_id, self.method_id))
 
 
@@ -750,13 +684,6 @@ class ChannelFlow(AMQPMethod):
         self.active = active
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!?', self.active))
 
 
@@ -793,13 +720,6 @@ class ChannelFlowOk(AMQPMethod):
         self.active = active
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!?', self.active))
 
 
@@ -829,13 +749,7 @@ class ChannelOpen(AMQPMethod):
         """
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
+        pass # this has a frame, but its only default shortstrs
 
 
 class ChannelOpenOk(AMQPMethod):
@@ -865,15 +779,9 @@ class ChannelOpenOk(AMQPMethod):
         """
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!L', len(self.reserved_1)))
         out(self.reserved_1)
+        pass # this has a frame, but its only default shortstrs
 
 
 class Exchange(AMQPClass):
@@ -956,14 +864,8 @@ class ExchangeDeclare(AMQPMethod):
         self.arguments = arguments
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hpp?????', 0, self.exchange, self.type, self.passive, self.durable, 0, 0, self.no_wait))
+        pass # this has a frame, but its only default shortstrs
 
 
 class ExchangeDelete(AMQPMethod):
@@ -1008,13 +910,6 @@ class ExchangeDelete(AMQPMethod):
         self.no_wait = no_wait
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hp??', 0, self.exchange, self.if_unused, self.no_wait))
 
 
@@ -1138,14 +1033,8 @@ class QueueBind(AMQPMethod):
         self.arguments = arguments
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hppp?', 0, self.queue, self.exchange, self.routing_key, self.no_wait))
+        pass # this has a frame, but its only default shortstrs
 
 
 class QueueBindOk(AMQPMethod):
@@ -1250,14 +1139,8 @@ class QueueDeclare(AMQPMethod):
         self.arguments = arguments
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hp?????', 0, self.queue, self.passive, self.durable, self.exclusive, self.auto_delete, self.no_wait))
+        pass # this has a frame, but its only default shortstrs
 
 
 class QueueDelete(AMQPMethod):
@@ -1308,13 +1191,6 @@ class QueueDelete(AMQPMethod):
         self.no_wait = no_wait
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hp???', 0, self.queue, self.if_unused, self.if_empty, self.no_wait))
 
 
@@ -1360,13 +1236,6 @@ class QueueDeclareOk(AMQPMethod):
         self.consumer_count = consumer_count
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!pII', self.queue, self.message_count, self.consumer_count))
 
 
@@ -1401,13 +1270,6 @@ class QueueDeleteOk(AMQPMethod):
         self.message_count = message_count
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!I', self.message_count))
 
 
@@ -1446,13 +1308,6 @@ class QueuePurge(AMQPMethod):
         self.no_wait = no_wait
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hp?', 0, self.queue, self.no_wait))
 
 
@@ -1487,13 +1342,6 @@ class QueuePurgeOk(AMQPMethod):
         self.message_count = message_count
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!I', self.message_count))
 
 
@@ -1542,14 +1390,8 @@ class QueueUnbind(AMQPMethod):
         self.arguments = arguments
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hppp', 0, self.queue, self.exchange, self.routing_key))
+        pass # this has a frame, but its only default shortstrs
 
 
 class QueueUnbindOk(AMQPMethod):
@@ -1623,13 +1465,6 @@ class BasicAck(AMQPMethod):
         self.multiple = multiple
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!L?', self.delivery_tag, self.multiple))
 
 
@@ -1693,14 +1528,8 @@ class BasicConsume(AMQPMethod):
         self.arguments = arguments
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hpp????', 0, self.queue, self.consumer_tag, self.no_local, self.no_ack, self.exclusive, self.no_wait))
+        pass # this has a frame, but its only default shortstrs
 
 
 class BasicCancel(AMQPMethod):
@@ -1738,13 +1567,6 @@ class BasicCancel(AMQPMethod):
         self.no_wait = no_wait
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!p?', self.consumer_tag, self.no_wait))
 
 
@@ -1780,13 +1602,6 @@ class BasicConsumeOk(AMQPMethod):
         self.consumer_tag = consumer_tag
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!p', self.consumer_tag))
 
 
@@ -1820,13 +1635,6 @@ class BasicCancelOk(AMQPMethod):
         self.consumer_tag = consumer_tag
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!p', self.consumer_tag))
 
 
@@ -1878,13 +1686,6 @@ class BasicDeliver(AMQPMethod):
         self.routing_key = routing_key
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!pL?pp', self.consumer_tag, self.delivery_tag, self.redelivered, self.exchange, self.routing_key))
 
 
@@ -1924,13 +1725,6 @@ class BasicGet(AMQPMethod):
         self.no_ack = no_ack
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hp?', 0, self.queue, self.no_ack))
 
 
@@ -1982,13 +1776,6 @@ class BasicGetOk(AMQPMethod):
         self.message_count = message_count
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!L?ppI', self.delivery_tag, self.redelivered, self.exchange, self.routing_key, self.message_count))
 
 
@@ -2020,13 +1807,7 @@ class BasicGetEmpty(AMQPMethod):
         """
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
+        pass # this has a frame, but its only default shortstrs
 
 
 class BasicPublish(AMQPMethod):
@@ -2085,13 +1866,6 @@ class BasicPublish(AMQPMethod):
         self.immediate = immediate
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hpp??', 0, self.exchange, self.routing_key, self.mandatory, self.immediate))
 
 
@@ -2151,13 +1925,6 @@ class BasicQos(AMQPMethod):
         self.global_ = global_
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!IH?', self.prefetch_size, self.prefetch_count, self.global_))
 
 
@@ -2232,13 +1999,6 @@ class BasicReturn(AMQPMethod):
         self.routing_key = routing_key
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!Hppp', self.reply_code, self.reply_text, self.exchange, self.routing_key))
 
 
@@ -2279,13 +2039,6 @@ class BasicReject(AMQPMethod):
         self.requeue = requeue
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!L?', self.delivery_tag, self.requeue))
 
 
@@ -2324,13 +2077,6 @@ class BasicRecoverAsync(AMQPMethod):
         self.requeue = requeue
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!?', self.requeue))
 
 
@@ -2369,13 +2115,6 @@ class BasicRecover(AMQPMethod):
         self.requeue = requeue
 
     def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
         out(struct.pack('!?', self.requeue))
 
 

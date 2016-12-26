@@ -232,13 +232,6 @@ class AMQPMethod(object):
                 # end
                 if len(method.fields) > 0:
                     line('''\n    def write_arguments(self, out):
-        """
-        Return this method frame as binary
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
 ''')
                     def emit_structs(su):
                         if len(su) == 0:
@@ -250,6 +243,7 @@ class AMQPMethod(object):
                         line('))\n')
 
                     good_structs = []
+                    written = False
                     for field in method.fields:
                         if field.type not in BASIC_TYPES:
                             tp = domain_to_basic_type[field.type]
@@ -261,6 +255,7 @@ class AMQPMethod(object):
 
                             if tp == 'longstr':
                                 good_structs.append(('L', 'len(self.'+name_field(field.name)+')'))
+                                written = True
 
                             emit_structs(good_structs)
                             good_structs = []
@@ -268,6 +263,7 @@ class AMQPMethod(object):
                             # emit ours
                             if tp == 'longstr':
                                 line('        out(self.'+name_field(field.name)+')\n')
+                                written = True
                         else:
                             # special case - empty string
                             if tp == 'shortstr' and field.reserved:
@@ -275,7 +271,12 @@ class AMQPMethod(object):
 
                             val = 'self.'+name_field(field.name) if not field.reserved else frepr(BASIC_TYPES[tp][2], sop=six.binary_type)
                             good_structs.append((BASIC_TYPES[tp][1], val))
+                            written = True
+                    written = written and len(good_structs) > 0
                     emit_structs(good_structs)
+
+                    if not written:
+                        line('        pass # this has a frame, but it''s only default shortstrs\n')
                     line('\n')
 
 
