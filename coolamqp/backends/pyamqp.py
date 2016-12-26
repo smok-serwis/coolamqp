@@ -25,25 +25,23 @@ def translate_exceptions(fun):
             return fun(*args, **kwargs)
         except (amqp.exceptions.ConsumerCancelled):
             # I did not expect those here. Channel must be really bad.
+            logger.critical('Found consumer cancelled where it should not be')
             raise ConnectionFailedError('WTF: '+(e.message if six.PY2 else e.args[0]))
-        except (amqp.exceptions.Blocked, ) as e:
-            pass    # too bad
         except (amqp.RecoverableChannelError,
                 amqp.exceptions.NotFound,
+                amqp.exceptions.NoConsumers,
+                amqp.exceptions.ResourceLocked,
+                amqp.exceptions.ResourceError,
+                amqp.exceptions.ResourceLocked,
                 amqp.exceptions.AccessRefused) as e:
-
-            try:
-                e.reply_code
-            except AttributeError:
-
-
-            if e.
-
+            logger.warn('py-amqp: backend reports %s:%s', e.reply_code, e.reply_text)
             raise RemoteAMQPError(e.reply_code, e.reply_text)
         except (IOError,
                 amqp.ConnectionForced,
+                amqp.exceptions.InvalidPath,
                 amqp.IrrecoverableChannelError,
                 amqp.exceptions.UnexpectedFrame) as e:
+            logger.warn('py-amqp: backend reports %s:%s', e.reply_code, e.reply_text)
             raise ConnectionFailedError(e.message if six.PY2 else e.args[0])
     return q
 
