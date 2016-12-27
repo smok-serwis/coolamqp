@@ -145,15 +145,15 @@ class ConnectionClose(AMQPMethodPayload):
         """
         Create frame connection.close
 
-        :type reply_code: reply-code (as short)
-        :type reply_text: reply-text (as shortstr)
+        :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
+        :type reply_text: binary type (max length 255) (reply-text in AMQP)
         :param class_id: Failing method class
             When the close is provoked by a method exception, this is the class of the
             method.
-        :type class_id: class-id (as short)
+        :type class_id: int, 16 bit unsigned (class-id in AMQP)
         :param method_id: Failing method id
             When the close is provoked by a method exception, this is the ID of the method.
-        :type method_id: method-id (as short)
+        :type method_id: int, 16 bit unsigned (method-id in AMQP)
         """
         self.reply_code = reply_code
         self.reply_text = reply_text
@@ -266,7 +266,7 @@ class ConnectionOpen(AMQPMethodPayload):
 
         :param virtual_host: Virtual host name
             The name of the virtual host to work with.
-        :type virtual_host: path (as shortstr)
+        :type virtual_host: binary type (max length 255) (path in AMQP)
         """
         self.virtual_host = virtual_host
 
@@ -383,25 +383,25 @@ class ConnectionStart(AMQPMethodPayload):
         :param version_major: Protocol major version
             The major version number can take any value from 0 to 99 as defined in the
             AMQP specification.
-        :type version_major: octet (as octet)
+        :type version_major: int, 8 bit unsigned (octet in AMQP)
         :param version_minor: Protocol minor version
             The minor version number can take any value from 0 to 99 as defined in the
             AMQP specification.
-        :type version_minor: octet (as octet)
+        :type version_minor: int, 8 bit unsigned (octet in AMQP)
         :param server_properties: Server properties
             The properties SHOULD contain at least these fields: "host", specifying the
             server host name or address, "product", giving the name of the server product,
             "version", giving the name of the server version, "platform", giving the name
             of the operating system, "copyright", if appropriate, and "information", giving
             other general information.
-        :type server_properties: peer-properties (as table)
+        :type server_properties: table. See coolamqp.framing.frames.field_table (peer-properties in AMQP)
         :param mechanisms: Available security mechanisms
             A list of the security mechanisms that the server supports, delimited by spaces.
-        :type mechanisms: longstr (as longstr)
+        :type mechanisms: binary type (longstr in AMQP)
         :param locales: Available message locales
             A list of the message locales that the server supports, delimited by spaces. The
             locale defines the language in which the server will send reply texts.
-        :type locales: longstr (as longstr)
+        :type locales: binary type (longstr in AMQP)
         """
         self.version_major = version_major
         self.version_minor = version_minor
@@ -477,7 +477,7 @@ class ConnectionSecure(AMQPMethodPayload):
         :param challenge: Security challenge data
             Challenge information, a block of opaque binary data passed to the security
             mechanism.
-        :type challenge: longstr (as longstr)
+        :type challenge: binary type (longstr in AMQP)
         """
         self.challenge = challenge
 
@@ -543,19 +543,19 @@ class ConnectionStartOk(AMQPMethodPayload):
             of the client product, "version", giving the name of the client version, "platform",
             giving the name of the operating system, "copyright", if appropriate, and
             "information", giving other general information.
-        :type client_properties: peer-properties (as table)
+        :type client_properties: table. See coolamqp.framing.frames.field_table (peer-properties in AMQP)
         :param mechanism: Selected security mechanism
             A single security mechanisms selected by the client, which must be one of those
             specified by the server.
-        :type mechanism: shortstr (as shortstr)
+        :type mechanism: binary type (max length 255) (shortstr in AMQP)
         :param response: Security response data
             A block of opaque data passed to the security mechanism. The contents of this
             data are defined by the SASL security mechanism.
-        :type response: longstr (as longstr)
+        :type response: binary type (longstr in AMQP)
         :param locale: Selected message locale
             A single message locale selected by the client, which must be one of those
             specified by the server.
-        :type locale: shortstr (as shortstr)
+        :type locale: binary type (max length 255) (shortstr in AMQP)
         """
         self.client_properties = client_properties
         self.mechanism = mechanism
@@ -635,7 +635,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
         :param response: Security response data
             A block of opaque data passed to the security mechanism. The contents of this
             data are defined by the SASL security mechanism.
-        :type response: longstr (as longstr)
+        :type response: binary type (longstr in AMQP)
         """
         self.response = response
 
@@ -698,17 +698,17 @@ class ConnectionTune(AMQPMethodPayload):
         :param channel_max: Proposed maximum channels
             Specifies highest channel number that the server permits.  Usable channel numbers
             are in the range 1..channel-max.  Zero indicates no specified limit.
-        :type channel_max: short (as short)
+        :type channel_max: int, 16 bit unsigned (short in AMQP)
         :param frame_max: Proposed maximum frame size
             The largest frame size that the server proposes for the connection, including
             frame header and end-byte.  The client can negotiate a lower value. Zero means
             that the server does not impose any specific limit but may reject very large
             frames if it cannot allocate resources for them.
-        :type frame_max: long (as long)
+        :type frame_max: int, 32 bit unsigned (long in AMQP)
         :param heartbeat: Desired heartbeat delay
             The delay, in seconds, of the connection heartbeat that the server wants.
             Zero means the server does not want a heartbeat.
-        :type heartbeat: short (as short)
+        :type heartbeat: int, 16 bit unsigned (short in AMQP)
         """
         self.channel_max = channel_max
         self.frame_max = frame_max
@@ -769,18 +769,18 @@ class ConnectionTuneOk(AMQPMethodPayload):
 
         :param channel_max: Negotiated maximum channels
             The maximum total number of channels that the client will use per connection.
-        :type channel_max: short (as short)
+        :type channel_max: int, 16 bit unsigned (short in AMQP)
         :param frame_max: Negotiated maximum frame size
             The largest frame size that the client and server will use for the connection.
             Zero means that the client does not impose any specific limit but may reject
             very large frames if it cannot allocate resources for them. Note that the
             frame-max limit applies principally to content frames, where large contents can
             be broken into frames of arbitrary size.
-        :type frame_max: long (as long)
+        :type frame_max: int, 32 bit unsigned (long in AMQP)
         :param heartbeat: Desired heartbeat delay
             The delay, in seconds, of the connection heartbeat that the client wants. Zero
             means the client does not want a heartbeat.
-        :type heartbeat: short (as short)
+        :type heartbeat: int, 16 bit unsigned (short in AMQP)
         """
         self.channel_max = channel_max
         self.frame_max = frame_max
@@ -851,15 +851,15 @@ class ChannelClose(AMQPMethodPayload):
         """
         Create frame channel.close
 
-        :type reply_code: reply-code (as short)
-        :type reply_text: reply-text (as shortstr)
+        :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
+        :type reply_text: binary type (max length 255) (reply-text in AMQP)
         :param class_id: Failing method class
             When the close is provoked by a method exception, this is the class of the
             method.
-        :type class_id: class-id (as short)
+        :type class_id: int, 16 bit unsigned (class-id in AMQP)
         :param method_id: Failing method id
             When the close is provoked by a method exception, this is the ID of the method.
-        :type method_id: method-id (as short)
+        :type method_id: int, 16 bit unsigned (method-id in AMQP)
         """
         self.reply_code = reply_code
         self.reply_text = reply_text
@@ -972,7 +972,7 @@ class ChannelFlow(AMQPMethodPayload):
         :param active: Start/stop content frames
             If 1, the peer starts sending content frames. If 0, the peer stops sending
             content frames.
-        :type active: bit (as bit)
+        :type active: bool (bit in AMQP)
         """
         self.active = active
 
@@ -1030,7 +1030,7 @@ class ChannelFlowOk(AMQPMethodPayload):
         :param active: Current flow setting
             Confirms the setting of the processed flow method: 1 means the peer will start
             sending or continue to send content frames; 0 means it will not.
-        :type active: bit (as bit)
+        :type active: bool (bit in AMQP)
         """
         self.active = active
 
@@ -1195,13 +1195,13 @@ class ExchangeDeclare(AMQPMethodPayload):
         :param exchange: Exchange names starting with "amq." are reserved for pre-declared and
             standardised exchanges. The client MAY declare an exchange starting with
             "amq." if the passive option is set, or the exchange already exists.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param type: Exchange type
             Each exchange belongs to one of a set of exchange types implemented by the
             server. The exchange types define the functionality of the exchange - i.e. how
             messages are routed through it. It is not valid or meaningful to attempt to
             change the type of an existing exchange.
-        :type type: shortstr (as shortstr)
+        :type type: binary type (max length 255) (shortstr in AMQP)
         :param passive: Do not create exchange
             If set, the server will reply with Declare-Ok if the exchange already
             exists with the same name, and raise an error if not.  The client can
@@ -1209,17 +1209,17 @@ class ExchangeDeclare(AMQPMethodPayload):
             server state. When set, all other method fields except name and no-wait
             are ignored.  A declare with both passive and no-wait has no effect.
             Arguments are compared for semantic equivalence.
-        :type passive: bit (as bit)
+        :type passive: bool (bit in AMQP)
         :param durable: Request a durable exchange
             If set when creating a new exchange, the exchange will be marked as durable.
             Durable exchanges remain active when a server restarts. Non-durable exchanges
             (transient exchanges) are purged if/when a server restarts.
-        :type durable: bit (as bit)
-        :type no_wait: no-wait (as bit)
+        :type durable: bool (bit in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for declaration
             A set of arguments for the declaration. The syntax and semantics of these
             arguments depends on the server implementation.
-        :type arguments: table (as table)
+        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
         """
         self.exchange = exchange
         self.type = type
@@ -1302,13 +1302,13 @@ class ExchangeDelete(AMQPMethodPayload):
         Create frame exchange.delete
 
         :param exchange: The client must not attempt to delete an exchange that does not exist.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param if_unused: Delete only if unused
             If set, the server will only delete the exchange if it has no queue bindings. If
             the exchange has queue bindings the server does not delete it but raises a
             channel exception instead.
-        :type if_unused: bit (as bit)
-        :type no_wait: no-wait (as bit)
+        :type if_unused: bool (bit in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         """
         self.exchange = exchange
         self.if_unused = if_unused
@@ -1478,10 +1478,10 @@ class QueueBind(AMQPMethodPayload):
         Create frame queue.bind
 
         :param queue: Specifies the name of the queue to bind.
-        :type queue: queue-name (as shortstr)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
         :param exchange: Name of the exchange to bind to
             A client MUST NOT be allowed to bind a queue to a non-existent exchange.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
             Specifies the routing key for the binding. The routing key is used for routing
             messages depending on the exchange configuration. Not all exchanges use a
@@ -1491,12 +1491,12 @@ class QueueBind(AMQPMethodPayload):
             key as well.  If the queue name is provided but the routing key is empty, the
             server does the binding with that empty routing key.  The meaning of empty
             routing keys depends on the exchange implementation.
-        :type routing_key: shortstr (as shortstr)
-        :type no_wait: no-wait (as bit)
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for binding
             A set of arguments for the binding. The syntax and semantics of these arguments
             depends on the exchange class.
-        :type arguments: table (as table)
+        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.exchange = exchange
@@ -1631,7 +1631,7 @@ class QueueDeclare(AMQPMethodPayload):
         :param queue: The queue name may be empty, in which case the server must create a new
             queue with a unique generated name and return this to the client in the
             Declare-Ok method.
-        :type queue: queue-name (as shortstr)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
         :param passive: Do not create queue
             If set, the server will reply with Declare-Ok if the queue already
             exists with the same name, and raise an error if not.  The client can
@@ -1639,30 +1639,30 @@ class QueueDeclare(AMQPMethodPayload):
             server state.  When set, all other method fields except name and no-wait
             are ignored.  A declare with both passive and no-wait has no effect.
             Arguments are compared for semantic equivalence.
-        :type passive: bit (as bit)
+        :type passive: bool (bit in AMQP)
         :param durable: Request a durable queue
             If set when creating a new queue, the queue will be marked as durable. Durable
             queues remain active when a server restarts. Non-durable queues (transient
             queues) are purged if/when a server restarts. Note that durable queues do not
             necessarily hold persistent messages, although it does not make sense to send
             persistent messages to a transient queue.
-        :type durable: bit (as bit)
+        :type durable: bool (bit in AMQP)
         :param exclusive: Request an exclusive queue
             Exclusive queues may only be accessed by the current connection, and are
             deleted when that connection closes.  Passive declaration of an exclusive
             queue by other connections are not allowed.
-        :type exclusive: bit (as bit)
+        :type exclusive: bool (bit in AMQP)
         :param auto_delete: Auto-delete queue when unused
             If set, the queue is deleted when all consumers have finished using it.  The last
             consumer can be cancelled either explicitly or because its channel is closed. If
             there was no consumer ever on the queue, it won't be deleted.  Applications can
             explicitly delete auto-delete queues using the Delete method as normal.
-        :type auto_delete: bit (as bit)
-        :type no_wait: no-wait (as bit)
+        :type auto_delete: bool (bit in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for declaration
             A set of arguments for the declaration. The syntax and semantics of these
             arguments depends on the server implementation.
-        :type arguments: table (as table)
+        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.passive = passive
@@ -1744,16 +1744,16 @@ class QueueDelete(AMQPMethodPayload):
         Create frame queue.delete
 
         :param queue: Specifies the name of the queue to delete.
-        :type queue: queue-name (as shortstr)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
         :param if_unused: Delete only if unused
             If set, the server will only delete the queue if it has no consumers. If the
             queue has consumers the server does does not delete it but raises a channel
             exception instead.
-        :type if_unused: bit (as bit)
+        :type if_unused: bool (bit in AMQP)
         :param if_empty: Delete only if empty
             If set, the server will only delete the queue if it has no messages.
-        :type if_empty: bit (as bit)
-        :type no_wait: no-wait (as bit)
+        :type if_empty: bool (bit in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         """
         self.queue = queue
         self.if_unused = if_unused
@@ -1826,12 +1826,12 @@ class QueueDeclareOk(AMQPMethodPayload):
 
         :param queue: Reports the name of the queue. if the server generated a queue name, this field
             contains that name.
-        :type queue: queue-name (as shortstr)
-        :type message_count: message-count (as long)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
+        :type message_count: int, 32 bit unsigned (message-count in AMQP)
         :param consumer_count: Number of consumers
             Reports the number of active consumers for the queue. Note that consumers can
             suspend activity (Channel.Flow) in which case they do not appear in this count.
-        :type consumer_count: long (as long)
+        :type consumer_count: int, 32 bit unsigned (long in AMQP)
         """
         self.queue = queue
         self.message_count = message_count
@@ -1895,7 +1895,7 @@ class QueueDeleteOk(AMQPMethodPayload):
         Create frame queue.delete-ok
 
         :param message_count: Reports the number of messages deleted.
-        :type message_count: message-count (as long)
+        :type message_count: int, 32 bit unsigned (message-count in AMQP)
         """
         self.message_count = message_count
 
@@ -1952,8 +1952,8 @@ class QueuePurge(AMQPMethodPayload):
         Create frame queue.purge
 
         :param queue: Specifies the name of the queue to purge.
-        :type queue: queue-name (as shortstr)
-        :type no_wait: no-wait (as bit)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         """
         self.queue = queue
         self.no_wait = no_wait
@@ -2018,7 +2018,7 @@ class QueuePurgeOk(AMQPMethodPayload):
         Create frame queue.purge-ok
 
         :param message_count: Reports the number of messages purged.
-        :type message_count: message-count (as long)
+        :type message_count: int, 32 bit unsigned (message-count in AMQP)
         """
         self.message_count = message_count
 
@@ -2076,15 +2076,15 @@ class QueueUnbind(AMQPMethodPayload):
         Create frame queue.unbind
 
         :param queue: Specifies the name of the queue to unbind.
-        :type queue: queue-name (as shortstr)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
         :param exchange: The name of the exchange to unbind from.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Routing key of binding
             Specifies the routing key of the binding to unbind.
-        :type routing_key: shortstr (as shortstr)
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
         :param arguments: Arguments of binding
             Specifies the arguments of the binding to unbind.
-        :type arguments: table (as table)
+        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.exchange = exchange
@@ -2213,13 +2213,13 @@ class BasicAck(AMQPMethodPayload):
         """
         Create frame basic.ack
 
-        :type delivery_tag: delivery-tag (as longlong)
+        :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
         :param multiple: Acknowledge multiple messages
             If set to 1, the delivery tag is treated as "up to and including", so that the
             client can acknowledge multiple messages with a single method. If set to zero,
             the delivery tag refers to a single message. If the multiple field is 1, and the
             delivery tag is zero, tells the server to acknowledge all outstanding messages.
-        :type multiple: bit (as bit)
+        :type multiple: bool (bit in AMQP)
         """
         self.delivery_tag = delivery_tag
         self.multiple = multiple
@@ -2285,22 +2285,22 @@ class BasicConsume(AMQPMethodPayload):
         Create frame basic.consume
 
         :param queue: Specifies the name of the queue to consume from.
-        :type queue: queue-name (as shortstr)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
         :param consumer_tag: Specifies the identifier for the consumer. the consumer tag is local to a
             channel, so two clients can use the same consumer tags. If this field is
             empty the server will generate a unique tag.
-        :type consumer_tag: consumer-tag (as shortstr)
-        :type no_local: no-local (as bit)
-        :type no_ack: no-ack (as bit)
+        :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
+        :type no_local: bool (no-local in AMQP)
+        :type no_ack: bool (no-ack in AMQP)
         :param exclusive: Request exclusive access
             Request exclusive consumer access, meaning only this consumer can access the
             queue.
-        :type exclusive: bit (as bit)
-        :type no_wait: no-wait (as bit)
+        :type exclusive: bool (bit in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for declaration
             A set of arguments for the consume. The syntax and semantics of these
             arguments depends on the server implementation.
-        :type arguments: table (as table)
+        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.consumer_tag = consumer_tag
@@ -2384,8 +2384,8 @@ class BasicCancel(AMQPMethodPayload):
         """
         Create frame basic.cancel
 
-        :type consumer_tag: consumer-tag (as shortstr)
-        :type no_wait: no-wait (as bit)
+        :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
         """
         self.consumer_tag = consumer_tag
         self.no_wait = no_wait
@@ -2450,7 +2450,7 @@ class BasicConsumeOk(AMQPMethodPayload):
         Create frame basic.consume-ok
 
         :param consumer_tag: Holds the consumer tag specified by the client or provided by the server.
-        :type consumer_tag: consumer-tag (as shortstr)
+        :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
         """
         self.consumer_tag = consumer_tag
 
@@ -2508,7 +2508,7 @@ class BasicCancelOk(AMQPMethodPayload):
         """
         Create frame basic.cancel-ok
 
-        :type consumer_tag: consumer-tag (as shortstr)
+        :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
         """
         self.consumer_tag = consumer_tag
 
@@ -2572,15 +2572,15 @@ class BasicDeliver(AMQPMethodPayload):
         """
         Create frame basic.deliver
 
-        :type consumer_tag: consumer-tag (as shortstr)
-        :type delivery_tag: delivery-tag (as longlong)
-        :type redelivered: redelivered (as bit)
+        :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
+        :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
+        :type redelivered: bool (redelivered in AMQP)
         :param exchange: Specifies the name of the exchange that the message was originally published to.
             May be empty, indicating the default exchange.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
             Specifies the routing key name specified when the message was published.
-        :type routing_key: shortstr (as shortstr)
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
         """
         self.consumer_tag = consumer_tag
         self.delivery_tag = delivery_tag
@@ -2662,8 +2662,8 @@ class BasicGet(AMQPMethodPayload):
         Create frame basic.get
 
         :param queue: Specifies the name of the queue to get a message from.
-        :type queue: queue-name (as shortstr)
-        :type no_ack: no-ack (as bit)
+        :type queue: binary type (max length 255) (queue-name in AMQP)
+        :type no_ack: bool (no-ack in AMQP)
         """
         self.queue = queue
         self.no_ack = no_ack
@@ -2733,15 +2733,15 @@ class BasicGetOk(AMQPMethodPayload):
         """
         Create frame basic.get-ok
 
-        :type delivery_tag: delivery-tag (as longlong)
-        :type redelivered: redelivered (as bit)
+        :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
+        :type redelivered: bool (redelivered in AMQP)
         :param exchange: Specifies the name of the exchange that the message was originally published to.
             If empty, the message was published to the default exchange.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
             Specifies the routing key name specified when the message was published.
-        :type routing_key: shortstr (as shortstr)
-        :type message_count: message-count (as long)
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
+        :type message_count: int, 32 bit unsigned (message-count in AMQP)
         """
         self.delivery_tag = delivery_tag
         self.redelivered = redelivered
@@ -2870,22 +2870,22 @@ class BasicPublish(AMQPMethodPayload):
         :param exchange: Specifies the name of the exchange to publish to. the exchange name can be
             empty, meaning the default exchange. If the exchange name is specified, and that
             exchange does not exist, the server will raise a channel exception.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
             Specifies the routing key for the message. The routing key is used for routing
             messages depending on the exchange configuration.
-        :type routing_key: shortstr (as shortstr)
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
         :param mandatory: Indicate mandatory routing
             This flag tells the server how to react if the message cannot be routed to a
             queue. If this flag is set, the server will return an unroutable message with a
             Return method. If this flag is zero, the server silently drops the message.
-        :type mandatory: bit (as bit)
+        :type mandatory: bool (bit in AMQP)
         :param immediate: Request immediate delivery
             This flag tells the server how to react if the message cannot be routed to a
             queue consumer immediately. If this flag is set, the server will return an
             undeliverable message with a Return method. If this flag is zero, the server
             will queue the message, but with no guarantee that it will ever be consumed.
-        :type immediate: bit (as bit)
+        :type immediate: bool (bit in AMQP)
         """
         self.exchange = exchange
         self.routing_key = routing_key
@@ -2972,17 +2972,17 @@ class BasicQos(AMQPMethodPayload):
             available prefetch size (and also falls into other prefetch limits). May be set
             to zero, meaning "no specific limit", although other prefetch limits may still
             apply. The prefetch-size is ignored if the no-ack option is set.
-        :type prefetch_size: long (as long)
+        :type prefetch_size: int, 32 bit unsigned (long in AMQP)
         :param prefetch_count: Prefetch window in messages
             Specifies a prefetch window in terms of whole messages. This field may be used
             in combination with the prefetch-size field; a message will only be sent in
             advance if both prefetch windows (and those at the channel and connection level)
             allow it. The prefetch-count is ignored if the no-ack option is set.
-        :type prefetch_count: short (as short)
+        :type prefetch_count: int, 16 bit unsigned (short in AMQP)
         :param global_: Apply to entire connection
             By default the QoS settings apply to the current channel only. If this field is
             set, they are applied to the entire connection.
-        :type global_: bit (as bit)
+        :type global_: bool (bit in AMQP)
         """
         self.prefetch_size = prefetch_size
         self.prefetch_count = prefetch_count
@@ -3089,14 +3089,14 @@ class BasicReturn(AMQPMethodPayload):
         """
         Create frame basic.return
 
-        :type reply_code: reply-code (as short)
-        :type reply_text: reply-text (as shortstr)
+        :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
+        :type reply_text: binary type (max length 255) (reply-text in AMQP)
         :param exchange: Specifies the name of the exchange that the message was originally published
             to.  May be empty, meaning the default exchange.
-        :type exchange: exchange-name (as shortstr)
+        :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
             Specifies the routing key name specified when the message was published.
-        :type routing_key: shortstr (as shortstr)
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
         """
         self.reply_code = reply_code
         self.reply_text = reply_text
@@ -3171,11 +3171,11 @@ class BasicReject(AMQPMethodPayload):
         """
         Create frame basic.reject
 
-        :type delivery_tag: delivery-tag (as longlong)
+        :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
         :param requeue: Requeue the message
             If requeue is true, the server will attempt to requeue the message.  If requeue
             is false or the requeue  attempt fails the messages are discarded or dead-lettered.
-        :type requeue: bit (as bit)
+        :type requeue: bool (bit in AMQP)
         """
         self.delivery_tag = delivery_tag
         self.requeue = requeue
@@ -3237,7 +3237,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
             If this field is zero, the message will be redelivered to the original
             recipient. If this bit is 1, the server will attempt to requeue the message,
             potentially then delivering it to an alternative subscriber.
-        :type requeue: bit (as bit)
+        :type requeue: bool (bit in AMQP)
         """
         self.requeue = requeue
 
@@ -3297,7 +3297,7 @@ class BasicRecover(AMQPMethodPayload):
             If this field is zero, the message will be redelivered to the original
             recipient. If this bit is 1, the server will attempt to requeue the message,
             potentially then delivering it to an alternative subscriber.
-        :type requeue: bit (as bit)
+        :type requeue: bool (bit in AMQP)
         """
         self.requeue = requeue
 

@@ -188,7 +188,20 @@ from coolamqp.framing.frames.field_table import enframe_table, deframe_table, fr
                 if (field.label is not None) or (field.docs is not None):
                     line('        :param %s: %s\n', name_field(field.name),
                          doxify(field.label, field.docs, prefix=12, blank=False))
-                line('        :type %s: %s (as %s)\n', name_field(field.name), field.type, field.basic_type)
+
+                tp = {
+                    'shortstr': 'binary type (max length 255)',
+                    'longstr': 'binary type',
+                    'table': 'table. See coolamqp.framing.frames.field_table',
+                    'bit': 'bool',
+                    'octet': 'int, 8 bit unsigned',
+                    'short': 'int, 16 bit unsigned',
+                    'long': 'int, 32 bit unsigned',
+                    'longlong': 'int, 64 bit unsigned',
+                    'timestamp': '64 bit signed POSIX timestamp (in seconds)',
+                }
+
+                line('        :type %s: %s (%s in AMQP)\n', name_field(field.name), tp[field.basic_type], field.type)
 
             line('        """\n')
 

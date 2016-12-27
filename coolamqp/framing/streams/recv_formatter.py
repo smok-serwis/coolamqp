@@ -59,7 +59,7 @@ class ReceivingFormatter(object):
         :raises ValueError: invalid frame readed, kill the connection.
         :return: iterator with frames
         """
-        while self.__statemachine():
+        while self._statemachine():
             pass
 
         while len(self.frames) > 0:
