@@ -9,8 +9,16 @@ import struct
 from coolamqp.framing.frames.base import AMQPPayload
 
 
+
 class AMQPClass(object):
-    pass
+    """An AMQP class"""
+
+
+class AMQPContentPropertyList(object):
+    """
+    A class is intmately bound with content and content properties
+    """
+    PROPERTIES = []
 
 
 class AMQPMethodPayload(AMQPPayload):

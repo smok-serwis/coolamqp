@@ -31,7 +31,7 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 import struct
 
-from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload
+from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.frames.field_table import enframe_table, deframe_table, frame_table_size
 
 ''')
@@ -75,6 +75,9 @@ from coolamqp.framing.frames.field_table import enframe_table, deframe_table, fr
 
     # Output classes
     for cls in get_classes(xml):
+
+        cls = cls._replace(content_properties=[p._replace(basic_type=domain_to_basic_type[p.type]) for p in cls.content_properties])
+
         line('''\nclass %s(AMQPClass):
     """
     %s
@@ -82,8 +85,27 @@ from coolamqp.framing.frames.field_table import enframe_table, deframe_table, fr
     NAME = %s
     INDEX = %s
 
-''', name_class(cls.name), doxify(None, cls.docs), frepr(cls.name), cls.index)
+''',
+             name_class(cls.name), doxify(None, cls.docs), frepr(cls.name), cls.index)
 
+        line('''\nclass %sContentPropertyList(AMQPContentPropertyList):
+    """
+    %s
+    """
+    CLASS_NAME = %s
+    CLASS_INDEX = %s
+    CLASS = %s
+
+    CONTENT_PROPERTIES = [
+    # tuple of (name, domain, type)
+''',
+
+           name_class(cls.name), doxify(None, cls.docs), frepr(cls.name), cls.index, name_class(cls.name))
+
+        for property in cls.content_properties:
+            line('        (%s, %s, %s), # %s\n', frepr(property.name), frepr(property.type), frepr(property.basic_type),
+                 frepr(property.label))
+        line('    ]\n\n')
 
         for method in cls.methods:
             full_class_name = '%s%s' % (name_class(cls.name), name_method(method.name))
@@ -105,6 +127,8 @@ from coolamqp.framing.frames.field_table import enframe_table, deframe_table, fr
     NAME = %s
     CLASSNAME = %s
     FULLNAME = %s
+
+    CONTENT_PROPERTY_LIST = %sContentPropertyList
 
     CLASS_INDEX = %s
     CLASS_INDEX_BINARY = %s
@@ -129,6 +153,7 @@ from coolamqp.framing.frames.field_table import enframe_table, deframe_table, fr
                  frepr(method.name),
                  frepr(cls.name),
                  frepr(cls.name + '.' + method.name),
+                 name_class(cls.name),
                  frepr(cls.index),
                  as_nice_escaped_string(chr(cls.index)),
                  frepr(method.index),

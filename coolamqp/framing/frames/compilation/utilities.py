@@ -14,7 +14,8 @@ Method = namedtuple('Method', ('name', 'synchronous', 'index', 'label', 'docs', 
                                'sent_by_client', 'sent_by_server', 'constant'))
         # synchronous is bool, constant is bool
         # repponse is a list of method.name
-Class_ = namedtuple('Class_', ('name', 'index', 'docs', 'methods'))   # label is int
+Property = namedtuple('Property', ('name', 'type', 'label', 'basic_type'))
+Class_ = namedtuple('Class_', ('name', 'index', 'docs', 'methods', 'content_properties'))   # label is int
 Domain = namedtuple('Domain', ('name', 'type', 'elementary'))   # elementary is bool
 
 
@@ -106,6 +107,10 @@ def for_method_field(elem): # for <field> in <method>
                  None)
 
 
+def for_content_property(elem):
+    a = elem.attrib
+    return Property(a['name'], a['domain'], a.get('label', ''), None)
+
 def for_method(elem):       # for <method>
     a = elem.attrib
     return Method(six.text_type(a['name']), bool(int(a.get('synchronous', '0'))), int(a['index']), a['label'], get_docs(elem),
@@ -119,7 +124,8 @@ def for_method(elem):       # for <method>
 def for_class(elem):        # for <class>
     a = elem.attrib
     methods = sorted([for_method(me) for me in elem.getchildren() if me.tag == 'method'], key=lambda m: (m.name.strip('-')[0], -len(m.response)))
-    return Class_(six.text_type(a['name']), int(a['index']), get_docs(elem) or a['label'], methods)
+    return Class_(six.text_type(a['name']), int(a['index']), get_docs(elem) or a['label'], methods,
+                  [for_content_property(e) for e in elem.getchildren() if e.tag == 'field'])
 
 def for_constant(elem):     # for <constant>
     a = elem.attrib

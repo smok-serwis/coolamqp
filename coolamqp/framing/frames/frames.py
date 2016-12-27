@@ -39,6 +39,8 @@ class AMQPMethodFrame(AMQPFrame):
 
         return AMQPMethodFrame(channel, payload)
 
+    def get_size(self):
+        return 10 + self.payload.get_size()
 
 
 class AMQPHeaderFrame(AMQPFrame):
@@ -68,6 +70,9 @@ class AMQPHeaderFrame(AMQPFrame):
     def unserialize(channel, payload_as_buffer):
         pass
 
+    def get_size(self):
+        raise NotImplementedError
+
 
 class AMQPBodyFrame(AMQPFrame):
     FRAME_TYPE = FRAME_BODY
@@ -85,6 +90,9 @@ class AMQPBodyFrame(AMQPFrame):
     def unserialize(channel, payload_as_buffer):
         return AMQPBodyFrame(channel, payload_as_buffer)
 
+    def get_size(self):
+        return 8 + len(self.data)
+
 
 class AMQPHeartbeatFrame(AMQPFrame):
     FRAME_TYPE = FRAME_HEARTBEAT
@@ -98,3 +106,5 @@ class AMQPHeartbeatFrame(AMQPFrame):
         AMQPFrame.write_to(self, buf)
         buf.write(chr(FRAME_END))
 
+    def get_size(self):
+        return AMQPHeartbeatFrame.LENGTH

@@ -50,6 +50,13 @@ class AMQPFrame(object):        # base class for frames
         """
         raise NotImplementedError('Override me')
 
+    def get_size(self):
+        """
+        Return size of this frame, in bytes, from frame type to frame_end
+        :return: int
+        """
+        raise NotImplementedError()
+
 
 class AMQPPayload(object):
     """Payload is something that can write itself to bytes,
@@ -61,3 +68,10 @@ class AMQPPayload(object):
 
         :param buf: buffer to write to (will be written using .write)
         """
+
+    def get_size(self):
+        """
+        Return size of this payload
+        :return: int
+        """
+        raise NotImplementedError()

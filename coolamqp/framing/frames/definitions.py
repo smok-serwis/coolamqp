@@ -12,7 +12,7 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 import struct
 
-from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload
+from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.frames.field_table import enframe_table, deframe_table, frame_table_size
 
 # Core constants
@@ -104,6 +104,21 @@ class Connection(AMQPClass):
     INDEX = 10
 
 
+class ConnectionContentPropertyList(AMQPContentPropertyList):
+    """
+    The connection class provides methods for a client to establish a network connection to
+    
+    a server, and for both peers to operate the connection thereafter.
+    """
+    CLASS_NAME = u'connection'
+    CLASS_INDEX = 10
+    CLASS = Connection
+
+    CONTENT_PROPERTIES = [
+    # tuple of (name, domain, type)
+    ]
+
+
 class ConnectionClose(AMQPMethodPayload):
     """
     Request a connection close
@@ -117,6 +132,8 @@ class ConnectionClose(AMQPMethodPayload):
     NAME = u'close'
     CLASSNAME = u'connection'
     FULLNAME = u'connection.close'
+
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
 
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
@@ -193,6 +210,8 @@ class ConnectionCloseOk(AMQPMethodPayload):
     CLASSNAME = u'connection'
     FULLNAME = u'connection.close-ok'
 
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
+
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
     METHOD_INDEX = 51
@@ -237,6 +256,8 @@ class ConnectionOpen(AMQPMethodPayload):
     NAME = u'open'
     CLASSNAME = u'connection'
     FULLNAME = u'connection.open'
+
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
 
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
@@ -305,6 +326,8 @@ class ConnectionOpenOk(AMQPMethodPayload):
     CLASSNAME = u'connection'
     FULLNAME = u'connection.open-ok'
 
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
+
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
     METHOD_INDEX = 41
@@ -351,6 +374,8 @@ class ConnectionStart(AMQPMethodPayload):
     NAME = u'start'
     CLASSNAME = u'connection'
     FULLNAME = u'connection.start'
+
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
 
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
@@ -450,6 +475,8 @@ class ConnectionSecure(AMQPMethodPayload):
     CLASSNAME = u'connection'
     FULLNAME = u'connection.secure'
 
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
+
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
     METHOD_INDEX = 20
@@ -509,6 +536,8 @@ class ConnectionStartOk(AMQPMethodPayload):
     NAME = u'start-ok'
     CLASSNAME = u'connection'
     FULLNAME = u'connection.start-ok'
+
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
 
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
@@ -607,6 +636,8 @@ class ConnectionSecureOk(AMQPMethodPayload):
     CLASSNAME = u'connection'
     FULLNAME = u'connection.secure-ok'
 
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
+
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
     METHOD_INDEX = 21
@@ -668,6 +699,8 @@ class ConnectionTune(AMQPMethodPayload):
     NAME = u'tune'
     CLASSNAME = u'connection'
     FULLNAME = u'connection.tune'
+
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
 
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
@@ -740,6 +773,8 @@ class ConnectionTuneOk(AMQPMethodPayload):
     CLASSNAME = u'connection'
     FULLNAME = u'connection.tune-ok'
 
+    CONTENT_PROPERTY_LIST = ConnectionContentPropertyList
+
     CLASS_INDEX = 10
     CLASS_INDEX_BINARY = b'\x0A'
     METHOD_INDEX = 31
@@ -810,6 +845,21 @@ class Channel(AMQPClass):
     INDEX = 20
 
 
+class ChannelContentPropertyList(AMQPContentPropertyList):
+    """
+    The channel class provides methods for a client to establish a channel to a
+    
+    server and for both peers to operate the channel thereafter.
+    """
+    CLASS_NAME = u'channel'
+    CLASS_INDEX = 20
+    CLASS = Channel
+
+    CONTENT_PROPERTIES = [
+    # tuple of (name, domain, type)
+    ]
+
+
 class ChannelClose(AMQPMethodPayload):
     """
     Request a channel close
@@ -823,6 +873,8 @@ class ChannelClose(AMQPMethodPayload):
     NAME = u'close'
     CLASSNAME = u'channel'
     FULLNAME = u'channel.close'
+
+    CONTENT_PROPERTY_LIST = ChannelContentPropertyList
 
     CLASS_INDEX = 20
     CLASS_INDEX_BINARY = b'\x14'
@@ -899,6 +951,8 @@ class ChannelCloseOk(AMQPMethodPayload):
     CLASSNAME = u'channel'
     FULLNAME = u'channel.close-ok'
 
+    CONTENT_PROPERTY_LIST = ChannelContentPropertyList
+
     CLASS_INDEX = 20
     CLASS_INDEX_BINARY = b'\x14'
     METHOD_INDEX = 41
@@ -944,6 +998,8 @@ class ChannelFlow(AMQPMethodPayload):
     NAME = u'flow'
     CLASSNAME = u'channel'
     FULLNAME = u'channel.flow'
+
+    CONTENT_PROPERTY_LIST = ChannelContentPropertyList
 
     CLASS_INDEX = 20
     CLASS_INDEX_BINARY = b'\x14'
@@ -1001,6 +1057,8 @@ class ChannelFlowOk(AMQPMethodPayload):
     NAME = u'flow-ok'
     CLASSNAME = u'channel'
     FULLNAME = u'channel.flow-ok'
+
+    CONTENT_PROPERTY_LIST = ChannelContentPropertyList
 
     CLASS_INDEX = 20
     CLASS_INDEX_BINARY = b'\x14'
@@ -1060,6 +1118,8 @@ class ChannelOpen(AMQPMethodPayload):
     CLASSNAME = u'channel'
     FULLNAME = u'channel.open'
 
+    CONTENT_PROPERTY_LIST = ChannelContentPropertyList
+
     CLASS_INDEX = 20
     CLASS_INDEX_BINARY = b'\x14'
     METHOD_INDEX = 10
@@ -1103,6 +1163,8 @@ class ChannelOpenOk(AMQPMethodPayload):
     NAME = u'open-ok'
     CLASSNAME = u'channel'
     FULLNAME = u'channel.open-ok'
+
+    CONTENT_PROPERTY_LIST = ChannelContentPropertyList
 
     CLASS_INDEX = 20
     CLASS_INDEX_BINARY = b'\x14'
@@ -1148,6 +1210,21 @@ class Exchange(AMQPClass):
     INDEX = 40
 
 
+class ExchangeContentPropertyList(AMQPContentPropertyList):
+    """
+    Exchanges match and distribute messages across queues. exchanges can be configured in
+    
+    the server or declared at runtime.
+    """
+    CLASS_NAME = u'exchange'
+    CLASS_INDEX = 40
+    CLASS = Exchange
+
+    CONTENT_PROPERTIES = [
+    # tuple of (name, domain, type)
+    ]
+
+
 class ExchangeDeclare(AMQPMethodPayload):
     """
     Verify exchange exists, create if needed
@@ -1159,6 +1236,8 @@ class ExchangeDeclare(AMQPMethodPayload):
     NAME = u'declare'
     CLASSNAME = u'exchange'
     FULLNAME = u'exchange.declare'
+
+    CONTENT_PROPERTY_LIST = ExchangeContentPropertyList
 
     CLASS_INDEX = 40
     CLASS_INDEX_BINARY = b'\x28'
@@ -1274,6 +1353,8 @@ class ExchangeDelete(AMQPMethodPayload):
     CLASSNAME = u'exchange'
     FULLNAME = u'exchange.delete'
 
+    CONTENT_PROPERTY_LIST = ExchangeContentPropertyList
+
     CLASS_INDEX = 40
     CLASS_INDEX_BINARY = b'\x28'
     METHOD_INDEX = 20
@@ -1350,6 +1431,8 @@ class ExchangeDeclareOk(AMQPMethodPayload):
     CLASSNAME = u'exchange'
     FULLNAME = u'exchange.declare-ok'
 
+    CONTENT_PROPERTY_LIST = ExchangeContentPropertyList
+
     CLASS_INDEX = 40
     CLASS_INDEX_BINARY = b'\x28'
     METHOD_INDEX = 11
@@ -1391,6 +1474,8 @@ class ExchangeDeleteOk(AMQPMethodPayload):
     NAME = u'delete-ok'
     CLASSNAME = u'exchange'
     FULLNAME = u'exchange.delete-ok'
+
+    CONTENT_PROPERTY_LIST = ExchangeContentPropertyList
 
     CLASS_INDEX = 40
     CLASS_INDEX_BINARY = b'\x28'
@@ -1434,6 +1519,22 @@ class Queue(AMQPClass):
     INDEX = 50
 
 
+class QueueContentPropertyList(AMQPContentPropertyList):
+    """
+    Queues store and forward messages. queues can be configured in the server or created at
+    
+    runtime. Queues must be attached to at least one exchange in order to receive messages
+    from publishers.
+    """
+    CLASS_NAME = u'queue'
+    CLASS_INDEX = 50
+    CLASS = Queue
+
+    CONTENT_PROPERTIES = [
+    # tuple of (name, domain, type)
+    ]
+
+
 class QueueBind(AMQPMethodPayload):
     """
     Bind queue to an exchange
@@ -1447,6 +1548,8 @@ class QueueBind(AMQPMethodPayload):
     NAME = u'bind'
     CLASSNAME = u'queue'
     FULLNAME = u'queue.bind'
+
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
 
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
@@ -1553,6 +1656,8 @@ class QueueBindOk(AMQPMethodPayload):
     CLASSNAME = u'queue'
     FULLNAME = u'queue.bind-ok'
 
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
+
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
     METHOD_INDEX = 21
@@ -1596,6 +1701,8 @@ class QueueDeclare(AMQPMethodPayload):
     NAME = u'declare'
     CLASSNAME = u'queue'
     FULLNAME = u'queue.declare'
+
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
 
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
@@ -1715,6 +1822,8 @@ class QueueDelete(AMQPMethodPayload):
     CLASSNAME = u'queue'
     FULLNAME = u'queue.delete'
 
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
+
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
     METHOD_INDEX = 40
@@ -1797,6 +1906,8 @@ class QueueDeclareOk(AMQPMethodPayload):
     CLASSNAME = u'queue'
     FULLNAME = u'queue.declare-ok'
 
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
+
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
     METHOD_INDEX = 11
@@ -1869,6 +1980,8 @@ class QueueDeleteOk(AMQPMethodPayload):
     CLASSNAME = u'queue'
     FULLNAME = u'queue.delete-ok'
 
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
+
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
     METHOD_INDEX = 41
@@ -1924,6 +2037,8 @@ class QueuePurge(AMQPMethodPayload):
     NAME = u'purge'
     CLASSNAME = u'queue'
     FULLNAME = u'queue.purge'
+
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
 
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
@@ -1992,6 +2107,8 @@ class QueuePurgeOk(AMQPMethodPayload):
     CLASSNAME = u'queue'
     FULLNAME = u'queue.purge-ok'
 
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
+
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
     METHOD_INDEX = 31
@@ -2046,6 +2163,8 @@ class QueueUnbind(AMQPMethodPayload):
     NAME = u'unbind'
     CLASSNAME = u'queue'
     FULLNAME = u'queue.unbind'
+
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
 
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
@@ -2136,6 +2255,8 @@ class QueueUnbindOk(AMQPMethodPayload):
     CLASSNAME = u'queue'
     FULLNAME = u'queue.unbind-ok'
 
+    CONTENT_PROPERTY_LIST = QueueContentPropertyList
+
     CLASS_INDEX = 50
     CLASS_INDEX_BINARY = b'\x32'
     METHOD_INDEX = 51
@@ -2175,6 +2296,33 @@ class Basic(AMQPClass):
     INDEX = 60
 
 
+class BasicContentPropertyList(AMQPContentPropertyList):
+    """
+    The basic class provides methods that support an industry-standard messaging model.
+    """
+    CLASS_NAME = u'basic'
+    CLASS_INDEX = 60
+    CLASS = Basic
+
+    CONTENT_PROPERTIES = [
+    # tuple of (name, domain, type)
+        (u'content-type', u'shortstr', u'shortstr'), # u'MIME content type'
+        (u'content-encoding', u'shortstr', u'shortstr'), # u'MIME content encoding'
+        (u'headers', u'table', u'table'), # u'message header field table'
+        (u'delivery-mode', u'octet', u'octet'), # u'non-persistent (1) or persistent (2)'
+        (u'priority', u'octet', u'octet'), # u'message priority, 0 to 9'
+        (u'correlation-id', u'shortstr', u'shortstr'), # u'application correlation identifier'
+        (u'reply-to', u'shortstr', u'shortstr'), # u'address to reply to'
+        (u'expiration', u'shortstr', u'shortstr'), # u'message expiration specification'
+        (u'message-id', u'shortstr', u'shortstr'), # u'application message identifier'
+        (u'timestamp', u'timestamp', u'timestamp'), # u'message timestamp'
+        (u'type', u'shortstr', u'shortstr'), # u'message type name'
+        (u'user-id', u'shortstr', u'shortstr'), # u'creating user id'
+        (u'app-id', u'shortstr', u'shortstr'), # u'creating application id'
+        (u'reserved', u'shortstr', u'shortstr'), # u'reserved, must be empty'
+    ]
+
+
 class BasicAck(AMQPMethodPayload):
     """
     Acknowledge one or more messages
@@ -2187,6 +2335,8 @@ class BasicAck(AMQPMethodPayload):
     NAME = u'ack'
     CLASSNAME = u'basic'
     FULLNAME = u'basic.ack'
+
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
 
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
@@ -2252,6 +2402,8 @@ class BasicConsume(AMQPMethodPayload):
     NAME = u'consume'
     CLASSNAME = u'basic'
     FULLNAME = u'basic.consume'
+
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
 
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
@@ -2359,6 +2511,8 @@ class BasicCancel(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.cancel'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 30
@@ -2424,6 +2578,8 @@ class BasicConsumeOk(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.consume-ok'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 21
@@ -2482,6 +2638,8 @@ class BasicCancelOk(AMQPMethodPayload):
     NAME = u'cancel-ok'
     CLASSNAME = u'basic'
     FULLNAME = u'basic.cancel-ok'
+
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
 
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
@@ -2543,6 +2701,8 @@ class BasicDeliver(AMQPMethodPayload):
     NAME = u'deliver'
     CLASSNAME = u'basic'
     FULLNAME = u'basic.deliver'
+
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
 
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
@@ -2635,6 +2795,8 @@ class BasicGet(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.get'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 70
@@ -2703,6 +2865,8 @@ class BasicGetOk(AMQPMethodPayload):
     NAME = u'get-ok'
     CLASSNAME = u'basic'
     FULLNAME = u'basic.get-ok'
+
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
 
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
@@ -2792,6 +2956,8 @@ class BasicGetEmpty(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.get-empty'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 72
@@ -2838,6 +3004,8 @@ class BasicPublish(AMQPMethodPayload):
     NAME = u'publish'
     CLASSNAME = u'basic'
     FULLNAME = u'basic.publish'
+
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
 
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
@@ -2937,6 +3105,8 @@ class BasicQos(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.qos'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 10
@@ -3017,6 +3187,8 @@ class BasicQosOk(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.qos-ok'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 11
@@ -3061,6 +3233,8 @@ class BasicReturn(AMQPMethodPayload):
     NAME = u'return'
     CLASSNAME = u'basic'
     FULLNAME = u'basic.return'
+
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
 
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
@@ -3146,6 +3320,8 @@ class BasicReject(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.reject'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 90
@@ -3209,6 +3385,8 @@ class BasicRecoverAsync(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.recover-async'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 100
@@ -3269,6 +3447,8 @@ class BasicRecover(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.recover'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 110
@@ -3327,6 +3507,8 @@ class BasicRecoverOk(AMQPMethodPayload):
     CLASSNAME = u'basic'
     FULLNAME = u'basic.recover-ok'
 
+    CONTENT_PROPERTY_LIST = BasicContentPropertyList
+
     CLASS_INDEX = 60
     CLASS_INDEX_BINARY = b'\x3C'
     METHOD_INDEX = 111
@@ -3374,6 +3556,28 @@ class Tx(AMQPClass):
     INDEX = 90
 
 
+class TxContentPropertyList(AMQPContentPropertyList):
+    """
+    The tx class allows publish and ack operations to be batched into atomic
+    
+    units of work.  The intention is that all publish and ack requests issued
+    within a transaction will complete successfully or none of them will.
+    Servers SHOULD implement atomic transactions at least where all publish
+    or ack requests affect a single queue.  Transactions that cover multiple
+    queues may be non-atomic, given that queues can be created and destroyed
+    asynchronously, and such events do not form part of any transaction.
+    Further, the behaviour of transactions with respect to the immediate and
+    mandatory flags on Basic.Publish methods is not defined.
+    """
+    CLASS_NAME = u'tx'
+    CLASS_INDEX = 90
+    CLASS = Tx
+
+    CONTENT_PROPERTIES = [
+    # tuple of (name, domain, type)
+    ]
+
+
 class TxCommit(AMQPMethodPayload):
     """
     Commit the current transaction
@@ -3385,6 +3589,8 @@ class TxCommit(AMQPMethodPayload):
     NAME = u'commit'
     CLASSNAME = u'tx'
     FULLNAME = u'tx.commit'
+
+    CONTENT_PROPERTY_LIST = TxContentPropertyList
 
     CLASS_INDEX = 90
     CLASS_INDEX_BINARY = b'\x5A'
@@ -3427,6 +3633,8 @@ class TxCommitOk(AMQPMethodPayload):
     NAME = u'commit-ok'
     CLASSNAME = u'tx'
     FULLNAME = u'tx.commit-ok'
+
+    CONTENT_PROPERTY_LIST = TxContentPropertyList
 
     CLASS_INDEX = 90
     CLASS_INDEX_BINARY = b'\x5A'
@@ -3473,6 +3681,8 @@ class TxRollback(AMQPMethodPayload):
     CLASSNAME = u'tx'
     FULLNAME = u'tx.rollback'
 
+    CONTENT_PROPERTY_LIST = TxContentPropertyList
+
     CLASS_INDEX = 90
     CLASS_INDEX_BINARY = b'\x5A'
     METHOD_INDEX = 30
@@ -3514,6 +3724,8 @@ class TxRollbackOk(AMQPMethodPayload):
     NAME = u'rollback-ok'
     CLASSNAME = u'tx'
     FULLNAME = u'tx.rollback-ok'
+
+    CONTENT_PROPERTY_LIST = TxContentPropertyList
 
     CLASS_INDEX = 90
     CLASS_INDEX_BINARY = b'\x5A'
@@ -3558,6 +3770,8 @@ class TxSelect(AMQPMethodPayload):
     CLASSNAME = u'tx'
     FULLNAME = u'tx.select'
 
+    CONTENT_PROPERTY_LIST = TxContentPropertyList
+
     CLASS_INDEX = 90
     CLASS_INDEX_BINARY = b'\x5A'
     METHOD_INDEX = 10
@@ -3599,6 +3813,8 @@ class TxSelectOk(AMQPMethodPayload):
     NAME = u'select-ok'
     CLASSNAME = u'tx'
     FULLNAME = u'tx.select-ok'
+
+    CONTENT_PROPERTY_LIST = TxContentPropertyList
 
     CLASS_INDEX = 90
     CLASS_INDEX_BINARY = b'\x5A'
