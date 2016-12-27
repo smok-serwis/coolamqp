@@ -87,7 +87,7 @@ class Order(object):
         """Return whether the operation failed, ie. completed but with an error code.
         Cancelled and discarded ops are considered failed.
         This assumes that this order has been .wait()ed upon"""
-        return self._result is True
+        return self._result is not True
 
     def result(self):
         """Wait until this is completed and return a response"""

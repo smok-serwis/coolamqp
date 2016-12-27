@@ -12,7 +12,9 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 import struct
 
-# Core frame types
+from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, _deframe_table, _frame_table_size
+
+# Core constants
 FRAME_METHOD = 1
 FRAME_HEADER = 2
 FRAME_BODY = 3
@@ -59,6 +61,11 @@ NOT_IMPLEMENTED = 540 # The client tried to use functionality that is not implem
 INTERNAL_ERROR = 541 # The server could not complete the method because of an internal error.
                      # The server may require intervention by an operator in order to resume
                      # normal operations.
+
+HARD_ERROR = [CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, SYNTAX_ERROR, COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME, RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, INTERNAL_ERROR]
+SOFT_ERROR = [CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND, RESOURCE_LOCKED, PRECONDITION_FAILED]
+
+
 DOMAIN_TO_BASIC_TYPE = {
     u'class-id': u'short',
     u'consumer-tag': u'shortstr',
@@ -86,26 +93,6 @@ DOMAIN_TO_BASIC_TYPE = {
     u'table': None,
 }
 
-
-class AMQPClass(object):
-    pass
-
-
-class AMQPMethod(object):
-    RESPONSE_TO = None
-    REPLY_WITH = []
-    FIELDS = []
-
-    def write_arguments(self, out):
-        """
-        Write the argument portion of this frame into out.
-
-        :param out: a callable that will be invoked (possibly many times) with
-            parts of the arguments section.
-        :type out: callable(part_of_frame: binary type) -> nevermind
-        """
-
-
 class Connection(AMQPClass):
     """
     The connection class provides methods for a client to establish a network connection to
@@ -128,13 +115,24 @@ class ConnectionClose(AMQPMethod):
     CLASS = Connection
     NAME = u'close'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 50
     FULLNAME = u'connection.close'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 50
+    METHOD_INDEX_BINARY = b'\x32'
+    BINARY_HEADER = b'\x0A\x32'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ConnectionCloseOk]
-    BINARY_HEADER = b'\x0A\x32'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 13 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reply-code', u'reply-code', u'short', False), 
         (u'reply-text', u'reply-text', u'shortstr', False), 
@@ -161,8 +159,25 @@ class ConnectionClose(AMQPMethod):
         self.class_id = class_id
         self.method_id = method_id
 
-    def write_arguments(self, out):
-        out(struct.pack('!HpHH', self.reply_code, self.reply_text, self.class_id, self.method_id))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
+        buf.write(self.reply_text)
+        buf.write(struct.pack('!HH', self.class_id, self.method_id))
+
+    def get_size(self):
+        return len(self.reply_text) + 7
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionClose.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
+        offset += 3
+        reply_text = buf[offset:offset+s_len]
+        offset += s_len
+        class_id, method_id, = struct.unpack_from('!HH', buf, offset)
+        offset += 4
+        return ConnectionClose(reply_code, reply_text, class_id, method_id)
 
 
 class ConnectionCloseOk(AMQPMethod):
@@ -175,20 +190,38 @@ class ConnectionCloseOk(AMQPMethod):
     CLASS = Connection
     NAME = u'close-ok'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 51
     FULLNAME = u'connection.close-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 51
+    METHOD_INDEX_BINARY = b'\x33'
+    BINARY_HEADER = b'\x0A\x33'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x0A\x33'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x0A\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = ConnectionClose # this is sent in response to connection.close
 
     def __init__(self):
         """
         Create frame connection.close-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ConnectionCloseOk()
+
 
 class ConnectionOpen(AMQPMethod):
     """
@@ -202,13 +235,24 @@ class ConnectionOpen(AMQPMethod):
     CLASS = Connection
     NAME = u'open'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 40
     FULLNAME = u'connection.open'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 40
+    METHOD_INDEX_BINARY = b'\x28'
+    BINARY_HEADER = b'\x0A\x28'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ConnectionOpenOk]
-    BINARY_HEADER = b'\x0A\x28'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 15 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'virtual-host', u'path', u'shortstr', False),  # virtual host name
         (u'reserved-1', u'shortstr', u'shortstr', True), 
@@ -225,8 +269,28 @@ class ConnectionOpen(AMQPMethod):
         """
         self.virtual_host = virtual_host
 
-    def write_arguments(self, out):
-        out(struct.pack('!p?', self.virtual_host, 0))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.virtual_host)))
+        buf.write(self.virtual_host)
+        buf.write(b'\x00')
+        buf.write(struct.pack('!B', ))
+
+    def get_size(self):
+        return len(self.virtual_host) + 3
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionOpen.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        virtual_host = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        offset += s_len
+        offset += 1
+        return ConnectionOpen(virtual_host)
 
 
 class ConnectionOpenOk(AMQPMethod):
@@ -238,13 +302,25 @@ class ConnectionOpenOk(AMQPMethod):
     CLASS = Connection
     NAME = u'open-ok'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 41
     FULLNAME = u'connection.open-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 41
+    METHOD_INDEX_BINARY = b'\x29'
+    BINARY_HEADER = b'\x0A\x29'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x0A\x29'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 7 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x0A\x29\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = ConnectionOpen # this is sent in response to connection.open
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'shortstr', u'shortstr', True), 
@@ -255,8 +331,11 @@ class ConnectionOpenOk(AMQPMethod):
         Create frame connection.open-ok
         """
 
-    def write_arguments(self, out):
-        pass # this has a frame, but its only default shortstrs
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ConnectionOpenOk()
 
 
 class ConnectionStart(AMQPMethod):
@@ -270,13 +349,24 @@ class ConnectionStart(AMQPMethod):
     CLASS = Connection
     NAME = u'start'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 10
     FULLNAME = u'connection.start'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 10
+    METHOD_INDEX_BINARY = b'\x0A'
+    BINARY_HEADER = b'\x0A\x0A'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ConnectionStartOk]
-    BINARY_HEADER = b'\x0A\x0A'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 59 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'version-major', u'octet', u'octet', False),  # protocol major version
         (u'version-minor', u'octet', u'octet', False),  # protocol minor version
@@ -318,13 +408,32 @@ class ConnectionStart(AMQPMethod):
         self.mechanisms = mechanisms
         self.locales = locales
 
-    def write_arguments(self, out):
-        out(struct.pack('!BB', self.version_major, self.version_minor))
-        out(struct.pack('!L', len(self.mechanisms)))
-        out(self.mechanisms)
-        out(struct.pack('!L', len(self.locales)))
-        out(self.locales)
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!BB', self.version_major, self.version_minor))
+        _enframe_table(buf, self.server_properties)
+        buf.write(struct.pack('!L', len(self.mechanisms)))
+        buf.write(self.mechanisms)
+        buf.write(struct.pack('!L', len(self.locales)))
+        buf.write(self.locales)
+
+    def get_size(self):
+        return _frame_table_size(self.server_properties) + len(self.mechanisms) + len(self.locales) + 14
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionStart.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        server_properties, delta = _deframe_table(buf, offset)
+        offset += delta
+        version_major, version_minor, s_len, = struct.unpack_from('!BBL', buf, offset)
+        offset += 6
+        mechanisms = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!L', buf, offset)
+        offset += 4
+        locales = buf[offset:offset+s_len]
+        offset += s_len
+        return ConnectionStart(version_major, version_minor, server_properties, mechanisms, locales)
 
 
 class ConnectionSecure(AMQPMethod):
@@ -338,13 +447,24 @@ class ConnectionSecure(AMQPMethod):
     CLASS = Connection
     NAME = u'secure'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 20
     FULLNAME = u'connection.secure'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 20
+    METHOD_INDEX_BINARY = b'\x14'
+    BINARY_HEADER = b'\x0A\x14'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ConnectionSecureOk]
-    BINARY_HEADER = b'\x0A\x14'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 19 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'challenge', u'longstr', u'longstr', False),  # security challenge data
     ]
@@ -360,10 +480,22 @@ class ConnectionSecure(AMQPMethod):
         """
         self.challenge = challenge
 
-    def write_arguments(self, out):
-        out(struct.pack('!L', len(self.challenge)))
-        out(self.challenge)
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!L', len(self.challenge)))
+        buf.write(self.challenge)
+
+    def get_size(self):
+        return len(self.challenge) + 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionSecure.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!L', buf, offset)
+        offset += 4
+        challenge = buf[offset:offset+s_len]
+        offset += s_len
+        return ConnectionSecure(challenge)
 
 
 class ConnectionStartOk(AMQPMethod):
@@ -375,13 +507,24 @@ class ConnectionStartOk(AMQPMethod):
     CLASS = Connection
     NAME = u'start-ok'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 11
     FULLNAME = u'connection.start-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 11
+    METHOD_INDEX_BINARY = b'\x0B'
+    BINARY_HEADER = b'\x0A\x0B'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x0A\x0B'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 52 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = ConnectionStart # this is sent in response to connection.start
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'client-properties', u'peer-properties', u'table', False),  # client properties
@@ -418,10 +561,37 @@ class ConnectionStartOk(AMQPMethod):
         self.response = response
         self.locale = locale
 
-    def write_arguments(self, out):
-        out(struct.pack('!pL', self.mechanism, len(self.response)))
-        out(self.response)
-        out(struct.pack('!p', self.locale))
+    def write_arguments(self, buf):
+        _enframe_table(buf, self.client_properties)
+        buf.write(struct.pack('!B', len(self.mechanism)))
+        buf.write(self.mechanism)
+        buf.write(struct.pack('!L', len(self.response)))
+        buf.write(self.response)
+        buf.write(struct.pack('!B', len(self.locale)))
+        buf.write(self.locale)
+
+    def get_size(self):
+        return _frame_table_size(self.client_properties) + len(self.mechanism) + len(self.response) + len(self.locale) + 10
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionStartOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        client_properties, delta = _deframe_table(buf, offset)
+        offset += delta
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        mechanism = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!L', buf, offset)
+        offset += 4
+        response = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        locale = buf[offset:offset+s_len]
+        offset += s_len
+        return ConnectionStartOk(client_properties, mechanism, response, locale)
 
 
 class ConnectionSecureOk(AMQPMethod):
@@ -434,13 +604,24 @@ class ConnectionSecureOk(AMQPMethod):
     CLASS = Connection
     NAME = u'secure-ok'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 21
     FULLNAME = u'connection.secure-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 21
+    METHOD_INDEX_BINARY = b'\x15'
+    BINARY_HEADER = b'\x0A\x15'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x0A\x15'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 19 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = ConnectionSecure # this is sent in response to connection.secure
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'response', u'longstr', u'longstr', False),  # security response data
@@ -457,10 +638,22 @@ class ConnectionSecureOk(AMQPMethod):
         """
         self.response = response
 
-    def write_arguments(self, out):
-        out(struct.pack('!L', len(self.response)))
-        out(self.response)
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!L', len(self.response)))
+        buf.write(self.response)
+
+    def get_size(self):
+        return len(self.response) + 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionSecureOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!L', buf, offset)
+        offset += 4
+        response = buf[offset:offset+s_len]
+        offset += s_len
+        return ConnectionSecureOk(response)
 
 
 class ConnectionTune(AMQPMethod):
@@ -473,13 +666,24 @@ class ConnectionTune(AMQPMethod):
     CLASS = Connection
     NAME = u'tune'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 30
     FULLNAME = u'connection.tune'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 30
+    METHOD_INDEX_BINARY = b'\x1E'
+    BINARY_HEADER = b'\x0A\x1E'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ConnectionTuneOk]
-    BINARY_HEADER = b'\x0A\x1E'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 8 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'channel-max', u'short', u'short', False),  # proposed maximum channels
         (u'frame-max', u'long', u'long', False),  # proposed maximum frame size
@@ -509,8 +713,18 @@ class ConnectionTune(AMQPMethod):
         self.frame_max = frame_max
         self.heartbeat = heartbeat
 
-    def write_arguments(self, out):
-        out(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
+
+    def get_size(self):
+        return 8
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionTune.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        channel_max, frame_max, heartbeat, = struct.unpack_from('!HIH', buf, offset)
+        return ConnectionTune(channel_max, frame_max, heartbeat)
 
 
 class ConnectionTuneOk(AMQPMethod):
@@ -523,13 +737,24 @@ class ConnectionTuneOk(AMQPMethod):
     CLASS = Connection
     NAME = u'tune-ok'
     CLASSNAME = u'connection'
-    CLASS_INDEX = 10
-    METHOD_INDEX = 31
     FULLNAME = u'connection.tune-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 10
+    CLASS_INDEX_BINARY = b'\x0A'
+    METHOD_INDEX = 31
+    METHOD_INDEX_BINARY = b'\x1F'
+    BINARY_HEADER = b'\x0A\x1F'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x0A\x1F'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 8 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = ConnectionTune # this is sent in response to connection.tune
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'channel-max', u'short', u'short', False),  # negotiated maximum channels
@@ -560,8 +785,18 @@ class ConnectionTuneOk(AMQPMethod):
         self.frame_max = frame_max
         self.heartbeat = heartbeat
 
-    def write_arguments(self, out):
-        out(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
+
+    def get_size(self):
+        return 8
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ConnectionTuneOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        channel_max, frame_max, heartbeat, = struct.unpack_from('!HIH', buf, offset)
+        return ConnectionTuneOk(channel_max, frame_max, heartbeat)
 
 
 class Channel(AMQPClass):
@@ -586,13 +821,24 @@ class ChannelClose(AMQPMethod):
     CLASS = Channel
     NAME = u'close'
     CLASSNAME = u'channel'
-    CLASS_INDEX = 20
-    METHOD_INDEX = 40
     FULLNAME = u'channel.close'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 20
+    CLASS_INDEX_BINARY = b'\x14'
+    METHOD_INDEX = 40
+    METHOD_INDEX_BINARY = b'\x28'
+    BINARY_HEADER = b'\x14\x28'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ChannelCloseOk]
-    BINARY_HEADER = b'\x14\x28'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 13 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reply-code', u'reply-code', u'short', False), 
         (u'reply-text', u'reply-text', u'shortstr', False), 
@@ -619,8 +865,25 @@ class ChannelClose(AMQPMethod):
         self.class_id = class_id
         self.method_id = method_id
 
-    def write_arguments(self, out):
-        out(struct.pack('!HpHH', self.reply_code, self.reply_text, self.class_id, self.method_id))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
+        buf.write(self.reply_text)
+        buf.write(struct.pack('!HH', self.class_id, self.method_id))
+
+    def get_size(self):
+        return len(self.reply_text) + 7
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ChannelClose.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
+        offset += 3
+        reply_text = buf[offset:offset+s_len]
+        offset += s_len
+        class_id, method_id, = struct.unpack_from('!HH', buf, offset)
+        offset += 4
+        return ChannelClose(reply_code, reply_text, class_id, method_id)
 
 
 class ChannelCloseOk(AMQPMethod):
@@ -633,20 +896,38 @@ class ChannelCloseOk(AMQPMethod):
     CLASS = Channel
     NAME = u'close-ok'
     CLASSNAME = u'channel'
-    CLASS_INDEX = 20
-    METHOD_INDEX = 41
     FULLNAME = u'channel.close-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 20
+    CLASS_INDEX_BINARY = b'\x14'
+    METHOD_INDEX = 41
+    METHOD_INDEX_BINARY = b'\x29'
+    BINARY_HEADER = b'\x14\x29'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x14\x29'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x14\x29\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = ChannelClose # this is sent in response to channel.close
 
     def __init__(self):
         """
         Create frame channel.close-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ChannelCloseOk()
+
 
 class ChannelFlow(AMQPMethod):
     """
@@ -661,13 +942,24 @@ class ChannelFlow(AMQPMethod):
     CLASS = Channel
     NAME = u'flow'
     CLASSNAME = u'channel'
-    CLASS_INDEX = 20
-    METHOD_INDEX = 20
     FULLNAME = u'channel.flow'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 20
+    CLASS_INDEX_BINARY = b'\x14'
+    METHOD_INDEX = 20
+    METHOD_INDEX_BINARY = b'\x14'
+    BINARY_HEADER = b'\x14\x14'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ChannelFlowOk]
-    BINARY_HEADER = b'\x14\x14'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 1 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'active', u'bit', u'bit', False),  # start/stop content frames
     ]
@@ -683,8 +975,19 @@ class ChannelFlow(AMQPMethod):
         """
         self.active = active
 
-    def write_arguments(self, out):
-        out(struct.pack('!?', self.active))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', (int(self.active) << 0)))
+
+    def get_size(self):
+        return 1
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ChannelFlow.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        _bit_0, = struct.unpack_from('!B', buf, offset)
+        active = bool(_bit_0 & 1)
+        return ChannelFlow(active)
 
 
 class ChannelFlowOk(AMQPMethod):
@@ -696,13 +999,24 @@ class ChannelFlowOk(AMQPMethod):
     CLASS = Channel
     NAME = u'flow-ok'
     CLASSNAME = u'channel'
-    CLASS_INDEX = 20
-    METHOD_INDEX = 21
     FULLNAME = u'channel.flow-ok'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 20
+    CLASS_INDEX_BINARY = b'\x14'
+    METHOD_INDEX = 21
+    METHOD_INDEX_BINARY = b'\x15'
+    BINARY_HEADER = b'\x14\x15'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x14\x15'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 1 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = ChannelFlow # this is sent in response to channel.flow
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'active', u'bit', u'bit', False),  # current flow setting
@@ -719,8 +1033,19 @@ class ChannelFlowOk(AMQPMethod):
         """
         self.active = active
 
-    def write_arguments(self, out):
-        out(struct.pack('!?', self.active))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', (int(self.active) << 0)))
+
+    def get_size(self):
+        return 1
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ChannelFlowOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        _bit_0, = struct.unpack_from('!B', buf, offset)
+        active = bool(_bit_0 & 1)
+        return ChannelFlowOk(active)
 
 
 class ChannelOpen(AMQPMethod):
@@ -732,13 +1057,25 @@ class ChannelOpen(AMQPMethod):
     CLASS = Channel
     NAME = u'open'
     CLASSNAME = u'channel'
-    CLASS_INDEX = 20
-    METHOD_INDEX = 10
     FULLNAME = u'channel.open'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 20
+    CLASS_INDEX_BINARY = b'\x14'
+    METHOD_INDEX = 10
+    METHOD_INDEX_BINARY = b'\x0A'
+    BINARY_HEADER = b'\x14\x0A'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ChannelOpenOk]
-    BINARY_HEADER = b'\x14\x0A'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 7 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x05\x14\x0A\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'shortstr', u'shortstr', True), 
     ]
@@ -748,8 +1085,11 @@ class ChannelOpen(AMQPMethod):
         Create frame channel.open
         """
 
-    def write_arguments(self, out):
-        pass # this has a frame, but its only default shortstrs
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ChannelOpen()
 
 
 class ChannelOpenOk(AMQPMethod):
@@ -761,13 +1101,25 @@ class ChannelOpenOk(AMQPMethod):
     CLASS = Channel
     NAME = u'open-ok'
     CLASSNAME = u'channel'
-    CLASS_INDEX = 20
-    METHOD_INDEX = 11
     FULLNAME = u'channel.open-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 20
+    CLASS_INDEX_BINARY = b'\x14'
+    METHOD_INDEX = 11
+    METHOD_INDEX_BINARY = b'\x0B'
+    BINARY_HEADER = b'\x14\x0B'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x14\x0B'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 19 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x05\x14\x0B\x00\x00\x00\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = ChannelOpen # this is sent in response to channel.open
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'longstr', u'longstr', True), 
@@ -778,10 +1130,11 @@ class ChannelOpenOk(AMQPMethod):
         Create frame channel.open-ok
         """
 
-    def write_arguments(self, out):
-        out(struct.pack('!L', len(self.reserved_1)))
-        out(self.reserved_1)
-        pass # this has a frame, but its only default shortstrs
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ChannelOpenOk()
 
 
 class Exchange(AMQPClass):
@@ -804,13 +1157,24 @@ class ExchangeDeclare(AMQPMethod):
     CLASS = Exchange
     NAME = u'declare'
     CLASSNAME = u'exchange'
-    CLASS_INDEX = 40
-    METHOD_INDEX = 10
     FULLNAME = u'exchange.declare'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 40
+    CLASS_INDEX_BINARY = b'\x28'
+    METHOD_INDEX = 10
+    METHOD_INDEX_BINARY = b'\x0A'
+    BINARY_HEADER = b'\x28\x0A'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ExchangeDeclareOk]
-    BINARY_HEADER = b'\x28\x0A'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 36 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'exchange', u'exchange-name', u'shortstr', False), 
@@ -863,9 +1227,38 @@ class ExchangeDeclare(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hpp?????', 0, self.exchange, self.type, self.passive, self.durable, 0, 0, self.no_wait))
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', len(self.type)))
+        buf.write(self.type)
+        buf.write(struct.pack('!B', (int(self.passive) << 0) | (int(self.durable) << 1) | (int(self.no_wait) << 2)))
+        _enframe_table(buf, self.arguments)
+
+    def get_size(self):
+        return len(self.exchange) + len(self.type) + _frame_table_size(self.arguments) + 9
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ExchangeDeclare.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        type = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        passive = bool(_bit & 1)
+        durable = bool(_bit & 2)
+        no_wait = bool(_bit & 16)
+        arguments, delta = _deframe_table(buf, offset)
+        offset += delta
+        return ExchangeDeclare(exchange, type, passive, durable, no_wait, arguments)
 
 
 class ExchangeDelete(AMQPMethod):
@@ -878,13 +1271,24 @@ class ExchangeDelete(AMQPMethod):
     CLASS = Exchange
     NAME = u'delete'
     CLASSNAME = u'exchange'
-    CLASS_INDEX = 40
-    METHOD_INDEX = 20
     FULLNAME = u'exchange.delete'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 40
+    CLASS_INDEX_BINARY = b'\x28'
+    METHOD_INDEX = 20
+    METHOD_INDEX_BINARY = b'\x14'
+    BINARY_HEADER = b'\x28\x14'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [ExchangeDeleteOk]
-    BINARY_HEADER = b'\x28\x14'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 10 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'exchange', u'exchange-name', u'shortstr', False), 
@@ -909,8 +1313,28 @@ class ExchangeDelete(AMQPMethod):
         self.if_unused = if_unused
         self.no_wait = no_wait
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hp??', 0, self.exchange, self.if_unused, self.no_wait))
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', (int(self.if_unused) << 0) | (int(self.no_wait) << 1)))
+
+    def get_size(self):
+        return len(self.exchange) + 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= ExchangeDelete.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        if_unused = bool(_bit & 1)
+        no_wait = bool(_bit & 2)
+        return ExchangeDelete(exchange, if_unused, no_wait)
 
 
 class ExchangeDeclareOk(AMQPMethod):
@@ -923,20 +1347,38 @@ class ExchangeDeclareOk(AMQPMethod):
     CLASS = Exchange
     NAME = u'declare-ok'
     CLASSNAME = u'exchange'
-    CLASS_INDEX = 40
-    METHOD_INDEX = 11
     FULLNAME = u'exchange.declare-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 40
+    CLASS_INDEX_BINARY = b'\x28'
+    METHOD_INDEX = 11
+    METHOD_INDEX_BINARY = b'\x0B'
+    BINARY_HEADER = b'\x28\x0B'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x28\x0B'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x28\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = ExchangeDeclare # this is sent in response to exchange.declare
 
     def __init__(self):
         """
         Create frame exchange.declare-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ExchangeDeclareOk()
+
 
 class ExchangeDeleteOk(AMQPMethod):
     """
@@ -947,20 +1389,38 @@ class ExchangeDeleteOk(AMQPMethod):
     CLASS = Exchange
     NAME = u'delete-ok'
     CLASSNAME = u'exchange'
-    CLASS_INDEX = 40
-    METHOD_INDEX = 21
     FULLNAME = u'exchange.delete-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 40
+    CLASS_INDEX_BINARY = b'\x28'
+    METHOD_INDEX = 21
+    METHOD_INDEX_BINARY = b'\x15'
+    BINARY_HEADER = b'\x28\x15'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x28\x15'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x28\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = ExchangeDelete # this is sent in response to exchange.delete
 
     def __init__(self):
         """
         Create frame exchange.delete-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ExchangeDeleteOk()
+
 
 class Queue(AMQPClass):
     """
@@ -985,13 +1445,24 @@ class QueueBind(AMQPMethod):
     CLASS = Queue
     NAME = u'bind'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 20
     FULLNAME = u'queue.bind'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 20
+    METHOD_INDEX_BINARY = b'\x14'
+    BINARY_HEADER = b'\x32\x14'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [QueueBindOk]
-    BINARY_HEADER = b'\x32\x14'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 43 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1032,9 +1503,42 @@ class QueueBind(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hppp?', 0, self.queue, self.exchange, self.routing_key, self.no_wait))
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+        buf.write(struct.pack('!B', (int(self.no_wait) << 0)))
+        _enframe_table(buf, self.arguments)
+
+    def get_size(self):
+        return len(self.queue) + len(self.exchange) + len(self.routing_key) + _frame_table_size(self.arguments) + 10
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueueBind.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        no_wait = bool(_bit & 1)
+        arguments, delta = _deframe_table(buf, offset)
+        offset += delta
+        return QueueBind(queue, exchange, routing_key, no_wait, arguments)
 
 
 class QueueBindOk(AMQPMethod):
@@ -1046,20 +1550,38 @@ class QueueBindOk(AMQPMethod):
     CLASS = Queue
     NAME = u'bind-ok'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 21
     FULLNAME = u'queue.bind-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 21
+    METHOD_INDEX_BINARY = b'\x15'
+    BINARY_HEADER = b'\x32\x15'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x32\x15'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x32\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = QueueBind # this is sent in response to queue.bind
 
     def __init__(self):
         """
         Create frame queue.bind-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return QueueBindOk()
+
 
 class QueueDeclare(AMQPMethod):
     """
@@ -1072,13 +1594,24 @@ class QueueDeclare(AMQPMethod):
     CLASS = Queue
     NAME = u'declare'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 10
     FULLNAME = u'queue.declare'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 10
+    METHOD_INDEX_BINARY = b'\x0A'
+    BINARY_HEADER = b'\x32\x0A'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [QueueDeclareOk]
-    BINARY_HEADER = b'\x32\x0A'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 29 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1138,9 +1671,34 @@ class QueueDeclare(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hp?????', 0, self.queue, self.passive, self.durable, self.exclusive, self.auto_delete, self.no_wait))
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!B', (int(self.passive) << 0) | (int(self.durable) << 1) | (int(self.exclusive) << 2) | (int(self.auto_delete) << 3) | (int(self.no_wait) << 4)))
+        _enframe_table(buf, self.arguments)
+
+    def get_size(self):
+        return len(self.queue) + _frame_table_size(self.arguments) + 8
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueueDeclare.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        passive = bool(_bit & 1)
+        durable = bool(_bit & 2)
+        exclusive = bool(_bit & 4)
+        auto_delete = bool(_bit & 8)
+        no_wait = bool(_bit & 16)
+        arguments, delta = _deframe_table(buf, offset)
+        offset += delta
+        return QueueDeclare(queue, passive, durable, exclusive, auto_delete, no_wait, arguments)
 
 
 class QueueDelete(AMQPMethod):
@@ -1154,13 +1712,24 @@ class QueueDelete(AMQPMethod):
     CLASS = Queue
     NAME = u'delete'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 40
     FULLNAME = u'queue.delete'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 40
+    METHOD_INDEX_BINARY = b'\x28'
+    BINARY_HEADER = b'\x32\x28'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [QueueDeleteOk]
-    BINARY_HEADER = b'\x32\x28'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 10 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1190,8 +1759,29 @@ class QueueDelete(AMQPMethod):
         self.if_empty = if_empty
         self.no_wait = no_wait
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hp???', 0, self.queue, self.if_unused, self.if_empty, self.no_wait))
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!B', (int(self.if_unused) << 0) | (int(self.if_empty) << 1) | (int(self.no_wait) << 2)))
+
+    def get_size(self):
+        return len(self.queue) + 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueueDelete.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        if_unused = bool(_bit & 1)
+        if_empty = bool(_bit & 2)
+        no_wait = bool(_bit & 4)
+        return QueueDelete(queue, if_unused, if_empty, no_wait)
 
 
 class QueueDeclareOk(AMQPMethod):
@@ -1204,13 +1794,24 @@ class QueueDeclareOk(AMQPMethod):
     CLASS = Queue
     NAME = u'declare-ok'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 11
     FULLNAME = u'queue.declare-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 11
+    METHOD_INDEX_BINARY = b'\x0B'
+    BINARY_HEADER = b'\x32\x0B'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x32\x0B'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 15 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = QueueDeclare # this is sent in response to queue.declare
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1235,8 +1836,25 @@ class QueueDeclareOk(AMQPMethod):
         self.message_count = message_count
         self.consumer_count = consumer_count
 
-    def write_arguments(self, out):
-        out(struct.pack('!pII', self.queue, self.message_count, self.consumer_count))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!II', self.message_count, self.consumer_count))
+
+    def get_size(self):
+        return len(self.queue) + 9
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueueDeclareOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        message_count, consumer_count, = struct.unpack_from('!II', buf, offset)
+        offset += 8
+        return QueueDeclareOk(queue, message_count, consumer_count)
 
 
 class QueueDeleteOk(AMQPMethod):
@@ -1248,13 +1866,24 @@ class QueueDeleteOk(AMQPMethod):
     CLASS = Queue
     NAME = u'delete-ok'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 41
     FULLNAME = u'queue.delete-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 41
+    METHOD_INDEX_BINARY = b'\x29'
+    BINARY_HEADER = b'\x32\x29'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x32\x29'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 4 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = QueueDelete # this is sent in response to queue.delete
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'message-count', u'message-count', u'long', False), 
@@ -1269,8 +1898,18 @@ class QueueDeleteOk(AMQPMethod):
         """
         self.message_count = message_count
 
-    def write_arguments(self, out):
-        out(struct.pack('!I', self.message_count))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!I', self.message_count))
+
+    def get_size(self):
+        return 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueueDeleteOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        message_count, = struct.unpack_from('!I', buf, offset)
+        return QueueDeleteOk(message_count)
 
 
 class QueuePurge(AMQPMethod):
@@ -1283,13 +1922,24 @@ class QueuePurge(AMQPMethod):
     CLASS = Queue
     NAME = u'purge'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 30
     FULLNAME = u'queue.purge'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 30
+    METHOD_INDEX_BINARY = b'\x1E'
+    BINARY_HEADER = b'\x32\x1E'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [QueuePurgeOk]
-    BINARY_HEADER = b'\x32\x1E'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 10 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1307,8 +1957,27 @@ class QueuePurge(AMQPMethod):
         self.queue = queue
         self.no_wait = no_wait
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hp?', 0, self.queue, self.no_wait))
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!B', (int(self.no_wait) << 0)))
+
+    def get_size(self):
+        return len(self.queue) + 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueuePurge.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        no_wait = bool(_bit & 1)
+        return QueuePurge(queue, no_wait)
 
 
 class QueuePurgeOk(AMQPMethod):
@@ -1320,13 +1989,24 @@ class QueuePurgeOk(AMQPMethod):
     CLASS = Queue
     NAME = u'purge-ok'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 31
     FULLNAME = u'queue.purge-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 31
+    METHOD_INDEX_BINARY = b'\x1F'
+    BINARY_HEADER = b'\x32\x1F'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x32\x1F'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 4 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = QueuePurge # this is sent in response to queue.purge
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'message-count', u'message-count', u'long', False), 
@@ -1341,8 +2021,18 @@ class QueuePurgeOk(AMQPMethod):
         """
         self.message_count = message_count
 
-    def write_arguments(self, out):
-        out(struct.pack('!I', self.message_count))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!I', self.message_count))
+
+    def get_size(self):
+        return 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueuePurgeOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        message_count, = struct.unpack_from('!I', buf, offset)
+        return QueuePurgeOk(message_count)
 
 
 class QueueUnbind(AMQPMethod):
@@ -1354,13 +2044,24 @@ class QueueUnbind(AMQPMethod):
     CLASS = Queue
     NAME = u'unbind'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 50
     FULLNAME = u'queue.unbind'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 50
+    METHOD_INDEX_BINARY = b'\x32'
+    BINARY_HEADER = b'\x32\x32'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [QueueUnbindOk]
-    BINARY_HEADER = b'\x32\x32'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 42 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1389,9 +2090,38 @@ class QueueUnbind(AMQPMethod):
         self.routing_key = routing_key
         self.arguments = arguments
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hppp', 0, self.queue, self.exchange, self.routing_key))
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+        _enframe_table(buf, self.arguments)
+
+    def get_size(self):
+        return len(self.queue) + len(self.exchange) + len(self.routing_key) + _frame_table_size(self.arguments) + 9
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueueUnbind.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        arguments, delta = _deframe_table(buf, offset)
+        offset += delta
+        return QueueUnbind(queue, exchange, routing_key, arguments)
 
 
 class QueueUnbindOk(AMQPMethod):
@@ -1403,20 +2133,38 @@ class QueueUnbindOk(AMQPMethod):
     CLASS = Queue
     NAME = u'unbind-ok'
     CLASSNAME = u'queue'
-    CLASS_INDEX = 50
-    METHOD_INDEX = 51
     FULLNAME = u'queue.unbind-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 50
+    CLASS_INDEX_BINARY = b'\x32'
+    METHOD_INDEX = 51
+    METHOD_INDEX_BINARY = b'\x33'
+    BINARY_HEADER = b'\x32\x33'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x32\x33'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x32\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = QueueUnbind # this is sent in response to queue.unbind
 
     def __init__(self):
         """
         Create frame queue.unbind-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return QueueUnbindOk()
+
 
 class Basic(AMQPClass):
     """
@@ -1437,13 +2185,24 @@ class BasicAck(AMQPMethod):
     CLASS = Basic
     NAME = u'ack'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 80
     FULLNAME = u'basic.ack'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 80
+    METHOD_INDEX_BINARY = b'\x50'
+    BINARY_HEADER = b'\x3C\x50'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x50'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 9 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'delivery-tag', u'delivery-tag', u'longlong', False), 
         (u'multiple', u'bit', u'bit', False),  # acknowledge multiple messages
@@ -1464,8 +2223,20 @@ class BasicAck(AMQPMethod):
         self.delivery_tag = delivery_tag
         self.multiple = multiple
 
-    def write_arguments(self, out):
-        out(struct.pack('!L?', self.delivery_tag, self.multiple))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!Q', self.delivery_tag))
+        buf.write(struct.pack('!B', (int(self.multiple) << 0)))
+
+    def get_size(self):
+        return 9
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicAck.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        delivery_tag, _bit_0, = struct.unpack_from('!QB', buf, offset)
+        multiple = bool(_bit_0 & 1)
+        return BasicAck(delivery_tag, multiple)
 
 
 class BasicConsume(AMQPMethod):
@@ -1479,13 +2250,24 @@ class BasicConsume(AMQPMethod):
     CLASS = Basic
     NAME = u'consume'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 20
     FULLNAME = u'basic.consume'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 20
+    METHOD_INDEX_BINARY = b'\x14'
+    BINARY_HEADER = b'\x3C\x14'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [BasicConsumeOk]
-    BINARY_HEADER = b'\x3C\x14'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 36 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1527,9 +2309,39 @@ class BasicConsume(AMQPMethod):
         self.no_wait = no_wait
         self.arguments = arguments
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hpp????', 0, self.queue, self.consumer_tag, self.no_local, self.no_ack, self.exclusive, self.no_wait))
-        pass # this has a frame, but its only default shortstrs
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(self.consumer_tag)
+        buf.write(struct.pack('!B', (int(self.no_local) << 0) | (int(self.no_ack) << 1) | (int(self.exclusive) << 2) | (int(self.no_wait) << 3)))
+        _enframe_table(buf, self.arguments)
+
+    def get_size(self):
+        return len(self.queue) + len(self.consumer_tag) + _frame_table_size(self.arguments) + 9
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicConsume.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        consumer_tag = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        no_local = bool(_bit & 1)
+        no_ack = bool(_bit & 2)
+        exclusive = bool(_bit & 4)
+        no_wait = bool(_bit & 8)
+        arguments, delta = _deframe_table(buf, offset)
+        offset += delta
+        return BasicConsume(queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments)
 
 
 class BasicCancel(AMQPMethod):
@@ -1544,13 +2356,24 @@ class BasicCancel(AMQPMethod):
     CLASS = Basic
     NAME = u'cancel'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 30
     FULLNAME = u'basic.cancel'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 30
+    METHOD_INDEX_BINARY = b'\x1E'
+    BINARY_HEADER = b'\x3C\x1E'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [BasicCancelOk]
-    BINARY_HEADER = b'\x3C\x1E'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 8 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
         (u'no-wait', u'no-wait', u'bit', False), 
@@ -1566,8 +2389,26 @@ class BasicCancel(AMQPMethod):
         self.consumer_tag = consumer_tag
         self.no_wait = no_wait
 
-    def write_arguments(self, out):
-        out(struct.pack('!p?', self.consumer_tag, self.no_wait))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(self.consumer_tag)
+        buf.write(struct.pack('!B', (int(self.no_wait) << 0)))
+
+    def get_size(self):
+        return len(self.consumer_tag) + 2
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicCancel.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        consumer_tag = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        no_wait = bool(_bit & 1)
+        return BasicCancel(consumer_tag, no_wait)
 
 
 class BasicConsumeOk(AMQPMethod):
@@ -1580,13 +2421,24 @@ class BasicConsumeOk(AMQPMethod):
     CLASS = Basic
     NAME = u'consume-ok'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 21
     FULLNAME = u'basic.consume-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 21
+    METHOD_INDEX_BINARY = b'\x15'
+    BINARY_HEADER = b'\x3C\x15'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x15'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 7 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = BasicConsume # this is sent in response to basic.consume
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
@@ -1601,8 +2453,22 @@ class BasicConsumeOk(AMQPMethod):
         """
         self.consumer_tag = consumer_tag
 
-    def write_arguments(self, out):
-        out(struct.pack('!p', self.consumer_tag))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(self.consumer_tag)
+
+    def get_size(self):
+        return len(self.consumer_tag) + 1
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicConsumeOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        consumer_tag = buf[offset:offset+s_len]
+        offset += s_len
+        return BasicConsumeOk(consumer_tag)
 
 
 class BasicCancelOk(AMQPMethod):
@@ -1614,13 +2480,24 @@ class BasicCancelOk(AMQPMethod):
     CLASS = Basic
     NAME = u'cancel-ok'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 31
     FULLNAME = u'basic.cancel-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 31
+    METHOD_INDEX_BINARY = b'\x1F'
+    BINARY_HEADER = b'\x3C\x1F'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x1F'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 7 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = BasicCancel # this is sent in response to basic.cancel
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
@@ -1634,8 +2511,22 @@ class BasicCancelOk(AMQPMethod):
         """
         self.consumer_tag = consumer_tag
 
-    def write_arguments(self, out):
-        out(struct.pack('!p', self.consumer_tag))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(self.consumer_tag)
+
+    def get_size(self):
+        return len(self.consumer_tag) + 1
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicCancelOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        consumer_tag = buf[offset:offset+s_len]
+        offset += s_len
+        return BasicCancelOk(consumer_tag)
 
 
 class BasicDeliver(AMQPMethod):
@@ -1650,13 +2541,24 @@ class BasicDeliver(AMQPMethod):
     CLASS = Basic
     NAME = u'deliver'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 60
     FULLNAME = u'basic.deliver'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 60
+    METHOD_INDEX_BINARY = b'\x3C'
+    BINARY_HEADER = b'\x3C\x3C'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x3C'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 30 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'consumer-tag', u'consumer-tag', u'shortstr', False), 
         (u'delivery-tag', u'delivery-tag', u'longlong', False), 
@@ -1685,8 +2587,38 @@ class BasicDeliver(AMQPMethod):
         self.exchange = exchange
         self.routing_key = routing_key
 
-    def write_arguments(self, out):
-        out(struct.pack('!pL?pp', self.consumer_tag, self.delivery_tag, self.redelivered, self.exchange, self.routing_key))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(self.consumer_tag)
+        buf.write(struct.pack('!B', (int(self.redelivered) << 0)))
+        buf.write(struct.pack('!QB', self.delivery_tag, len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+
+    def get_size(self):
+        return len(self.consumer_tag) + len(self.exchange) + len(self.routing_key) + 12
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicDeliver.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        consumer_tag = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        redelivered = bool(_bit & 1)
+        delivery_tag, s_len, = struct.unpack_from('!QB', buf, offset)
+        offset += 9
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        return BasicDeliver(consumer_tag, delivery_tag, redelivered, exchange, routing_key)
 
 
 class BasicGet(AMQPMethod):
@@ -1700,13 +2632,24 @@ class BasicGet(AMQPMethod):
     CLASS = Basic
     NAME = u'get'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 70
     FULLNAME = u'basic.get'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 70
+    METHOD_INDEX_BINARY = b'\x46'
+    BINARY_HEADER = b'\x3C\x46'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [BasicGetOk, BasicGetEmpty]
-    BINARY_HEADER = b'\x3C\x46'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 10 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'queue', u'queue-name', u'shortstr', False), 
@@ -1724,8 +2667,27 @@ class BasicGet(AMQPMethod):
         self.queue = queue
         self.no_ack = no_ack
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hp?', 0, self.queue, self.no_ack))
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(self.queue)
+        buf.write(struct.pack('!B', (int(self.no_ack) << 0)))
+
+    def get_size(self):
+        return len(self.queue) + 4
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicGet.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        queue = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        no_ack = bool(_bit & 1)
+        return BasicGet(queue, no_ack)
 
 
 class BasicGetOk(AMQPMethod):
@@ -1739,13 +2701,24 @@ class BasicGetOk(AMQPMethod):
     CLASS = Basic
     NAME = u'get-ok'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 71
     FULLNAME = u'basic.get-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 71
+    METHOD_INDEX_BINARY = b'\x47'
+    BINARY_HEADER = b'\x3C\x47'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x47'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 27 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     RESPONSE_TO = BasicGet # this is sent in response to basic.get
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'delivery-tag', u'delivery-tag', u'longlong', False), 
@@ -1775,8 +2748,35 @@ class BasicGetOk(AMQPMethod):
         self.routing_key = routing_key
         self.message_count = message_count
 
-    def write_arguments(self, out):
-        out(struct.pack('!L?ppI', self.delivery_tag, self.redelivered, self.exchange, self.routing_key, self.message_count))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', (int(self.redelivered) << 0)))
+        buf.write(struct.pack('!QB', self.delivery_tag, len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+        buf.write(struct.pack('!I', self.message_count))
+
+    def get_size(self):
+        return len(self.exchange) + len(self.routing_key) + 15
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicGetOk.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        redelivered = bool(_bit & 1)
+        delivery_tag, s_len, = struct.unpack_from('!QB', buf, offset)
+        offset += 9
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        message_count, = struct.unpack_from('!I', buf, offset)
+        offset += 4
+        return BasicGetOk(delivery_tag, redelivered, exchange, routing_key, message_count)
 
 
 class BasicGetEmpty(AMQPMethod):
@@ -1789,13 +2789,25 @@ class BasicGetEmpty(AMQPMethod):
     CLASS = Basic
     NAME = u'get-empty'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 72
     FULLNAME = u'basic.get-empty'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 72
+    METHOD_INDEX_BINARY = b'\x48'
+    BINARY_HEADER = b'\x3C\x48'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x48'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 7 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x0D\x3C\x48\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = BasicGet # this is sent in response to basic.get
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'shortstr', u'shortstr', True), 
@@ -1806,8 +2818,11 @@ class BasicGetEmpty(AMQPMethod):
         Create frame basic.get-empty
         """
 
-    def write_arguments(self, out):
-        pass # this has a frame, but its only default shortstrs
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return BasicGetEmpty()
 
 
 class BasicPublish(AMQPMethod):
@@ -1821,13 +2836,24 @@ class BasicPublish(AMQPMethod):
     CLASS = Basic
     NAME = u'publish'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 40
     FULLNAME = u'basic.publish'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 40
+    METHOD_INDEX_BINARY = b'\x28'
+    BINARY_HEADER = b'\x3C\x28'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x28'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 17 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reserved-1', u'short', u'short', True), 
         (u'exchange', u'exchange-name', u'shortstr', False), 
@@ -1865,8 +2891,34 @@ class BasicPublish(AMQPMethod):
         self.mandatory = mandatory
         self.immediate = immediate
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hpp??', 0, self.exchange, self.routing_key, self.mandatory, self.immediate))
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+        buf.write(struct.pack('!B', (int(self.mandatory) << 0) | (int(self.immediate) << 1)))
+
+    def get_size(self):
+        return len(self.exchange) + len(self.routing_key) + 5
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicPublish.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        mandatory = bool(_bit & 1)
+        immediate = bool(_bit & 2)
+        return BasicPublish(exchange, routing_key, mandatory, immediate)
 
 
 class BasicQos(AMQPMethod):
@@ -1882,13 +2934,24 @@ class BasicQos(AMQPMethod):
     CLASS = Basic
     NAME = u'qos'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 10
     FULLNAME = u'basic.qos'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 10
+    METHOD_INDEX_BINARY = b'\x0A'
+    BINARY_HEADER = b'\x3C\x0A'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [BasicQosOk]
-    BINARY_HEADER = b'\x3C\x0A'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 7 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'prefetch-size', u'long', u'long', False),  # prefetch window in octets
         (u'prefetch-count', u'short', u'short', False),  # prefetch window in messages
@@ -1924,8 +2987,20 @@ class BasicQos(AMQPMethod):
         self.prefetch_count = prefetch_count
         self.global_ = global_
 
-    def write_arguments(self, out):
-        out(struct.pack('!IH?', self.prefetch_size, self.prefetch_count, self.global_))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!IH', self.prefetch_size, self.prefetch_count))
+        buf.write(struct.pack('!B', (int(self.global_) << 0)))
+
+    def get_size(self):
+        return 7
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicQos.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        prefetch_size, prefetch_count, _bit_0, = struct.unpack_from('!IHB', buf, offset)
+        global_ = bool(_bit_0 & 1)
+        return BasicQos(prefetch_size, prefetch_count, global_)
 
 
 class BasicQosOk(AMQPMethod):
@@ -1939,20 +3014,38 @@ class BasicQosOk(AMQPMethod):
     CLASS = Basic
     NAME = u'qos-ok'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 11
     FULLNAME = u'basic.qos-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 11
+    METHOD_INDEX_BINARY = b'\x0B'
+    BINARY_HEADER = b'\x3C\x0B'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x0B'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x3C\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = BasicQos # this is sent in response to basic.qos
 
     def __init__(self):
         """
         Create frame basic.qos-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return BasicQosOk()
+
 
 class BasicReturn(AMQPMethod):
     """
@@ -1966,13 +3059,24 @@ class BasicReturn(AMQPMethod):
     CLASS = Basic
     NAME = u'return'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 50
     FULLNAME = u'basic.return'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 50
+    METHOD_INDEX_BINARY = b'\x32'
+    BINARY_HEADER = b'\x3C\x32'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x32'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 23 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'reply-code', u'reply-code', u'short', False), 
         (u'reply-text', u'reply-text', u'shortstr', False), 
@@ -1998,8 +3102,34 @@ class BasicReturn(AMQPMethod):
         self.exchange = exchange
         self.routing_key = routing_key
 
-    def write_arguments(self, out):
-        out(struct.pack('!Hppp', self.reply_code, self.reply_text, self.exchange, self.routing_key))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
+        buf.write(self.reply_text)
+        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(self.exchange)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+
+    def get_size(self):
+        return len(self.reply_text) + len(self.exchange) + len(self.routing_key) + 5
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicReturn.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
+        offset += 3
+        reply_text = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        exchange = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        return BasicReturn(reply_code, reply_text, exchange, routing_key)
 
 
 class BasicReject(AMQPMethod):
@@ -2013,13 +3143,24 @@ class BasicReject(AMQPMethod):
     CLASS = Basic
     NAME = u'reject'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 90
     FULLNAME = u'basic.reject'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 90
+    METHOD_INDEX_BINARY = b'\x5A'
+    BINARY_HEADER = b'\x3C\x5A'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x5A'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 9 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'delivery-tag', u'delivery-tag', u'longlong', False), 
         (u'requeue', u'bit', u'bit', False),  # requeue the message
@@ -2038,8 +3179,20 @@ class BasicReject(AMQPMethod):
         self.delivery_tag = delivery_tag
         self.requeue = requeue
 
-    def write_arguments(self, out):
-        out(struct.pack('!L?', self.delivery_tag, self.requeue))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!Q', self.delivery_tag))
+        buf.write(struct.pack('!B', (int(self.requeue) << 0)))
+
+    def get_size(self):
+        return 9
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicReject.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        delivery_tag, _bit_0, = struct.unpack_from('!QB', buf, offset)
+        requeue = bool(_bit_0 & 1)
+        return BasicReject(delivery_tag, requeue)
 
 
 class BasicRecoverAsync(AMQPMethod):
@@ -2053,13 +3206,24 @@ class BasicRecoverAsync(AMQPMethod):
     CLASS = Basic
     NAME = u'recover-async'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 100
     FULLNAME = u'basic.recover-async'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 100
+    METHOD_INDEX_BINARY = b'\x64'
+    BINARY_HEADER = b'\x3C\x64'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x64'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 1 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'requeue', u'bit', u'bit', False),  # requeue the message
     ]
@@ -2076,8 +3240,19 @@ class BasicRecoverAsync(AMQPMethod):
         """
         self.requeue = requeue
 
-    def write_arguments(self, out):
-        out(struct.pack('!?', self.requeue))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', (int(self.requeue) << 0)))
+
+    def get_size(self):
+        return 1
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicRecoverAsync.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        _bit_0, = struct.unpack_from('!B', buf, offset)
+        requeue = bool(_bit_0 & 1)
+        return BasicRecoverAsync(requeue)
 
 
 class BasicRecover(AMQPMethod):
@@ -2091,13 +3266,24 @@ class BasicRecover(AMQPMethod):
     CLASS = Basic
     NAME = u'recover'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 110
     FULLNAME = u'basic.recover'
-    SYNCHRONOUS = False
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 110
+    METHOD_INDEX_BINARY = b'\x6E'
+    BINARY_HEADER = b'\x3C\x6E'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = False        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x6E'
-    IS_SIZE_STATIC = False
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 1 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
     FIELDS = [ # tuples of (field name, field domain, basic type used, is_reserved)
         (u'requeue', u'bit', u'bit', False),  # requeue the message
     ]
@@ -2114,8 +3300,19 @@ class BasicRecover(AMQPMethod):
         """
         self.requeue = requeue
 
-    def write_arguments(self, out):
-        out(struct.pack('!?', self.requeue))
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', (int(self.requeue) << 0)))
+
+    def get_size(self):
+        return 1
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= BasicRecover.MINIMUM_SIZE, 'Frame too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        _bit_0, = struct.unpack_from('!B', buf, offset)
+        requeue = bool(_bit_0 & 1)
+        return BasicRecover(requeue)
 
 
 class BasicRecoverOk(AMQPMethod):
@@ -2127,19 +3324,37 @@ class BasicRecoverOk(AMQPMethod):
     CLASS = Basic
     NAME = u'recover-ok'
     CLASSNAME = u'basic'
-    CLASS_INDEX = 60
-    METHOD_INDEX = 111
     FULLNAME = u'basic.recover-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 60
+    CLASS_INDEX_BINARY = b'\x3C'
+    METHOD_INDEX = 111
+    METHOD_INDEX_BINARY = b'\x6F'
+    BINARY_HEADER = b'\x3C\x6F'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x3C\x6F'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x3C\x6F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
         Create frame basic.recover-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return BasicRecoverOk()
+
 
 class Tx(AMQPClass):
     """
@@ -2168,19 +3383,37 @@ class TxCommit(AMQPMethod):
     CLASS = Tx
     NAME = u'commit'
     CLASSNAME = u'tx'
-    CLASS_INDEX = 90
-    METHOD_INDEX = 20
     FULLNAME = u'tx.commit'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 90
+    CLASS_INDEX_BINARY = b'\x5A'
+    METHOD_INDEX = 20
+    METHOD_INDEX_BINARY = b'\x14'
+    BINARY_HEADER = b'\x5A\x14'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [TxCommitOk]
-    BINARY_HEADER = b'\x5A\x14'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x14\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
         Create frame tx.commit
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return TxCommit()
+
 
 class TxCommitOk(AMQPMethod):
     """
@@ -2192,20 +3425,38 @@ class TxCommitOk(AMQPMethod):
     CLASS = Tx
     NAME = u'commit-ok'
     CLASSNAME = u'tx'
-    CLASS_INDEX = 90
-    METHOD_INDEX = 21
     FULLNAME = u'tx.commit-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 90
+    CLASS_INDEX_BINARY = b'\x5A'
+    METHOD_INDEX = 21
+    METHOD_INDEX_BINARY = b'\x15'
+    BINARY_HEADER = b'\x5A\x15'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x5A\x15'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = TxCommit # this is sent in response to tx.commit
 
     def __init__(self):
         """
         Create frame tx.commit-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return TxCommitOk()
+
 
 class TxRollback(AMQPMethod):
     """
@@ -2219,19 +3470,37 @@ class TxRollback(AMQPMethod):
     CLASS = Tx
     NAME = u'rollback'
     CLASSNAME = u'tx'
-    CLASS_INDEX = 90
-    METHOD_INDEX = 30
     FULLNAME = u'tx.rollback'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 90
+    CLASS_INDEX_BINARY = b'\x5A'
+    METHOD_INDEX = 30
+    METHOD_INDEX_BINARY = b'\x1E'
+    BINARY_HEADER = b'\x5A\x1E'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [TxRollbackOk]
-    BINARY_HEADER = b'\x5A\x1E'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x1E\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
         Create frame tx.rollback
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return TxRollback()
+
 
 class TxRollbackOk(AMQPMethod):
     """
@@ -2243,20 +3512,38 @@ class TxRollbackOk(AMQPMethod):
     CLASS = Tx
     NAME = u'rollback-ok'
     CLASSNAME = u'tx'
-    CLASS_INDEX = 90
-    METHOD_INDEX = 31
     FULLNAME = u'tx.rollback-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 90
+    CLASS_INDEX_BINARY = b'\x5A'
+    METHOD_INDEX = 31
+    METHOD_INDEX_BINARY = b'\x1F'
+    BINARY_HEADER = b'\x5A\x1F'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x5A\x1F'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = TxRollback # this is sent in response to tx.rollback
 
     def __init__(self):
         """
         Create frame tx.rollback-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return TxRollbackOk()
+
 
 class TxSelect(AMQPMethod):
     """
@@ -2268,19 +3555,37 @@ class TxSelect(AMQPMethod):
     CLASS = Tx
     NAME = u'select'
     CLASSNAME = u'tx'
-    CLASS_INDEX = 90
-    METHOD_INDEX = 10
     FULLNAME = u'tx.select'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 90
+    CLASS_INDEX_BINARY = b'\x5A'
+    METHOD_INDEX = 10
+    METHOD_INDEX_BINARY = b'\x0A'
+    BINARY_HEADER = b'\x5A\x0A'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = [TxSelectOk]
-    BINARY_HEADER = b'\x5A\x0A'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = True
+    SENT_BY_SERVER = False
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x0A\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
         Create frame tx.select
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return TxSelect()
+
 
 class TxSelectOk(AMQPMethod):
     """
@@ -2292,20 +3597,38 @@ class TxSelectOk(AMQPMethod):
     CLASS = Tx
     NAME = u'select-ok'
     CLASSNAME = u'tx'
-    CLASS_INDEX = 90
-    METHOD_INDEX = 11
     FULLNAME = u'tx.select-ok'
-    SYNCHRONOUS = True
+
+    CLASS_INDEX = 90
+    CLASS_INDEX_BINARY = b'\x5A'
+    METHOD_INDEX = 11
+    METHOD_INDEX_BINARY = b'\x0B'
+    BINARY_HEADER = b'\x5A\x0B'      # CLASS ID + METHOD ID
+
+    SYNCHRONOUS = True        # does this message imply other one?
     REPLY_WITH = []
-    BINARY_HEADER = b'\x5A\x0B'
-    IS_SIZE_STATIC = True
-    STATIC_ARGUMENT_SIZE = 0 # length of arguments (as binary) is constant here
+
+    SENT_BY_CLIENT = False
+    SENT_BY_SERVER = True
+
+    MINIMUM_SIZE = 0 # arguments part can never be shorter than this
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
     RESPONSE_TO = TxSelect # this is sent in response to tx.select
 
     def __init__(self):
         """
         Create frame tx.select-ok
         """
+
+    # not generating write_arguments - this method has static content!
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return TxSelectOk()
+
 
 IDENT_TO_METHOD = {
     (90, 21): TxCommitOk,
@@ -2361,5 +3684,62 @@ IDENT_TO_METHOD = {
     (50, 51): QueueUnbindOk,
     (50, 21): QueueBindOk,
     (50, 10): QueueDeclare,
+}
+
+
+BINARY_HEADER_TO_METHOD = {
+    b'\x5A\x15': TxCommitOk,
+    b'\x3C\x64': BasicRecoverAsync,
+    b'\x0A\x0B': ConnectionStartOk,
+    b'\x3C\x28': BasicPublish,
+    b'\x3C\x32': BasicReturn,
+    b'\x0A\x33': ConnectionCloseOk,
+    b'\x14\x14': ChannelFlow,
+    b'\x3C\x15': BasicConsumeOk,
+    b'\x0A\x15': ConnectionSecureOk,
+    b'\x5A\x1E': TxRollback,
+    b'\x5A\x0A': TxSelect,
+    b'\x32\x0B': QueueDeclareOk,
+    b'\x3C\x46': BasicGet,
+    b'\x5A\x0B': TxSelectOk,
+    b'\x0A\x1E': ConnectionTune,
+    b'\x3C\x0B': BasicQosOk,
+    b'\x3C\x50': BasicAck,
+    b'\x14\x15': ChannelFlowOk,
+    b'\x3C\x3C': BasicDeliver,
+    b'\x5A\x1F': TxRollbackOk,
+    b'\x14\x28': ChannelClose,
+    b'\x3C\x47': BasicGetOk,
+    b'\x32\x1E': QueuePurge,
+    b'\x0A\x1F': ConnectionTuneOk,
+    b'\x0A\x28': ConnectionOpen,
+    b'\x3C\x1E': BasicCancel,
+    b'\x32\x32': QueueUnbind,
+    b'\x28\x0A': ExchangeDeclare,
+    b'\x0A\x32': ConnectionClose,
+    b'\x14\x0A': ChannelOpen,
+    b'\x14\x29': ChannelCloseOk,
+    b'\x3C\x6E': BasicRecover,
+    b'\x3C\x5A': BasicReject,
+    b'\x32\x1F': QueuePurgeOk,
+    b'\x32\x28': QueueDelete,
+    b'\x28\x14': ExchangeDelete,
+    b'\x32\x14': QueueBind,
+    b'\x0A\x29': ConnectionOpenOk,
+    b'\x3C\x1F': BasicCancelOk,
+    b'\x5A\x14': TxCommit,
+    b'\x0A\x0A': ConnectionStart,
+    b'\x3C\x0A': BasicQos,
+    b'\x28\x0B': ExchangeDeclareOk,
+    b'\x28\x15': ExchangeDeleteOk,
+    b'\x14\x0B': ChannelOpenOk,
+    b'\x3C\x48': BasicGetEmpty,
+    b'\x3C\x6F': BasicRecoverOk,
+    b'\x3C\x14': BasicConsume,
+    b'\x0A\x14': ConnectionSecure,
+    b'\x32\x29': QueueDeleteOk,
+    b'\x32\x33': QueueUnbindOk,
+    b'\x32\x15': QueueBindOk,
+    b'\x32\x0A': QueueDeclare,
 }
 

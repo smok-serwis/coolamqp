@@ -32,12 +32,6 @@ def translate_exceptions(fun):
                 amqp.exceptions.NotFound,
                 amqp.exceptions.AccessRefused) as e:
 
-            try:
-                e.reply_code
-            except AttributeError:
-
-
-            if e.
 
             raise RemoteAMQPError(e.reply_code, e.reply_text)
         except (IOError,

@@ -2,32 +2,25 @@
 from __future__ import absolute_import, division, print_function
 from collections import namedtuple
 import six
+import math
+
+from coolamqp.framing.frames.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 
 # docs may be None
 
 Constant = namedtuple('Constant', ('name', 'value', 'kind', 'docs'))  # kind is AMQP constant class # value is int
-Field = namedtuple('Field', ('name', 'type', 'label', 'docs', 'reserved')) # reserved is bool
-Method = namedtuple('Method', ('name', 'synchronous', 'index', 'label', 'docs', 'fields', 'response'))
-        # synchronous is bool
+Field = namedtuple('Field', ('name', 'type', 'label', 'docs', 'reserved', 'basic_type')) # reserved is bool
+Method = namedtuple('Method', ('name', 'synchronous', 'index', 'label', 'docs', 'fields', 'response',
+                               'sent_by_client', 'sent_by_server', 'constant'))
+        # synchronous is bool, constant is bool
         # repponse is a list of method.name
 Class_ = namedtuple('Class_', ('name', 'index', 'docs', 'methods'))   # label is int
 Domain = namedtuple('Domain', ('name', 'type', 'elementary'))   # elementary is bool
 
-            # name => (length|None, struct ID|None, reserved-field-value : for struct if structable, bytes else)
-BASIC_TYPES = {'bit': (1, '?', 0),
-               'octet': (1, 'B', 0),
-               'short': (2, 'H', 0),
-               'long': (4, 'I', 0),
-               'longlong': (8, 'L', 0),
-               'timestamp': (8, 'L', 0),
-               'table': (None, None, b'\x00\x00\x00\x00'),
-               'longstr': (None, None, b'\x00\x00\x00\x00'),
-               'shortstr': (None, 'p', '')
-               }
 
 
 class Method(object):
-    def __init__(self, name, synchronous, index, label, docs, fields, response):
+    def __init__(self, name, synchronous, index, label, docs, fields, response, sent_by_client, sent_by_server):
         self.name = name
         self.synchronous = synchronous
         self.index = index
@@ -35,25 +28,56 @@ class Method(object):
         self.response = response
         self.label = label
         self.docs = docs
+        self.sent_by_client = sent_by_client
+        self.sent_by_server = sent_by_server
 
-    def get_size(self, domain_to_type): # for static methods
-        size = 0
+        self.constant = len([f for f in self.fields if not f.reserved]) == 0
+
+    def get_static_body(self):  # only arguments part
+        body = []
+        bits = 0
         for field in self.fields:
-            tp = field.type
-            while tp in domain_to_type:
-                tp = domain_to_type[tp]
-            if BASIC_TYPES[tp] is None:
-                raise TypeError()
-            size += BASIC_TYPES[tp]
+
+            if bits > 0 and field.basic_type != 'bit':
+                body.append(b'\x00' * math.ceil(bits / 8))
+                bits = 0
+
+            if field.basic_type == 'bit':
+                bits += 1
+            else:
+                body.append(eval(BASIC_TYPES[field.basic_type][2]))
+        return b''.join(body)
+
+    def get_size(self, domain_to_type=None): # for static methods
+        size = 0
+        bits = 0
+        for field in self.fields:
+
+            if (bits > 0) and (field.basic_type != 'bit'):  # sync bits
+                size += int(math.ceil(bits / 8))
+                bits = 0
+
+            if BASIC_TYPES[field.basic_type][0] is None:
+                if field.basic_type == 'bit':
+                    bits += 1
+                else:
+                    size += len(BASIC_TYPES[field.basic_type][2])   # default minimum entry
+            else:
+                size += BASIC_TYPES[field.basic_type][0]
+
+        if bits > 0:    # sync bits
+            size += int(math.ceil(bits / 8))
+
         return size
 
-    def is_static(self, domain_to_type):    # is size constant?
-        try:
-            self.get_size(domain_to_type)
-        except TypeError:
-            return False
+    def is_static(self, domain_to_type=None):    # is size constant?
+        for field in self.fields:
+            if field.basic_type in DYNAMIC_BASIC_TYPES:
+                return False
         return True
 
+    def get_minimum_size(self, domain_to_type=None):
+        return self.get_size()
 
 
 def get_docs(elem):
@@ -78,14 +102,18 @@ def for_method_field(elem): # for <field> in <method>
     return Field(six.text_type(a['name']), a['domain'] if 'domain' in a else a['type'],
                  a.get('label', None),
                  get_docs(elem),
-                 a.get('reserved', '0') == '1')
+                 a.get('reserved', '0') == '1',
+                 None)
 
 
 def for_method(elem):       # for <method>
     a = elem.attrib
     return Method(six.text_type(a['name']), bool(int(a.get('synchronous', '0'))), int(a['index']), a['label'], get_docs(elem),
                   [for_method_field(fie) for fie in elem.getchildren() if fie.tag == 'field'],
-                  [e.attrib['name'] for e in elem.findall('response')]
+                  [e.attrib['name'] for e in elem.findall('response')],
+                  # if chassis=server that means server has to accept it
+                  any([e.attrib.get('name', '') == 'server' for e in elem.getchildren() if e.tag == 'chassis']),
+                  any([e.attrib.get('name', '') == 'client' for e in elem.getchildren() if e.tag == 'chassis'])
                   )
 
 def for_class(elem):        # for <class>
