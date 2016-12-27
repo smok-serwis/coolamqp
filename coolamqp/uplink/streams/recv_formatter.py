@@ -6,9 +6,9 @@ import six
 import collections
 import socket
 
-from coolamqp.framing.frames.definitions import FRAME_HEADER, FRAME_HEARTBEAT, FRAME_END, FRAME_METHOD, FRAME_BODY
-from coolamqp.framing.frames.frames import AMQPBodyFrame, AMQPHeaderFrame, AMQPHeartbeatFrame, AMQPMethodFrame
-from coolamqp.framing.streams.exceptions import InvalidDataError
+from coolamqp.uplink.frames.definitions import FRAME_HEADER, FRAME_HEARTBEAT, FRAME_END, FRAME_METHOD, FRAME_BODY
+from coolamqp.uplink.frames.frames import AMQPBodyFrame, AMQPHeaderFrame, AMQPHeartbeatFrame, AMQPMethodFrame
+from coolamqp.uplink.streams.exceptions import InvalidDataError
 
 
 FRAME_TYPES = {

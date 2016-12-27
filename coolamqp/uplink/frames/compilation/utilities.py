@@ -4,7 +4,7 @@ from collections import namedtuple
 import six
 import math
 
-from coolamqp.framing.frames.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
+from coolamqp.uplink.frames.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 
 # docs may be None
 

@@ -6,8 +6,8 @@ from __future__ import absolute_import, division, print_function
 
 import struct
 
-from coolamqp.framing.frames.base import AMQPFrame
-from coolamqp.framing.frames.definitions import FRAME_METHOD, FRAME_HEARTBEAT, FRAME_BODY, FRAME_HEADER, FRAME_END, \
+from coolamqp.uplink.frames.base import AMQPFrame
+from coolamqp.uplink.frames.definitions import FRAME_METHOD, FRAME_HEARTBEAT, FRAME_BODY, FRAME_HEADER, FRAME_END, \
     IDENT_TO_METHOD
 
 

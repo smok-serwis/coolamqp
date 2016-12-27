@@ -13,7 +13,11 @@ setup(name='CoolAMQP',
       packages=[
           'coolamqp',
           'coolamqp.backends',
-          'coolamqp.framing',
+          'coolamqp.uplink',
+          'coolamqp.uplink.frames',
+          'coolamqp.uplink.frames.compilation',
+          'coolamqp.uplink.streams',
+
       ],
       license='MIT License',
       long_description=u'The AMQP client that handles reconnection madness for you',

@@ -4,7 +4,7 @@ from __future__ import print_function, absolute_import
 A Python version of the AMQP machine-readable specification.
 
 Generated automatically by CoolAMQP from AMQP machine-readable specification.
-See coolamqp.framing.frames.compilation for the tool
+See coolamqp.uplink.frames.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
@@ -12,8 +12,8 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 import struct
 
-from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
-from coolamqp.framing.frames.field_table import enframe_table, deframe_table, frame_table_size
+from coolamqp.uplink.frames.base_definitions import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
+from coolamqp.uplink.frames.field_table import enframe_table, deframe_table, frame_table_size
 
 # Core constants
 FRAME_METHOD = 1
@@ -435,7 +435,7 @@ class ConnectionStart(AMQPMethodPayload):
             "version", giving the name of the server version, "platform", giving the name
             of the operating system, "copyright", if appropriate, and "information", giving
             other general information.
-        :type server_properties: table. See coolamqp.framing.frames.field_table (peer-properties in AMQP)
+        :type server_properties: table. See coolamqp.uplink.frames.field_table (peer-properties in AMQP)
         :param mechanisms: Available security mechanisms
             A list of the security mechanisms that the server supports, delimited by spaces.
         :type mechanisms: binary type (longstr in AMQP)
@@ -588,7 +588,7 @@ class ConnectionStartOk(AMQPMethodPayload):
             of the client product, "version", giving the name of the client version, "platform",
             giving the name of the operating system, "copyright", if appropriate, and
             "information", giving other general information.
-        :type client_properties: table. See coolamqp.framing.frames.field_table (peer-properties in AMQP)
+        :type client_properties: table. See coolamqp.uplink.frames.field_table (peer-properties in AMQP)
         :param mechanism: Selected security mechanism
             A single security mechanisms selected by the client, which must be one of those
             specified by the server.
@@ -1346,7 +1346,7 @@ class ExchangeDeclare(AMQPMethodPayload):
         :param arguments: Arguments for declaration
             A set of arguments for the declaration. The syntax and semantics of these
             arguments depends on the server implementation.
-        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
+        :type arguments: table. See coolamqp.uplink.frames.field_table (table in AMQP)
         """
         self.exchange = exchange
         self.type = type
@@ -1663,7 +1663,7 @@ class QueueBind(AMQPMethodPayload):
         :param arguments: Arguments for binding
             A set of arguments for the binding. The syntax and semantics of these arguments
             depends on the exchange class.
-        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
+        :type arguments: table. See coolamqp.uplink.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.exchange = exchange
@@ -1833,7 +1833,7 @@ class QueueDeclare(AMQPMethodPayload):
         :param arguments: Arguments for declaration
             A set of arguments for the declaration. The syntax and semantics of these
             arguments depends on the server implementation.
-        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
+        :type arguments: table. See coolamqp.uplink.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.passive = passive
@@ -2267,7 +2267,7 @@ class QueueUnbind(AMQPMethodPayload):
         :type routing_key: binary type (max length 255) (shortstr in AMQP)
         :param arguments: Arguments of binding
             Specifies the arguments of the binding to unbind.
-        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
+        :type arguments: table. See coolamqp.uplink.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.exchange = exchange
@@ -2395,7 +2395,7 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         :param content_encoding: MIME content encoding
         :type content_encoding: binary type (max length 255) (shortstr in AMQP)
         :param headers: message header field table
-        :type headers: table. See coolamqp.framing.frames.field_table (table in AMQP)
+        :type headers: table. See coolamqp.uplink.frames.field_table (table in AMQP)
         :param delivery_mode: non-persistent (1) or persistent (2)
         :type delivery_mode: int, 8 bit unsigned (octet in AMQP)
         :param priority: message priority, 0 to 9
@@ -2633,7 +2633,7 @@ class BasicConsume(AMQPMethodPayload):
         :param arguments: Arguments for declaration
             A set of arguments for the consume. The syntax and semantics of these
             arguments depends on the server implementation.
-        :type arguments: table. See coolamqp.framing.frames.field_table (table in AMQP)
+        :type arguments: table. See coolamqp.uplink.frames.field_table (table in AMQP)
         """
         self.queue = queue
         self.consumer_tag = consumer_tag

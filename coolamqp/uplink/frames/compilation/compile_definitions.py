@@ -5,15 +5,15 @@ import struct
 import six
 import math
 
-from coolamqp.framing.frames.compilation.utilities import get_constants, get_classes, get_domains, \
+from coolamqp.uplink.frames.compilation.utilities import get_constants, get_classes, get_domains, \
     byname, name_class, name_method, name_field, ffmt, doxify, infertype, normname, as_nice_escaped_string, \
     frepr
-from coolamqp.framing.frames.base import BASIC_TYPES
+from coolamqp.uplink.frames.base import BASIC_TYPES
 
 TYPE_TRANSLATOR = {
         'shortstr': 'binary type (max length 255)',
         'longstr': 'binary type',
-        'table': 'table. See coolamqp.framing.frames.field_table',
+        'table': 'table. See coolamqp.uplink.frames.field_table',
         'bit': 'bool',
         'octet': 'int, 8 bit unsigned',
         'short': 'int, 16 bit unsigned',
@@ -22,7 +22,7 @@ TYPE_TRANSLATOR = {
         'timestamp': '64 bit signed POSIX timestamp (in seconds)',
 }
 
-def compile_definitions(xml_file='resources/amqp0-9-1.xml', out_file='coolamqp/framing/frames/definitions.py'):
+def compile_definitions(xml_file='resources/amqp0-9-1.xml', out_file='coolamqp/uplink/frames/definitions.py'):
     """parse resources/amqp-0-9-1.xml into """
 
     xml = ElementTree.parse(xml_file)
@@ -34,7 +34,7 @@ from __future__ import print_function, absolute_import
 A Python version of the AMQP machine-readable specification.
 
 Generated automatically by CoolAMQP from AMQP machine-readable specification.
-See coolamqp.framing.frames.compilation for the tool
+See coolamqp.uplink.frames.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
@@ -42,8 +42,8 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 import struct
 
-from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
-from coolamqp.framing.frames.field_table import enframe_table, deframe_table, frame_table_size
+from coolamqp.uplink.frames.base_definitions import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
+from coolamqp.uplink.frames.field_table import enframe_table, deframe_table, frame_table_size
 
 ''')
 

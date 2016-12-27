@@ -7,7 +7,6 @@ import io
 import socket
 
 
-
 class SendingOperator(object):
     """
     Assembles AMQP frames from received data and orchestrates their upload via a socket.
@@ -42,7 +41,6 @@ class SendingOperator(object):
         self.on_close = on_close
 
         self.failed = False
-
 
     def _failed(self, e):
         """Discard all to_send, run on_fail callables"""

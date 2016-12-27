@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function
 
 import struct
 
-from coolamqp.framing.frames.base import AMQPPayload
+from coolamqp.uplink.frames.base import AMQPPayload
 
 
 
@@ -31,7 +31,7 @@ class AMQPMethodPayload(AMQPPayload):
         Write own content to target buffer - starting from LENGTH, ending on FRAME_END
         :param buf: target buffer
         """
-        from coolamqp.framing.frames.definitions import FRAME_END
+        from coolamqp.uplink.frames.definitions import FRAME_END
 
         if self.IS_CONTENT_STATIC:
             buf.write(self.STATIC_CONTENT)
