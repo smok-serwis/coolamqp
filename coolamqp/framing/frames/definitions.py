@@ -114,10 +114,11 @@ class ConnectionContentPropertyList(AMQPContentPropertyList):
     CLASS_INDEX = 10
     CLASS = Connection
 
-    CONTENT_PROPERTIES = [
-    # tuple of (name, domain, type)
+    CONTENT_PROPERTIES = [  # tuple of (name, domain, type)
+
     ]
 
+    def __init__(self):'
 
 class ConnectionClose(AMQPMethodPayload):
     """
@@ -855,10 +856,11 @@ class ChannelContentPropertyList(AMQPContentPropertyList):
     CLASS_INDEX = 20
     CLASS = Channel
 
-    CONTENT_PROPERTIES = [
-    # tuple of (name, domain, type)
+    CONTENT_PROPERTIES = [  # tuple of (name, domain, type)
+
     ]
 
+    def __init__(self):'
 
 class ChannelClose(AMQPMethodPayload):
     """
@@ -1220,10 +1222,11 @@ class ExchangeContentPropertyList(AMQPContentPropertyList):
     CLASS_INDEX = 40
     CLASS = Exchange
 
-    CONTENT_PROPERTIES = [
-    # tuple of (name, domain, type)
+    CONTENT_PROPERTIES = [  # tuple of (name, domain, type)
+
     ]
 
+    def __init__(self):'
 
 class ExchangeDeclare(AMQPMethodPayload):
     """
@@ -1530,10 +1533,11 @@ class QueueContentPropertyList(AMQPContentPropertyList):
     CLASS_INDEX = 50
     CLASS = Queue
 
-    CONTENT_PROPERTIES = [
-    # tuple of (name, domain, type)
+    CONTENT_PROPERTIES = [  # tuple of (name, domain, type)
+
     ]
 
+    def __init__(self):'
 
 class QueueBind(AMQPMethodPayload):
     """
@@ -2304,8 +2308,8 @@ class BasicContentPropertyList(AMQPContentPropertyList):
     CLASS_INDEX = 60
     CLASS = Basic
 
-    CONTENT_PROPERTIES = [
-    # tuple of (name, domain, type)
+    CONTENT_PROPERTIES = [  # tuple of (name, domain, type)
+
         (u'content-type', u'shortstr', u'shortstr'), # u'MIME content type'
         (u'content-encoding', u'shortstr', u'shortstr'), # u'MIME content encoding'
         (u'headers', u'table', u'table'), # u'message header field table'
@@ -2322,6 +2326,21 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         (u'reserved', u'shortstr', u'shortstr'), # u'reserved, must be empty'
     ]
 
+    def __init__(self, content_type, content_encoding, headers, delivery_mode, priority, correlation_id, reply_to, expiration, message_id, timestamp, type, user_id, app_id, reserved):'
+        self.content_type = content_type # MIME content type
+        self.content_encoding = content_encoding # MIME content encoding
+        self.headers = headers # message header field table
+        self.delivery_mode = delivery_mode # non-persistent (1) or persistent (2)
+        self.priority = priority # message priority, 0 to 9
+        self.correlation_id = correlation_id # application correlation identifier
+        self.reply_to = reply_to # address to reply to
+        self.expiration = expiration # message expiration specification
+        self.message_id = message_id # application message identifier
+        self.timestamp = timestamp # message timestamp
+        self.type = type # message type name
+        self.user_id = user_id # creating user id
+        self.app_id = app_id # creating application id
+        self.reserved = reserved # reserved, must be empty
 
 class BasicAck(AMQPMethodPayload):
     """
@@ -3573,10 +3592,11 @@ class TxContentPropertyList(AMQPContentPropertyList):
     CLASS_INDEX = 90
     CLASS = Tx
 
-    CONTENT_PROPERTIES = [
-    # tuple of (name, domain, type)
+    CONTENT_PROPERTIES = [  # tuple of (name, domain, type)
+
     ]
 
+    def __init__(self):'
 
 class TxCommit(AMQPMethodPayload):
     """
