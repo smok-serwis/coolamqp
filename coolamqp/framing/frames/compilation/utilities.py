@@ -14,7 +14,7 @@ Method = namedtuple('Method', ('name', 'synchronous', 'index', 'label', 'docs', 
                                'sent_by_client', 'sent_by_server', 'constant'))
         # synchronous is bool, constant is bool
         # repponse is a list of method.name
-Property = namedtuple('Property', ('name', 'type', 'label', 'basic_type'))
+Property = namedtuple('Property', ('name', 'type', 'label', 'basic_type', 'reserved'))
 Class_ = namedtuple('Class_', ('name', 'index', 'docs', 'methods', 'content_properties'))   # label is int
 Domain = namedtuple('Domain', ('name', 'type', 'elementary'))   # elementary is bool
 
@@ -109,7 +109,8 @@ def for_method_field(elem): # for <field> in <method>
 
 def for_content_property(elem):
     a = elem.attrib
-    return Property(a['name'], a['domain'], a.get('label', ''), None)
+    return Property(a['name'], a['domain'], a.get('label', ''), None, 'reserved' in a['name'])
+
 
 def for_method(elem):       # for <method>
     a = elem.attrib

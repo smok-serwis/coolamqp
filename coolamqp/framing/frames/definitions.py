@@ -118,7 +118,22 @@ class ConnectionContentPropertyList(AMQPContentPropertyList):
 
     ]
 
-    def __init__(self):'
+    def __init__(self):
+        """
+        Create the property list.
+
+        """
+
+    def write_arguments(self, buf):
+        pass # this has a frame, but its only default shortstrs
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ConnectionContentPropertyList()
+
+    def get_size(self):
+        return 0
+
 
 class ConnectionClose(AMQPMethodPayload):
     """
@@ -860,7 +875,22 @@ class ChannelContentPropertyList(AMQPContentPropertyList):
 
     ]
 
-    def __init__(self):'
+    def __init__(self):
+        """
+        Create the property list.
+
+        """
+
+    def write_arguments(self, buf):
+        pass # this has a frame, but its only default shortstrs
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ChannelContentPropertyList()
+
+    def get_size(self):
+        return 0
+
 
 class ChannelClose(AMQPMethodPayload):
     """
@@ -1226,7 +1256,22 @@ class ExchangeContentPropertyList(AMQPContentPropertyList):
 
     ]
 
-    def __init__(self):'
+    def __init__(self):
+        """
+        Create the property list.
+
+        """
+
+    def write_arguments(self, buf):
+        pass # this has a frame, but its only default shortstrs
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return ExchangeContentPropertyList()
+
+    def get_size(self):
+        return 0
+
 
 class ExchangeDeclare(AMQPMethodPayload):
     """
@@ -1537,7 +1582,22 @@ class QueueContentPropertyList(AMQPContentPropertyList):
 
     ]
 
-    def __init__(self):'
+    def __init__(self):
+        """
+        Create the property list.
+
+        """
+
+    def write_arguments(self, buf):
+        pass # this has a frame, but its only default shortstrs
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return QueueContentPropertyList()
+
+    def get_size(self):
+        return 0
+
 
 class QueueBind(AMQPMethodPayload):
     """
@@ -2326,7 +2386,37 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         (u'reserved', u'shortstr', u'shortstr'), # u'reserved, must be empty'
     ]
 
-    def __init__(self, content_type, content_encoding, headers, delivery_mode, priority, correlation_id, reply_to, expiration, message_id, timestamp, type, user_id, app_id, reserved):'
+    def __init__(self, content_type, content_encoding, headers, delivery_mode, priority, correlation_id, reply_to, expiration, message_id, timestamp, type, user_id, app_id):
+        """
+        Create the property list.
+
+        :param content_type: MIME content type
+        :type content_type: binary type (max length 255) (shortstr in AMQP)
+        :param content_encoding: MIME content encoding
+        :type content_encoding: binary type (max length 255) (shortstr in AMQP)
+        :param headers: message header field table
+        :type headers: table. See coolamqp.framing.frames.field_table (table in AMQP)
+        :param delivery_mode: non-persistent (1) or persistent (2)
+        :type delivery_mode: int, 8 bit unsigned (octet in AMQP)
+        :param priority: message priority, 0 to 9
+        :type priority: int, 8 bit unsigned (octet in AMQP)
+        :param correlation_id: application correlation identifier
+        :type correlation_id: binary type (max length 255) (shortstr in AMQP)
+        :param reply_to: address to reply to
+        :type reply_to: binary type (max length 255) (shortstr in AMQP)
+        :param expiration: message expiration specification
+        :type expiration: binary type (max length 255) (shortstr in AMQP)
+        :param message_id: application message identifier
+        :type message_id: binary type (max length 255) (shortstr in AMQP)
+        :param timestamp: message timestamp
+        :type timestamp: 64 bit signed POSIX timestamp (in seconds) (timestamp in AMQP)
+        :param type: message type name
+        :type type: binary type (max length 255) (shortstr in AMQP)
+        :param user_id: creating user id
+        :type user_id: binary type (max length 255) (shortstr in AMQP)
+        :param app_id: creating application id
+        :type app_id: binary type (max length 255) (shortstr in AMQP)
+        """
         self.content_type = content_type # MIME content type
         self.content_encoding = content_encoding # MIME content encoding
         self.headers = headers # message header field table
@@ -2340,7 +2430,79 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         self.type = type # message type name
         self.user_id = user_id # creating user id
         self.app_id = app_id # creating application id
-        self.reserved = reserved # reserved, must be empty
+
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.content_type)))
+        buf.write(self.content_type)
+        buf.write(struct.pack('!B', len(self.content_encoding)))
+        buf.write(self.content_encoding)
+        enframe_table(buf, self.headers)
+        buf.write(struct.pack('!BBB', self.delivery_mode, self.priority, len(self.correlation_id)))
+        buf.write(self.correlation_id)
+        buf.write(struct.pack('!B', len(self.reply_to)))
+        buf.write(self.reply_to)
+        buf.write(struct.pack('!B', len(self.expiration)))
+        buf.write(self.expiration)
+        buf.write(struct.pack('!B', len(self.message_id)))
+        buf.write(self.message_id)
+        buf.write(struct.pack('!LB', self.timestamp, len(self.type)))
+        buf.write(self.type)
+        buf.write(struct.pack('!B', len(self.user_id)))
+        buf.write(self.user_id)
+        buf.write(struct.pack('!B', len(self.app_id)))
+        buf.write(self.app_id)
+        buf.write(b'\x00')
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        assert (len(buf) - start_offset) >= QueueUnbindOk.MINIMUM_SIZE, 'Content property list too short!'
+        offset = start_offset   # we will use it to count consumed bytes
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        content_type = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        content_encoding = buf[offset:offset+s_len]
+        offset += s_len
+        headers, delta = deframe_table(buf, offset)
+        offset += delta
+        delivery_mode, priority, s_len, = struct.unpack_from('!BBB', buf, offset)
+        offset += 3
+        correlation_id = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        reply_to = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        expiration = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        message_id = buf[offset:offset+s_len]
+        offset += s_len
+        timestamp, s_len, = struct.unpack_from('!LB', buf, offset)
+        offset += 9
+        type = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        user_id = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        app_id = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        offset += s_len
+        return BasicContentPropertyList(content_type, content_encoding, headers, delivery_mode, priority, correlation_id, reply_to, expiration, message_id, timestamp, type, user_id, app_id)
+
+    def get_size(self):
+        return len(self.content_type) + len(self.content_encoding) + frame_table_size(self.headers) + len(self.correlation_id) + len(self.reply_to) + len(self.expiration) + len(self.message_id) + len(self.type) + len(self.user_id) + len(self.app_id) + 24
+
 
 class BasicAck(AMQPMethodPayload):
     """
@@ -3596,7 +3758,22 @@ class TxContentPropertyList(AMQPContentPropertyList):
 
     ]
 
-    def __init__(self):'
+    def __init__(self):
+        """
+        Create the property list.
+
+        """
+
+    def write_arguments(self, buf):
+        pass # this has a frame, but its only default shortstrs
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        return TxContentPropertyList()
+
+    def get_size(self):
+        return 0
+
 
 class TxCommit(AMQPMethodPayload):
     """
