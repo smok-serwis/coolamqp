@@ -5,68 +5,13 @@ import struct
 import six
 import math
 
-from getp import get_constants, get_classes, get_domains, byname, name_class, name_method, name_field, \
-                 BASIC_TYPES
-
-def frepr(p, sop=six.text_type):
-    if isinstance(p, basestring):
-        p = sop(p)
-    s = repr(p)
-
-    if isinstance(p, basestring) and not s.startswith('u'):
-        return ('u' if sop == six.text_type else 'b') + s
-    else:
-        return s
-
-def as_nice_escaped_string(p):
-    body = []
-    for q in p:
-        z = (hex(ord(q))[2:].upper())
-        if len(z) == 1:
-            z = u'0' + z
-        body.append(u'\\x' + z)
-    return u"b'"+(u''.join(body))+u"'"
+from coolamqp.framing.frames.compilation.utilities import get_constants, get_classes, get_domains, \
+    byname, name_class, name_method, name_field, ffmt, doxify, infertype, normname, as_nice_escaped_string, \
+    frepr
+from coolamqp.framing.frames.base import BASIC_TYPES
 
 
-def normname(p):
-    return p.strip().replace('-', '_').upper()
-
-def infertype(p):
-    try:
-        return int(p)
-    except ValueError:
-        return p
-
-def doxify(label, doc, prefix=4, blank=True): # output a full docstring section
-    label = [] if label is None else [label]
-    doc = [] if doc is None else [q.strip() for q in doc.split(u'\n') if len(q.strip()) > 0]
-    pre = u' '*prefix
-
-    doc = label + doc
-
-    if len(doc) == 0:
-        return u''
-
-    doc[0] = doc[0].capitalize()
-
-    if len(doc) == 1:
-        return doc[0]
-
-    doc = filter(lambda p: len(p.strip()) > 0, doc)
-
-    if blank:
-        doc = [doc[0], u''] + doc[1:]
-
-    f = (u'\n'.join(pre + lin for lin in doc))[prefix:]
-    return f
-
-def ffmt(data, *args, **kwargs):
-    for arg in args:
-        op = str if kwargs.get('sane', True) else frepr
-        data = data.replace('%s', op(arg), 1)
-    return data
-
-def compile_definitions(xml_file='../resources/amqp0-9-1.xml', out_file='../coolamqp/framing/frames/machine.py'):
+def compile_definitions(xml_file='resources/amqp0-9-1.xml', out_file='coolamqp/framing/frames/definitions.py'):
     """parse resources/amqp-0-9-1.xml into """
 
     xml = ElementTree.parse(xml_file)
@@ -78,7 +23,7 @@ from __future__ import print_function, absolute_import
 A Python version of the AMQP machine-readable specification.
 
 Generated automatically by CoolAMQP from AMQP machine-readable specification.
-See utils/compdefs.py for the tool
+See coolamqp.framing.frames.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
@@ -86,7 +31,8 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 import struct
 
-from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, _deframe_table, _frame_table_size
+from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload
+from coolamqp.framing.frames.field_table import enframe_table, deframe_table, frame_table_size
 
 ''')
 
@@ -151,7 +97,7 @@ from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, 
 
             is_content_static = len([f for f in method.fields if not f.reserved]) == 0
 
-            line('''\nclass %s(AMQPMethod):
+            line('''\nclass %s(AMQPMethodPayload):
     """
     %s
     """
@@ -302,7 +248,7 @@ from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, 
                         good_structs = []
 
                         if field.basic_type == 'table':
-                            line('        _enframe_table(buf, %s)\n' % (val, ))
+                            line('        enframe_table(buf, %s)\n' % (val, ))
                             written = True
                         else:
                             # emit ours
@@ -352,7 +298,7 @@ from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, 
                         parts.append('len(self.'+name_field(field.name)+')')
                         accumulator += 4
                     elif bt == 'table':
-                        parts.append('_frame_table_size(self.'+name_field(field.name)+')')
+                        parts.append('frame_table_size(self.'+name_field(field.name)+')')
                         accumulator += 4
                     else:
                         raise Exception()
@@ -487,7 +433,7 @@ from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, 
                             bits.append(fieldname)
                         else:
                             if field.basic_type == 'table': # oh my god
-                                line("""        %s, delta = _deframe_table(buf, offset)
+                                line("""        %s, delta = deframe_table(buf, offset)
         offset += delta
 """, name_field(field.name))
                             else:   # longstr or shortstr
@@ -540,5 +486,7 @@ from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, 
 
 
     out.close()
+
+
 if __name__ == '__main__':
     compile_definitions()

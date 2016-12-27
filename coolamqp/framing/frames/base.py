@@ -7,6 +7,9 @@ import six
 logger = logging.getLogger(__name__)
 
 
+AMQP_HELLO_HEADER = b'AMQP\x00\x00\x09\x01'
+
+
 # name => (length|None, struct ID|None, reserved-field-value : for struct if structable, bytes else, length of default)
 BASIC_TYPES = {'bit': (None, None, "0", None),          # special case
                'octet': (1, 'B', "b'\\x00'", 1),
@@ -22,140 +25,39 @@ BASIC_TYPES = {'bit': (None, None, "0", None),          # special case
 DYNAMIC_BASIC_TYPES = ('table', 'longstr', 'shortstr')
 
 
-def dec_to_bytes(buf, v):
-    dps = 0
-    for k in six.moves.xrange(20):
-        k = v * (10 ** dps)
-        if abs(k-int(k)) < 0.00001: # epsilon
-            return buf.write(struct.pack('!BI', dps, k))
 
-    logger.critical('Cannot convert %s to decimal, substituting with 0', repr(v))
-    buf.write(b'\x00\x00\x00\x00')
+class AMQPFrame(object):        # base class for frames
+    FRAME_TYPE = None   # override me!
 
+    def __init__(self, channel):
+        self.channel = channel
 
-FIELD_TYPES = {
-        # length, struct, (option)formatter_to_bytes
-    't': (1, '!?'),      # boolean
-    'b': (1, '!b'),
-    'B': (1, '!B'),
-    'U': (2, '!H'),
-    'u': (2, '!h'),
-    'I': (4, '!I'),
-    'i': (4, '!i'),
-    'L': (8, '!Q'),
-    'l': (8, '!q'),
-    'f': (4, '!f'),
-    'd': (8, '!d'),
-    'D': (5, None, dec_to_bytes), # decimal-value
-    's': (None, None, lambda buf, v: buf.write(struct.pack('B', len(v)) + v)),       # short-string
-    'S': (None, None, lambda buf, v: buf.write(struct.pack('!I', len(v)) + v)),  # long-string
-    'A': (None, None),  # field-array
-    'T': (8, '!Q'),
-    'V': (0, ''),
-}
+    def write_to(self, buf):
+        """
+        Write a complete frame to buffer
 
+        This writes type and channel ID.
+        """
+        buf.write(struct.pack('!BH', self.FRAME_TYPE, self.channel))
 
-
-
-"""
-A table is of form:
-[
-    (name::bytes, value::any, type::bytes(len=1)),
-    ...
-
-]
-"""
-
-
-def _enframe_table(buf, table):
-    """
-    Write AMQP table to buffer
-    :param buf:
-    :param table:
-    :return:
-    """
-    buf.write(struct.pack('!L', _frame_table_size(table)))
-
-    for name, value, type in table:
-        buf.write(struct.pack('!B', len(name)))
-        buf.write(name)
-        buf.write(type)
-
-        opt = FIELD_TYPES[opt]
-
-        if type == 'F': # nice one
-            _enframe_table(buf, value)
-        elif type == 'V':
-            continue
-        elif len(opt) == 2: # can autoframe
-            buf.write(struct.pack(opt[1], value))
-        else:
-            opt[2](buf, value)
-
-
-def _deframe_table(buf, start_offset): # helper - convert bytes to table
-    """:return: tuple (table, bytes consumed)"""
-
-
-def _frame_table_size(table):
-    """:return: length of table representation, in bytes, WITHOUT length header"""
-
-
-class AMQPClass(object):
-    pass
+    @staticmethod
+    def unserialize(channel, payload_as_buffer):
+        """
+        Unserialize from a buffer.
+        Buffer starts at frame's own payload - type, channel and size was already obtained.
+        Payload does not contain FRAME_EMD.
+        AMQPHeartbeatFrame does not have to implement this.
+        """
+        raise NotImplementedError('Override me')
 
 
 class AMQPPayload(object):
     """Payload is something that can write itself to bytes,
     or at least provide a buffer to do it."""
 
-    def write_arguments(self, buf):
+    def write_to(self, buf):
         """
-        Emit itself into a buffer
+        Emit itself into a buffer, from length to FRAME_END
 
         :param buf: buffer to write to (will be written using .write)
         """
-
-
-class AMQPMethod(object):
-    RESPONSE_TO = None
-    REPLY_WITH = []
-    FIELDS = []
-
-    def get_size(self):
-        """
-        Calculate the size of this frame.
-
-        :return: int, size of argument section
-        """
-        raise NotImplementedError()
-
-    def write_arguments(self, buf):
-        """
-        Write the argument portion of this frame into buffer.
-
-        :param buf: buffer to write to
-        :return: how many bytes written
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    def from_buffer(buf, offset):
-        """
-        Construct this frame from a buffer
-
-        :param buf: a buffer to construct the frame from
-        :type buf: buffer or memoryview
-        :param offset: offset the argument portion begins at
-        :type offset: int
-        :return: tuple of (an instance of %s, amount of bytes consumed as int)
-        """
-        raise NotImplementedError('')
-
-
-
-
-class AMQPFrame(object):
-    def __init__(self, channel, payload):
-        self.channel = channel
-        self.payload = payload

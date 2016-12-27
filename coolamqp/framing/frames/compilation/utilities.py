@@ -162,3 +162,60 @@ def name_field(field):
     if field in ('global', ):
         field = field + '_'
     return field.replace('-', '_')
+
+def frepr(p, sop=six.text_type):
+    if isinstance(p, basestring):
+        p = sop(p)
+    s = repr(p)
+
+    if isinstance(p, basestring) and not s.startswith('u'):
+        return ('u' if sop == six.text_type else 'b') + s
+    else:
+        return s
+
+def as_nice_escaped_string(p):
+    body = []
+    for q in p:
+        z = (hex(ord(q))[2:].upper())
+        if len(z) == 1:
+            z = u'0' + z
+        body.append(u'\\x' + z)
+    return u"b'"+(u''.join(body))+u"'"
+
+def normname(p):
+    return p.strip().replace('-', '_').upper()
+
+def infertype(p):
+    try:
+        return int(p)
+    except ValueError:
+        return p
+
+def doxify(label, doc, prefix=4, blank=True): # output a full docstring section
+    label = [] if label is None else [label]
+    doc = [] if doc is None else [q.strip() for q in doc.split(u'\n') if len(q.strip()) > 0]
+    pre = u' '*prefix
+
+    doc = label + doc
+
+    if len(doc) == 0:
+        return u''
+
+    doc[0] = doc[0].capitalize()
+
+    if len(doc) == 1:
+        return doc[0]
+
+    doc = filter(lambda p: len(p.strip()) > 0, doc)
+
+    if blank:
+        doc = [doc[0], u''] + doc[1:]
+
+    f = (u'\n'.join(pre + lin for lin in doc))[prefix:]
+    return f
+
+def ffmt(data, *args, **kwargs):
+    for arg in args:
+        op = str if kwargs.get('sane', True) else frepr
+        data = data.replace('%s', op(arg), 1)
+    return data

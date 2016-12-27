@@ -4,7 +4,7 @@ from __future__ import print_function, absolute_import
 A Python version of the AMQP machine-readable specification.
 
 Generated automatically by CoolAMQP from AMQP machine-readable specification.
-See utils/compdefs.py for the tool
+See coolamqp.framing.frames.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
@@ -12,7 +12,8 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 import struct
 
-from coolamqp.framing.frames.base import AMQPClass, AMQPMethod, _enframe_table, _deframe_table, _frame_table_size
+from coolamqp.framing.frames.base_definitions import AMQPClass, AMQPMethodPayload
+from coolamqp.framing.frames.field_table import enframe_table, deframe_table, frame_table_size
 
 # Core constants
 FRAME_METHOD = 1
@@ -103,7 +104,7 @@ class Connection(AMQPClass):
     INDEX = 10
 
 
-class ConnectionClose(AMQPMethod):
+class ConnectionClose(AMQPMethodPayload):
     """
     Request a connection close
     
@@ -180,7 +181,7 @@ class ConnectionClose(AMQPMethod):
         return ConnectionClose(reply_code, reply_text, class_id, method_id)
 
 
-class ConnectionCloseOk(AMQPMethod):
+class ConnectionCloseOk(AMQPMethodPayload):
     """
     Confirm a connection close
     
@@ -223,7 +224,7 @@ class ConnectionCloseOk(AMQPMethod):
         return ConnectionCloseOk()
 
 
-class ConnectionOpen(AMQPMethod):
+class ConnectionOpen(AMQPMethodPayload):
     """
     Open connection to virtual host
     
@@ -293,7 +294,7 @@ class ConnectionOpen(AMQPMethod):
         return ConnectionOpen(virtual_host)
 
 
-class ConnectionOpenOk(AMQPMethod):
+class ConnectionOpenOk(AMQPMethodPayload):
     """
     Signal that connection is ready
     
@@ -338,7 +339,7 @@ class ConnectionOpenOk(AMQPMethod):
         return ConnectionOpenOk()
 
 
-class ConnectionStart(AMQPMethod):
+class ConnectionStart(AMQPMethodPayload):
     """
     Start connection negotiation
     
@@ -410,20 +411,20 @@ class ConnectionStart(AMQPMethod):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!BB', self.version_major, self.version_minor))
-        _enframe_table(buf, self.server_properties)
+        enframe_table(buf, self.server_properties)
         buf.write(struct.pack('!L', len(self.mechanisms)))
         buf.write(self.mechanisms)
         buf.write(struct.pack('!L', len(self.locales)))
         buf.write(self.locales)
 
     def get_size(self):
-        return _frame_table_size(self.server_properties) + len(self.mechanisms) + len(self.locales) + 14
+        return frame_table_size(self.server_properties) + len(self.mechanisms) + len(self.locales) + 14
 
     @staticmethod
     def from_buffer(buf, start_offset):
         assert (len(buf) - start_offset) >= ConnectionStart.MINIMUM_SIZE, 'Frame too short!'
         offset = start_offset   # we will use it to count consumed bytes
-        server_properties, delta = _deframe_table(buf, offset)
+        server_properties, delta = deframe_table(buf, offset)
         offset += delta
         version_major, version_minor, s_len, = struct.unpack_from('!BBL', buf, offset)
         offset += 6
@@ -436,7 +437,7 @@ class ConnectionStart(AMQPMethod):
         return ConnectionStart(version_major, version_minor, server_properties, mechanisms, locales)
 
 
-class ConnectionSecure(AMQPMethod):
+class ConnectionSecure(AMQPMethodPayload):
     """
     Security mechanism challenge
     
@@ -498,7 +499,7 @@ class ConnectionSecure(AMQPMethod):
         return ConnectionSecure(challenge)
 
 
-class ConnectionStartOk(AMQPMethod):
+class ConnectionStartOk(AMQPMethodPayload):
     """
     Select security mechanism and locale
     
@@ -562,7 +563,7 @@ class ConnectionStartOk(AMQPMethod):
         self.locale = locale
 
     def write_arguments(self, buf):
-        _enframe_table(buf, self.client_properties)
+        enframe_table(buf, self.client_properties)
         buf.write(struct.pack('!B', len(self.mechanism)))
         buf.write(self.mechanism)
         buf.write(struct.pack('!L', len(self.response)))
@@ -571,13 +572,13 @@ class ConnectionStartOk(AMQPMethod):
         buf.write(self.locale)
 
     def get_size(self):
-        return _frame_table_size(self.client_properties) + len(self.mechanism) + len(self.response) + len(self.locale) + 10
+        return frame_table_size(self.client_properties) + len(self.mechanism) + len(self.response) + len(self.locale) + 10
 
     @staticmethod
     def from_buffer(buf, start_offset):
         assert (len(buf) - start_offset) >= ConnectionStartOk.MINIMUM_SIZE, 'Frame too short!'
         offset = start_offset   # we will use it to count consumed bytes
-        client_properties, delta = _deframe_table(buf, offset)
+        client_properties, delta = deframe_table(buf, offset)
         offset += delta
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
@@ -594,7 +595,7 @@ class ConnectionStartOk(AMQPMethod):
         return ConnectionStartOk(client_properties, mechanism, response, locale)
 
 
-class ConnectionSecureOk(AMQPMethod):
+class ConnectionSecureOk(AMQPMethodPayload):
     """
     Security mechanism response
     
@@ -656,7 +657,7 @@ class ConnectionSecureOk(AMQPMethod):
         return ConnectionSecureOk(response)
 
 
-class ConnectionTune(AMQPMethod):
+class ConnectionTune(AMQPMethodPayload):
     """
     Propose connection tuning parameters
     
@@ -727,7 +728,7 @@ class ConnectionTune(AMQPMethod):
         return ConnectionTune(channel_max, frame_max, heartbeat)
 
 
-class ConnectionTuneOk(AMQPMethod):
+class ConnectionTuneOk(AMQPMethodPayload):
     """
     Negotiate connection tuning parameters
     
@@ -809,7 +810,7 @@ class Channel(AMQPClass):
     INDEX = 20
 
 
-class ChannelClose(AMQPMethod):
+class ChannelClose(AMQPMethodPayload):
     """
     Request a channel close
     
@@ -886,7 +887,7 @@ class ChannelClose(AMQPMethod):
         return ChannelClose(reply_code, reply_text, class_id, method_id)
 
 
-class ChannelCloseOk(AMQPMethod):
+class ChannelCloseOk(AMQPMethodPayload):
     """
     Confirm a channel close
     
@@ -929,7 +930,7 @@ class ChannelCloseOk(AMQPMethod):
         return ChannelCloseOk()
 
 
-class ChannelFlow(AMQPMethod):
+class ChannelFlow(AMQPMethodPayload):
     """
     Enable/disable flow from peer
     
@@ -990,7 +991,7 @@ class ChannelFlow(AMQPMethod):
         return ChannelFlow(active)
 
 
-class ChannelFlowOk(AMQPMethod):
+class ChannelFlowOk(AMQPMethodPayload):
     """
     Confirm a flow method
     
@@ -1048,7 +1049,7 @@ class ChannelFlowOk(AMQPMethod):
         return ChannelFlowOk(active)
 
 
-class ChannelOpen(AMQPMethod):
+class ChannelOpen(AMQPMethodPayload):
     """
     Open a channel for use
     
@@ -1092,7 +1093,7 @@ class ChannelOpen(AMQPMethod):
         return ChannelOpen()
 
 
-class ChannelOpenOk(AMQPMethod):
+class ChannelOpenOk(AMQPMethodPayload):
     """
     Signal that the channel is ready
     
@@ -1147,7 +1148,7 @@ class Exchange(AMQPClass):
     INDEX = 40
 
 
-class ExchangeDeclare(AMQPMethod):
+class ExchangeDeclare(AMQPMethodPayload):
     """
     Verify exchange exists, create if needed
     
@@ -1234,10 +1235,10 @@ class ExchangeDeclare(AMQPMethod):
         buf.write(struct.pack('!B', len(self.type)))
         buf.write(self.type)
         buf.write(struct.pack('!B', (int(self.passive) << 0) | (int(self.durable) << 1) | (int(self.no_wait) << 2)))
-        _enframe_table(buf, self.arguments)
+        enframe_table(buf, self.arguments)
 
     def get_size(self):
-        return len(self.exchange) + len(self.type) + _frame_table_size(self.arguments) + 9
+        return len(self.exchange) + len(self.type) + frame_table_size(self.arguments) + 9
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1256,12 +1257,12 @@ class ExchangeDeclare(AMQPMethod):
         passive = bool(_bit & 1)
         durable = bool(_bit & 2)
         no_wait = bool(_bit & 16)
-        arguments, delta = _deframe_table(buf, offset)
+        arguments, delta = deframe_table(buf, offset)
         offset += delta
         return ExchangeDeclare(exchange, type, passive, durable, no_wait, arguments)
 
 
-class ExchangeDelete(AMQPMethod):
+class ExchangeDelete(AMQPMethodPayload):
     """
     Delete an exchange
     
@@ -1337,7 +1338,7 @@ class ExchangeDelete(AMQPMethod):
         return ExchangeDelete(exchange, if_unused, no_wait)
 
 
-class ExchangeDeclareOk(AMQPMethod):
+class ExchangeDeclareOk(AMQPMethodPayload):
     """
     Confirm exchange declaration
     
@@ -1380,7 +1381,7 @@ class ExchangeDeclareOk(AMQPMethod):
         return ExchangeDeclareOk()
 
 
-class ExchangeDeleteOk(AMQPMethod):
+class ExchangeDeleteOk(AMQPMethodPayload):
     """
     Confirm deletion of an exchange
     
@@ -1433,7 +1434,7 @@ class Queue(AMQPClass):
     INDEX = 50
 
 
-class QueueBind(AMQPMethod):
+class QueueBind(AMQPMethodPayload):
     """
     Bind queue to an exchange
     
@@ -1512,10 +1513,10 @@ class QueueBind(AMQPMethod):
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
         buf.write(struct.pack('!B', (int(self.no_wait) << 0)))
-        _enframe_table(buf, self.arguments)
+        enframe_table(buf, self.arguments)
 
     def get_size(self):
-        return len(self.queue) + len(self.exchange) + len(self.routing_key) + _frame_table_size(self.arguments) + 10
+        return len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments) + 10
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1536,12 +1537,12 @@ class QueueBind(AMQPMethod):
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 1
         no_wait = bool(_bit & 1)
-        arguments, delta = _deframe_table(buf, offset)
+        arguments, delta = deframe_table(buf, offset)
         offset += delta
         return QueueBind(queue, exchange, routing_key, no_wait, arguments)
 
 
-class QueueBindOk(AMQPMethod):
+class QueueBindOk(AMQPMethodPayload):
     """
     Confirm bind successful
     
@@ -1583,7 +1584,7 @@ class QueueBindOk(AMQPMethod):
         return QueueBindOk()
 
 
-class QueueDeclare(AMQPMethod):
+class QueueDeclare(AMQPMethodPayload):
     """
     Declare queue, create if needed
     
@@ -1676,10 +1677,10 @@ class QueueDeclare(AMQPMethod):
         buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', (int(self.passive) << 0) | (int(self.durable) << 1) | (int(self.exclusive) << 2) | (int(self.auto_delete) << 3) | (int(self.no_wait) << 4)))
-        _enframe_table(buf, self.arguments)
+        enframe_table(buf, self.arguments)
 
     def get_size(self):
-        return len(self.queue) + _frame_table_size(self.arguments) + 8
+        return len(self.queue) + frame_table_size(self.arguments) + 8
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1696,12 +1697,12 @@ class QueueDeclare(AMQPMethod):
         exclusive = bool(_bit & 4)
         auto_delete = bool(_bit & 8)
         no_wait = bool(_bit & 16)
-        arguments, delta = _deframe_table(buf, offset)
+        arguments, delta = deframe_table(buf, offset)
         offset += delta
         return QueueDeclare(queue, passive, durable, exclusive, auto_delete, no_wait, arguments)
 
 
-class QueueDelete(AMQPMethod):
+class QueueDelete(AMQPMethodPayload):
     """
     Delete a queue
     
@@ -1784,7 +1785,7 @@ class QueueDelete(AMQPMethod):
         return QueueDelete(queue, if_unused, if_empty, no_wait)
 
 
-class QueueDeclareOk(AMQPMethod):
+class QueueDeclareOk(AMQPMethodPayload):
     """
     Confirms a queue definition
     
@@ -1857,7 +1858,7 @@ class QueueDeclareOk(AMQPMethod):
         return QueueDeclareOk(queue, message_count, consumer_count)
 
 
-class QueueDeleteOk(AMQPMethod):
+class QueueDeleteOk(AMQPMethodPayload):
     """
     Confirm deletion of a queue
     
@@ -1912,7 +1913,7 @@ class QueueDeleteOk(AMQPMethod):
         return QueueDeleteOk(message_count)
 
 
-class QueuePurge(AMQPMethod):
+class QueuePurge(AMQPMethodPayload):
     """
     Purge a queue
     
@@ -1980,7 +1981,7 @@ class QueuePurge(AMQPMethod):
         return QueuePurge(queue, no_wait)
 
 
-class QueuePurgeOk(AMQPMethod):
+class QueuePurgeOk(AMQPMethodPayload):
     """
     Confirms a queue purge
     
@@ -2035,7 +2036,7 @@ class QueuePurgeOk(AMQPMethod):
         return QueuePurgeOk(message_count)
 
 
-class QueueUnbind(AMQPMethod):
+class QueueUnbind(AMQPMethodPayload):
     """
     Unbind a queue from an exchange
     
@@ -2098,10 +2099,10 @@ class QueueUnbind(AMQPMethod):
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
-        _enframe_table(buf, self.arguments)
+        enframe_table(buf, self.arguments)
 
     def get_size(self):
-        return len(self.queue) + len(self.exchange) + len(self.routing_key) + _frame_table_size(self.arguments) + 9
+        return len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments) + 9
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -2119,12 +2120,12 @@ class QueueUnbind(AMQPMethod):
         offset += 1
         routing_key = buf[offset:offset+s_len]
         offset += s_len
-        arguments, delta = _deframe_table(buf, offset)
+        arguments, delta = deframe_table(buf, offset)
         offset += delta
         return QueueUnbind(queue, exchange, routing_key, arguments)
 
 
-class QueueUnbindOk(AMQPMethod):
+class QueueUnbindOk(AMQPMethodPayload):
     """
     Confirm unbind successful
     
@@ -2174,7 +2175,7 @@ class Basic(AMQPClass):
     INDEX = 60
 
 
-class BasicAck(AMQPMethod):
+class BasicAck(AMQPMethodPayload):
     """
     Acknowledge one or more messages
     
@@ -2239,7 +2240,7 @@ class BasicAck(AMQPMethod):
         return BasicAck(delivery_tag, multiple)
 
 
-class BasicConsume(AMQPMethod):
+class BasicConsume(AMQPMethodPayload):
     """
     Start a queue consumer
     
@@ -2316,10 +2317,10 @@ class BasicConsume(AMQPMethod):
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
         buf.write(struct.pack('!B', (int(self.no_local) << 0) | (int(self.no_ack) << 1) | (int(self.exclusive) << 2) | (int(self.no_wait) << 3)))
-        _enframe_table(buf, self.arguments)
+        enframe_table(buf, self.arguments)
 
     def get_size(self):
-        return len(self.queue) + len(self.consumer_tag) + _frame_table_size(self.arguments) + 9
+        return len(self.queue) + len(self.consumer_tag) + frame_table_size(self.arguments) + 9
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -2339,12 +2340,12 @@ class BasicConsume(AMQPMethod):
         no_ack = bool(_bit & 2)
         exclusive = bool(_bit & 4)
         no_wait = bool(_bit & 8)
-        arguments, delta = _deframe_table(buf, offset)
+        arguments, delta = deframe_table(buf, offset)
         offset += delta
         return BasicConsume(queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments)
 
 
-class BasicCancel(AMQPMethod):
+class BasicCancel(AMQPMethodPayload):
     """
     End a queue consumer
     
@@ -2411,7 +2412,7 @@ class BasicCancel(AMQPMethod):
         return BasicCancel(consumer_tag, no_wait)
 
 
-class BasicConsumeOk(AMQPMethod):
+class BasicConsumeOk(AMQPMethodPayload):
     """
     Confirm a new consumer
     
@@ -2471,7 +2472,7 @@ class BasicConsumeOk(AMQPMethod):
         return BasicConsumeOk(consumer_tag)
 
 
-class BasicCancelOk(AMQPMethod):
+class BasicCancelOk(AMQPMethodPayload):
     """
     Confirm a cancelled consumer
     
@@ -2529,7 +2530,7 @@ class BasicCancelOk(AMQPMethod):
         return BasicCancelOk(consumer_tag)
 
 
-class BasicDeliver(AMQPMethod):
+class BasicDeliver(AMQPMethodPayload):
     """
     Notify the client of a consumer message
     
@@ -2621,7 +2622,7 @@ class BasicDeliver(AMQPMethod):
         return BasicDeliver(consumer_tag, delivery_tag, redelivered, exchange, routing_key)
 
 
-class BasicGet(AMQPMethod):
+class BasicGet(AMQPMethodPayload):
     """
     Direct access to a queue
     
@@ -2690,7 +2691,7 @@ class BasicGet(AMQPMethod):
         return BasicGet(queue, no_ack)
 
 
-class BasicGetOk(AMQPMethod):
+class BasicGetOk(AMQPMethodPayload):
     """
     Provide client with a message
     
@@ -2779,7 +2780,7 @@ class BasicGetOk(AMQPMethod):
         return BasicGetOk(delivery_tag, redelivered, exchange, routing_key, message_count)
 
 
-class BasicGetEmpty(AMQPMethod):
+class BasicGetEmpty(AMQPMethodPayload):
     """
     Indicate no messages available
     
@@ -2825,7 +2826,7 @@ class BasicGetEmpty(AMQPMethod):
         return BasicGetEmpty()
 
 
-class BasicPublish(AMQPMethod):
+class BasicPublish(AMQPMethodPayload):
     """
     Publish a message
     
@@ -2921,7 +2922,7 @@ class BasicPublish(AMQPMethod):
         return BasicPublish(exchange, routing_key, mandatory, immediate)
 
 
-class BasicQos(AMQPMethod):
+class BasicQos(AMQPMethodPayload):
     """
     Specify quality of service
     
@@ -3003,7 +3004,7 @@ class BasicQos(AMQPMethod):
         return BasicQos(prefetch_size, prefetch_count, global_)
 
 
-class BasicQosOk(AMQPMethod):
+class BasicQosOk(AMQPMethodPayload):
     """
     Confirm the requested qos
     
@@ -3047,7 +3048,7 @@ class BasicQosOk(AMQPMethod):
         return BasicQosOk()
 
 
-class BasicReturn(AMQPMethod):
+class BasicReturn(AMQPMethodPayload):
     """
     Return a failed message
     
@@ -3132,7 +3133,7 @@ class BasicReturn(AMQPMethod):
         return BasicReturn(reply_code, reply_text, exchange, routing_key)
 
 
-class BasicReject(AMQPMethod):
+class BasicReject(AMQPMethodPayload):
     """
     Reject an incoming message
     
@@ -3195,7 +3196,7 @@ class BasicReject(AMQPMethod):
         return BasicReject(delivery_tag, requeue)
 
 
-class BasicRecoverAsync(AMQPMethod):
+class BasicRecoverAsync(AMQPMethodPayload):
     """
     Redeliver unacknowledged messages
     
@@ -3255,7 +3256,7 @@ class BasicRecoverAsync(AMQPMethod):
         return BasicRecoverAsync(requeue)
 
 
-class BasicRecover(AMQPMethod):
+class BasicRecover(AMQPMethodPayload):
     """
     Redeliver unacknowledged messages
     
@@ -3315,7 +3316,7 @@ class BasicRecover(AMQPMethod):
         return BasicRecover(requeue)
 
 
-class BasicRecoverOk(AMQPMethod):
+class BasicRecoverOk(AMQPMethodPayload):
     """
     Confirm recovery
     
@@ -3373,7 +3374,7 @@ class Tx(AMQPClass):
     INDEX = 90
 
 
-class TxCommit(AMQPMethod):
+class TxCommit(AMQPMethodPayload):
     """
     Commit the current transaction
     
@@ -3415,7 +3416,7 @@ class TxCommit(AMQPMethod):
         return TxCommit()
 
 
-class TxCommitOk(AMQPMethod):
+class TxCommitOk(AMQPMethodPayload):
     """
     Confirm a successful commit
     
@@ -3458,7 +3459,7 @@ class TxCommitOk(AMQPMethod):
         return TxCommitOk()
 
 
-class TxRollback(AMQPMethod):
+class TxRollback(AMQPMethodPayload):
     """
     Abandon the current transaction
     
@@ -3502,7 +3503,7 @@ class TxRollback(AMQPMethod):
         return TxRollback()
 
 
-class TxRollbackOk(AMQPMethod):
+class TxRollbackOk(AMQPMethodPayload):
     """
     Confirm successful rollback
     
@@ -3545,7 +3546,7 @@ class TxRollbackOk(AMQPMethod):
         return TxRollbackOk()
 
 
-class TxSelect(AMQPMethod):
+class TxSelect(AMQPMethodPayload):
     """
     Select standard transaction mode
     
@@ -3587,7 +3588,7 @@ class TxSelect(AMQPMethod):
         return TxSelect()
 
 
-class TxSelectOk(AMQPMethod):
+class TxSelectOk(AMQPMethodPayload):
     """
     Confirm transaction mode
     
