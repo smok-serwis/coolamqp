@@ -1,12 +1,16 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-from collections import namedtuple
-import six
-import math
 
-from coolamqp.uplink.frames.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
+import math
+from collections import namedtuple
+
+import six
+
+from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 
 # docs may be None
+
+
 
 Constant = namedtuple('Constant', ('name', 'value', 'kind', 'docs'))  # kind is AMQP constant class # value is int
 Field = namedtuple('Field', ('name', 'type', 'label', 'docs', 'reserved', 'basic_type')) # reserved is bool
@@ -14,10 +18,8 @@ Method = namedtuple('Method', ('name', 'synchronous', 'index', 'label', 'docs', 
                                'sent_by_client', 'sent_by_server', 'constant'))
         # synchronous is bool, constant is bool
         # repponse is a list of method.name
-Property = namedtuple('Property', ('name', 'type', 'label', 'basic_type', 'reserved'))
-Class_ = namedtuple('Class_', ('name', 'index', 'docs', 'methods', 'content_properties'))   # label is int
+Class_ = namedtuple('Class_', ('name', 'index', 'docs', 'methods', 'properties'))   # label is int
 Domain = namedtuple('Domain', ('name', 'type', 'elementary'))   # elementary is bool
-
 
 
 class Method(object):
@@ -49,36 +51,34 @@ class Method(object):
                 body.append(eval(BASIC_TYPES[field.basic_type][2]))
         return b''.join(body)
 
-    def get_size(self, domain_to_type=None): # for static methods
-        size = 0
-        bits = 0
-        for field in self.fields:
-
-            if (bits > 0) and (field.basic_type != 'bit'):  # sync bits
-                size += int(math.ceil(bits / 8))
-                bits = 0
-
-            if BASIC_TYPES[field.basic_type][0] is None:
-                if field.basic_type == 'bit':
-                    bits += 1
-                else:
-                    size += len(BASIC_TYPES[field.basic_type][2])   # default minimum entry
-            else:
-                size += BASIC_TYPES[field.basic_type][0]
-
-        if bits > 0:    # sync bits
-            size += int(math.ceil(bits / 8))
-
-        return size
-
     def is_static(self, domain_to_type=None):    # is size constant?
         for field in self.fields:
             if field.basic_type in DYNAMIC_BASIC_TYPES:
                 return False
         return True
 
-    def get_minimum_size(self, domain_to_type=None):
-        return self.get_size()
+
+def get_size(fields):   # assume all fields have static length
+    size = 0
+    bits = 0
+    for field in fields:
+
+        if (bits > 0) and (field.basic_type != 'bit'):  # sync bits
+            size += int(math.ceil(bits / 8))
+            bits = 0
+
+        if BASIC_TYPES[field.basic_type][0] is None:
+            if field.basic_type == 'bit':
+                bits += 1
+            else:
+                size += len(BASIC_TYPES[field.basic_type][2])   # default minimum entry
+        else:
+            size += BASIC_TYPES[field.basic_type][0]
+
+    if bits > 0:    # sync bits
+        size += int(math.ceil(bits / 8))
+
+    return size
 
 
 def get_docs(elem):
@@ -98,7 +98,7 @@ def for_domain(elem):
     return Domain(six.text_type(a['name']), a['type'], a['type'] == a['name'])
 
 
-def for_method_field(elem): # for <field> in <method>
+def for_field(elem): # for <field> in <method>
     a = elem.attrib
     return Field(six.text_type(a['name']), a['domain'] if 'domain' in a else a['type'],
                  a.get('label', None),
@@ -106,16 +106,10 @@ def for_method_field(elem): # for <field> in <method>
                  a.get('reserved', '0') == '1',
                  None)
 
-
-def for_content_property(elem):
-    a = elem.attrib
-    return Property(a['name'], a['domain'], a.get('label', ''), None, 'reserved' in a['name'])
-
-
 def for_method(elem):       # for <method>
     a = elem.attrib
     return Method(six.text_type(a['name']), bool(int(a.get('synchronous', '0'))), int(a['index']), a['label'], get_docs(elem),
-                  [for_method_field(fie) for fie in elem.getchildren() if fie.tag == 'field'],
+                  [for_field(fie) for fie in elem.getchildren() if fie.tag == 'field'],
                   [e.attrib['name'] for e in elem.findall('response')],
                   # if chassis=server that means server has to accept it
                   any([e.attrib.get('name', '') == 'server' for e in elem.getchildren() if e.tag == 'chassis']),
@@ -126,7 +120,7 @@ def for_class(elem):        # for <class>
     a = elem.attrib
     methods = sorted([for_method(me) for me in elem.getchildren() if me.tag == 'method'], key=lambda m: (m.name.strip('-')[0], -len(m.response)))
     return Class_(six.text_type(a['name']), int(a['index']), get_docs(elem) or a['label'], methods,
-                  [for_content_property(e) for e in elem.getchildren() if e.tag == 'field'])
+                  [for_field(e) for e in elem.getchildren() if e.tag == 'field'])
 
 def for_constant(elem):     # for <constant>
     a = elem.attrib
@@ -143,30 +137,31 @@ def get_domains(xml):
     return [for_domain(e) for e in xml.findall('domain')]
 
 
-def a_text(callable):
+def as_unicode(callable):
     def roll(*args, **kwargs):
         return six.text_type(callable(*args, **kwargs))
     return roll
 
-def byname(list_of_things):
+def to_dict_by_name(list_of_things):
     return dict((a.name, a) for a in list_of_things)
 
-@a_text
+@as_unicode
 def name_class(classname):
     """Change AMQP class name to Python class name"""
     return classname.capitalize()
 
-@a_text
-def name_method(methodname):
+@as_unicode
+def format_method_class_name(methodname):
     if '-' in methodname:
         i = methodname.find('-')
         return methodname[0:i].capitalize() + methodname[i+1].upper() + methodname[i+2:]
     else:
         return methodname.capitalize()
 
-@a_text
-def name_field(field):
-    if field in ('global', ):
+@as_unicode
+def format_field_name(field):
+    print(repr(field))
+    if field in (u'global', u'type'):
         field = field + '_'
     return field.replace('-', '_')
 
@@ -180,7 +175,7 @@ def frepr(p, sop=six.text_type):
     else:
         return s
 
-def as_nice_escaped_string(p):
+def to_code_binary(p):
     body = []
     for q in p:
         z = (hex(ord(q))[2:].upper())
@@ -189,16 +184,16 @@ def as_nice_escaped_string(p):
         body.append(u'\\x' + z)
     return u"b'"+(u''.join(body))+u"'"
 
-def normname(p):
+def pythonify_name(p):
     return p.strip().replace('-', '_').upper()
 
-def infertype(p):
+def try_to_int(p):
     try:
         return int(p)
     except ValueError:
         return p
 
-def doxify(label, doc, prefix=4, blank=True): # output a full docstring section
+def to_docstring(label, doc, prefix=4, blank=True): # output a full docstring section
     label = [] if label is None else [label]
     doc = [] if doc is None else [q.strip() for q in doc.split(u'\n') if len(q.strip()) > 0]
     pre = u' '*prefix

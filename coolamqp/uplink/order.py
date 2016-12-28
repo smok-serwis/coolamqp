@@ -13,7 +13,7 @@ class MethodTransaction(object):
 
 class SyncOrder(Order):
     """
-    This means "send a method frame, optionally some other frames,
+    This means "send a method frame, optionally some other framing,
     and run a callback with the returned thing.
 
     Possible responses are registered for.

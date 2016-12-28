@@ -1,8 +1,8 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import struct
+
 import logging
-import six
+import struct
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ BASIC_TYPES = {'bit': (None, None, "0", None),          # special case
                'short': (2, 'H', "b'\\x00\\x00'", 2),
                'long': (4, 'I', "b'\\x00\\x00\\x00\\x00'", 4),
                'longlong': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
-               'timestamp': (8, 'L', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
+               'timestamp': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
                'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),          # special case
                'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),        # special case
                'shortstr': (None, None, "b'\\x00'", 1),                        # special case
@@ -25,8 +25,7 @@ BASIC_TYPES = {'bit': (None, None, "0", None),          # special case
 DYNAMIC_BASIC_TYPES = ('table', 'longstr', 'shortstr')
 
 
-
-class AMQPFrame(object):        # base class for frames
+class AMQPFrame(object):        # base class for framing
     FRAME_TYPE = None   # override me!
 
     def __init__(self, channel):
@@ -75,3 +74,68 @@ class AMQPPayload(object):
         :return: int
         """
         raise NotImplementedError()
+
+
+class AMQPClass(object):
+    """An AMQP class"""
+
+
+class AMQPContentPropertyList(object):
+    """
+    A class is intmately bound with content and content properties
+    """
+    PROPERTIES = []
+
+
+class AMQPMethodPayload(AMQPPayload):
+    RESPONSE_TO = None
+    REPLY_WITH = []
+    FIELDS = []
+
+    def write_to(self, buf):
+        """
+        Write own content to target buffer - starting from LENGTH, ending on FRAME_END
+        :param buf: target buffer
+        """
+        from coolamqp.framing import FRAME_END
+
+        if self.IS_CONTENT_STATIC:
+            buf.write(self.STATIC_CONTENT)
+        else:
+            buf.write(struct.pack('!I', self.get_size()+2))
+            buf.write(self.BINARY_HEADER)
+            self.write_arguments(buf)
+            buf.write(chr(FRAME_END))
+
+    def get_size(self):
+        """
+        Calculate the size of this frame.
+
+        :return: int, size of argument section
+        """
+        raise NotImplementedError()
+
+    def write_arguments(self, buf):
+        """
+        Write the argument portion of this frame into buffer.
+
+        :param buf: buffer to write to
+        :return: how many bytes written
+        :raise ValueError: some field here is invalid!
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Construct this frame from a buffer
+
+        :param buf: a buffer to construct the frame from
+        :type buf: buffer or memoryview
+        :param offset: offset the argument portion begins at
+        :type offset: int
+        :return: tuple of (an instance of %s, amount of bytes consumed as int)
+        :raise ValueError: invalid data
+        """
+        raise NotImplementedError('')
+

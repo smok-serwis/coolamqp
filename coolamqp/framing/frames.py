@@ -6,9 +6,9 @@ from __future__ import absolute_import, division, print_function
 
 import struct
 
-from coolamqp.uplink.frames.base import AMQPFrame
-from coolamqp.uplink.frames.definitions import FRAME_METHOD, FRAME_HEARTBEAT, FRAME_BODY, FRAME_HEADER, FRAME_END, \
-    IDENT_TO_METHOD
+from coolamqp.framing.base import AMQPFrame
+from coolamqp.framing.definitions import FRAME_METHOD, FRAME_HEARTBEAT, FRAME_BODY, FRAME_HEADER, FRAME_END, \
+    IDENT_TO_METHOD, CLASS_ID_TO_CONTENT_PROPERTY_LIST
 
 
 class AMQPMethodFrame(AMQPFrame):
@@ -48,10 +48,10 @@ class AMQPHeaderFrame(AMQPFrame):
 
     def __init__(self, channel, class_id, weight, body_size, property_flags, property_list):
         """
-        :param channel:
-        :param class_id:
-        :param weight:
-        :param body_size:
+        :param channel: channel ID
+        :param class_id: class ID
+        :param weight: weight (lol wut?)
+        :param body_size: size of the body to follow
         :param property_flags:
         :param property_list:
         """

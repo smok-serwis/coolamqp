@@ -9,9 +9,9 @@ import socket
 
 class SendingOperator(object):
     """
-    Assembles AMQP frames from received data and orchestrates their upload via a socket.
+    Assembles AMQP framing from received data and orchestrates their upload via a socket.
 
-    Just call with .put(data) and get frames by iterator .frames().
+    Just call with .put(data) and get framing by iterator .framing().
 
     Not thread safe.
 
@@ -77,7 +77,7 @@ class SendingOperator(object):
 
     def send(self, frames, on_done=None, on_fail=None):
         """
-        Schedule to send some frames.
+        Schedule to send some framing.
         :param frames: list of AMQPFrame instances
         :param on_done: callable/0 to call when this is done (frame_end of last frame has just left this PC)
         :param on_fail: callable(Exception) to call when something broke before the data could be sent.

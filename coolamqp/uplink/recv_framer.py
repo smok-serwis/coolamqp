@@ -1,15 +1,12 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import struct
-import io
-import six
+
 import collections
-import socket
+import io
+import struct
 
-from coolamqp.uplink.frames.definitions import FRAME_HEADER, FRAME_HEARTBEAT, FRAME_END, FRAME_METHOD, FRAME_BODY
-from coolamqp.uplink.frames.frames import AMQPBodyFrame, AMQPHeaderFrame, AMQPHeartbeatFrame, AMQPMethodFrame
-from coolamqp.uplink.streams.exceptions import InvalidDataError
-
+from coolamqp.framing import AMQPBodyFrame, AMQPHeaderFrame, AMQPHeartbeatFrame, AMQPMethodFrame
+from coolamqp.framing import FRAME_HEADER, FRAME_HEARTBEAT, FRAME_END, FRAME_METHOD, FRAME_BODY
 
 FRAME_TYPES = {
     FRAME_HEADER: AMQPHeaderFrame,
@@ -20,9 +17,9 @@ FRAME_TYPES = {
 
 class ReceivingFormatter(object):
     """
-    Assembles AMQP frames from received data.
+    Assembles AMQP framing from received data.
 
-    Just call with .put(data) and get frames by iterator .frames().
+    Just call with .put(data) and get framing by iterator .framing().
 
     Not thread safe.
 
@@ -54,10 +51,10 @@ class ReceivingFormatter(object):
 
     def get_frames(self):   # -> iterator of AMQPFrame, raises ValueError
         """
-        An iterator to return frames pending for read.
+        An iterator to return framing pending for read.
 
         :raises ValueError: invalid frame readed, kill the connection.
-        :return: iterator with frames
+        :return: iterator with framing
         """
         while self._statemachine():
             pass

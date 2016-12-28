@@ -4,9 +4,69 @@ import collections
 from six.moves import queue
 
 
-class Watchman(object):
+from coolamqp.uplink.exceptions import called_by
+from coolamqp.scaffold import AcceptsFrames, RelaysFrames, Synchronized
+
+from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeartbeatFrame, AMQPBodyFrame, AMQPHeaderFrame
+
+
+class Watch(object):
+    def __init__(self, channel, on_frame, predicate):
+        """
+        :type predicate: callable(AMQPFrame object) -> should_trigger::bool
+        """
+        self.channel = channel
+        self.on_frame = on_frame
+        self.predicate = predicate
+
+
+
+
+class Watchman(AcceptsFrames, RelaysFrames, Synchronized):
     """
-    Watchman is a guy that you can:
+    Watchman is the guy, who:
+
+    - Receives frames from RecvFramer
+    - Executes in the context of the Listener
+    - You can ask to trigger, when a particular frame is received from server
+    """
+
+    def __init__(self):
+        super(Watchman, self).__init__(self)
+        self.watches = collections.defaultdict(collections.deque)
+        self.on_frame = lambda frame: None
+
+    def wire_frame_to(self, on_frame):
+        """
+        Set this Watchman to pass non-triggered frames to some callable.
+
+        Called by: Uplink factory
+
+        :param callable: callable(AMQPMethodPayload object)
+        """
+        self.on_frame = on_frame
+
+    @
+    def trigger_methods(self, channel, frame_payload_types, on_frame):
+        """
+        Register a one-shot trigger on an AMQP method.
+
+        After triggering upon any of method frame payload types, you'll get a callback with
+        AMQPMethodPayload instance. This will prevent it from being relayed further.
+
+        Called by: frontend, listener
+
+        :param channel: channel ID
+        :param frame_payload_types: list of AMQPMethodPayload classes
+        :param on_frame: callable(AMQPMethodPayload instance) -> n/a
+        """
+        def predicate(frame):
+            if not isinstance(frame, )
+        m = Watch(channel, on_frame, lambda frame: isinstance(frame.payload ))
+        with self.lock:
+
+
+
 
      - If you are ReaderThread, ask "hey, this frame just arrived,
      is someone interested in it?"
@@ -14,7 +74,7 @@ class Watchman(object):
      when a particular frame arrives (or a bunch of them, if your request
      expects a bunch).
 
-    Since Watchman receives all frames from ReaderThread, it also knows about:
+    Since Watchman receives all framing from ReaderThread, it also knows about:
     - channels being opened
     - channels being closed by exception
     -
@@ -51,7 +111,7 @@ class Watchman(object):
     def on_frame(self, frame):
         """
         A frame arrived. If this triggers a watch, trigger it and remove.
-        All frames received by ReaderThread go thru here.
+        All framing received by ReaderThread go thru here.
 
         TO BE CALLED BY READER THREAD
 

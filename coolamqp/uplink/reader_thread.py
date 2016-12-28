@@ -6,7 +6,7 @@ import threading
 
 class ReaderThread(threading.Thread):
     """
-    A thread, whose job is to receive AMQP frames from AMQP TCP socket.
+    A thread, whose job is to receive AMQP framing from AMQP TCP socket.
 
     Thread may inform Uplink of socket's lossage via on_socket_failed(exception). It should exit afterwards at once.
     """
@@ -26,7 +26,7 @@ class ReaderThread(threading.Thread):
 
     def on_cancel(self):
         """
-        Called by Uplink when it decides that we should not report any more frames, and should just die.
+        Called by Uplink when it decides that we should not report any more framing, and should just die.
         """
         self.is_cancelled = True
 
