@@ -10,13 +10,15 @@ AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 """
 
-import struct
-import collections
+import struct, collections, warnings, logging, six
 
-from coolamqp.framing.base_definitions import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
+from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
+from coolamqp.framing.compilation.content_property import compile_particular_content_property_list_class
 
-Field = collections.namedtuple('Field', ('name', 'type', 'reserved'))
+logger = logging.getLogger(__name__)
+
+Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved'))
 
 # Core constants
 FRAME_METHOD = 1
@@ -122,17 +124,16 @@ class ConnectionClose(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
-    REPLY_WITH = [ConnectionCloseOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reply-code', u'short', reserved=False),
-        Field(u'reply-text', u'shortstr', reserved=False),
-        Field(u'class-id', u'short', reserved=False),
-        Field(u'method-id', u'short', reserved=False),
+        Field(u'reply-code', u'reply-code', u'short', reserved=False),
+        Field(u'reply-text', u'reply-text', u'shortstr', reserved=False),
+        Field(u'class-id', u'class-id', u'short', reserved=False),
+        Field(u'method-id', u'method-id', u'short', reserved=False),
     ]
 
     def __init__(self, reply_code, reply_text, class_id, method_id):
@@ -187,12 +188,10 @@ class ConnectionCloseOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x33'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x0A\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = ConnectionClose # this is sent in response to connection.close
 
     def __init__(self):
         """
@@ -221,16 +220,15 @@ class ConnectionOpen(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [ConnectionOpenOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'virtual-host', u'shortstr', reserved=False),
-        Field(u'reserved-1', u'shortstr', reserved=True),
-        Field(u'reserved-2', u'bit', reserved=True),
+        Field(u'virtual-host', u'path', u'shortstr', reserved=False),
+        Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
+        Field(u'reserved-2', u'bit', u'bit', reserved=True),
     ]
 
     def __init__(self, virtual_host):
@@ -279,16 +277,14 @@ class ConnectionOpenOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x0A\x29\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = ConnectionOpen # this is sent in response to connection.open
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'shortstr', reserved=True),
+        Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
 
     def __init__(self):
@@ -320,18 +316,17 @@ class ConnectionStart(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = [ConnectionStartOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'version-major', u'octet', reserved=False),
-        Field(u'version-minor', u'octet', reserved=False),
-        Field(u'server-properties', u'table', reserved=False),
-        Field(u'mechanisms', u'longstr', reserved=False),
-        Field(u'locales', u'longstr', reserved=False),
+        Field(u'version-major', u'octet', u'octet', reserved=False),
+        Field(u'version-minor', u'octet', u'octet', reserved=False),
+        Field(u'server-properties', u'peer-properties', u'table', reserved=False),
+        Field(u'mechanisms', u'longstr', u'longstr', reserved=False),
+        Field(u'locales', u'longstr', u'longstr', reserved=False),
     ]
 
     def __init__(self, version_major, version_minor, server_properties, mechanisms, locales):
@@ -407,14 +402,13 @@ class ConnectionSecure(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = [ConnectionSecureOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'challenge', u'longstr', reserved=False),
+        Field(u'challenge', u'longstr', u'longstr', reserved=False),
     ]
 
     def __init__(self, challenge):
@@ -457,18 +451,16 @@ class ConnectionStartOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = ConnectionStart # this is sent in response to connection.start
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'client-properties', u'table', reserved=False),
-        Field(u'mechanism', u'shortstr', reserved=False),
-        Field(u'response', u'longstr', reserved=False),
-        Field(u'locale', u'shortstr', reserved=False),
+        Field(u'client-properties', u'peer-properties', u'table', reserved=False),
+        Field(u'mechanism', u'shortstr', u'shortstr', reserved=False),
+        Field(u'response', u'longstr', u'longstr', reserved=False),
+        Field(u'locale', u'shortstr', u'shortstr', reserved=False),
     ]
 
     def __init__(self, client_properties, mechanism, response, locale):
@@ -544,15 +536,13 @@ class ConnectionSecureOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = ConnectionSecure # this is sent in response to connection.secure
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'response', u'longstr', reserved=False),
+        Field(u'response', u'longstr', u'longstr', reserved=False),
     ]
 
     def __init__(self, response):
@@ -596,16 +586,15 @@ class ConnectionTune(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = [ConnectionTuneOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'channel-max', u'short', reserved=False),
-        Field(u'frame-max', u'long', reserved=False),
-        Field(u'heartbeat', u'short', reserved=False),
+        Field(u'channel-max', u'short', u'short', reserved=False),
+        Field(u'frame-max', u'long', u'long', reserved=False),
+        Field(u'heartbeat', u'short', u'short', reserved=False),
     ]
 
     def __init__(self, channel_max, frame_max, heartbeat):
@@ -658,17 +647,15 @@ class ConnectionTuneOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x0A\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = ConnectionTune # this is sent in response to connection.tune
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'channel-max', u'short', reserved=False),
-        Field(u'frame-max', u'long', reserved=False),
-        Field(u'heartbeat', u'short', reserved=False),
+        Field(u'channel-max', u'short', u'short', reserved=False),
+        Field(u'frame-max', u'long', u'long', reserved=False),
+        Field(u'heartbeat', u'short', u'short', reserved=False),
     ]
 
     def __init__(self, channel_max, frame_max, heartbeat):
@@ -733,17 +720,16 @@ class ChannelClose(AMQPMethodPayload):
     BINARY_HEADER = b'\x14\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
-    REPLY_WITH = [ChannelCloseOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reply-code', u'short', reserved=False),
-        Field(u'reply-text', u'shortstr', reserved=False),
-        Field(u'class-id', u'short', reserved=False),
-        Field(u'method-id', u'short', reserved=False),
+        Field(u'reply-code', u'reply-code', u'short', reserved=False),
+        Field(u'reply-text', u'reply-text', u'shortstr', reserved=False),
+        Field(u'class-id', u'class-id', u'short', reserved=False),
+        Field(u'method-id', u'method-id', u'short', reserved=False),
     ]
 
     def __init__(self, reply_code, reply_text, class_id, method_id):
@@ -798,12 +784,10 @@ class ChannelCloseOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x14\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x14\x29\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = ChannelClose # this is sent in response to channel.close
 
     def __init__(self):
         """
@@ -833,14 +817,13 @@ class ChannelFlow(AMQPMethodPayload):
     BINARY_HEADER = b'\x14\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
-    REPLY_WITH = [ChannelFlowOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'active', u'bit', reserved=False),
+        Field(u'active', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, active):
@@ -881,15 +864,13 @@ class ChannelFlowOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x14\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = ChannelFlow # this is sent in response to channel.flow
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'active', u'bit', reserved=False),
+        Field(u'active', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, active):
@@ -930,7 +911,6 @@ class ChannelOpen(AMQPMethodPayload):
     BINARY_HEADER = b'\x14\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [ChannelOpenOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -938,7 +918,7 @@ class ChannelOpen(AMQPMethodPayload):
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'shortstr', reserved=True),
+        Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
 
     def __init__(self):
@@ -968,16 +948,14 @@ class ChannelOpenOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x14\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x05\x14\x0B\x00\x00\x00\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = ChannelOpen # this is sent in response to channel.open
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'longstr', reserved=True),
+        Field(u'reserved-1', u'longstr', u'longstr', reserved=True),
     ]
 
     def __init__(self):
@@ -1018,22 +996,21 @@ class ExchangeDeclare(AMQPMethodPayload):
     BINARY_HEADER = b'\x28\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [ExchangeDeclareOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'type', u'shortstr', reserved=False),
-        Field(u'passive', u'bit', reserved=False),
-        Field(u'durable', u'bit', reserved=False),
-        Field(u'reserved-2', u'bit', reserved=True),
-        Field(u'reserved-3', u'bit', reserved=True),
-        Field(u'no-wait', u'bit', reserved=False),
-        Field(u'arguments', u'table', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'type', u'shortstr', u'shortstr', reserved=False),
+        Field(u'passive', u'bit', u'bit', reserved=False),
+        Field(u'durable', u'bit', u'bit', reserved=False),
+        Field(u'reserved-2', u'bit', u'bit', reserved=True),
+        Field(u'reserved-3', u'bit', u'bit', reserved=True),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
+        Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
     def __init__(self, exchange, type_, passive, durable, no_wait, arguments):
@@ -1121,17 +1098,16 @@ class ExchangeDelete(AMQPMethodPayload):
     BINARY_HEADER = b'\x28\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [ExchangeDeleteOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'if-unused', u'bit', reserved=False),
-        Field(u'no-wait', u'bit', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'if-unused', u'bit', u'bit', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
 
     def __init__(self, exchange, if_unused, no_wait):
@@ -1186,12 +1162,10 @@ class ExchangeDeclareOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x28\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x28\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = ExchangeDeclare # this is sent in response to exchange.declare
 
     def __init__(self):
         """
@@ -1217,12 +1191,10 @@ class ExchangeDeleteOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x28\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x28\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = ExchangeDelete # this is sent in response to exchange.delete
 
     def __init__(self):
         """
@@ -1262,19 +1234,18 @@ class QueueBind(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [QueueBindOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'routing-key', u'shortstr', reserved=False),
-        Field(u'no-wait', u'bit', reserved=False),
-        Field(u'arguments', u'table', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
+        Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
     def __init__(self, queue, exchange, routing_key, no_wait, arguments):
@@ -1356,12 +1327,10 @@ class QueueBindOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x32\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = QueueBind # this is sent in response to queue.bind
 
     def __init__(self):
         """
@@ -1389,21 +1358,20 @@ class QueueDeclare(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [QueueDeclareOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'passive', u'bit', reserved=False),
-        Field(u'durable', u'bit', reserved=False),
-        Field(u'exclusive', u'bit', reserved=False),
-        Field(u'auto-delete', u'bit', reserved=False),
-        Field(u'no-wait', u'bit', reserved=False),
-        Field(u'arguments', u'table', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'passive', u'bit', u'bit', reserved=False),
+        Field(u'durable', u'bit', u'bit', reserved=False),
+        Field(u'exclusive', u'bit', u'bit', reserved=False),
+        Field(u'auto-delete', u'bit', u'bit', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
+        Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
     def __init__(self, queue, passive, durable, exclusive, auto_delete, no_wait, arguments):
@@ -1496,18 +1464,17 @@ class QueueDelete(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [QueueDeleteOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'if-unused', u'bit', reserved=False),
-        Field(u'if-empty', u'bit', reserved=False),
-        Field(u'no-wait', u'bit', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'if-unused', u'bit', u'bit', reserved=False),
+        Field(u'if-empty', u'bit', u'bit', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
 
     def __init__(self, queue, if_unused, if_empty, no_wait):
@@ -1567,17 +1534,15 @@ class QueueDeclareOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = QueueDeclare # this is sent in response to queue.declare
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'message-count', u'long', reserved=False),
-        Field(u'consumer-count', u'long', reserved=False),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'message-count', u'message-count', u'long', reserved=False),
+        Field(u'consumer-count', u'long', u'long', reserved=False),
     ]
 
     def __init__(self, queue, message_count, consumer_count):
@@ -1629,15 +1594,13 @@ class QueueDeleteOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = QueueDelete # this is sent in response to queue.delete
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'message-count', u'long', reserved=False),
+        Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
 
     def __init__(self, message_count):
@@ -1676,16 +1639,15 @@ class QueuePurge(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [QueuePurgeOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'no-wait', u'bit', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
 
     def __init__(self, queue, no_wait):
@@ -1732,15 +1694,13 @@ class QueuePurgeOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = QueuePurge # this is sent in response to queue.purge
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'message-count', u'long', reserved=False),
+        Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
 
     def __init__(self, message_count):
@@ -1778,18 +1738,17 @@ class QueueUnbind(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [QueueUnbindOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'routing-key', u'shortstr', reserved=False),
-        Field(u'arguments', u'table', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
+        Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
     def __init__(self, queue, exchange, routing_key, arguments):
@@ -1856,12 +1815,10 @@ class QueueUnbindOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x32\x33'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x32\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = QueueUnbind # this is sent in response to queue.unbind
 
     def __init__(self):
         """
@@ -1888,21 +1845,90 @@ class BasicContentPropertyList(AMQPContentPropertyList):
     The basic class provides methods that support an industry-standard messaging model.
     """
     FIELDS = [
-        Field(u'content-type', u'shortstr', False),
-        Field(u'content-encoding', u'shortstr', False),
-        Field(u'headers', u'table', False),
-        Field(u'delivery-mode', u'octet', False),
-        Field(u'priority', u'octet', False),
-        Field(u'correlation-id', u'shortstr', False),
-        Field(u'reply-to', u'shortstr', False),
-        Field(u'expiration', u'shortstr', False),
-        Field(u'message-id', u'shortstr', False),
-        Field(u'timestamp', u'timestamp', False),
-        Field(u'type', u'shortstr', False),
-        Field(u'user-id', u'shortstr', False),
-        Field(u'app-id', u'shortstr', False),
-        Field(u'reserved', u'shortstr', False),
+        Field(u'content-type', u'shortstr', u'shortstr', False),
+        Field(u'content-encoding', u'shortstr', u'shortstr', False),
+        Field(u'headers', u'table', u'table', False),
+        Field(u'delivery-mode', u'octet', u'octet', False),
+        Field(u'priority', u'octet', u'octet', False),
+        Field(u'correlation-id', u'shortstr', u'shortstr', False),
+        Field(u'reply-to', u'shortstr', u'shortstr', False),
+        Field(u'expiration', u'shortstr', u'shortstr', False),
+        Field(u'message-id', u'shortstr', u'shortstr', False),
+        Field(u'timestamp', u'timestamp', u'timestamp', False),
+        Field(u'type', u'shortstr', u'shortstr', False),
+        Field(u'user-id', u'shortstr', u'shortstr', False),
+        Field(u'app-id', u'shortstr', u'shortstr', False),
+        Field(u'reserved', u'shortstr', u'shortstr', False),
     ]
+    # A dictionary from a zero property list to a class typized with
+    # some fields
+    PARTICULAR_CLASSES = {}
+
+    def __new__(self, **kwargs):
+        """
+        Return a property list.
+        :param content_type: MIME content type
+        :type content_type: binary type (max length 255) (AMQP as shortstr)
+        :param content_encoding: MIME content encoding
+        :type content_encoding: binary type (max length 255) (AMQP as shortstr)
+        :param headers: message header field table
+        :type headers: table. See coolamqp.uplink.framing.field_table (AMQP as table)
+        :param delivery_mode: non-persistent (1) or persistent (2)
+        :type delivery_mode: int, 8 bit unsigned (AMQP as octet)
+        :param priority: message priority, 0 to 9
+        :type priority: int, 8 bit unsigned (AMQP as octet)
+        :param correlation_id: application correlation identifier
+        :type correlation_id: binary type (max length 255) (AMQP as shortstr)
+        :param reply_to: address to reply to
+        :type reply_to: binary type (max length 255) (AMQP as shortstr)
+        :param expiration: message expiration specification
+        :type expiration: binary type (max length 255) (AMQP as shortstr)
+        :param message_id: application message identifier
+        :type message_id: binary type (max length 255) (AMQP as shortstr)
+        :param timestamp: message timestamp
+        :type timestamp: 64 bit signed POSIX timestamp (in seconds) (AMQP as timestamp)
+        :param type_: message type name
+        :type type_: binary type (max length 255) (AMQP as shortstr)
+        :param user_id: creating user id
+        :type user_id: binary type (max length 255) (AMQP as shortstr)
+        :param app_id: creating application id
+        :type app_id: binary type (max length 255) (AMQP as shortstr)
+        :param reserved: reserved, must be empty
+        :type reserved: binary type (max length 255) (AMQP as shortstr)
+        """
+        zpf = bytearray([
+            (('content_type' in kwargs) << 7) | (('content_encoding' in kwargs) << 6) | (('headers' in kwargs) << 5) | (('delivery_mode' in kwargs) << 4) | (('priority' in kwargs) << 3) | (('correlation_id' in kwargs) << 2) | (('reply_to' in kwargs) << 1) | int('expiration' in kwargs),
+            (('message_id' in kwargs) << 7) | (('timestamp' in kwargs) << 6) | (('type_' in kwargs) << 5) | (('user_id' in kwargs) << 4) | (('app_id' in kwargs) << 3) | (('reserved' in kwargs) << 2)
+        ])
+        zpf = six.binary_type(zpf)
+
+        if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
+            warnings.warn(u"""You could go faster.
+
+        If you know in advance what properties you will be using, use typized constructors like
+
+            # runs once
+            my_type = BasicContentPropertyList.typize('content_type', 'content_encoding')
+            # runs many times
+            props = my_type('text/plain', 'utf8')
+
+        instead of
+
+            # runs many times
+            props = BasicContentPropertyList(content_type='text/plain', content_encoding='utf8')
+
+        This way you will be faster.
+
+        If you do not know in advance what properties you will be using, it is correct to use
+        this constructor.
+        """)
+
+            return BasicContentPropertyList.PARTICULAR_CLASSES[zpf](**kwargs)
+        else:
+            logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
+            BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c(**kwargs)
 
 
 class BasicAck(AMQPMethodPayload):
@@ -1919,15 +1945,14 @@ class BasicAck(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x50'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'delivery-tag', u'longlong', reserved=False),
-        Field(u'multiple', u'bit', reserved=False),
+        Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
+        Field(u'multiple', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, delivery_tag, multiple):
@@ -1976,21 +2001,20 @@ class BasicConsume(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [BasicConsumeOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'consumer-tag', u'shortstr', reserved=False),
-        Field(u'no-local', u'bit', reserved=False),
-        Field(u'no-ack', u'bit', reserved=False),
-        Field(u'exclusive', u'bit', reserved=False),
-        Field(u'no-wait', u'bit', reserved=False),
-        Field(u'arguments', u'table', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
+        Field(u'no-local', u'no-local', u'bit', reserved=False),
+        Field(u'no-ack', u'no-ack', u'bit', reserved=False),
+        Field(u'exclusive', u'bit', u'bit', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
+        Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
     def __init__(self, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments):
@@ -2071,15 +2095,14 @@ class BasicCancel(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [BasicCancelOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'consumer-tag', u'shortstr', reserved=False),
-        Field(u'no-wait', u'bit', reserved=False),
+        Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
 
     def __init__(self, consumer_tag, no_wait):
@@ -2126,15 +2149,13 @@ class BasicConsumeOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = BasicConsume # this is sent in response to basic.consume
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'consumer-tag', u'shortstr', reserved=False),
+        Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
     ]
 
     def __init__(self, consumer_tag):
@@ -2175,15 +2196,13 @@ class BasicCancelOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = BasicCancel # this is sent in response to basic.cancel
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'consumer-tag', u'shortstr', reserved=False),
+        Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
     ]
 
     def __init__(self, consumer_tag):
@@ -2226,18 +2245,17 @@ class BasicDeliver(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x3C'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'consumer-tag', u'shortstr', reserved=False),
-        Field(u'delivery-tag', u'longlong', reserved=False),
-        Field(u'redelivered', u'bit', reserved=False),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'routing-key', u'shortstr', reserved=False),
+        Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
+        Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
+        Field(u'redelivered', u'redelivered', u'bit', reserved=False),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
     ]
 
     def __init__(self, consumer_tag, delivery_tag, redelivered, exchange, routing_key):
@@ -2306,16 +2324,15 @@ class BasicGet(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x46'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [BasicGetOk, BasicGetEmpty]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'queue', u'shortstr', reserved=False),
-        Field(u'no-ack', u'bit', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'queue', u'queue-name', u'shortstr', reserved=False),
+        Field(u'no-ack', u'no-ack', u'bit', reserved=False),
     ]
 
     def __init__(self, queue, no_ack):
@@ -2364,19 +2381,17 @@ class BasicGetOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x47'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
-    RESPONSE_TO = BasicGet # this is sent in response to basic.get
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'delivery-tag', u'longlong', reserved=False),
-        Field(u'redelivered', u'bit', reserved=False),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'routing-key', u'shortstr', reserved=False),
-        Field(u'message-count', u'long', reserved=False),
+        Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
+        Field(u'redelivered', u'redelivered', u'bit', reserved=False),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
+        Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
 
     def __init__(self, delivery_tag, redelivered, exchange, routing_key, message_count):
@@ -2441,16 +2456,14 @@ class BasicGetEmpty(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x48'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x0D\x3C\x48\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = BasicGet # this is sent in response to basic.get
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'shortstr', reserved=True),
+        Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
 
     def __init__(self):
@@ -2482,18 +2495,17 @@ class BasicPublish(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reserved-1', u'short', reserved=True),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'routing-key', u'shortstr', reserved=False),
-        Field(u'mandatory', u'bit', reserved=False),
-        Field(u'immediate', u'bit', reserved=False),
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
+        Field(u'mandatory', u'bit', u'bit', reserved=False),
+        Field(u'immediate', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, exchange, routing_key, mandatory, immediate):
@@ -2569,16 +2581,15 @@ class BasicQos(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [BasicQosOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'prefetch-size', u'long', reserved=False),
-        Field(u'prefetch-count', u'short', reserved=False),
-        Field(u'global', u'bit', reserved=False),
+        Field(u'prefetch-size', u'long', u'long', reserved=False),
+        Field(u'prefetch-count', u'short', u'short', reserved=False),
+        Field(u'global', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, prefetch_size, prefetch_count, global_):
@@ -2641,12 +2652,10 @@ class BasicQosOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x3C\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = BasicQos # this is sent in response to basic.qos
 
     def __init__(self):
         """
@@ -2675,17 +2684,16 @@ class BasicReturn(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'reply-code', u'short', reserved=False),
-        Field(u'reply-text', u'shortstr', reserved=False),
-        Field(u'exchange', u'shortstr', reserved=False),
-        Field(u'routing-key', u'shortstr', reserved=False),
+        Field(u'reply-code', u'reply-code', u'short', reserved=False),
+        Field(u'reply-text', u'reply-text', u'shortstr', reserved=False),
+        Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
     ]
 
     def __init__(self, reply_code, reply_text, exchange, routing_key):
@@ -2749,15 +2757,14 @@ class BasicReject(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x5A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'delivery-tag', u'longlong', reserved=False),
-        Field(u'requeue', u'bit', reserved=False),
+        Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
+        Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, delivery_tag, requeue):
@@ -2804,14 +2811,13 @@ class BasicRecoverAsync(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x64'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'requeue', u'bit', reserved=False),
+        Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, requeue):
@@ -2855,14 +2861,13 @@ class BasicRecover(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x6E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
     FIELDS = [ 
-        Field(u'requeue', u'bit', reserved=False),
+        Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
 
     def __init__(self, requeue):
@@ -2904,7 +2909,6 @@ class BasicRecoverOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x3C\x6F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -2952,7 +2956,6 @@ class TxCommit(AMQPMethodPayload):
     BINARY_HEADER = b'\x5A\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [TxCommitOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -2983,12 +2986,10 @@ class TxCommitOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x5A\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = TxCommit # this is sent in response to tx.commit
 
     def __init__(self):
         """
@@ -3017,7 +3018,6 @@ class TxRollback(AMQPMethodPayload):
     BINARY_HEADER = b'\x5A\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [TxRollbackOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -3048,12 +3048,10 @@ class TxRollbackOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x5A\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = TxRollback # this is sent in response to tx.rollback
 
     def __init__(self):
         """
@@ -3080,7 +3078,6 @@ class TxSelect(AMQPMethodPayload):
     BINARY_HEADER = b'\x5A\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
-    REPLY_WITH = [TxSelectOk]       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -3111,12 +3108,10 @@ class TxSelectOk(AMQPMethodPayload):
     BINARY_HEADER = b'\x5A\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
-    REPLY_WITH = []       # methods you can reply with to this one
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
-    RESPONSE_TO = TxSelect # this is sent in response to tx.select
 
     def __init__(self):
         """
@@ -3248,3 +3243,90 @@ CLASS_ID_TO_CONTENT_PROPERTY_LIST = {
     60: BasicContentPropertyList,
 }
 
+# Methods that are sent as replies to other methods, ie. ConnectionOpenOk: ConnectionOpen
+# if a method is NOT a reply, it will not be in this dict
+# a method may be a reply for AT MOST one method
+REPLY_REASONS_FOR = {
+    BasicGetEmpty: BasicGet,
+    BasicGetOk: BasicGet,
+    ExchangeDeleteOk: ExchangeDelete,
+    TxSelectOk: TxSelect,
+    QueueBindOk: QueueBind,
+    BasicConsumeOk: BasicConsume,
+    BasicCancelOk: BasicCancel,
+    TxRollbackOk: TxRollback,
+    ChannelOpenOk: ChannelOpen,
+    QueueDeleteOk: QueueDelete,
+    ChannelCloseOk: ChannelClose,
+    BasicQosOk: BasicQos,
+    ConnectionStartOk: ConnectionStart,
+    QueueUnbindOk: QueueUnbind,
+    TxCommitOk: TxCommit,
+    QueuePurgeOk: QueuePurge,
+    QueueDeclareOk: QueueDeclare,
+    ExchangeDeclareOk: ExchangeDeclare,
+    ConnectionTuneOk: ConnectionTune,
+    ConnectionSecureOk: ConnectionSecure,
+    ConnectionOpenOk: ConnectionOpen,
+    ChannelFlowOk: ChannelFlow,
+    ConnectionCloseOk: ConnectionClose,
+}
+
+# Methods that are replies for other, ie. ConnectionOpenOk: ConnectionOpen
+# a method may be a reply for ONE or NONE other methods
+# if a method has no replies, it will have an empty list as value here
+REPLIES_FOR= {
+    BasicGetEmpty: [],
+    BasicRecoverOk: [],
+    BasicReturn: [],
+    QueueDeclare: [QueueDeclareOk],
+    BasicGetOk: [],
+    ConnectionSecure: [ConnectionSecureOk],
+    ExchangeDeleteOk: [],
+    TxRollback: [TxRollbackOk],
+    TxSelectOk: [],
+    QueueBindOk: [],
+    ChannelFlow: [ChannelFlowOk],
+    BasicConsumeOk: [],
+    BasicRecover: [],
+    BasicCancelOk: [],
+    BasicGet: [BasicGetOk, BasicGetEmpty],
+    TxRollbackOk: [],
+    BasicAck: [],
+    ExchangeDelete: [ExchangeDeleteOk],
+    BasicConsume: [BasicConsumeOk],
+    ConnectionClose: [ConnectionCloseOk],
+    ChannelOpenOk: [],
+    QueueDeleteOk: [],
+    QueueBind: [QueueBindOk],
+    ConnectionStart: [ConnectionStartOk],
+    BasicQos: [BasicQosOk],
+    QueueUnbind: [QueueUnbindOk],
+    BasicQosOk: [],
+    BasicReject: [],
+    ChannelCloseOk: [],
+    ExchangeDeclare: [ExchangeDeclareOk],
+    BasicPublish: [],
+    ConnectionTune: [ConnectionTuneOk],
+    ConnectionStartOk: [],
+    QueueUnbindOk: [],
+    QueueDelete: [QueueDeleteOk],
+    ConnectionCloseOk: [],
+    QueuePurge: [QueuePurgeOk],
+    ChannelOpen: [ChannelOpenOk],
+    ChannelClose: [ChannelCloseOk],
+    QueuePurgeOk: [],
+    QueueDeclareOk: [],
+    BasicCancel: [BasicCancelOk],
+    ExchangeDeclareOk: [],
+    TxCommitOk: [],
+    ConnectionTuneOk: [],
+    ConnectionSecureOk: [],
+    ConnectionOpenOk: [],
+    ChannelFlowOk: [],
+    BasicRecoverAsync: [],
+    TxSelect: [TxSelectOk],
+    BasicDeliver: [],
+    TxCommit: [TxCommitOk],
+    ConnectionOpen: [ConnectionOpenOk],
+}

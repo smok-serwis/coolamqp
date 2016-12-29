@@ -52,8 +52,8 @@ class AMQPHeaderFrame(AMQPFrame):
         :param class_id: class ID
         :param weight: weight (lol wut?)
         :param body_size: size of the body to follow
-        :param property_flags:
-        :param property_list:
+        :param property_flags: binary
+        :param property_list: a list of properties
         """
         AMQPFrame.__init__(self, channel)
         self.class_id = class_id
@@ -64,7 +64,9 @@ class AMQPHeaderFrame(AMQPFrame):
 
     def write_to(self, buf):
         AMQPFrame.write_to(self, buf)
-        buf.write(struct.pack('!HHQH'))
+        buf.write(struct.pack('!HHQ', self.class_id, 0, self.body_size))
+        buf.write(self.property_flags)
+
 
     @staticmethod
     def unserialize(channel, payload_as_buffer):

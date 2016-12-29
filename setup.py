@@ -2,6 +2,7 @@
 # coding=UTF-8
 from setuptools import setup
 
+
 setup(name='CoolAMQP',
       version='0.12',
       description='AMQP client with sane reconnects',

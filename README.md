@@ -8,31 +8,13 @@ CoolAMQP
 [![PyPI](https://img.shields.io/pypi/pyversions/CoolAMQP.svg)]()
 [![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
 
-When you're tired of fucking with AMQP reconnects.
+A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
 
-When a connection made by CoolAMQP to your broker fails, it will pick another
-node, redeclare exchanges, queues, consumers, QoS and all the other shit, and tell
-your application that a disconnect happened.
+tl;dr - [this](coolamqp/framing/definitions.py) is **machine-generated** compile-time.
+[this](coolamqp/framing/compilation/content_property.py) **generates classes run-time**.
 
-You only need to remember that:
-
-1. Reconnects and redefinitions take a while. Things will happen during that time. It is your responsibility to ensure that your distributed system is built to handle this
-2. CoolAMQP will tell you when it senses losing broker connection. It will also tell you when it regains the connection (that means that everything is redefined and ready to go)
-3. Delivering messages multiple times may happen. Ensure you know when it happens. Keywords: message acknowledgement, amqp specification
-4. CoolAMQP won't touch your messages. You send bags of bytes and properties, you get bags of bytes and their properties. This is by design - the postman shouldn't mess with your mail.
 
 The project is actively maintained and used in a commercial project. Tests can run
 either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.
 
 Enjoy!
-
-# Changelog
-## v0.12
-* ACCESS_REFUSED/RESOURCE_LOCKED on reconnect is properly handled
-* reason for consumer cancel is provided
-* can read error code and reply text from failed orders
-* test suite refactored and improved
-## v0.11
-* added *no_ack* to *consume*
-* can pass other non-text types to Message
-* can set global bit in *qos*

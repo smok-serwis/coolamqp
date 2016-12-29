@@ -160,7 +160,6 @@ def format_method_class_name(methodname):
 
 @as_unicode
 def format_field_name(field):
-    print(repr(field))
     if field in (u'global', u'type'):
         field = field + '_'
     return field.replace('-', '_')

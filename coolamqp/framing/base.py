@@ -86,6 +86,43 @@ class AMQPContentPropertyList(object):
     """
     PROPERTIES = []
 
+    @staticmethod
+    def zero_property_flags(property_flags):
+        """
+        Given a binary property_flags, set all bit properties to 0.
+
+        This leaves us with a canonical representation, that can be used
+        in obtaining a particular property list
+        :param property_flags: binary
+        :return: binary
+        """
+        # this is a default implementation.
+        # compiler should emit it's own when the content property list has a
+        # possible bit field
+        return property_flags
+
+    def write_to(self, buf):
+        """Serialize itself (flags + values) to a buffer"""
+        raise NotImplementedError
+
+    @staticmethod
+    def from_buffer(self, buf, start_offset):
+        """
+        Return an instance of self, loaded from a buffer.
+
+        This does not have to return length, because it is always passed exactly enough of a buffer.
+
+        Buffer HAS TO start at property_flags
+        """
+        raise NotImplementedError
+
+    def get_size(self):
+        """
+        How long is property_flags + property_values
+        :return: int
+        """
+        raise NotImplementedError
+
 
 class AMQPMethodPayload(AMQPPayload):
     RESPONSE_TO = None
