@@ -109,6 +109,39 @@ class Connection(AMQPClass):
     INDEX = 10
 
 
+    @staticmethod
+    def typize(*fields):
+        zpf = bytearray([
+            ])
+        zpf = six.binary_type(zpf)
+        if zpf in ConnectionContentPropertyList.PARTICULAR_CLASSES:
+            return ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf]
+        else:
+            logger.debug('Property field (ConnectionContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, ConnectionContentPropertyList.FIELDS)
+            ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c
+
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Return a content property list instance unserialized from
+        buffer, so that buf[offset] marks the start of property flags
+        """
+        # extract property flags
+        pfl = 2
+        while ord(buf[offset + pfl]) & 1:
+            pfl += 2
+        zpf = ConnectionContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
+        if zpf in ConnectionContentPropertyList.PARTICULAR_CLASSES:
+            return ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
+        else:
+            logger.debug('Property field (ConnectionContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, ConnectionContentPropertyList.FIELDS)
+            ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c.from_buffer(buf, offset)
+
+
 class ConnectionClose(AMQPMethodPayload):
     """
     Request a connection close
@@ -705,6 +738,39 @@ class Channel(AMQPClass):
     INDEX = 20
 
 
+    @staticmethod
+    def typize(*fields):
+        zpf = bytearray([
+            ])
+        zpf = six.binary_type(zpf)
+        if zpf in ChannelContentPropertyList.PARTICULAR_CLASSES:
+            return ChannelContentPropertyList.PARTICULAR_CLASSES[zpf]
+        else:
+            logger.debug('Property field (ChannelContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, ChannelContentPropertyList.FIELDS)
+            ChannelContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c
+
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Return a content property list instance unserialized from
+        buffer, so that buf[offset] marks the start of property flags
+        """
+        # extract property flags
+        pfl = 2
+        while ord(buf[offset + pfl]) & 1:
+            pfl += 2
+        zpf = ChannelContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
+        if zpf in ChannelContentPropertyList.PARTICULAR_CLASSES:
+            return ChannelContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
+        else:
+            logger.debug('Property field (ChannelContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, ChannelContentPropertyList.FIELDS)
+            ChannelContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c.from_buffer(buf, offset)
+
+
 class ChannelClose(AMQPMethodPayload):
     """
     Request a channel close
@@ -983,6 +1049,39 @@ class Exchange(AMQPClass):
     INDEX = 40
 
 
+    @staticmethod
+    def typize(*fields):
+        zpf = bytearray([
+            ])
+        zpf = six.binary_type(zpf)
+        if zpf in ExchangeContentPropertyList.PARTICULAR_CLASSES:
+            return ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf]
+        else:
+            logger.debug('Property field (ExchangeContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, ExchangeContentPropertyList.FIELDS)
+            ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c
+
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Return a content property list instance unserialized from
+        buffer, so that buf[offset] marks the start of property flags
+        """
+        # extract property flags
+        pfl = 2
+        while ord(buf[offset + pfl]) & 1:
+            pfl += 2
+        zpf = ExchangeContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
+        if zpf in ExchangeContentPropertyList.PARTICULAR_CLASSES:
+            return ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
+        else:
+            logger.debug('Property field (ExchangeContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, ExchangeContentPropertyList.FIELDS)
+            ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c.from_buffer(buf, offset)
+
+
 class ExchangeDeclare(AMQPMethodPayload):
     """
     Verify exchange exists, create if needed
@@ -1217,6 +1316,39 @@ class Queue(AMQPClass):
     """
     NAME = u'queue'
     INDEX = 50
+
+
+    @staticmethod
+    def typize(*fields):
+        zpf = bytearray([
+            ])
+        zpf = six.binary_type(zpf)
+        if zpf in QueueContentPropertyList.PARTICULAR_CLASSES:
+            return QueueContentPropertyList.PARTICULAR_CLASSES[zpf]
+        else:
+            logger.debug('Property field (QueueContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, QueueContentPropertyList.FIELDS)
+            QueueContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c
+
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Return a content property list instance unserialized from
+        buffer, so that buf[offset] marks the start of property flags
+        """
+        # extract property flags
+        pfl = 2
+        while ord(buf[offset + pfl]) & 1:
+            pfl += 2
+        zpf = QueueContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
+        if zpf in QueueContentPropertyList.PARTICULAR_CLASSES:
+            return QueueContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
+        else:
+            logger.debug('Property field (QueueContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, QueueContentPropertyList.FIELDS)
+            QueueContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c.from_buffer(buf, offset)
 
 
 class QueueBind(AMQPMethodPayload):
@@ -1929,6 +2061,40 @@ class BasicContentPropertyList(AMQPContentPropertyList):
             c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
             BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
             return c(**kwargs)
+
+    @staticmethod
+    def typize(*fields):
+        zpf = bytearray([
+            (('content_type' in fields) << 7) | (('content_encoding' in fields) << 6) | (('headers' in fields) << 5) | (('delivery_mode' in fields) << 4) | (('priority' in fields) << 3) | (('correlation_id' in fields) << 2) | (('reply_to' in fields) << 1) | int('expiration' in kwargs),
+            (('message_id' in fields) << 7) | (('timestamp' in fields) << 6) | (('type_' in fields) << 5) | (('user_id' in fields) << 4) | (('app_id' in fields) << 3) | (('reserved' in fields) << 2)
+            ])
+        zpf = six.binary_type(zpf)
+        if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
+            return BasicContentPropertyList.PARTICULAR_CLASSES[zpf]
+        else:
+            logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
+            BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c
+
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Return a content property list instance unserialized from
+        buffer, so that buf[offset] marks the start of property flags
+        """
+        # extract property flags
+        pfl = 2
+        while ord(buf[offset + pfl]) & 1:
+            pfl += 2
+        zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
+        if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
+            return BasicContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
+        else:
+            logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
+            BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c.from_buffer(buf, offset)
 
 
 class BasicAck(AMQPMethodPayload):
@@ -2941,6 +3107,39 @@ class Tx(AMQPClass):
     """
     NAME = u'tx'
     INDEX = 90
+
+
+    @staticmethod
+    def typize(*fields):
+        zpf = bytearray([
+            ])
+        zpf = six.binary_type(zpf)
+        if zpf in TxContentPropertyList.PARTICULAR_CLASSES:
+            return TxContentPropertyList.PARTICULAR_CLASSES[zpf]
+        else:
+            logger.debug('Property field (TxContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, TxContentPropertyList.FIELDS)
+            TxContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c
+
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Return a content property list instance unserialized from
+        buffer, so that buf[offset] marks the start of property flags
+        """
+        # extract property flags
+        pfl = 2
+        while ord(buf[offset + pfl]) & 1:
+            pfl += 2
+        zpf = TxContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
+        if zpf in TxContentPropertyList.PARTICULAR_CLASSES:
+            return TxContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
+        else:
+            logger.debug('Property field (TxContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, TxContentPropertyList.FIELDS)
+            TxContentPropertyList.PARTICULAR_CLASSES[zpf] = c
+            return c.from_buffer(buf, offset)
 
 
 class TxCommit(AMQPMethodPayload):

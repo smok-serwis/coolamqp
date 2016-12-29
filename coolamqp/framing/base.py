@@ -37,7 +37,8 @@ class AMQPFrame(object):        # base class for framing
 
         This writes type and channel ID.
         """
-        buf.write(struct.pack('!BH', self.FRAME_TYPE, self.channel))
+        # DO NOT UNCOMMENT buf.write(struct.pack('!BH', self.FRAME_TYPE, self.channel))
+        raise NotImplementedError('Please write the frame type and channel in child classes, its faster that way ')
 
     @staticmethod
     def unserialize(channel, payload_as_buffer):
@@ -54,7 +55,7 @@ class AMQPFrame(object):        # base class for framing
         Return size of this frame, in bytes, from frame type to frame_end
         :return: int
         """
-        raise NotImplementedError()
+        raise NotImplementedError('Override me')
 
 
 class AMQPPayload(object):
@@ -103,7 +104,7 @@ class AMQPContentPropertyList(object):
 
     def write_to(self, buf):
         """Serialize itself (flags + values) to a buffer"""
-        raise NotImplementedError
+        raise Exception('This is an abstract method')
 
     @staticmethod
     def from_buffer(self, buf, start_offset):
@@ -114,14 +115,14 @@ class AMQPContentPropertyList(object):
 
         Buffer HAS TO start at property_flags
         """
-        raise NotImplementedError
+        raise Exception('This is an abstract method')
 
     def get_size(self):
         """
         How long is property_flags + property_values
         :return: int
         """
-        raise NotImplementedError
+        raise Exception('This is an abstract method')
 
 
 class AMQPMethodPayload(AMQPPayload):
@@ -175,4 +176,3 @@ class AMQPMethodPayload(AMQPPayload):
         :raise ValueError: invalid data
         """
         raise NotImplementedError('')
-

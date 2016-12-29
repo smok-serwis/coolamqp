@@ -164,14 +164,14 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 # a bit
                 if piece_index > 0:
                     if field.reserved or field.basic_type == 'bit':
-                        byte_chunk.append(u"kwargs['%s']" % (2**piece_index, ))
+                        pass # zero anyway
                     else:
                         byte_chunk.append(u"(('%s' in kwargs) << %s)" % (format_field_name(field.name), piece_index))
                     piece_index -= 1
                 else:
                     if first_byte:
                         if field.reserved or field.basic_type == 'bit':
-                            byte_chunk.append(u'0')
+                            pass    # zero anyway
                         else:
                             byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
                     else:
@@ -219,9 +219,81 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             c = compile_particular_content_property_list_class(zpf, %s.FIELDS)
             %s.PARTICULAR_CLASSES[zpf] = c
             return c(**kwargs)
-
 '''.replace('%s', name_class(cls.name) + 'ContentPropertyList').replace('%d', '%s'))
 
+        line(u'''
+    @staticmethod
+    def typize(*fields):
+''')
+        line(u'        zpf = bytearray([\n')
+
+        first_byte = True  # in 2-byte group
+        piece_index = 7  # from 7 downto 0
+        fields_remaining = len(cls.properties)
+        byte_chunk = []
+
+        for field in cls.properties:
+            # a bit
+            if piece_index > 0:
+                if field.reserved or field.basic_type == 'bit':
+                    pass # zero
+                else:
+                    byte_chunk.append(u"(('%s' in fields) << %s)" % (format_field_name(field.name), piece_index))
+                piece_index -= 1
+            else:
+                if first_byte:
+                    if field.reserved or field.basic_type == 'bit':
+                        pass #zero
+                    else:
+                        byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
+                else:
+                    # this is the "do we need moar flags" section
+                    byte_chunk.append(u"kwargs['%s']" % (
+                        int(fields_remaining > 1)
+                    ))
+
+                # Emit the byte
+                line(u'            %s,\n', u' | '.join(byte_chunk))
+                byte_chunk = []
+                first_byte = not first_byte
+                piece_index = 7
+            fields_remaining -= 1
+
+        if len(byte_chunk) > 0:
+            line(u'            %s\n', u' | '.join(byte_chunk))  # We did not finish
+
+        line(u'''            ])
+        zpf = six.binary_type(zpf)
+        if zpf in %s.PARTICULAR_CLASSES:
+            return %s.PARTICULAR_CLASSES[zpf]
+        else:
+            logger.debug('Property field (%s:%d) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, %s.FIELDS)
+            %s.PARTICULAR_CLASSES[zpf] = c
+            return c
+'''.replace("%s", name_class(cls.name) + 'ContentPropertyList').replace('%d', '%s'))
+
+        line(u'''
+    @staticmethod
+    def from_buffer(buf, offset):
+        """
+        Return a content property list instance unserialized from
+        buffer, so that buf[offset] marks the start of property flags
+        """
+        # extract property flags
+        pfl = 2
+        while ord(buf[offset + pfl]) & 1:
+            pfl += 2
+        zpf = %s.zero_property_flags(buf[offset:offset+pfl])
+        if zpf in %s.PARTICULAR_CLASSES:
+            return %s.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
+        else:
+            logger.debug('Property field (%s:%d) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, %s.FIELDS)
+            %s.PARTICULAR_CLASSES[zpf] = c
+            return c.from_buffer(buf, offset)
+
+'''.replace('%s', name_class(cls.name) + 'ContentPropertyList').replace("%d", "%s"))
 
         # ============================================ Do methods for this class
         for method in cls.methods:

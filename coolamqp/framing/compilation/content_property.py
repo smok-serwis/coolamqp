@@ -83,11 +83,12 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     # from_buffer
     # note that non-bit values
-    mod.append(u'    def from_buffer(self, buf, start_offset):\n        offset = start_offset + %s\n' % (zpf_length, ))
+    mod.append(u'    @classmethod\n')
+    mod.append(u'    def from_buffer(cls, buf, start_offset):\n        offset = start_offset + %s\n' % (zpf_length, ))
     mod.append(get_from_buffer(
         present_fields
         , prefix='', indent_level=2))
-    mod.append(u'        return ParticularContentTypeList(%s)\n' %
+    mod.append(u'        return cls(%s)\n' %
                u', '.join(format_field_name(field.name) for field in present_fields))
 
 
