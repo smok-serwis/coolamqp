@@ -147,7 +147,7 @@ def enframe_table(buf, table):
 def deframe_table(buf, start_offset): # -> (table, bytes_consumed)
     """:return: tuple (table, bytes consumed)"""
     offset = start_offset
-    table_length, = struct.unpack_from('!I', buf, start_offset)
+    table_length, = struct.unpack_from('!L', buf, start_offset)
     offset += 4
 
     # we will check if it's really so.
@@ -158,11 +158,11 @@ def deframe_table(buf, start_offset): # -> (table, bytes_consumed)
         offset += 1
         field_name = buf[offset:offset+ln]
         offset += ln
-        field_val, field_tp, delta = deframe_field_value(buf, offset)
+        fv, delta = deframe_field_value(buf, offset)
         offset += delta
-        fields.append((field_name, (field_val, field_tp)))
+        fields.append((field_name, fv))
 
-    if offset > (start_offset+table_length):
+    if offset > (start_offset+table_length+4):
         raise ValueError('Table turned out longer than expected! Found %s bytes expected %s',
                          (offset-start_offset, table_length))
 

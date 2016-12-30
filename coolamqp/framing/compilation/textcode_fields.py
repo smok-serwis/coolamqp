@@ -127,6 +127,8 @@ def get_from_buffer(fields, prefix='', indent_level=2):
         elif field.basic_type == u'bit':
             bits.append('_' if field.reserved else fieldname)
         elif field.basic_type == u'table': # oh my god
+            if len(to_struct) > 0:
+                emit_structures()
             emit("%s, delta = deframe_table(buf, offset)", fieldname)
             emit("offset += delta")
         else:   # longstr or shortstr

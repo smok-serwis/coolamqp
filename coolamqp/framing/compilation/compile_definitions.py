@@ -221,48 +221,48 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             return c(**kwargs)
 '''.replace('%s', name_class(cls.name) + 'ContentPropertyList').replace('%d', '%s'))
 
-        line(u'''
+            line(u'''
     @staticmethod
     def typize(*fields):
-''')
-        line(u'        zpf = bytearray([\n')
+    ''')
+            line(u'    zpf = bytearray([\n')
 
-        first_byte = True  # in 2-byte group
-        piece_index = 7  # from 7 downto 0
-        fields_remaining = len(cls.properties)
-        byte_chunk = []
+            first_byte = True  # in 2-byte group
+            piece_index = 7  # from 7 downto 0
+            fields_remaining = len(cls.properties)
+            byte_chunk = []
 
-        for field in cls.properties:
-            # a bit
-            if piece_index > 0:
-                if field.reserved or field.basic_type == 'bit':
-                    pass # zero
-                else:
-                    byte_chunk.append(u"(('%s' in fields) << %s)" % (format_field_name(field.name), piece_index))
-                piece_index -= 1
-            else:
-                if first_byte:
+            for field in cls.properties:
+                # a bit
+                if piece_index > 0:
                     if field.reserved or field.basic_type == 'bit':
-                        pass #zero
+                        pass # zero
                     else:
-                        byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
+                        byte_chunk.append(u"(('%s' in fields) << %s)" % (format_field_name(field.name), piece_index))
+                    piece_index -= 1
                 else:
-                    # this is the "do we need moar flags" section
-                    byte_chunk.append(u"kwargs['%s']" % (
-                        int(fields_remaining > 1)
-                    ))
+                    if first_byte:
+                        if field.reserved or field.basic_type == 'bit':
+                            pass #zero
+                        else:
+                            byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
+                    else:
+                        # this is the "do we need moar flags" section
+                        byte_chunk.append(u"kwargs['%s']" % (
+                            int(fields_remaining > 1)
+                        ))
 
-                # Emit the byte
-                line(u'            %s,\n', u' | '.join(byte_chunk))
-                byte_chunk = []
-                first_byte = not first_byte
-                piece_index = 7
-            fields_remaining -= 1
+                    # Emit the byte
+                    line(u'        %s,\n', u' | '.join(byte_chunk))
+                    byte_chunk = []
+                    first_byte = not first_byte
+                    piece_index = 7
+                fields_remaining -= 1
 
-        if len(byte_chunk) > 0:
-            line(u'            %s\n', u' | '.join(byte_chunk))  # We did not finish
+            if len(byte_chunk) > 0:
+                line(u'        %s\n', u' | '.join(byte_chunk))  # We did not finish
 
-        line(u'''            ])
+            line(u'''        ])
         zpf = six.binary_type(zpf)
         if zpf in %s.PARTICULAR_CLASSES:
             return %s.PARTICULAR_CLASSES[zpf]
@@ -273,7 +273,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             return c
 '''.replace("%s", name_class(cls.name) + 'ContentPropertyList').replace('%d', '%s'))
 
-        line(u'''
+            line(u'''
     @staticmethod
     def from_buffer(buf, offset):
         """
@@ -326,7 +326,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                  to_docstring(method.label, method.docs),
                  frepr(cls.name + '.' + method.name),
                  frepr(cls.index), frepr(method.index),
-                 to_code_binary(chr(cls.index)+chr(method.index)),
+                 to_code_binary(struct.pack("!HH", cls.index, method.index)),
                  repr(method.sent_by_client),
                  repr(method.sent_by_server),
                  repr(is_static),
@@ -423,7 +423,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
     line('\nBINARY_HEADER_TO_METHOD = {\n')
     for k, v in dct.items():
-        line('    %s: %s,\n', to_code_binary(struct.pack('!BB', *k)), v)
+        line('    %s: %s,\n', to_code_binary(struct.pack('!HH', *k)), v)
     line('}\n\n')
 
     line('\nCLASS_ID_TO_CONTENT_PROPERTY_LIST = {\n')

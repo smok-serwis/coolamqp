@@ -28,15 +28,21 @@ class AMQPMethodFrame(AMQPFrame):
 
     @staticmethod
     def unserialize(channel, payload_as_buffer):
+        print('Going to unser a methodframe')
         clsmet = struct.unpack_from('!HH', payload_as_buffer, 0)
+
+        print('Cls:Met=', clsmet)
 
         try:
             method_payload_class = IDENT_TO_METHOD[clsmet]
             payload = method_payload_class.from_buffer(payload_as_buffer, 4)
+        except Exception as e:
+            print(repr(e))
+            raise
         except KeyError:
             raise ValueError('Invalid class %s method %s' % clsmet)
-
-        return AMQPMethodFrame(channel, payload)
+        else:
+            return AMQPMethodFrame(channel, payload)
 
     def get_size(self):
         # frame header is always 7, frame end is 1, class + method is 4
@@ -69,7 +75,6 @@ class AMQPHeaderFrame(AMQPFrame):
     @staticmethod
     def unserialize(channel, payload_as_buffer):
         # payload starts with class ID
-        print(repr(str(payload_as_buffer[12:])))
         class_id, weight, body_size = struct.unpack_from('!HHQ', payload_as_buffer, 0)
         properties = CLASS_ID_TO_CONTENT_PROPERTY_LIST[class_id].from_buffer(payload_as_buffer, 12)
         return AMQPHeaderFrame(channel, class_id, weight, body_size, properties)

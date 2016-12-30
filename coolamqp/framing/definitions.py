@@ -109,39 +109,6 @@ class Connection(AMQPClass):
     INDEX = 10
 
 
-    @staticmethod
-    def typize(*fields):
-        zpf = bytearray([
-            ])
-        zpf = six.binary_type(zpf)
-        if zpf in ConnectionContentPropertyList.PARTICULAR_CLASSES:
-            return ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf]
-        else:
-            logger.debug('Property field (ConnectionContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, ConnectionContentPropertyList.FIELDS)
-            ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c
-
-    @staticmethod
-    def from_buffer(buf, offset):
-        """
-        Return a content property list instance unserialized from
-        buffer, so that buf[offset] marks the start of property flags
-        """
-        # extract property flags
-        pfl = 2
-        while ord(buf[offset + pfl]) & 1:
-            pfl += 2
-        zpf = ConnectionContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
-        if zpf in ConnectionContentPropertyList.PARTICULAR_CLASSES:
-            return ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
-        else:
-            logger.debug('Property field (ConnectionContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, ConnectionContentPropertyList.FIELDS)
-            ConnectionContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c.from_buffer(buf, offset)
-
-
 class ConnectionClose(AMQPMethodPayload):
     """
     Request a connection close
@@ -154,7 +121,7 @@ class ConnectionClose(AMQPMethodPayload):
     NAME = u'connection.close'
 
     INDEX = (10, 50)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x32'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
@@ -218,7 +185,7 @@ class ConnectionCloseOk(AMQPMethodPayload):
     NAME = u'connection.close-ok'
 
     INDEX = (10, 51)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x33'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x33'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
@@ -250,7 +217,7 @@ class ConnectionOpen(AMQPMethodPayload):
     NAME = u'connection.open'
 
     INDEX = (10, 40)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x28'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -307,7 +274,7 @@ class ConnectionOpenOk(AMQPMethodPayload):
     NAME = u'connection.open-ok'
 
     INDEX = (10, 41)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x29'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -346,7 +313,7 @@ class ConnectionStart(AMQPMethodPayload):
     NAME = u'connection.start'
 
     INDEX = (10, 10)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x0A'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -408,10 +375,12 @@ class ConnectionStart(AMQPMethodPayload):
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
+        version_major, version_minor, = struct.unpack_from('!BB', buf, offset)
+        offset += 2
         server_properties, delta = deframe_table(buf, offset)
         offset += delta
-        version_major, version_minor, s_len, = struct.unpack_from('!BBL', buf, offset)
-        offset += 6
+        s_len, = struct.unpack_from('!L', buf, offset)
+        offset += 4
         mechanisms = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!L', buf, offset)
@@ -432,7 +401,7 @@ class ConnectionSecure(AMQPMethodPayload):
     NAME = u'connection.secure'
 
     INDEX = (10, 20)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x14'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -481,7 +450,7 @@ class ConnectionStartOk(AMQPMethodPayload):
     NAME = u'connection.start-ok'
 
     INDEX = (10, 11)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x0B'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -566,7 +535,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
     NAME = u'connection.secure-ok'
 
     INDEX = (10, 21)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x15'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -616,7 +585,7 @@ class ConnectionTune(AMQPMethodPayload):
     NAME = u'connection.tune'
 
     INDEX = (10, 30)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x1E'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -677,7 +646,7 @@ class ConnectionTuneOk(AMQPMethodPayload):
     NAME = u'connection.tune-ok'
 
     INDEX = (10, 31)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x0A\x1F'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x0A\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -738,39 +707,6 @@ class Channel(AMQPClass):
     INDEX = 20
 
 
-    @staticmethod
-    def typize(*fields):
-        zpf = bytearray([
-            ])
-        zpf = six.binary_type(zpf)
-        if zpf in ChannelContentPropertyList.PARTICULAR_CLASSES:
-            return ChannelContentPropertyList.PARTICULAR_CLASSES[zpf]
-        else:
-            logger.debug('Property field (ChannelContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, ChannelContentPropertyList.FIELDS)
-            ChannelContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c
-
-    @staticmethod
-    def from_buffer(buf, offset):
-        """
-        Return a content property list instance unserialized from
-        buffer, so that buf[offset] marks the start of property flags
-        """
-        # extract property flags
-        pfl = 2
-        while ord(buf[offset + pfl]) & 1:
-            pfl += 2
-        zpf = ChannelContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
-        if zpf in ChannelContentPropertyList.PARTICULAR_CLASSES:
-            return ChannelContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
-        else:
-            logger.debug('Property field (ChannelContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, ChannelContentPropertyList.FIELDS)
-            ChannelContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c.from_buffer(buf, offset)
-
-
 class ChannelClose(AMQPMethodPayload):
     """
     Request a channel close
@@ -783,7 +719,7 @@ class ChannelClose(AMQPMethodPayload):
     NAME = u'channel.close'
 
     INDEX = (20, 40)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x14\x28'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x14\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
@@ -847,7 +783,7 @@ class ChannelCloseOk(AMQPMethodPayload):
     NAME = u'channel.close-ok'
 
     INDEX = (20, 41)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x14\x29'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x14\x00\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
@@ -880,7 +816,7 @@ class ChannelFlow(AMQPMethodPayload):
     NAME = u'channel.flow'
 
     INDEX = (20, 20)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x14\x14'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x14\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
@@ -927,7 +863,7 @@ class ChannelFlowOk(AMQPMethodPayload):
     NAME = u'channel.flow-ok'
 
     INDEX = (20, 21)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x14\x15'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x14\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
@@ -974,7 +910,7 @@ class ChannelOpen(AMQPMethodPayload):
     NAME = u'channel.open'
 
     INDEX = (20, 10)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x14\x0A'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x14\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1011,7 +947,7 @@ class ChannelOpenOk(AMQPMethodPayload):
     NAME = u'channel.open-ok'
 
     INDEX = (20, 11)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x14\x0B'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x14\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -1049,39 +985,6 @@ class Exchange(AMQPClass):
     INDEX = 40
 
 
-    @staticmethod
-    def typize(*fields):
-        zpf = bytearray([
-            ])
-        zpf = six.binary_type(zpf)
-        if zpf in ExchangeContentPropertyList.PARTICULAR_CLASSES:
-            return ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf]
-        else:
-            logger.debug('Property field (ExchangeContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, ExchangeContentPropertyList.FIELDS)
-            ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c
-
-    @staticmethod
-    def from_buffer(buf, offset):
-        """
-        Return a content property list instance unserialized from
-        buffer, so that buf[offset] marks the start of property flags
-        """
-        # extract property flags
-        pfl = 2
-        while ord(buf[offset + pfl]) & 1:
-            pfl += 2
-        zpf = ExchangeContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
-        if zpf in ExchangeContentPropertyList.PARTICULAR_CLASSES:
-            return ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
-        else:
-            logger.debug('Property field (ExchangeContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, ExchangeContentPropertyList.FIELDS)
-            ExchangeContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c.from_buffer(buf, offset)
-
-
 class ExchangeDeclare(AMQPMethodPayload):
     """
     Verify exchange exists, create if needed
@@ -1092,7 +995,7 @@ class ExchangeDeclare(AMQPMethodPayload):
     NAME = u'exchange.declare'
 
     INDEX = (40, 10)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x28\x0A'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x28\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1194,7 +1097,7 @@ class ExchangeDelete(AMQPMethodPayload):
     NAME = u'exchange.delete'
 
     INDEX = (40, 20)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x28\x14'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x28\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1258,7 +1161,7 @@ class ExchangeDeclareOk(AMQPMethodPayload):
     NAME = u'exchange.declare-ok'
 
     INDEX = (40, 11)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x28\x0B'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x28\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -1287,7 +1190,7 @@ class ExchangeDeleteOk(AMQPMethodPayload):
     NAME = u'exchange.delete-ok'
 
     INDEX = (40, 21)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x28\x15'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x28\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -1318,39 +1221,6 @@ class Queue(AMQPClass):
     INDEX = 50
 
 
-    @staticmethod
-    def typize(*fields):
-        zpf = bytearray([
-            ])
-        zpf = six.binary_type(zpf)
-        if zpf in QueueContentPropertyList.PARTICULAR_CLASSES:
-            return QueueContentPropertyList.PARTICULAR_CLASSES[zpf]
-        else:
-            logger.debug('Property field (QueueContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, QueueContentPropertyList.FIELDS)
-            QueueContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c
-
-    @staticmethod
-    def from_buffer(buf, offset):
-        """
-        Return a content property list instance unserialized from
-        buffer, so that buf[offset] marks the start of property flags
-        """
-        # extract property flags
-        pfl = 2
-        while ord(buf[offset + pfl]) & 1:
-            pfl += 2
-        zpf = QueueContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
-        if zpf in QueueContentPropertyList.PARTICULAR_CLASSES:
-            return QueueContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
-        else:
-            logger.debug('Property field (QueueContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, QueueContentPropertyList.FIELDS)
-            QueueContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c.from_buffer(buf, offset)
-
-
 class QueueBind(AMQPMethodPayload):
     """
     Bind queue to an exchange
@@ -1363,7 +1233,7 @@ class QueueBind(AMQPMethodPayload):
     NAME = u'queue.bind'
 
     INDEX = (50, 20)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x14'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1456,7 +1326,7 @@ class QueueBindOk(AMQPMethodPayload):
     NAME = u'queue.bind-ok'
 
     INDEX = (50, 21)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x15'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -1487,7 +1357,7 @@ class QueueDeclare(AMQPMethodPayload):
     NAME = u'queue.declare'
 
     INDEX = (50, 10)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x0A'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1593,7 +1463,7 @@ class QueueDelete(AMQPMethodPayload):
     NAME = u'queue.delete'
 
     INDEX = (50, 40)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x28'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1663,7 +1533,7 @@ class QueueDeclareOk(AMQPMethodPayload):
     NAME = u'queue.declare-ok'
 
     INDEX = (50, 11)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x0B'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -1723,7 +1593,7 @@ class QueueDeleteOk(AMQPMethodPayload):
     NAME = u'queue.delete-ok'
 
     INDEX = (50, 41)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x29'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -1768,7 +1638,7 @@ class QueuePurge(AMQPMethodPayload):
     NAME = u'queue.purge'
 
     INDEX = (50, 30)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x1E'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1823,7 +1693,7 @@ class QueuePurgeOk(AMQPMethodPayload):
     NAME = u'queue.purge-ok'
 
     INDEX = (50, 31)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x1F'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -1867,7 +1737,7 @@ class QueueUnbind(AMQPMethodPayload):
     NAME = u'queue.unbind'
 
     INDEX = (50, 50)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x32'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -1944,7 +1814,7 @@ class QueueUnbindOk(AMQPMethodPayload):
     NAME = u'queue.unbind-ok'
 
     INDEX = (50, 51)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x32\x33'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x32\x00\x33'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2065,9 +1935,9 @@ class BasicContentPropertyList(AMQPContentPropertyList):
     @staticmethod
     def typize(*fields):
         zpf = bytearray([
-            (('content_type' in fields) << 7) | (('content_encoding' in fields) << 6) | (('headers' in fields) << 5) | (('delivery_mode' in fields) << 4) | (('priority' in fields) << 3) | (('correlation_id' in fields) << 2) | (('reply_to' in fields) << 1) | int('expiration' in kwargs),
-            (('message_id' in fields) << 7) | (('timestamp' in fields) << 6) | (('type_' in fields) << 5) | (('user_id' in fields) << 4) | (('app_id' in fields) << 3) | (('reserved' in fields) << 2)
-            ])
+        (('content_type' in fields) << 7) | (('content_encoding' in fields) << 6) | (('headers' in fields) << 5) | (('delivery_mode' in fields) << 4) | (('priority' in fields) << 3) | (('correlation_id' in fields) << 2) | (('reply_to' in fields) << 1) | int('expiration' in kwargs),
+        (('message_id' in fields) << 7) | (('timestamp' in fields) << 6) | (('type_' in fields) << 5) | (('user_id' in fields) << 4) | (('app_id' in fields) << 3) | (('reserved' in fields) << 2)
+        ])
         zpf = six.binary_type(zpf)
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[zpf]
@@ -2108,7 +1978,7 @@ class BasicAck(AMQPMethodPayload):
     NAME = u'basic.ack'
 
     INDEX = (60, 80)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x50'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x50'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -2164,7 +2034,7 @@ class BasicConsume(AMQPMethodPayload):
     NAME = u'basic.consume'
 
     INDEX = (60, 20)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x14'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -2258,7 +2128,7 @@ class BasicCancel(AMQPMethodPayload):
     NAME = u'basic.cancel'
 
     INDEX = (60, 30)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x1E'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -2312,7 +2182,7 @@ class BasicConsumeOk(AMQPMethodPayload):
     NAME = u'basic.consume-ok'
 
     INDEX = (60, 21)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x15'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2359,7 +2229,7 @@ class BasicCancelOk(AMQPMethodPayload):
     NAME = u'basic.cancel-ok'
 
     INDEX = (60, 31)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x1F'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2408,7 +2278,7 @@ class BasicDeliver(AMQPMethodPayload):
     NAME = u'basic.deliver'
 
     INDEX = (60, 60)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x3C'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x3C'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2487,7 +2357,7 @@ class BasicGet(AMQPMethodPayload):
     NAME = u'basic.get'
 
     INDEX = (60, 70)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x46'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x46'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -2544,7 +2414,7 @@ class BasicGetOk(AMQPMethodPayload):
     NAME = u'basic.get-ok'
 
     INDEX = (60, 71)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x47'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x47'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2619,7 +2489,7 @@ class BasicGetEmpty(AMQPMethodPayload):
     NAME = u'basic.get-empty'
 
     INDEX = (60, 72)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x48'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x48'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2658,7 +2528,7 @@ class BasicPublish(AMQPMethodPayload):
     NAME = u'basic.publish'
 
     INDEX = (60, 40)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x28'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -2744,7 +2614,7 @@ class BasicQos(AMQPMethodPayload):
     NAME = u'basic.qos'
 
     INDEX = (60, 10)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x0A'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -2815,7 +2685,7 @@ class BasicQosOk(AMQPMethodPayload):
     NAME = u'basic.qos-ok'
 
     INDEX = (60, 11)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x0B'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2847,7 +2717,7 @@ class BasicReturn(AMQPMethodPayload):
     NAME = u'basic.return'
 
     INDEX = (60, 50)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x32'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -2920,7 +2790,7 @@ class BasicReject(AMQPMethodPayload):
     NAME = u'basic.reject'
 
     INDEX = (60, 90)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x5A'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x5A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -2974,7 +2844,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
     NAME = u'basic.recover-async'
 
     INDEX = (60, 100)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x64'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x64'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -3024,7 +2894,7 @@ class BasicRecover(AMQPMethodPayload):
     NAME = u'basic.recover'
 
     INDEX = (60, 110)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x6E'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x6E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -3072,7 +2942,7 @@ class BasicRecoverOk(AMQPMethodPayload):
     NAME = u'basic.recover-ok'
 
     INDEX = (60, 111)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x3C\x6F'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x3C\x00\x6F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -3109,39 +2979,6 @@ class Tx(AMQPClass):
     INDEX = 90
 
 
-    @staticmethod
-    def typize(*fields):
-        zpf = bytearray([
-            ])
-        zpf = six.binary_type(zpf)
-        if zpf in TxContentPropertyList.PARTICULAR_CLASSES:
-            return TxContentPropertyList.PARTICULAR_CLASSES[zpf]
-        else:
-            logger.debug('Property field (TxContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, TxContentPropertyList.FIELDS)
-            TxContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c
-
-    @staticmethod
-    def from_buffer(buf, offset):
-        """
-        Return a content property list instance unserialized from
-        buffer, so that buf[offset] marks the start of property flags
-        """
-        # extract property flags
-        pfl = 2
-        while ord(buf[offset + pfl]) & 1:
-            pfl += 2
-        zpf = TxContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
-        if zpf in TxContentPropertyList.PARTICULAR_CLASSES:
-            return TxContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
-        else:
-            logger.debug('Property field (TxContentPropertyList:%s) not seen yet, compiling', repr(zpf))
-            c = compile_particular_content_property_list_class(zpf, TxContentPropertyList.FIELDS)
-            TxContentPropertyList.PARTICULAR_CLASSES[zpf] = c
-            return c.from_buffer(buf, offset)
-
-
 class TxCommit(AMQPMethodPayload):
     """
     Commit the current transaction
@@ -3152,7 +2989,7 @@ class TxCommit(AMQPMethodPayload):
     NAME = u'tx.commit'
 
     INDEX = (90, 20)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x5A\x14'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x5A\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -3182,7 +3019,7 @@ class TxCommitOk(AMQPMethodPayload):
     NAME = u'tx.commit-ok'
 
     INDEX = (90, 21)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x5A\x15'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x5A\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -3214,7 +3051,7 @@ class TxRollback(AMQPMethodPayload):
     NAME = u'tx.rollback'
 
     INDEX = (90, 30)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x5A\x1E'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x5A\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -3244,7 +3081,7 @@ class TxRollbackOk(AMQPMethodPayload):
     NAME = u'tx.rollback-ok'
 
     INDEX = (90, 31)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x5A\x1F'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x5A\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -3274,7 +3111,7 @@ class TxSelect(AMQPMethodPayload):
     NAME = u'tx.select'
 
     INDEX = (90, 10)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x5A\x0A'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x5A\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
@@ -3304,7 +3141,7 @@ class TxSelectOk(AMQPMethodPayload):
     NAME = u'tx.select-ok'
 
     INDEX = (90, 11)          # (Class ID, Method ID)
-    BINARY_HEADER = b'\x5A\x0B'      # CLASS ID + METHOD ID
+    BINARY_HEADER = b'\x00\x5A\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
@@ -3382,59 +3219,59 @@ IDENT_TO_METHOD = {
 
 
 BINARY_HEADER_TO_METHOD = {
-    b'\x5A\x15': TxCommitOk,
-    b'\x3C\x64': BasicRecoverAsync,
-    b'\x0A\x0B': ConnectionStartOk,
-    b'\x3C\x28': BasicPublish,
-    b'\x3C\x32': BasicReturn,
-    b'\x0A\x33': ConnectionCloseOk,
-    b'\x14\x14': ChannelFlow,
-    b'\x3C\x15': BasicConsumeOk,
-    b'\x0A\x15': ConnectionSecureOk,
-    b'\x5A\x1E': TxRollback,
-    b'\x5A\x0A': TxSelect,
-    b'\x32\x0B': QueueDeclareOk,
-    b'\x3C\x46': BasicGet,
-    b'\x5A\x0B': TxSelectOk,
-    b'\x0A\x1E': ConnectionTune,
-    b'\x3C\x0B': BasicQosOk,
-    b'\x3C\x50': BasicAck,
-    b'\x14\x15': ChannelFlowOk,
-    b'\x3C\x3C': BasicDeliver,
-    b'\x5A\x1F': TxRollbackOk,
-    b'\x14\x28': ChannelClose,
-    b'\x3C\x47': BasicGetOk,
-    b'\x32\x1E': QueuePurge,
-    b'\x0A\x1F': ConnectionTuneOk,
-    b'\x0A\x28': ConnectionOpen,
-    b'\x3C\x1E': BasicCancel,
-    b'\x32\x32': QueueUnbind,
-    b'\x28\x0A': ExchangeDeclare,
-    b'\x0A\x32': ConnectionClose,
-    b'\x14\x0A': ChannelOpen,
-    b'\x14\x29': ChannelCloseOk,
-    b'\x3C\x6E': BasicRecover,
-    b'\x3C\x5A': BasicReject,
-    b'\x32\x1F': QueuePurgeOk,
-    b'\x32\x28': QueueDelete,
-    b'\x28\x14': ExchangeDelete,
-    b'\x32\x14': QueueBind,
-    b'\x0A\x29': ConnectionOpenOk,
-    b'\x3C\x1F': BasicCancelOk,
-    b'\x5A\x14': TxCommit,
-    b'\x0A\x0A': ConnectionStart,
-    b'\x3C\x0A': BasicQos,
-    b'\x28\x0B': ExchangeDeclareOk,
-    b'\x28\x15': ExchangeDeleteOk,
-    b'\x14\x0B': ChannelOpenOk,
-    b'\x3C\x48': BasicGetEmpty,
-    b'\x3C\x6F': BasicRecoverOk,
-    b'\x3C\x14': BasicConsume,
-    b'\x0A\x14': ConnectionSecure,
-    b'\x32\x29': QueueDeleteOk,
-    b'\x32\x33': QueueUnbindOk,
-    b'\x32\x15': QueueBindOk,
-    b'\x32\x0A': QueueDeclare,
+    b'\x00\x5A\x00\x15': TxCommitOk,
+    b'\x00\x3C\x00\x64': BasicRecoverAsync,
+    b'\x00\x0A\x00\x0B': ConnectionStartOk,
+    b'\x00\x3C\x00\x28': BasicPublish,
+    b'\x00\x3C\x00\x32': BasicReturn,
+    b'\x00\x0A\x00\x33': ConnectionCloseOk,
+    b'\x00\x14\x00\x14': ChannelFlow,
+    b'\x00\x3C\x00\x15': BasicConsumeOk,
+    b'\x00\x0A\x00\x15': ConnectionSecureOk,
+    b'\x00\x5A\x00\x1E': TxRollback,
+    b'\x00\x5A\x00\x0A': TxSelect,
+    b'\x00\x32\x00\x0B': QueueDeclareOk,
+    b'\x00\x3C\x00\x46': BasicGet,
+    b'\x00\x5A\x00\x0B': TxSelectOk,
+    b'\x00\x0A\x00\x1E': ConnectionTune,
+    b'\x00\x3C\x00\x0B': BasicQosOk,
+    b'\x00\x3C\x00\x50': BasicAck,
+    b'\x00\x14\x00\x15': ChannelFlowOk,
+    b'\x00\x3C\x00\x3C': BasicDeliver,
+    b'\x00\x5A\x00\x1F': TxRollbackOk,
+    b'\x00\x14\x00\x28': ChannelClose,
+    b'\x00\x3C\x00\x47': BasicGetOk,
+    b'\x00\x32\x00\x1E': QueuePurge,
+    b'\x00\x0A\x00\x1F': ConnectionTuneOk,
+    b'\x00\x0A\x00\x28': ConnectionOpen,
+    b'\x00\x3C\x00\x1E': BasicCancel,
+    b'\x00\x32\x00\x32': QueueUnbind,
+    b'\x00\x28\x00\x0A': ExchangeDeclare,
+    b'\x00\x0A\x00\x32': ConnectionClose,
+    b'\x00\x14\x00\x0A': ChannelOpen,
+    b'\x00\x14\x00\x29': ChannelCloseOk,
+    b'\x00\x3C\x00\x6E': BasicRecover,
+    b'\x00\x3C\x00\x5A': BasicReject,
+    b'\x00\x32\x00\x1F': QueuePurgeOk,
+    b'\x00\x32\x00\x28': QueueDelete,
+    b'\x00\x28\x00\x14': ExchangeDelete,
+    b'\x00\x32\x00\x14': QueueBind,
+    b'\x00\x0A\x00\x29': ConnectionOpenOk,
+    b'\x00\x3C\x00\x1F': BasicCancelOk,
+    b'\x00\x5A\x00\x14': TxCommit,
+    b'\x00\x0A\x00\x0A': ConnectionStart,
+    b'\x00\x3C\x00\x0A': BasicQos,
+    b'\x00\x28\x00\x0B': ExchangeDeclareOk,
+    b'\x00\x28\x00\x15': ExchangeDeleteOk,
+    b'\x00\x14\x00\x0B': ChannelOpenOk,
+    b'\x00\x3C\x00\x48': BasicGetEmpty,
+    b'\x00\x3C\x00\x6F': BasicRecoverOk,
+    b'\x00\x3C\x00\x14': BasicConsume,
+    b'\x00\x0A\x00\x14': ConnectionSecure,
+    b'\x00\x32\x00\x29': QueueDeleteOk,
+    b'\x00\x32\x00\x33': QueueUnbindOk,
+    b'\x00\x32\x00\x15': QueueBindOk,
+    b'\x00\x32\x00\x0A': QueueDeclare,
 }
 
 

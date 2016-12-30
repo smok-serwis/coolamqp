@@ -9,3 +9,7 @@ The layer that:
 This layer bears no notion of fault tolerance
 """
 from __future__ import absolute_import, division, print_function
+
+from coolamqp.uplink.connection import Connection
+from coolamqp.uplink.listener import ListenerThread
+from coolamqp.uplink.reactor import Reactor
