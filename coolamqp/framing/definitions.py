@@ -191,7 +191,7 @@ class ConnectionCloseOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x0A\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -279,7 +279,7 @@ class ConnectionOpenOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x0A\x29\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x29\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
     FIELDS = [ 
@@ -788,7 +788,7 @@ class ChannelCloseOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x14\x29\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x14\x00\x29\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -915,7 +915,7 @@ class ChannelOpen(AMQPMethodPayload):
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x05\x14\x0A\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x05\x00\x14\x00\x0A\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
     FIELDS = [ 
@@ -952,7 +952,7 @@ class ChannelOpenOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x05\x14\x0B\x00\x00\x00\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x05\x00\x14\x00\x0B\x00\x00\x00\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
     FIELDS = [ 
@@ -1168,7 +1168,7 @@ class ExchangeDeclareOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x28\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -1197,7 +1197,7 @@ class ExchangeDeleteOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x28\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -1334,7 +1334,7 @@ class QueueBindOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x32\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x32\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -1826,7 +1826,7 @@ class QueueUnbindOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x32\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x32\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -2503,7 +2503,7 @@ class BasicGetEmpty(AMQPMethodPayload):
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x0D\x3C\x48\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x0D\x00\x3C\x00\x48\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
     FIELDS = [ 
@@ -2700,7 +2700,7 @@ class BasicQosOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x3C\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x3C\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -2957,7 +2957,7 @@ class BasicRecoverOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x3C\x6F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x3C\x00\x6F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -3004,7 +3004,7 @@ class TxCommit(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x14\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x14\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -3034,7 +3034,7 @@ class TxCommitOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -3066,7 +3066,7 @@ class TxRollback(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x1E\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x1E\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -3096,7 +3096,7 @@ class TxRollbackOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -3126,7 +3126,7 @@ class TxSelect(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x0A\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x0A\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """
@@ -3156,7 +3156,7 @@ class TxSelectOk(AMQPMethodPayload):
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
-    STATIC_CONTENT = b'\x00\x00\x00\x04\x5A\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     def __init__(self):
         """

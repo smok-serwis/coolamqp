@@ -8,6 +8,7 @@ from coolamqp.uplink.connection.recv_framer import ReceivingFramer
 from coolamqp.uplink.connection.send_framer import SendingFramer
 from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeartbeatFrame
 
+from coolamqp.uplink.connection.watches import MethodWatch, FailWatch
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,8 @@ class Connection(object):
         self.failed = False
         self.transcript = None
 
-        self.method_watches = {}    # channel => [AMQPMethodPayload instance, callback]
-
-        # to call if an unwatched frame is caught
-        self.on_heartbeat = lambda: None
-        self.unwatched_frame = lambda frame: None  # callable(AMQPFrame instance)
+        self.watches = {}    # channel => [Watch object]
+        self.fail_watches = []
 
     def start(self):
         """
@@ -43,8 +41,21 @@ class Connection(object):
         self.sendf = SendingFramer(self.listener_socket.send)
 
     def on_fail(self):
+        """Underlying connection is closed"""
         if self.transcript is not None:
             self.transcript.on_fail()
+
+        for channel, watches in self.watches:
+            for watch in watches:
+                watch.failed()
+
+        self.watches = {}
+
+        for watch in self.fail_watches:
+            watch.fire()
+
+        self.fail_watches = []
+
         self.failed = True
 
     def send(self, frames, reason=None):
@@ -69,18 +80,19 @@ class Connection(object):
         if self.transcript is not None:
             self.transcript.on_frame(frame)
 
-        if isinstance(frame, AMQPMethodFrame):
-            if frame.channel in self.method_watches:
-                if isinstance(frame.payload, self.method_watches[frame.channel][0]):
-                    method, callback = self.method_watches[frame.channel].popleft()
-                    callback(frame.payload)
-                    return
+        if frame.channel in self.watches:
+            deq = self.watches[frame.channel]
 
-        if isinstance(frame, AMQPHeartbeatFrame):
-            self.on_heartbeat()
-            return
+            examined_watches = []
+            while len(deq) > 0:
+                watch = deq.popleft()
+                if not watch.is_triggered_by(frame) or (not watch.oneshot):
+                    examined_watches.append(watch)
 
-        self.unwatched_frame(frame)
+            for watch in reversed(examined_watches):
+                deq.appendleft(watch)
+
+        logger.critical('Unhandled frame %s, dropping', frame)
 
     def watch_watchdog(self, delay, callback):
         """
@@ -88,12 +100,23 @@ class Connection(object):
         """
         self.listener_socket.oneshot(delay, callback)
 
+    def watch(self, watch):
+        """
+        Register a watch.
+        :param watch: Watch to register
+        """
+        if isinstance(watch, FailWatch):
+            self.fail_watches.append(watch)
+        else:
+            if watch.channel not in self.watches:
+                self.watches[watch.channel] = collections.deque([watch])
+            else:
+                self.watches[watch.channel].append(watch)
+
     def watch_for_method(self, channel, method, callback):
         """
         :param channel: channel to monitor
         :param method: AMQPMethodPayload class
         :param callback: callable(AMQPMethodPayload instance)
         """
-        if channel not in self.method_watches:
-            self.method_watches[channel] = collections.deque()
-        self.method_watches[channel].append((method, callback))
+        self.watch(MethodWatch(channel, method, callback))

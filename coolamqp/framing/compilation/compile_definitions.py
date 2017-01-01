@@ -344,7 +344,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
                 line('''    STATIC_CONTENT = %s  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 ''',
-                     to_code_binary(struct.pack('!LBB', static_size + 4, cls.index, method.index) + \
+                     to_code_binary(struct.pack('!LHH', static_size + 4, cls.index, method.index) + \
                                     method.get_static_body() + \
                                     struct.pack('!B', FRAME_END)))
 

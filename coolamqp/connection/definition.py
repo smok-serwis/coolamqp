@@ -8,8 +8,9 @@ class NodeDefinition(object):
     Definition of a node
     """
 
-    def __init__(self, host, port, user, password, virtual_host='/', amqp_version='0.9.1', heartbeat=None):
+    def __init__(self, host, port, user, password, virtual_host='/', heartbeat=None):
         """
+        All necessary information to establish a link to a broker.
 
         :param host: TCP host, str
         :param port: TCP port, int
@@ -23,5 +24,10 @@ class NodeDefinition(object):
         self.host = host
         self.port = port
         self.virtual_host = virtual_host
-        self.amqp_version = amqp_version
         self.heartbeat = heartbeat
+
+    def to_connection_object(self):
+        """
+        Return a Connection object that
+        :return:
+        """

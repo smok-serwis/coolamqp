@@ -151,6 +151,9 @@ class AMQPMethodPayload(AMQPPayload):
 
         :return: int, size of argument section
         """
+        if self.IS_CONTENT_STATIC:
+            return len(self.STATIC_CONTENT)-4-4-1  # minus length, class, method, frame_end
+
         raise NotImplementedError()
 
     def write_arguments(self, buf):

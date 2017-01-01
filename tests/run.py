@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 from coolamqp.uplink import ListenerThread, Connection
 import socket
 import time
+from coolamqp.connection.state import Broker
+from coolamqp.connection import NodeDefinition
 
 from coolamqp.uplink.transcript import SessionTranscript
 
@@ -16,6 +18,9 @@ def newc():
 
 
 from coolamqp.uplink import Handshaker
+NODE = NodeDefinition('127.0.0.1', 5672, 'user', 'user', heartbeat=5)
+
+
 
 if __name__ == '__main__':
     lt = ListenerThread()
@@ -23,9 +28,9 @@ if __name__ == '__main__':
 
     con = Connection(newc(), lt)
     con.transcript = SessionTranscript()
+    broker = Broker(con, NODE)
 
-    handshaker = Handshaker(con, 'user', 'user', '/', lambda: None, lambda: None, heartbeat=10)
-    con.start()
+    broker.connect()
 
     time.sleep(50)
 

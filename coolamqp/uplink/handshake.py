@@ -26,7 +26,6 @@ class Handshaker(object):
     Object that given a connection rolls the handshake.
     """
 
-
     def __init__(self, connection, login, password, virtual_host,
                  on_success, on_fail, heartbeat=0):
         """
@@ -83,7 +82,7 @@ class Handshaker(object):
     def on_connection_tune(self, payload):
         print('Channel max: ', payload.channel_max, 'Frame max: ', payload.frame_max, 'Heartbeat: ', payload.heartbeat)
 
-        self.channel_max = payload.channel_max
+        self.channel_max = 65535 if payload.channel_max == 0 else payload.channel_max
         self.frame_max = payload.frame_max
         self.heartbeat = min(payload.heartbeat, self.heartbeat)
 

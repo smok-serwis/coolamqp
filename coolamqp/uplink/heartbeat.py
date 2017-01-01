@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import monotonic
 
 from coolamqp.framing.frames import AMQPHeartbeatFrame
-
+from coolamqp.uplink.connection.watches import HeartbeatWatch
 
 class Heartbeater(object):
     """
@@ -17,7 +17,7 @@ class Heartbeater(object):
         self.last_heartbeat_on = monotonic.monotonic()  # last heartbeat from server
 
         self.connection.watch_watchdog(self.heartbeat_interval, self.on_timer)
-        self.connection.on_heartbeat = self.on_heartbeat
+        self.connection.watch(HeartbeatWatch(self.on_heartbeat))
 
     def on_heartbeat(self):
         self.last_heartbeat_on = monotonic.monotonic()
