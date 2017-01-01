@@ -70,8 +70,6 @@ class BaseSocket(object):
         except (IOError, socket.error):
             raise SocketFailed()
 
-        print('Got ',repr(data))
-
         if len(data) == 0:
             raise SocketFailed()
 

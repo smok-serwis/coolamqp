@@ -4,6 +4,8 @@ from coolamqp.uplink import ListenerThread, Connection
 import socket
 import time
 
+from coolamqp.uplink.transcript import SessionTranscript
+
 
 def newc():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -13,17 +15,18 @@ def newc():
     return s
 
 
-from coolamqp.handshake import Handshaker
+from coolamqp.uplink import Handshaker
 
 if __name__ == '__main__':
     lt = ListenerThread()
     lt.start()
 
     con = Connection(newc(), lt)
+    con.transcript = SessionTranscript()
 
-    handshaker = Handshaker(con, 'user', 'user', '/')
+    handshaker = Handshaker(con, 'user', 'user', '/', lambda: None, lambda: None, heartbeat=10)
     con.start()
 
-    time.sleep(5)
+    time.sleep(50)
 
     lt.terminate()

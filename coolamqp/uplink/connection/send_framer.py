@@ -43,8 +43,6 @@ class SendingFramer(object):
 
         for frame in frames:
             frame.write_to(buf)
-            print('Writing ', repr(frame), repr(frame.payload))
 
         q = buf.getvalue()
-        print(repr(q))
         self.on_send(q)

@@ -23,7 +23,7 @@ CLIENT_DATA = [
 
 class Handshaker(object):
     """
-    Object that given a connection rolls the handshake
+    Object that given a connection rolls the handshake.
     """
 
 
@@ -53,6 +53,14 @@ class Handshaker(object):
         self.frame_max = None
         self.heartbeat = heartbeat
 
+        self.connected = False
+
+    def on_watchdog(self):
+        if not self.connected:
+            # Not connected in 20 seconds - abort
+            self.connection.send(None, 'connection not established within 20 seconds')
+            self.on_fail()
+
     def on_connection_start(self, payload):
         sasl_mechanisms = payload.mechanisms.split(b' ')
         locale_supported = payload.locales.split(b' ')
@@ -61,6 +69,7 @@ class Handshaker(object):
         if b'PLAIN' not in sasl_mechanisms:
             raise ValueError('Server does not support PLAIN')
 
+        self.connection.watch_watchdog(20, self.on_watchdog)
         self.connection.watch_for_method(0, ConnectionTune, self.on_connection_tune)
         self.connection.send([
             AMQPMethodFrame(0,
@@ -69,7 +78,7 @@ class Handshaker(object):
                                                   'utf8'),
                                               locale_supported[0]
                                               ))
-        ])
+        ], 'connecting')
 
     def on_connection_tune(self, payload):
         print('Channel max: ', payload.channel_max, 'Frame max: ', payload.frame_max, 'Heartbeat: ', payload.heartbeat)
@@ -82,8 +91,14 @@ class Handshaker(object):
         self.connection.send([
             AMQPMethodFrame(0, ConnectionTuneOk(self.channel_max, self.frame_max, self.heartbeat)),
             AMQPMethodFrame(0, ConnectionOpen(self.virtual_host))
-        ])
+        ], 'connecting')
+
+        # Install heartbeat handlers NOW, if necessary
+        if self.heartbeat > 0:
+            from coolamqp.uplink.heartbeat import Heartbeater
+            Heartbeater(self.connection, self.heartbeat)
 
     def on_connection_open_ok(self, payload):
         print('Connection opened OK!')
         self.on_success()
+        self.connected = True

@@ -7,4 +7,5 @@ They can also send frames themselves.
 from __future__ import absolute_import, division, print_function
 
 from coolamqp.uplink.connection import Connection
+from coolamqp.uplink.handshake import Handshaker
 from coolamqp.uplink.listener import ListenerThread

@@ -28,7 +28,7 @@ class ReceivingFramer(object):
     State machine
         (frame_type is None)  and has_bytes(1)        ->          (frame_type <- bytes(1))
 
-        (frame_type is HEARTBEAT) and has_bytes(3)  ->          (output_frame, frame_type <- None)
+        (frame_type is HEARTBEAT) and has_bytes(AMQPHeartbeatFrame.LENGTH-1)  ->          (output_frame, frame_type <- None)
         (frame_type is not HEARTBEAT and not None) and has_bytes(6)  ->      (frame_channel <- bytes(2),
                                                                  frame_size <- bytes(4))
 
@@ -82,12 +82,12 @@ class ReceivingFramer(object):
             return True
 
         # state rule 2
-        elif (self.frame_type == FRAME_HEARTBEAT) and (self.total_data_len > 3):
+        elif (self.frame_type == FRAME_HEARTBEAT) and (self.total_data_len >= AMQPHeartbeatFrame.LENGTH-1):
             data = b''
-            while len(data) < 3:
-                data = data + self._extract(3 - len(data))
+            while len(data) < AMQPHeartbeatFrame.LENGTH-1:
+                data = data + six.binary_type(self._extract(AMQPHeartbeatFrame.LENGTH-1 - len(data)))
 
-            if data != AMQPHeartbeatFrame.DATA:
+            if data != AMQPHeartbeatFrame.DATA[1:]:
                 # Invalid heartbeat frame!
                 raise ValueError('Invalid AMQP heartbeat')
 

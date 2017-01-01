@@ -110,8 +110,8 @@ class AMQPBodyFrame(AMQPFrame):
 
 class AMQPHeartbeatFrame(AMQPFrame):
     FRAME_TYPE = FRAME_HEARTBEAT
-    LENGTH = 6
-    DATA = chr(FRAME_HEARTBEAT)+'\x00\x00\x00\x00\xCE'
+    LENGTH = 8
+    DATA = struct.pack('!BHLB', FRAME_HEARTBEAT, 0, 0, FRAME_END)
 
     def __init__(self):
         AMQPFrame.__init__(self, 0)

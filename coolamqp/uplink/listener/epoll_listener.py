@@ -30,7 +30,6 @@ class EpollSocket(BaseSocket):
         self.data_to_send.append(data)
         self.listener.epoll.modify(self, self.get_epoll_eventset())
 
-
     def oneshot(self, seconds_after, callable):
         """
         Set to fire a callable N seconds after
@@ -119,6 +118,8 @@ class EpollListener(object):
                                               sock.fileno(),
                                               callback
                                               ))
+        else:
+            print('oneshot from nowhere')
 
     def register(self, sock, on_read=lambda data: None,
                              on_fail=lambda: None):

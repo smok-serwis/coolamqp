@@ -2,8 +2,7 @@
 from __future__ import absolute_import, division, print_function
 import unittest
 
-from coolamqp.handshake import Handshaker
-from coolamqp.uplink import ListenerThread, Connection
+from coolamqp.uplink import ListenerThread, Connection, Handshaker
 import socket
 import time
 
@@ -33,5 +32,26 @@ class TestBasic(unittest.TestCase):
 
         time.sleep(5)
 
+        lt.terminate()
+        self.assertTrue(hnd_ok['ok'])
+
+
+    def test_heartbeats(self):
+
+        hnd_ok = {'ok': False}
+        def hnd_suc():
+            hnd_ok['ok'] = True
+
+        lt = ListenerThread()
+        lt.start()
+
+        con = Connection(newc(), lt)
+
+        Handshaker(con, 'user', 'user', '/', hnd_suc, lambda: None, 3)
+        con.start()
+
+        time.sleep(20)
+
+        self.assertFalse(con.failed)
         lt.terminate()
         self.assertTrue(hnd_ok['ok'])
