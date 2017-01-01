@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 import six
 import logging
 import select
+import monotonic
+import heapq
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
 
@@ -29,6 +31,23 @@ class EpollSocket(BaseSocket):
         self.listener.epoll.modify(self, self.get_epoll_eventset())
 
 
+    def oneshot(self, seconds_after, callable):
+        """
+        Set to fire a callable N seconds after
+        :param seconds_after: seconds after this
+        :param callable: callable/0
+        """
+        self.listener.oneshot(self, seconds_after, callable)
+
+    def noshot(self):
+        """
+        Clear all time-delayed callables.
+
+        This will make no time-delayed callables delivered if ran in listener thread
+        """
+        self.listener.noshot(self)
+
+
 class EpollListener(object):
     """
     A listener using epoll.
@@ -37,8 +56,9 @@ class EpollListener(object):
     def __init__(self):
         self.epoll = select.epoll()
         self.fd_to_sock = {}
+        self.time_events = []
 
-    def wait(self, timeout=0):
+    def wait(self, timeout=1):
         events = self.epoll.poll(timeout=timeout)
         for fd, event in events:
             sock = self.fd_to_sock[fd]
@@ -55,9 +75,23 @@ class EpollListener(object):
                 self.epoll.unregister(fd)
                 del self.fd_to_sock[fd]
                 sock.on_fail()
+                self.noshot(sock)
                 sock.close()
             else:
                 self.epoll.modify(fd, sock.get_epoll_eventset())
+
+        # Timer events
+        while len(self.time_events) > 0 and (self.time_events[0][0] < monotonic.monotonic()):
+            ts, fd, callback = heapq.heappop(self.time_events)
+            callback()
+
+    def noshot(self, sock):
+        """
+        Clear all one-shots for a socket
+        :param sock: BaseSocket instance
+        """
+        fd = sock.fileno()
+        self.time_events = [q for q in self.time_events if q[1] != fd]
 
     def shutdown(self):
         """
@@ -71,6 +105,20 @@ class EpollListener(object):
             sock.close()
         self.fd_to_sock = {}
         self.epoll.close()
+        self.time_events = []
+
+    def oneshot(self, sock, delta, callback):
+        """
+        A socket registers a time callback
+        :param sock: BaseSocket instance
+        :param delta: "this seconds after now"
+        :param callback: callable/0
+        """
+        if sock.fileno() in self.fd_to_sock:
+            heapq.heappush(self.time_events, (monotonic.monotonic() + delta,
+                                              sock.fileno(),
+                                              callback
+                                              ))
 
     def register(self, sock, on_read=lambda data: None,
                              on_fail=lambda: None):

@@ -4,7 +4,7 @@ import unittest
 import io
 import struct
 from coolamqp.framing.frames import AMQPHeaderFrame
-from coolamqp.framing.definitions import BasicContentPropertyList, FRAME_HEADER, FRAME_END
+from coolamqp.framing.definitions import BasicContentPropertyList, FRAME_HEADER, FRAME_END, ConnectionStartOk
 
 
 class TestShitSerializesRight(unittest.TestCase):
@@ -42,3 +42,5 @@ class TestShitSerializesRight(unittest.TestCase):
         self.assertEquals(buf.getvalue(),
 
                           )
+
+

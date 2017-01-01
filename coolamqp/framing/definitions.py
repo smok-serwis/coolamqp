@@ -244,8 +244,7 @@ class ConnectionOpen(AMQPMethodPayload):
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', len(self.virtual_host)))
         buf.write(self.virtual_host)
-        buf.write(struct.pack('!B', len(self.reserved_1)))
-        buf.write(self.reserved_1)
+        buf.write(b'\x00')
         buf.write(struct.pack('!B', 0))
         
     def get_size(self):
@@ -370,7 +369,7 @@ class ConnectionStart(AMQPMethodPayload):
         buf.write(self.locales)
         
     def get_size(self):
-        return 14 + frame_table_size(self.server_properties) + len(self.mechanisms) + len(self.locales)
+        return 10 + frame_table_size(self.server_properties) + len(self.mechanisms) + len(self.locales)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -503,7 +502,7 @@ class ConnectionStartOk(AMQPMethodPayload):
         buf.write(self.locale)
         
     def get_size(self):
-        return 10 + frame_table_size(self.client_properties) + len(self.mechanism) + len(self.response) + len(self.locale)
+        return 6 + frame_table_size(self.client_properties) + len(self.mechanism) + len(self.response) + len(self.locale)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1056,7 +1055,8 @@ class ExchangeDeclare(AMQPMethodPayload):
         self.arguments = arguments
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.exchange)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.exchange)))
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.type_)))
         buf.write(self.type_)
@@ -1064,7 +1064,7 @@ class ExchangeDeclare(AMQPMethodPayload):
         buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.no_wait << 4)))
         
     def get_size(self):
-        return 9 + len(self.exchange) + len(self.type_) + frame_table_size(self.arguments)
+        return 5 + len(self.exchange) + len(self.type_) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1130,7 +1130,8 @@ class ExchangeDelete(AMQPMethodPayload):
         self.no_wait = no_wait
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.exchange)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.exchange)))
         buf.write(self.exchange)
         buf.write(struct.pack('!B', (self.if_unused << 0) | (self.no_wait << 1)))
         
@@ -1282,7 +1283,8 @@ class QueueBind(AMQPMethodPayload):
         self.arguments = arguments
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.queue)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', len(self.exchange)))
         buf.write(self.exchange)
@@ -1292,7 +1294,7 @@ class QueueBind(AMQPMethodPayload):
         buf.write(struct.pack('!B', (self.no_wait << 0)))
         
     def get_size(self):
-        return 10 + len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments)
+        return 6 + len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1425,13 +1427,14 @@ class QueueDeclare(AMQPMethodPayload):
         self.arguments = arguments
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.queue)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         enframe_table(buf, self.arguments)
         buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.exclusive << 2) | (self.auto_delete << 3) | (self.no_wait << 4)))
         
     def get_size(self):
-        return 8 + len(self.queue) + frame_table_size(self.arguments)
+        return 4 + len(self.queue) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1501,7 +1504,8 @@ class QueueDelete(AMQPMethodPayload):
         self.no_wait = no_wait
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.queue)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', (self.if_unused << 0) | (self.if_empty << 1) | (self.no_wait << 2)))
         
@@ -1664,7 +1668,8 @@ class QueuePurge(AMQPMethodPayload):
         self.no_wait = no_wait
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.queue)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
         
@@ -1774,7 +1779,8 @@ class QueueUnbind(AMQPMethodPayload):
         self.arguments = arguments
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.queue)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', len(self.exchange)))
         buf.write(self.exchange)
@@ -1783,7 +1789,7 @@ class QueueUnbind(AMQPMethodPayload):
         enframe_table(buf, self.arguments)
         
     def get_size(self):
-        return 9 + len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments)
+        return 5 + len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -2084,7 +2090,8 @@ class BasicConsume(AMQPMethodPayload):
         self.arguments = arguments
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.queue)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
@@ -2092,7 +2099,7 @@ class BasicConsume(AMQPMethodPayload):
         buf.write(struct.pack('!B', (self.no_local << 0) | (self.no_ack << 1) | (self.exclusive << 2) | (self.no_wait << 3)))
         
     def get_size(self):
-        return 9 + len(self.queue) + len(self.consumer_tag) + frame_table_size(self.arguments)
+        return 5 + len(self.queue) + len(self.consumer_tag) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -2383,7 +2390,8 @@ class BasicGet(AMQPMethodPayload):
         self.no_ack = no_ack
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.queue)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', (self.no_ack << 0)))
         
@@ -2574,7 +2582,8 @@ class BasicPublish(AMQPMethodPayload):
         self.immediate = immediate
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HB', self.reserved_1, len(self.exchange)))
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.exchange)))
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)

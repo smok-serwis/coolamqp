@@ -18,6 +18,7 @@ class BaseSocket(object):
     """
 
     def __init__(self, sock, on_read=lambda data: None,
+                             on_time=lambda: None,
                              on_fail=lambda: None):
         """
 
@@ -25,6 +26,7 @@ class BaseSocket(object):
         :param on_read: callable(data) to be called when data is read.
             Listener thread context
             Raises ValueError on socket should be closed
+        :param on_time: callable() when time provided by socket expires
         :param on_fail: callable() when socket is dead and to be discarded.
             Listener thread context.
             Socket descriptor will be handled by listener.
@@ -35,12 +37,29 @@ class BaseSocket(object):
         self.data_to_send = collections.deque()
         self.my_on_read = on_read
         self.on_fail = on_fail
+        self.on_time = on_time
 
     def send(self, data):
         """
         Schedule to send some data
 
         :param data: data to send, or None to terminate this socket
+        """
+        raise Exception('Abstract; listener should override that')
+
+    def oneshot(self, seconds_after, callable):
+        """
+        Set to fire a callable N seconds after
+        :param seconds_after: seconds after this
+        :param callable: callable/0
+        """
+        raise Exception('Abstract; listener should override that')
+
+    def noshot(self):
+        """
+        Clear all time-delayed callables.
+
+        This will make no time-delayed callables delivered if ran in listener thread
         """
         raise Exception('Abstract; listener should override that')
 
@@ -51,13 +70,14 @@ class BaseSocket(object):
         except (IOError, socket.error):
             raise SocketFailed()
 
+        print('Got ',repr(data))
+
         if len(data) == 0:
             raise SocketFailed()
 
         try:
             self.my_on_read(data)
         except ValueError:
-            raise   #debug
             raise SocketFailed()
 
     def on_write(self):

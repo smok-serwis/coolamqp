@@ -56,7 +56,7 @@ def get_counter(fields, prefix='', indent_level=2):
             accumulator += 4
         elif bt == 'table':
             parts.append('frame_table_size(' + nam + ')')
-            accumulator += 4
+            accumulator += 0    # because frame_table_size accounts for that 4 leading bytes
         else:
             raise Exception()
 
@@ -205,16 +205,20 @@ def get_serializer(fields, prefix='', indent_level=2):
                 bits.append("False")
             else:
                 bits.append(nam)
-        elif field.basic_type in ('shortstr', 'longstr'):
-            formats.append('B' if field.basic_type == 'shortstr' else 'I')
-            format_args.append('len('+nam+')')
-            emit_single_struct_pack()
-            emit('buf.write(%s)', nam)
-        elif field.basic_type == 'table':
-            emit('enframe_table(buf, %s)', nam)
+        elif field.reserved:
+            # Just pasta
+            emit('buf.write(%s)', BASIC_TYPES[field.basic_type][2])
         else:
-            formats.append(BASIC_TYPES[field.basic_type][1])
-            format_args.append(nam)
+            if field.basic_type in ('shortstr', 'longstr'):
+                formats.append('B' if field.basic_type == 'shortstr' else 'I')
+                format_args.append('len('+nam+')')
+                emit_single_struct_pack()
+                emit('buf.write(%s)', nam)
+            elif field.basic_type == 'table':
+                emit('enframe_table(buf, %s)', nam)
+            else:
+                formats.append(BASIC_TYPES[field.basic_type][1])
+                format_args.append(nam)
 
     if len(bits) > 0:
         emit_bits()

@@ -30,23 +30,22 @@ def deframe_decimal(buf, offset):
 
 
 def deframe_shortstr(buf, offset):      # -> value, bytes_eaten
-    ln = ord(buf[offset])
+    ln, = struct.unpack_from('!B', buf, offset)
     return buf[offset+1:offset+1+ln], 1+ln
 
 
 def enframe_shortstr(buf, value):
-    buf.write(chr(len(value)))
+    buf.write(struct.pack('!B', len(value)))
     buf.write(value)
 
 
 def deframe_longstr(buf, offset):  # -> value, bytes_eaten
     ln, = struct.unpack_from('!I', buf, offset)
-    offset += 4
-    return buf[offset:offset+ln], 4 + ln
+    return buf[offset+4:offset+4+ln], 4 + ln
 
 
 def enframe_longstr(buf, value):
-    buf.write(struct.pack('!I', value))
+    buf.write(struct.pack('!I', len(value)))
     buf.write(value)
 
 
@@ -75,9 +74,9 @@ FIELD_TYPES = {
 
 def enframe_field_value(buf, fv):
     value, type = fv
-    buf.write(tp)
+    buf.write(type)
 
-    opt = FIELD_TYPES[tp]
+    opt = FIELD_TYPES[type]
 
     if opt[1] is not None:
         buf.write(struct.pack(opt[1], value))
@@ -154,9 +153,7 @@ def deframe_table(buf, start_offset): # -> (table, bytes_consumed)
     fields = []
 
     while offset < (start_offset+table_length+4):
-        ln, = struct.unpack_from('!B', buf, offset)
-        offset += 1
-        field_name = buf[offset:offset+ln]
+        field_name, ln = deframe_shortstr(buf, offset)
         offset += ln
         fv, delta = deframe_field_value(buf, offset)
         offset += delta
@@ -184,12 +181,7 @@ def frame_array_size(array):
 def frame_table_size(table):
     """:return: length of table representation, in bytes, INCLUDING length header"""
 
-    size = 4    # length header
-    for k, fv in table:
-        v,t =fv
-        size += 1 + len(k) + frame_field_value_size(v, t)
-
-    return size
+    return 4 + sum(1 + len(k) + frame_field_value_size(fv) for k, fv in table)
 
 
 FIELD_TYPES['A'] = (None, None, enframe_array, deframe_array, frame_array_size)

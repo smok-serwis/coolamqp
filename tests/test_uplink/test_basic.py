@@ -2,8 +2,8 @@
 from __future__ import absolute_import, division, print_function
 import unittest
 
-from coolamqp.framing.definitions import ConnectionStart
-from coolamqp.uplink import ListenerThread, Connection, Reactor
+from coolamqp.handshake import Handshaker
+from coolamqp.uplink import ListenerThread, Connection
 import socket
 import time
 
@@ -16,24 +16,22 @@ def newc():
     return s
 
 
-class LolReactor(Reactor):
-    def __init__(self):
-        Reactor.__init__(self)
-        self.got_connectionstart = False
-
-    def on_frame(self, frame):
-        if isinstance(frame.payload, ConnectionStart):
-            self.got_connectionstart = True
-
-
 class TestBasic(unittest.TestCase):
     def test_gets_connectionstart(self):
+
+        hnd_ok = {'ok': False}
+        def hnd_suc():
+            hnd_ok['ok'] = True
+
         lt = ListenerThread()
         lt.start()
-        r = LolReactor()
-        con = Connection(newc(), lt, r)
+
+        con = Connection(newc(), lt)
+
+        Handshaker(con, 'user', 'user', '/', hnd_suc, lambda: None)
+        con.start()
 
         time.sleep(5)
 
         lt.terminate()
-        self.assertTrue(r.got_connectionstart)
+        self.assertTrue(hnd_ok['ok'])

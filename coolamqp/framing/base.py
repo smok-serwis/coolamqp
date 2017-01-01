@@ -135,7 +135,7 @@ class AMQPMethodPayload(AMQPPayload):
         Write own content to target buffer - starting from LENGTH, ending on FRAME_END
         :param buf: target buffer
         """
-        from coolamqp.framing import FRAME_END
+        from coolamqp.framing.definitions import FRAME_END
 
         if self.IS_CONTENT_STATIC:
             buf.write(self.STATIC_CONTENT)
