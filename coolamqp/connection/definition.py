@@ -26,8 +26,3 @@ class NodeDefinition(object):
         self.virtual_host = virtual_host
         self.heartbeat = heartbeat
 
-    def to_connection_object(self):
-        """
-        Return a Connection object that
-        :return:
-        """

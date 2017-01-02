@@ -22,6 +22,28 @@ class Broker(object):
 
         self.free_channels = [] # list of channels usable for consuming shit
 
+    @staticmethod
+    def from_node_def(node_def, listener_thread, debug=True):
+        """
+        :param node_def: NodeDefinition to use
+        :param listener_thread: ListenerThread to use
+        :return: a Broker with Connection.
+        """
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((node_def.host, node_def.port))
+        s.settimeout(0)
+        s.send('AMQP\x00\x00\x09\x01')
+
+        from coolamqp.uplink import Connection
+        con = Connection(s, listener_thread)
+
+        if debug:
+            from coolamqp.uplink.transcript import SessionTranscript
+            con.transcript = SessionTranscript()
+
+        return Broker(con, node_def)
+
 
     def connect(self):
         """Return an LinkSetup order to get when it connects"""

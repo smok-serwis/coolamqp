@@ -15,9 +15,13 @@ CLIENT_DATA = [
         # because RabbitMQ is some kind of a fascist and does not allow
         # these fields to be of type short-string
         (b'product', (b'CoolAMQP', b'S')),
-        (b'version', (b'1.0', b'S')),
-        (b'copyright', (b'Copyright (C) 2016 DMS Serwis', b'S')),
-        (b'information', (b'Licensed under the MIT License. See https://github.com/smok-serwis/coolamqp for details', b'S'))
+        (b'version', (b'develop', b'S')),
+        (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', b'S')),
+        (b'information', (b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details', b'S')),
+        (b'capabilities', ([
+                               (b'consumer_cancel_notify', (True, b't')),
+                               (b'connection.blocked', (True, b't'))
+            ], b'F'))
       ]
 
 
