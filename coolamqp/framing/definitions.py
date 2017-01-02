@@ -109,6 +109,52 @@ class Connection(AMQPClass):
     INDEX = 10
 
 
+class ConnectionBlocked(AMQPMethodPayload):
+    """
+    This method indicates that a connection has been blocked
+    
+    and does not accept new publishes.
+    """
+    NAME = u'connection.blocked'
+
+    INDEX = (10, 60)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x3C'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, True
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
+
+    # See constructor pydoc for details
+    FIELDS = [ 
+        Field(u'reason', u'shortstr', u'shortstr', reserved=False),
+    ]
+
+    def __init__(self, reason):
+        """
+        Create frame connection.blocked
+
+        :type reason: binary type (max length 255) (shortstr in AMQP)
+        """
+        self.reason = reason
+
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', len(self.reason)))
+        buf.write(self.reason)
+        
+    def get_size(self):
+        return 1 + len(self.reason)
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        reason = buf[offset:offset+s_len]
+        offset += s_len
+        return ConnectionBlocked(reason)
+
+
 class ConnectionClose(AMQPMethodPayload):
     """
     Request a connection close
@@ -696,6 +742,35 @@ class ConnectionTuneOk(AMQPMethodPayload):
         return ConnectionTuneOk(channel_max, frame_max, heartbeat)
 
 
+class ConnectionUnblocked(AMQPMethodPayload):
+    """
+    This method indicates that a connection has been unblocked
+    
+    and now accepts publishes.
+    """
+    NAME = u'connection.unblocked'
+
+    INDEX = (10, 61)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x3D'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, True
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x3D\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __init__(self):
+        """
+        Create frame connection.unblocked
+        """
+
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        return ConnectionUnblocked()
+
+
 class Channel(AMQPClass):
     """
     The channel class provides methods for a client to establish a channel to a
@@ -984,6 +1059,126 @@ class Exchange(AMQPClass):
     INDEX = 40
 
 
+class ExchangeBind(AMQPMethodPayload):
+    """
+    Bind exchange to an exchange
+    
+    This method binds an exchange to an exchange.
+    """
+    NAME = u'exchange.bind'
+
+    INDEX = (40, 30)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x1E'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
+
+    # See constructor pydoc for details
+    FIELDS = [ 
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'destination', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'source', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
+        Field(u'arguments', u'table', u'table', reserved=False),
+    ]
+
+    def __init__(self, destination, source, routing_key, no_wait, arguments):
+        """
+        Create frame exchange.bind
+
+        :param destination: Name of the destination exchange to bind to
+            Specifies the name of the destination exchange to bind.
+        :type destination: binary type (max length 255) (exchange-name in AMQP)
+        :param source: Name of the source exchange to bind to
+            Specifies the name of the source exchange to bind.
+        :type source: binary type (max length 255) (exchange-name in AMQP)
+        :param routing_key: Message routing key
+            Specifies the routing key for the binding. The routing key
+            is used for routing messages depending on the exchange
+            configuration. Not all exchanges use a routing key - refer
+            to the specific exchange documentation.
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
+        :param arguments: Arguments for binding
+            A set of arguments for the binding. The syntax and semantics
+            of these arguments depends on the exchange class.
+        :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
+        """
+        self.destination = destination
+        self.source = source
+        self.routing_key = routing_key
+        self.no_wait = no_wait
+        self.arguments = arguments
+
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.destination)))
+        buf.write(self.destination)
+        buf.write(struct.pack('!B', len(self.source)))
+        buf.write(self.source)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+        enframe_table(buf, self.arguments)
+        buf.write(struct.pack('!B', (self.no_wait << 0)))
+        
+    def get_size(self):
+        return 6 + len(self.destination) + len(self.source) + len(self.routing_key) + frame_table_size(self.arguments)
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        destination = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        source = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        no_wait = bool(_bit >> 0)
+        offset += 1
+        arguments, delta = deframe_table(buf, offset)
+        offset += delta
+        return ExchangeBind(destination, source, routing_key, no_wait, arguments)
+
+
+class ExchangeBindOk(AMQPMethodPayload):
+    """
+    Confirm bind successful
+    
+    This method confirms that the bind was successful.
+    """
+    NAME = u'exchange.bind-ok'
+
+    INDEX = (40, 31)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x1F'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __init__(self):
+        """
+        Create frame exchange.bind-ok
+        """
+
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        return ExchangeBindOk()
+
+
 class ExchangeDeclare(AMQPMethodPayload):
     """
     Verify exchange exists, create if needed
@@ -1008,13 +1203,13 @@ class ExchangeDeclare(AMQPMethodPayload):
         Field(u'type', u'shortstr', u'shortstr', reserved=False),
         Field(u'passive', u'bit', u'bit', reserved=False),
         Field(u'durable', u'bit', u'bit', reserved=False),
-        Field(u'reserved-2', u'bit', u'bit', reserved=True),
-        Field(u'reserved-3', u'bit', u'bit', reserved=True),
+        Field(u'auto-delete', u'bit', u'bit', reserved=False),
+        Field(u'internal', u'bit', u'bit', reserved=False),
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
-    def __init__(self, exchange, type_, passive, durable, no_wait, arguments):
+    def __init__(self, exchange, type_, passive, durable, auto_delete, internal, no_wait, arguments):
         """
         Create frame exchange.declare
 
@@ -1041,6 +1236,16 @@ class ExchangeDeclare(AMQPMethodPayload):
             Durable exchanges remain active when a server restarts. Non-durable exchanges
             (transient exchanges) are purged if/when a server restarts.
         :type durable: bool (bit in AMQP)
+        :param auto_delete: Auto-delete when unused
+            If set, the exchange is deleted when all queues have
+            finished using it.
+        :type auto_delete: bool (bit in AMQP)
+        :param internal: Create internal exchange
+            If set, the exchange may not be used directly by publishers,
+            but only when bound to other exchanges. Internal exchanges
+            are used to construct wiring that is not visible to
+            applications.
+        :type internal: bool (bit in AMQP)
         :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for declaration
             A set of arguments for the declaration. The syntax and semantics of these
@@ -1051,6 +1256,8 @@ class ExchangeDeclare(AMQPMethodPayload):
         self.type_ = type_
         self.passive = passive
         self.durable = durable
+        self.auto_delete = auto_delete
+        self.internal = internal
         self.no_wait = no_wait
         self.arguments = arguments
 
@@ -1061,7 +1268,7 @@ class ExchangeDeclare(AMQPMethodPayload):
         buf.write(struct.pack('!B', len(self.type_)))
         buf.write(self.type_)
         enframe_table(buf, self.arguments)
-        buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.no_wait << 4)))
+        buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.auto_delete << 2) | (self.internal << 3) | (self.no_wait << 4)))
         
     def get_size(self):
         return 5 + len(self.exchange) + len(self.type_) + frame_table_size(self.arguments)
@@ -1080,11 +1287,13 @@ class ExchangeDeclare(AMQPMethodPayload):
         _bit, = struct.unpack_from('!B', buf, offset)
         passive = bool(_bit >> 0)
         durable = bool(_bit >> 1)
+        auto_delete = bool(_bit >> 2)
+        internal = bool(_bit >> 3)
         no_wait = bool(_bit >> 4)
         offset += 1
         arguments, delta = deframe_table(buf, offset)
         offset += delta
-        return ExchangeDeclare(exchange, type_, passive, durable, no_wait, arguments)
+        return ExchangeDeclare(exchange, type_, passive, durable, auto_delete, internal, no_wait, arguments)
 
 
 class ExchangeDelete(AMQPMethodPayload):
@@ -1209,6 +1418,120 @@ class ExchangeDeleteOk(AMQPMethodPayload):
     def from_buffer(buf, start_offset):
         offset = start_offset
         return ExchangeDeleteOk()
+
+
+class ExchangeUnbind(AMQPMethodPayload):
+    """
+    Unbind an exchange from an exchange
+    
+    This method unbinds an exchange from an exchange.
+    """
+    NAME = u'exchange.unbind'
+
+    INDEX = (40, 40)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x28'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
+
+    # See constructor pydoc for details
+    FIELDS = [ 
+        Field(u'reserved-1', u'short', u'short', reserved=True),
+        Field(u'destination', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'source', u'exchange-name', u'shortstr', reserved=False),
+        Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
+        Field(u'no-wait', u'no-wait', u'bit', reserved=False),
+        Field(u'arguments', u'table', u'table', reserved=False),
+    ]
+
+    def __init__(self, destination, source, routing_key, no_wait, arguments):
+        """
+        Create frame exchange.unbind
+
+        :param destination: Specifies the name of the destination exchange to unbind.
+        :type destination: binary type (max length 255) (exchange-name in AMQP)
+        :param source: Specifies the name of the source exchange to unbind.
+        :type source: binary type (max length 255) (exchange-name in AMQP)
+        :param routing_key: Routing key of binding
+            Specifies the routing key of the binding to unbind.
+        :type routing_key: binary type (max length 255) (shortstr in AMQP)
+        :type no_wait: bool (no-wait in AMQP)
+        :param arguments: Arguments of binding
+            Specifies the arguments of the binding to unbind.
+        :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
+        """
+        self.destination = destination
+        self.source = source
+        self.routing_key = routing_key
+        self.no_wait = no_wait
+        self.arguments = arguments
+
+    def write_arguments(self, buf):
+        buf.write(b'\x00\x00')
+        buf.write(struct.pack('!B', len(self.destination)))
+        buf.write(self.destination)
+        buf.write(struct.pack('!B', len(self.source)))
+        buf.write(self.source)
+        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(self.routing_key)
+        enframe_table(buf, self.arguments)
+        buf.write(struct.pack('!B', (self.no_wait << 0)))
+        
+    def get_size(self):
+        return 6 + len(self.destination) + len(self.source) + len(self.routing_key) + frame_table_size(self.arguments)
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        s_len, = struct.unpack_from('!2xB', buf, offset)
+        offset += 3
+        destination = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        source = buf[offset:offset+s_len]
+        offset += s_len
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
+        routing_key = buf[offset:offset+s_len]
+        offset += s_len
+        _bit, = struct.unpack_from('!B', buf, offset)
+        no_wait = bool(_bit >> 0)
+        offset += 1
+        arguments, delta = deframe_table(buf, offset)
+        offset += delta
+        return ExchangeUnbind(destination, source, routing_key, no_wait, arguments)
+
+
+class ExchangeUnbindOk(AMQPMethodPayload):
+    """
+    Confirm unbind successful
+    
+    This method confirms that the unbind was successful.
+    """
+    NAME = u'exchange.unbind-ok'
+
+    INDEX = (40, 51)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x33'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __init__(self):
+        """
+        Create frame exchange.unbind-ok
+        """
+
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        return ExchangeUnbindOk()
 
 
 class Queue(AMQPClass):
@@ -1977,16 +2300,20 @@ class BasicAck(AMQPMethodPayload):
     """
     Acknowledge one or more messages
     
-    This method acknowledges one or more messages delivered via the Deliver or Get-Ok
-    methods. The client can ask to confirm a single message or a set of messages up to
-    and including a specific message.
+    When sent by the client, this method acknowledges one or more
+    messages delivered via the Deliver or Get-Ok methods.
+    When sent by server, this method acknowledges one or more
+    messages published with the Publish method on a channel in
+    confirm mode.
+    The acknowledgement can be for a single message or a set of
+    messages up to and including a specific message.
     """
     NAME = u'basic.ack'
 
     INDEX = (60, 80)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x50'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2003,10 +2330,12 @@ class BasicAck(AMQPMethodPayload):
 
         :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
         :param multiple: Acknowledge multiple messages
-            If set to 1, the delivery tag is treated as "up to and including", so that the
-            client can acknowledge multiple messages with a single method. If set to zero,
-            the delivery tag refers to a single message. If the multiple field is 1, and the
-            delivery tag is zero, tells the server to acknowledge all outstanding messages.
+            If set to 1, the delivery tag is treated as "up to and
+            including", so that multiple messages can be acknowledged
+            with a single method. If set to zero, the delivery tag
+            refers to a single message. If the multiple field is 1, and
+            the delivery tag is zero, this indicates acknowledgement of
+            all outstanding messages.
         :type multiple: bool (bit in AMQP)
         """
         self.delivery_tag = delivery_tag
@@ -2131,13 +2460,23 @@ class BasicCancel(AMQPMethodPayload):
     messages, but it does mean the server will not send any more messages for
     that consumer. The client may receive an arbitrary number of messages in
     between sending the cancel method and receiving the cancel-ok reply.
+    It may also be sent from the server to the client in the event
+    of the consumer being unexpectedly cancelled (i.e. cancelled
+    for any reason other than the server receiving the
+    corresponding basic.cancel from the client). This allows
+    clients to be notified of the loss of consumers due to events
+    such as queue deletion. Note that as it is not a MUST for
+    clients to accept this method from the server, it is advisable
+    for the broker to be able to identify those clients that are
+    capable of accepting the method, through some means of
+    capability negotiation.
     """
     NAME = u'basic.cancel'
 
     INDEX = (60, 30)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x1E'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2238,7 +2577,7 @@ class BasicCancelOk(AMQPMethodPayload):
     INDEX = (60, 31)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x1F'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2525,6 +2864,75 @@ class BasicGetEmpty(AMQPMethodPayload):
         return BasicGetEmpty()
 
 
+class BasicNack(AMQPMethodPayload):
+    """
+    Reject one or more incoming messages
+    
+    This method allows a client to reject one or more incoming messages. It can be
+    used to interrupt and cancel large incoming messages, or return untreatable
+    messages to their original queue.
+    This method is also used by the server to inform publishers on channels in
+    confirm mode of unhandled messages.  If a publisher receives this method, it
+    probably needs to republish the offending messages.
+    """
+    NAME = u'basic.nack'
+
+    INDEX = (60, 120)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x78'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, True
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
+
+    # See constructor pydoc for details
+    FIELDS = [ 
+        Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
+        Field(u'multiple', u'bit', u'bit', reserved=False),
+        Field(u'requeue', u'bit', u'bit', reserved=False),
+    ]
+
+    def __init__(self, delivery_tag, multiple, requeue):
+        """
+        Create frame basic.nack
+
+        :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
+        :param multiple: Reject multiple messages
+            If set to 1, the delivery tag is treated as "up to and
+            including", so that multiple messages can be rejected
+            with a single method. If set to zero, the delivery tag
+            refers to a single message. If the multiple field is 1, and
+            the delivery tag is zero, this indicates rejection of
+            all outstanding messages.
+        :type multiple: bool (bit in AMQP)
+        :param requeue: Requeue the message
+            If requeue is true, the server will attempt to requeue the message.  If requeue
+            is false or the requeue  attempt fails the messages are discarded or dead-lettered.
+            Clients receiving the Nack methods should ignore this flag.
+        :type requeue: bool (bit in AMQP)
+        """
+        self.delivery_tag = delivery_tag
+        self.multiple = multiple
+        self.requeue = requeue
+
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!QB', self.delivery_tag, (self.multiple << 0) | (self.requeue << 1)))
+        
+    def get_size(self):
+        return 9
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        _bit, = struct.unpack_from('!B', buf, offset)
+        multiple = bool(_bit >> 0)
+        requeue = bool(_bit >> 1)
+        offset += 1
+        delivery_tag, = struct.unpack_from('!Q', buf, offset)
+        offset += 8
+        return BasicNack(delivery_tag, multiple, requeue)
+
+
 class BasicPublish(AMQPMethodPayload):
     """
     Publish a message
@@ -2658,8 +3066,14 @@ class BasicQos(AMQPMethodPayload):
             allow it. The prefetch-count is ignored if the no-ack option is set.
         :type prefetch_count: int, 16 bit unsigned (short in AMQP)
         :param global_: Apply to entire connection
-            By default the QoS settings apply to the current channel only. If this field is
-            set, they are applied to the entire connection.
+            RabbitMQ has reinterpreted this field. The original
+            specification said: "By default the QoS settings apply to
+            the current channel only. If this field is set, they are
+            applied to the entire connection." Instead, RabbitMQ takes
+            global=false to mean that the QoS settings should apply
+            per-consumer (for new consumers on the channel; existing
+            ones being unaffected) and global=true to mean that the QoS
+            settings should apply per-channel.
         :type global_: bool (bit in AMQP)
         """
         self.prefetch_size = prefetch_size
@@ -3170,18 +3584,123 @@ class TxSelectOk(AMQPMethodPayload):
         return TxSelectOk()
 
 
+class Confirm(AMQPClass):
+    """
+    The confirm class allows publishers to put the channel in
+    
+    confirm mode and subsequently be notified when messages have been
+    handled by the broker.  The intention is that all messages
+    published on a channel in confirm mode will be acknowledged at
+    some point.  By acknowledging a message the broker assumes
+    responsibility for it and indicates that it has done something
+    it deems reasonable with it.
+    Unroutable mandatory or immediate messages are acknowledged
+    right after the Basic.Return method. Messages are acknowledged
+    when all queues to which the message has been routed
+    have either delivered the message and received an
+    acknowledgement (if required), or enqueued the message (and
+    persisted it if required).
+    Published messages are assigned ascending sequence numbers,
+    starting at 1 with the first Confirm.Select method. The server
+    confirms messages by sending Basic.Ack methods referring to these
+    sequence numbers.
+    """
+    NAME = u'confirm'
+    INDEX = 85
+
+
+class ConfirmSelect(AMQPMethodPayload):
+    """
+    This method sets the channel to use publisher acknowledgements.
+    
+    The client can only use this method on a non-transactional
+    channel.
+    """
+    NAME = u'confirm.select'
+
+    INDEX = (85, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x55\x00\x0A'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
+
+    # See constructor pydoc for details
+    FIELDS = [ 
+        Field(u'nowait', u'bit', u'bit', reserved=False),
+    ]
+
+    def __init__(self, nowait):
+        """
+        Create frame confirm.select
+
+        :param nowait: If set, the server will not respond to the method. the client should
+            not wait for a reply method.  If the server could not complete the
+            method it will raise a channel or connection exception.
+        :type nowait: bool (bit in AMQP)
+        """
+        self.nowait = nowait
+
+    def write_arguments(self, buf):
+        buf.write(struct.pack('!B', (self.nowait << 0)))
+        
+    def get_size(self):
+        return 1
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        _bit, = struct.unpack_from('!B', buf, offset)
+        nowait = bool(_bit >> 0)
+        offset += 1
+        return ConfirmSelect(nowait)
+
+
+class ConfirmSelectOk(AMQPMethodPayload):
+    """
+    This method confirms to the client that the channel was successfully
+    
+    set to use publisher acknowledgements.
+    """
+    NAME = u'confirm.select-ok'
+
+    INDEX = (85, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x55\x00\x0B'      # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x55\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __init__(self):
+        """
+        Create frame confirm.select-ok
+        """
+
+
+    @staticmethod
+    def from_buffer(buf, start_offset):
+        offset = start_offset
+        return ConfirmSelectOk()
+
+
 IDENT_TO_METHOD = {
     (90, 21): TxCommitOk,
     (60, 100): BasicRecoverAsync,
     (10, 11): ConnectionStartOk,
     (60, 40): BasicPublish,
     (60, 50): BasicReturn,
-    (10, 51): ConnectionCloseOk,
+    (40, 21): ExchangeDeleteOk,
     (20, 20): ChannelFlow,
+    (40, 31): ExchangeBindOk,
     (60, 21): BasicConsumeOk,
     (10, 21): ConnectionSecureOk,
     (90, 30): TxRollback,
     (90, 10): TxSelect,
+    (85, 11): ConfirmSelectOk,
+    (10, 61): ConnectionUnblocked,
     (50, 11): QueueDeclareOk,
     (60, 70): BasicGet,
     (90, 11): TxSelectOk,
@@ -3191,6 +3710,8 @@ IDENT_TO_METHOD = {
     (20, 21): ChannelFlowOk,
     (60, 60): BasicDeliver,
     (90, 31): TxRollbackOk,
+    (60, 20): BasicConsume,
+    (85, 10): ConfirmSelect,
     (20, 40): ChannelClose,
     (60, 71): BasicGetOk,
     (50, 30): QueuePurge,
@@ -3209,20 +3730,24 @@ IDENT_TO_METHOD = {
     (40, 20): ExchangeDelete,
     (50, 20): QueueBind,
     (10, 41): ConnectionOpenOk,
+    (60, 120): BasicNack,
     (60, 31): BasicCancelOk,
     (90, 20): TxCommit,
     (10, 10): ConnectionStart,
     (60, 10): BasicQos,
     (40, 11): ExchangeDeclareOk,
-    (40, 21): ExchangeDeleteOk,
+    (10, 51): ConnectionCloseOk,
+    (40, 51): ExchangeUnbindOk,
     (20, 11): ChannelOpenOk,
     (60, 72): BasicGetEmpty,
+    (40, 30): ExchangeBind,
     (60, 111): BasicRecoverOk,
-    (60, 20): BasicConsume,
+    (40, 40): ExchangeUnbind,
     (10, 20): ConnectionSecure,
     (50, 41): QueueDeleteOk,
     (50, 51): QueueUnbindOk,
     (50, 21): QueueBindOk,
+    (10, 60): ConnectionBlocked,
     (50, 10): QueueDeclare,
 }
 
@@ -3233,12 +3758,15 @@ BINARY_HEADER_TO_METHOD = {
     b'\x00\x0A\x00\x0B': ConnectionStartOk,
     b'\x00\x3C\x00\x28': BasicPublish,
     b'\x00\x3C\x00\x32': BasicReturn,
-    b'\x00\x0A\x00\x33': ConnectionCloseOk,
+    b'\x00\x28\x00\x15': ExchangeDeleteOk,
     b'\x00\x14\x00\x14': ChannelFlow,
+    b'\x00\x28\x00\x1F': ExchangeBindOk,
     b'\x00\x3C\x00\x15': BasicConsumeOk,
     b'\x00\x0A\x00\x15': ConnectionSecureOk,
     b'\x00\x5A\x00\x1E': TxRollback,
     b'\x00\x5A\x00\x0A': TxSelect,
+    b'\x00\x55\x00\x0B': ConfirmSelectOk,
+    b'\x00\x0A\x00\x3D': ConnectionUnblocked,
     b'\x00\x32\x00\x0B': QueueDeclareOk,
     b'\x00\x3C\x00\x46': BasicGet,
     b'\x00\x5A\x00\x0B': TxSelectOk,
@@ -3248,6 +3776,8 @@ BINARY_HEADER_TO_METHOD = {
     b'\x00\x14\x00\x15': ChannelFlowOk,
     b'\x00\x3C\x00\x3C': BasicDeliver,
     b'\x00\x5A\x00\x1F': TxRollbackOk,
+    b'\x00\x3C\x00\x14': BasicConsume,
+    b'\x00\x55\x00\x0A': ConfirmSelect,
     b'\x00\x14\x00\x28': ChannelClose,
     b'\x00\x3C\x00\x47': BasicGetOk,
     b'\x00\x32\x00\x1E': QueuePurge,
@@ -3266,20 +3796,24 @@ BINARY_HEADER_TO_METHOD = {
     b'\x00\x28\x00\x14': ExchangeDelete,
     b'\x00\x32\x00\x14': QueueBind,
     b'\x00\x0A\x00\x29': ConnectionOpenOk,
+    b'\x00\x3C\x00\x78': BasicNack,
     b'\x00\x3C\x00\x1F': BasicCancelOk,
     b'\x00\x5A\x00\x14': TxCommit,
     b'\x00\x0A\x00\x0A': ConnectionStart,
     b'\x00\x3C\x00\x0A': BasicQos,
     b'\x00\x28\x00\x0B': ExchangeDeclareOk,
-    b'\x00\x28\x00\x15': ExchangeDeleteOk,
+    b'\x00\x0A\x00\x33': ConnectionCloseOk,
+    b'\x00\x28\x00\x33': ExchangeUnbindOk,
     b'\x00\x14\x00\x0B': ChannelOpenOk,
     b'\x00\x3C\x00\x48': BasicGetEmpty,
+    b'\x00\x28\x00\x1E': ExchangeBind,
     b'\x00\x3C\x00\x6F': BasicRecoverOk,
-    b'\x00\x3C\x00\x14': BasicConsume,
+    b'\x00\x28\x00\x28': ExchangeUnbind,
     b'\x00\x0A\x00\x14': ConnectionSecure,
     b'\x00\x32\x00\x29': QueueDeleteOk,
     b'\x00\x32\x00\x33': QueueUnbindOk,
     b'\x00\x32\x00\x15': QueueBindOk,
+    b'\x00\x0A\x00\x3C': ConnectionBlocked,
     b'\x00\x32\x00\x0A': QueueDeclare,
 }
 
@@ -3300,13 +3834,17 @@ REPLY_REASONS_FOR = {
     BasicConsumeOk: BasicConsume,
     BasicCancelOk: BasicCancel,
     TxRollbackOk: TxRollback,
+    TxCommitOk: TxCommit,
     ChannelOpenOk: ChannelOpen,
     QueueDeleteOk: QueueDelete,
+    ExchangeUnbindOk: ExchangeUnbind,
+    ExchangeBindOk: ExchangeBind,
     ChannelCloseOk: ChannelClose,
     BasicQosOk: BasicQos,
     ConnectionStartOk: ConnectionStart,
     QueueUnbindOk: QueueUnbind,
-    TxCommitOk: TxCommit,
+    ConfirmSelectOk: ConfirmSelect,
+    ConnectionCloseOk: ConnectionClose,
     QueuePurgeOk: QueuePurge,
     QueueDeclareOk: QueueDeclare,
     ExchangeDeclareOk: ExchangeDeclare,
@@ -3314,7 +3852,6 @@ REPLY_REASONS_FOR = {
     ConnectionSecureOk: ConnectionSecure,
     ConnectionOpenOk: ConnectionOpen,
     ChannelFlowOk: ChannelFlow,
-    ConnectionCloseOk: ConnectionClose,
 }
 
 # Methods that are replies for other, ie. ConnectionOpenOk: ConnectionOpen
@@ -3327,37 +3864,45 @@ REPLIES_FOR= {
     QueueDeclare: [QueueDeclareOk],
     BasicGetOk: [],
     ConnectionSecure: [ConnectionSecureOk],
-    ExchangeDeleteOk: [],
+    ConnectionTune: [ConnectionTuneOk],
     TxRollback: [TxRollbackOk],
     TxSelectOk: [],
     QueueBindOk: [],
     ChannelFlow: [ChannelFlowOk],
     BasicConsumeOk: [],
+    BasicConsume: [BasicConsumeOk],
     BasicRecover: [],
     BasicCancelOk: [],
+    ConfirmSelect: [ConfirmSelectOk],
     BasicGet: [BasicGetOk, BasicGetEmpty],
     TxRollbackOk: [],
-    BasicAck: [],
+    QueueBind: [QueueBindOk],
     ExchangeDelete: [ExchangeDeleteOk],
-    BasicConsume: [BasicConsumeOk],
+    BasicAck: [],
     ConnectionClose: [ConnectionCloseOk],
     ChannelOpenOk: [],
     QueueDeleteOk: [],
-    QueueBind: [QueueBindOk],
+    ExchangeUnbindOk: [],
     ConnectionStart: [ConnectionStartOk],
     BasicQos: [BasicQosOk],
     QueueUnbind: [QueueUnbindOk],
     BasicQosOk: [],
     BasicReject: [],
+    ExchangeBindOk: [],
     ChannelCloseOk: [],
     ExchangeDeclare: [ExchangeDeclareOk],
+    ConnectionBlocked: [],
     BasicPublish: [],
-    ConnectionTune: [ConnectionTuneOk],
+    ExchangeUnbind: [ExchangeUnbindOk],
+    ExchangeDeleteOk: [],
+    BasicNack: [],
     ConnectionStartOk: [],
-    QueueUnbindOk: [],
+    ExchangeBind: [ExchangeBindOk],
     QueueDelete: [QueueDeleteOk],
+    ConfirmSelectOk: [],
     ConnectionCloseOk: [],
     QueuePurge: [QueuePurgeOk],
+    QueueUnbindOk: [],
     ChannelOpen: [ChannelOpenOk],
     ChannelClose: [ChannelCloseOk],
     QueuePurgeOk: [],
@@ -3367,6 +3912,7 @@ REPLIES_FOR= {
     TxCommitOk: [],
     ConnectionTuneOk: [],
     ConnectionSecureOk: [],
+    ConnectionUnblocked: [],
     ConnectionOpenOk: [],
     ChannelFlowOk: [],
     BasicRecoverAsync: [],

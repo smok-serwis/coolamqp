@@ -108,7 +108,7 @@ def for_field(elem): # for <field> in <method>
 
 def for_method(elem):       # for <method>
     a = elem.attrib
-    return Method(six.text_type(a['name']), bool(int(a.get('synchronous', '0'))), int(a['index']), a['label'], get_docs(elem),
+    return Method(six.text_type(a['name']), bool(int(a.get('synchronous', '0'))), int(a['index']), a.get('label', None), get_docs(elem),
                   [for_field(fie) for fie in elem.getchildren() if fie.tag == 'field'],
                   [e.attrib['name'] for e in elem.findall('response')],
                   # if chassis=server that means server has to accept it

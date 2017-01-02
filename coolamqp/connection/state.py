@@ -44,7 +44,6 @@ class Broker(object):
 
         return Broker(con, node_def)
 
-
     def connect(self):
         """Return an LinkSetup order to get when it connects"""
         ls = LinkSetup()

@@ -24,7 +24,7 @@ TYPE_TRANSLATOR = {
         'timestamp': '64 bit signed POSIX timestamp (in seconds)',
 }
 
-def compile_definitions(xml_file='resources/amqp0-9-1.xml', out_file='coolamqp/framing/definitions.py'):
+def compile_definitions(xml_file='resources/amqp0-9-1.extended.xml', out_file='coolamqp/framing/definitions.py'):
     """parse resources/amqp-0-9-1.xml into """
 
     xml = ElementTree.parse(xml_file)
