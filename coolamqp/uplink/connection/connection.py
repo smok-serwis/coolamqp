@@ -2,13 +2,17 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import collections
-from coolamqp.uplink.listener import ListenerThread
+import socket
+import six
 
 from coolamqp.uplink.connection.recv_framer import ReceivingFramer
 from coolamqp.uplink.connection.send_framer import SendingFramer
-from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeartbeatFrame
+from coolamqp.framing.frames import AMQPMethodFrame
+from coolamqp.uplink.handshake import Handshaker
+from coolamqp.framing.definitions import ConnectionClose, ConnectionCloseOk
+from coolamqp.uplink.connection.watches import MethodWatch
+from coolamqp.uplink.connection.states import ST_ONLINE, ST_OFFLINE, ST_CONNECTING
 
-from coolamqp.uplink.connection.watches import MethodWatch, FailWatch
 
 logger = logging.getLogger(__name__)
 
@@ -18,85 +22,156 @@ class Connection(object):
     An object that manages a connection in a comprehensive way.
 
     It allows for sending and registering watches for particular things.
+
+    WARNING: Thread-safety of watch operation hinges on atomicity
+    of .append and .pop.
+
+    Lifecycle of connection is such:
+
+        Connection created  ->  state is ST_CONNECTING
+        .start() called     ->  state is ST_CONNECTING
+        connection.open-ok  ->  state is ST_ONLINE
     """
 
-    def __init__(self, socketobject, listener_thread):
-        self.listener_thread = listener_thread
-        self.socketobject = socketobject
-        self.recvf = ReceivingFramer(self.on_frame)
-        self.failed = False
-        self.transcript = None
+    def __init__(self, node_definition, listener_thread):
+        """
+        Create an object that links to an AMQP broker.
 
-        self.watches = {}    # channel => [Watch object]
-        self.fail_watches = []
+        No data will be physically sent until you hit .start()
+
+        :param node_definition: NodeDefinition instance to use
+        :param listener_thread: ListenerThread to use as async engine
+        """
+        self.listener_thread = listener_thread
+        self.node_definition = node_definition
+
+        self.recvf = ReceivingFramer(self.on_frame)
+
+        self.watches = {}    # channel => list of [Watch instance]
+
+        self.state = ST_CONNECTING
+
+        # Negotiated connection parameters - handshake will fill this in
+        self.free_channels = [] # attaches can use this for shit.
+                    # WARNING: thread safety of this hinges on atomicity of .pop or .append
+        self.frame_max = None
+        self.heartbeat = None
+        self.extensions = []
+
+    def on_connected(self):
+        """Called by handshaker upon reception of final connection.open-ok"""
+        self.state = ST_ONLINE
 
     def start(self):
         """
-        Start processing events for this connect
-        :return:
+        Start processing events for this connect. Create the socket,
+        transmit 'AMQP\x00\x00\x09\x01' and roll.
         """
-        self.listener_socket = self.listener_thread.register(self.socketobject,
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((self.node_definition.host, self.node_definition.port))
+        sock.settimeout(0)
+        sock.send('AMQP\x00\x00\x09\x01')
+
+        Handshaker(self, self.node_definition, self.on_connected)
+        self.listener_socket = self.listener_thread.register(sock,
                                                             on_read=self.recvf.put,
                                                             on_fail=self.on_fail)
         self.sendf = SendingFramer(self.listener_socket.send)
+        self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk), self.on_connection_close)
 
     def on_fail(self):
-        """Underlying connection is closed"""
-        if self.transcript is not None:
-            self.transcript.on_fail()
+        """
+        Called by event loop when the underlying connection is closed.
 
-        for channel, watches in self.watches:
+        This means the connection is dead, cannot be used anymore, and all operations
+        running on it now are aborted, null and void.
+
+        This calls fails all registered watches.
+        Called by ListenerThread.
+
+        WARNING: Note that .on_fail can get called twice - once from .on_connection_close,
+        and second time from ListenerThread when socket is disposed of
+        """
+        self.state = ST_OFFLINE # Update state
+
+        for channel, watches in six.iteritems(self.watches):   # Run all watches - failed
             for watch in watches:
                 watch.failed()
 
-        self.watches = {}
+        self.watches = {}                       # Clear the watch list
 
-        for watch in self.fail_watches:
-            watch.fire()
+    def on_connection_close(self, payload):
+        """
+        Server attempted to close the connection.. or maybe we did?
 
-        self.fail_watches = []
+        Called by ListenerThread.
+        """
+        self.on_fail()      # it does not make sense to prolong the agony
 
-        self.failed = True
+        if isinstance(payload, ConnectionClose):
+            self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
+        elif isinstance(payload, ConnectionCloseOk):
+            self.send(None)
 
-    def send(self, frames, reason=None):
+    def send(self, frames):
         """
         :param frames: list of frames or None to close the link
         :param reason: optional human-readable reason for this action
         """
-        if not self.failed:
-            if frames is not None:
-                self.sendf.send(frames)
-                if self.transcript is not None:
-                    for frame in frames:
-                        self.transcript.on_send(frame, reason)
-            else:
-                self.listener_socket.send(None)
-                self.failed = True
-
-                if self.transcript is not None:
-                    self.transcript.on_close_client(reason)
+        if frames is not None:
+            self.sendf.send(frames)
+        else:
+            # Listener socket will kill us when time is right
+            self.listener_socket.send(None)
 
     def on_frame(self, frame):
-        if self.transcript is not None:
-            self.transcript.on_frame(frame)
+        """
+        Called by event loop upon receiving an AMQP frame.
 
+        This will verify all watches on given channel if they were hit,
+        and take appropriate action.
+
+        Unhandled frames will be logged - if they were sent, they probably were important.
+
+        :param frame: AMQPFrame that was received
+        """
+        if isinstance(frame, AMQPMethodFrame):      # temporary, for debugging
+            print('RECEIVED', frame.payload.NAME)
+        else:
+            print('RECEIVED ', frame)
+
+        watch_handled = False   # True if ANY watch handled this
         if frame.channel in self.watches:
-            deq = self.watches[frame.channel]
+            watches = self.watches[frame.channel]       # a list
 
-            examined_watches = []
-            while len(deq) > 0:
-                watch = deq.popleft()
-                if not watch.is_triggered_by(frame) or (not watch.oneshot):
-                    examined_watches.append(watch)
+            alive_watches = []
+            while len(watches) > 0:
+                watch = watches.pop()
 
-            for watch in reversed(examined_watches):
-                deq.appendleft(watch)
+                if watch.cancelled:
+                    continue
 
-        logger.critical('Unhandled frame %s, dropping', frame)
+                watch_triggered = watch.is_triggered_by(frame)
+                watch_handled |= watch_triggered
 
-    def watch_watchdog(self, delay, callback):
+                if (not watch_triggered) or (not watch.oneshot):
+                    # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
+                    alive_watches.append(watch)
+
+            for watch in alive_watches:
+                watches.append(watch)
+
+        if not watch_handled:
+            logger.critical('Unhandled frame %s', frame)
+
+    def watchdog(self, delay, callback):
         """
         Call callback in delay seconds. One-shot.
+
+        Shall the connection die in the meantime, watchdog will not
+        be called, and everything will process according to
+        ListenerThread's on_fail callback.
         """
         self.listener_socket.oneshot(delay, callback)
 
@@ -105,18 +180,17 @@ class Connection(object):
         Register a watch.
         :param watch: Watch to register
         """
-        if isinstance(watch, FailWatch):
-            self.fail_watches.append(watch)
+        if watch.channel not in self.watches:
+            self.watches[watch.channel] = collections.deque([watch])
         else:
-            if watch.channel not in self.watches:
-                self.watches[watch.channel] = collections.deque([watch])
-            else:
-                self.watches[watch.channel].append(watch)
+            self.watches[watch.channel].append(watch)
 
     def watch_for_method(self, channel, method, callback):
         """
         :param channel: channel to monitor
-        :param method: AMQPMethodPayload class
+        :param method: AMQPMethodPayload class or tuple of AMQPMethodPayload classes
         :param callback: callable(AMQPMethodPayload instance)
         """
-        self.watch(MethodWatch(channel, method, callback))
+        mw = MethodWatch(channel, method, callback)
+        self.watch(mw)
+        return mw

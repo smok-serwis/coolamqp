@@ -12,6 +12,4 @@ Watches will fire upon an event triggering them.
 from __future__ import absolute_import, division, print_function
 
 from coolamqp.uplink.connection import Connection
-from coolamqp.uplink.handshake import Handshaker
 from coolamqp.uplink.listener import ListenerThread
-from coolamqp.uplink.connection import FailWatch, Watch

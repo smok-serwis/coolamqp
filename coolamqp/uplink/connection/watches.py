@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, print_function
 
 from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeartbeatFrame
-from coolamqp.framing.base import AMQPMethodPayload
 
 
 class Watch(object):
@@ -17,6 +16,7 @@ class Watch(object):
         """
         self.channel = channel
         self.oneshot = oneshot
+        self.cancelled = False
 
     def is_triggered_by(self, frame):
         """
@@ -32,6 +32,14 @@ class Watch(object):
         This watch will process things no more, because underlying
         link has failed
         """
+
+    def cancel(self):
+        """
+        Called by watch's user. This watch will not receive events anymore
+        (whether about frame or fail), and it will be discarded upon next iteration.
+        """
+        self.cancelled = True
+
 
 class FailWatch(Watch):
     """
@@ -75,10 +83,10 @@ class MethodWatch(Watch):
         """
         Watch.__init__(self, channel, True)
         self.callable = callable
-        if issubclass(method_or_methods, AMQPMethodPayload):
-            self.methods = (method_or_methods, )
-        else:
+        if isinstance(method_or_methods, (list, tuple)):
             self.methods = tuple(method_or_methods)
+        else:
+            self.methods = method_or_methods
         self.on_end = on_end
 
     def failed(self):

@@ -5,6 +5,9 @@ Comprehensive management of a framing connection.
 Connection is something that can:
  - call something when an AMQPFrame is received
  - send AMQPFrame's
+
+ Pretty much CoolAMQP is about persistent "attaches" that attach to transient connection
+ (they die when down) to do stuff, ie. send messages, consume, etc.
 """
 from __future__ import absolute_import, division, print_function
 

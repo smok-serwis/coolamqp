@@ -2,6 +2,8 @@
 """
 A listener is a thread that monitors a bunch of sockets for activity.
 
+Think "asyncio core" but I couldn't be bothered to learn Twisted.
+
 It provides both for sending and receiving messages. It is written
 as a package, because the optimal network call, epoll, is not
 available on Windows, and you might just want to use it.
