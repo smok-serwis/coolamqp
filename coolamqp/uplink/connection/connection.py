@@ -51,6 +51,8 @@ class Connection(object):
 
         self.state = ST_CONNECTING
 
+        self.callables_on_connected = []    # list of callable/0
+
         # Negotiated connection parameters - handshake will fill this in
         self.free_channels = [] # attaches can use this for shit.
                     # WARNING: thread safety of this hinges on atomicity of .pop or .append
@@ -58,9 +60,25 @@ class Connection(object):
         self.heartbeat = None
         self.extensions = []
 
+    def call_on_connected(self, callable):
+        """
+        Register a callable to be called when this links to the server.
+
+        If you call it while the connection IS up, callable will be called even before this returns.
+
+        :param callable: callable/0 to call
+        """
+        if self.state == ST_ONLINE:
+            callable()
+        else:
+            self.callables_on_connected.append(callable)
+
     def on_connected(self):
         """Called by handshaker upon reception of final connection.open-ok"""
         self.state = ST_ONLINE
+
+        while len(self.callables_on_connected) > 0:
+            self.callables_on_connected.pop()()
 
     def start(self):
         """
@@ -95,8 +113,10 @@ class Connection(object):
         """
         self.state = ST_OFFLINE # Update state
 
-        for channel, watches in six.iteritems(self.watches):   # Run all watches - failed
-            for watch in watches:
+        watchlists = [self.watches[channel] for channel in self.watches]
+
+        for watchlist in watchlists:   # Run all watches - failed
+            for watch in watchlist:
                 watch.failed()
 
         self.watches = {}                       # Clear the watch list
@@ -110,6 +130,7 @@ class Connection(object):
         self.on_fail()      # it does not make sense to prolong the agony
 
         if isinstance(payload, ConnectionClose):
+            print(payload.reply_code, payload.reply_text)
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
         elif isinstance(payload, ConnectionCloseOk):
             self.send(None)
@@ -120,6 +141,11 @@ class Connection(object):
         :param reason: optional human-readable reason for this action
         """
         if frames is not None:
+            for frame in frames:
+                if isinstance(frame, AMQPMethodFrame):
+                    print('Sending ', frame.payload)
+                else:
+                    print('Sending ', frame)
             self.sendf.send(frames)
         else:
             # Listener socket will kill us when time is right
@@ -175,6 +201,12 @@ class Connection(object):
         """
         self.listener_socket.oneshot(delay, callback)
 
+    def unwatch_all(self, channel_id):
+        """
+        Remove all watches from specified channel
+        """
+        self.watches.pop(channel_id, None)
+
     def watch(self, watch):
         """
         Register a watch.
@@ -185,12 +217,22 @@ class Connection(object):
         else:
             self.watches[watch.channel].append(watch)
 
-    def watch_for_method(self, channel, method, callback):
+    def watch_for_method(self, channel, method, callback, on_fail=None):
         """
         :param channel: channel to monitor
         :param method: AMQPMethodPayload class or tuple of AMQPMethodPayload classes
         :param callback: callable(AMQPMethodPayload instance)
         """
-        mw = MethodWatch(channel, method, callback)
+        mw = MethodWatch(channel, method, callback, on_end=on_fail)
         self.watch(mw)
         return mw
+
+    def method_and_watch(self, channel_id, method_payload, method_or_methods, callback):
+        """
+        A syntactic sugar for
+
+                .watch_for_method(channel_id, method_or_methdods, callback)
+                .send([AMQPMethodFrame(channel_id, method_payload)])
+        """
+        self.watch_for_method(channel_id, method_or_methods, callback)
+        self.send([AMQPMethodFrame(channel_id, method_payload)])

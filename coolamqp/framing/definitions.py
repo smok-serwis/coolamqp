@@ -408,8 +408,9 @@ class ConnectionStart(AMQPMethodPayload):
         self.locales = locales
 
     def write_arguments(self, buf):
+        buf.write(struct.pack('!BB', self.version_major, self.version_minor))
         enframe_table(buf, self.server_properties)
-        buf.write(struct.pack('!BBI', self.version_major, self.version_minor, len(self.mechanisms)))
+        buf.write(struct.pack('!I', len(self.mechanisms)))
         buf.write(self.mechanisms)
         buf.write(struct.pack('!I', len(self.locales)))
         buf.write(self.locales)
@@ -1121,8 +1122,8 @@ class ExchangeBind(AMQPMethodPayload):
         buf.write(self.source)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
-        enframe_table(buf, self.arguments)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
+        enframe_table(buf, self.arguments)
         
     def get_size(self):
         return 6 + len(self.destination) + len(self.source) + len(self.routing_key) + frame_table_size(self.arguments)
@@ -1267,8 +1268,8 @@ class ExchangeDeclare(AMQPMethodPayload):
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.type_)))
         buf.write(self.type_)
-        enframe_table(buf, self.arguments)
         buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.auto_delete << 2) | (self.internal << 3) | (self.no_wait << 4)))
+        enframe_table(buf, self.arguments)
         
     def get_size(self):
         return 5 + len(self.exchange) + len(self.type_) + frame_table_size(self.arguments)
@@ -1476,8 +1477,8 @@ class ExchangeUnbind(AMQPMethodPayload):
         buf.write(self.source)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
-        enframe_table(buf, self.arguments)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
+        enframe_table(buf, self.arguments)
         
     def get_size(self):
         return 6 + len(self.destination) + len(self.source) + len(self.routing_key) + frame_table_size(self.arguments)
@@ -1613,8 +1614,8 @@ class QueueBind(AMQPMethodPayload):
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
-        enframe_table(buf, self.arguments)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
+        enframe_table(buf, self.arguments)
         
     def get_size(self):
         return 6 + len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments)
@@ -1753,8 +1754,8 @@ class QueueDeclare(AMQPMethodPayload):
         buf.write(b'\x00\x00')
         buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
-        enframe_table(buf, self.arguments)
         buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.exclusive << 2) | (self.auto_delete << 3) | (self.no_wait << 4)))
+        enframe_table(buf, self.arguments)
         
     def get_size(self):
         return 4 + len(self.queue) + frame_table_size(self.arguments)
@@ -2424,8 +2425,8 @@ class BasicConsume(AMQPMethodPayload):
         buf.write(self.queue)
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
-        enframe_table(buf, self.arguments)
         buf.write(struct.pack('!B', (self.no_local << 0) | (self.no_ack << 1) | (self.exclusive << 2) | (self.no_wait << 3)))
+        enframe_table(buf, self.arguments)
         
     def get_size(self):
         return 5 + len(self.queue) + len(self.consumer_tag) + frame_table_size(self.arguments)

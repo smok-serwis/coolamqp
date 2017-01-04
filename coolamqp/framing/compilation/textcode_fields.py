@@ -215,6 +215,10 @@ def get_serializer(fields, prefix='', indent_level=2):
                 emit_single_struct_pack()
                 emit('buf.write(%s)', nam)
             elif field.basic_type == 'table':
+                if len(bits) > 0:
+                    emit_bits()
+                if len(formats) > 0:
+                    emit_single_struct_pack()
                 emit('enframe_table(buf, %s)', nam)
             else:
                 formats.append(BASIC_TYPES[field.basic_type][1])

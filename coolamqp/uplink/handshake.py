@@ -10,7 +10,8 @@ from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
 
 SUPPORTED_EXTENSIONS = [
-    b'publisher_confirms'
+    b'publisher_confirms',
+    b'consumer_cancel_notify'
 ]
 
 CLIENT_DATA = [

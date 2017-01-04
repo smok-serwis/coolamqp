@@ -118,8 +118,6 @@ class EpollListener(object):
                                               sock.fileno(),
                                               callback
                                               ))
-        else:
-            print('oneshot from nowhere')
 
     def register(self, sock, on_read=lambda data: None,
                              on_fail=lambda: None):

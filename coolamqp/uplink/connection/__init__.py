@@ -12,4 +12,5 @@ Connection is something that can:
 from __future__ import absolute_import, division, print_function
 
 from coolamqp.uplink.connection.connection import Connection
-from coolamqp.uplink.connection.watches import FailWatch, Watch
+from coolamqp.uplink.connection.watches import FailWatch, Watch, HeaderOrBodyWatch, MethodWatch
+from coolamqp.uplink.connection.states import ST_OFFLINE, ST_CONNECTING, ST_ONLINE

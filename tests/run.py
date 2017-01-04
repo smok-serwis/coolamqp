@@ -6,6 +6,9 @@ from coolamqp.connection import NodeDefinition
 from coolamqp.uplink import Connection
 import logging
 
+from coolamqp.attaches import Consumer
+from coolamqp.messages import Queue
+
 
 NODE = NodeDefinition('127.0.0.1', 5672, 'user', 'user', heartbeat=5)
 logging.basicConfig(level=logging.INFO)
@@ -15,9 +18,13 @@ if __name__ == '__main__':
     lt.start()
 
     con = Connection(NODE, lt)
-
     con.start()
 
-    time.sleep(50)
+
+    cons = Consumer(Queue('siema-eniu', auto_delete=True, exclusive=True))
+    cons.attach(con)
+
+    while True:
+        time.sleep(10)
 
     lt.terminate()

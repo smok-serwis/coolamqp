@@ -1,7 +1,7 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeartbeatFrame
+from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeartbeatFrame, AMQPHeaderFrame, AMQPBodyFrame
 
 
 class Watch(object):
@@ -69,6 +69,21 @@ class HeartbeatWatch(Watch):
             self.callable()
             return True
         return False
+
+
+class HeaderOrBodyWatch(Watch):
+    """
+    A multi-shot watch listening for AMQP header or body frames
+    """
+    def __init__(self, channel, callable):
+        Watch.__init__(self, channel, False)
+        self.callable = callable
+
+    def is_triggered_by(self, frame):
+        if not (isinstance(frame, (AMQPHeaderFrame, AMQPBodyFrame))):
+            return False
+        self.callable(frame)
+        return True
 
 
 class MethodWatch(Watch):
