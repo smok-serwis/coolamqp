@@ -4,12 +4,17 @@ import six
 import logging
 import select
 import monotonic
+import collections
 import heapq
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
 
 
 logger = logging.getLogger(__name__)
+
+
+RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
+RW = RO | select.EPOLLOUT
 
 
 class EpollSocket(BaseSocket):
@@ -19,16 +24,11 @@ class EpollSocket(BaseSocket):
     def __init__(self, sock, on_read, on_fail, listener):
         BaseSocket.__init__(self, sock, on_read=on_read, on_fail=on_fail)
         self.listener = listener
+        self.priority_queue = collections.deque()
 
-    def get_epoll_eventset(self):
-        if len(self.data_to_send) > 0:
-            return select.EPOLLIN | select.EPOLLERR | select.EPOLLHUP | select.EPOLLOUT
-        else:
-            return select.EPOLLIN | select.EPOLLERR | select.EPOLLHUP
-
-    def send(self, data):
-        self.data_to_send.append(data)
-        self.listener.epoll.modify(self, self.get_epoll_eventset())
+    def send(self, data, priority=False):
+        BaseSocket.send(self, data, priority=priority)
+        self.listener.epoll.modify(self, RW)
 
     def oneshot(self, seconds_after, callable):
         """
@@ -59,6 +59,13 @@ class EpollListener(object):
 
     def wait(self, timeout=1):
         events = self.epoll.poll(timeout=timeout)
+
+        # Timer events
+        mono = monotonic.monotonic()
+        while len(self.time_events) > 0 and (self.time_events[0][0] < mono):
+            ts, fd, callback = heapq.heappop(self.time_events)
+            callback()
+
         for fd, event in events:
             sock = self.fd_to_sock[fd]
 
@@ -66,23 +73,21 @@ class EpollListener(object):
             try:
                 if event & (select.EPOLLERR | select.EPOLLHUP):
                     raise SocketFailed()
-                elif event & select.EPOLLIN:
+
+                if event & select.EPOLLIN:
                     sock.on_read()
-                elif event & select.EPOLLOUT:
-                    sock.on_write()
+
+                if event & select.EPOLLOUT:
+                    if sock.on_write():
+                        # I'm done with sending for now
+                        self.epoll.modify(sock.fileno(), RW)
+
             except SocketFailed:
                 self.epoll.unregister(fd)
                 del self.fd_to_sock[fd]
                 sock.on_fail()
                 self.noshot(sock)
                 sock.close()
-            else:
-                self.epoll.modify(fd, sock.get_epoll_eventset())
-
-        # Timer events
-        while len(self.time_events) > 0 and (self.time_events[0][0] < monotonic.monotonic()):
-            ts, fd, callback = heapq.heappop(self.time_events)
-            callback()
 
     def noshot(self, sock):
         """
@@ -133,6 +138,6 @@ class EpollListener(object):
         sock = EpollSocket(sock, on_read, on_fail, self)
         self.fd_to_sock[sock.fileno()] = sock
 
-        self.epoll.register(sock, sock.get_epoll_eventset())
+        self.epoll.register(sock, RW)
         return sock
 

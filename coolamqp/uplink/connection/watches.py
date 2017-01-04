@@ -11,7 +11,8 @@ class Watch(object):
 
     def __init__(self, channel, oneshot):
         """
-        :param channel: Channel to listen to
+        :param channel: Channel to listen to.
+            all channels if None is passed
         :param oneshot: Is destroyed after triggering?
         """
         self.channel = channel
@@ -41,6 +42,28 @@ class Watch(object):
         self.cancelled = True
 
 
+class AnyWatch(Watch):
+    """
+    Watch that listens for any frame.
+
+    It does not listen for failures.
+
+    Used because heartbeating is implemented improperly EVERYWHERE
+    (ie. you might not get a heartbeat when connection is so loaded it just can't get it in time,
+    due to loads and loads of message exchanging).
+
+    Eg. RabbitMQ will happily disconnect you if you don't, but it can get lax with heartbeats
+    as it wants.
+    """
+    def __init__(self, callable):
+        Watch.__init__(self, None, False)
+        self.callable = callable
+
+    def is_triggered_by(self, frame):
+        self.callable(frame)
+        return True
+
+
 class FailWatch(Watch):
     """
     A special kind of watch that fires when connection has died
@@ -54,21 +77,6 @@ class FailWatch(Watch):
         Connection failed!
         """
         self.callable()
-
-
-class HeartbeatWatch(Watch):
-    """
-    Registered if heartbeats are enabled
-    """
-    def __init__(self, callable):
-        Watch.__init__(self, 0, False)
-        self.callable = callable
-
-    def is_triggered_by(self, frame):
-        if isinstance(frame, AMQPHeartbeatFrame):
-            self.callable()
-            return True
-        return False
 
 
 class HeaderOrBodyWatch(Watch):

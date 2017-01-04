@@ -11,7 +11,7 @@ from coolamqp.messages import Queue
 
 
 NODE = NodeDefinition('127.0.0.1', 5672, 'user', 'user', heartbeat=5)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 if __name__ == '__main__':
     lt = ListenerThread()
@@ -20,8 +20,7 @@ if __name__ == '__main__':
     con = Connection(NODE, lt)
     con.start()
 
-
-    cons = Consumer(Queue('siema-eniu', auto_delete=True, exclusive=True))
+    cons = Consumer(Queue('siema-eniu'), no_ack=False)
     cons.attach(con)
 
     while True:

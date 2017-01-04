@@ -11,5 +11,5 @@ Watches will fire upon an event triggering them.
 """
 from __future__ import absolute_import, division, print_function
 
-from coolamqp.uplink.connection import Connection, HeaderOrBodyWatch, MethodWatch
+from coolamqp.uplink.connection import Connection, HeaderOrBodyWatch, MethodWatch, AnyWatch
 from coolamqp.uplink.listener import ListenerThread

@@ -66,9 +66,10 @@ def get_counter(fields, prefix='', indent_level=2):
     return (u'    '*indent_level)+u'return '+(u' + '.join([str(accumulator)]+parts))+u'\n'
 
 
-def get_from_buffer(fields, prefix='', indent_level=2):
+def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
     """
     Emit code that collects values from buf:offset, updating offset as progressing.
+    :param remark: BE FUCKING VERBOSE! #DEBUG
     """
     code = []
     def emit(fmt, *args):
@@ -88,11 +89,16 @@ def get_from_buffer(fields, prefix='', indent_level=2):
     to_struct = []
 
     def emit_bits():
+        if len(bits) == 0:
+            return
+        if remark:
+            print('Bits are being banged')
         if all(n == '_' for n in bits):
             # everything is reserved, lol
             emit('offset += 1')
         else:
-            emit("_bit, = struct.unpack_from('!B', buf, offset)")
+            to_struct.append(('_bit', 'B'))
+            emit_structures(dont_do_bits=True)
 
             for multiplier, bit in enumerate(bits):
                 if bit != '_':
@@ -101,7 +107,11 @@ def get_from_buffer(fields, prefix='', indent_level=2):
 
         del bits[:]
 
-    def emit_structures():
+    def emit_structures(dont_do_bits=False):
+        if not dont_do_bits:
+            emit_bits()
+        if len(to_struct) == 0:
+            return
         fffnames = [a for a, b in to_struct if a != u'_'] # skip reserved
         ffffmts = [b for a, b in to_struct]
         emit("%s, = struct.unpack_from('!%s', buf, offset)", u', '.join(fffnames), u''.join(ffffmts))
@@ -112,23 +122,33 @@ def get_from_buffer(fields, prefix='', indent_level=2):
     for field in fields:
         fieldname = prefix+format_field_name(field.name)
 
-        if (len(bits) > 0) and (field.basic_type != 'bit'):
+        if (len(bits) > 0) and (field.basic_type != u'bit'):
             emit_bits()
+
+        if remark:
+            print('Doing', fieldname, 'of type', field.basic_type)
 
         # offset is current start
         # length is length to read
         if BASIC_TYPES[field.basic_type][0] is not None:
             # static type shit has
+
+            assert len(bits) == 0
+
             if field.reserved:
                 to_struct.append((u'_', '%sx' % (BASIC_TYPES[field.basic_type][0],)))
             else:
                 to_struct.append((fieldname, BASIC_TYPES[field.basic_type][1]))
+
             ln['ln'] += BASIC_TYPES[field.basic_type][0]
         elif field.basic_type == u'bit':
             bits.append('_' if field.reserved else fieldname)
         elif field.basic_type == u'table': # oh my god
-            if len(to_struct) > 0:
-                emit_structures()
+            emit_structures()
+
+            assert len(bits) == 0
+            assert len(to_struct) == 0
+
             emit("%s, delta = deframe_table(buf, offset)", fieldname)
             emit("offset += delta")
         else:   # longstr or shortstr
@@ -146,10 +166,7 @@ def get_from_buffer(fields, prefix='', indent_level=2):
         if len(bits) == 8:
             emit_bits()
 
-    if len(bits) > 0:
-        emit_bits()
-    if len(to_struct) > 0:
-        emit_structures()
+    emit_structures()
 
     return u''.join(code)
 

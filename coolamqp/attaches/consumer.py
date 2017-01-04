@@ -1,6 +1,6 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import uuid
+import six
 from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, AMQPHeaderFrame
 from coolamqp.framing.definitions import ChannelOpen, ChannelOpenOk, BasicConsume, \
     BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, ExchangeDeclareOk, \
@@ -14,11 +14,11 @@ ST_SYNCING = 1  # A process targeted at consuming has been started
 ST_ONLINE = 2   # Consumer is declared all right
 
 
-EV_ONLINE = 0   # called upon consumer being online and consuming
-EV_CANCEL = 1   # consumer has been cancelled by BasicCancel.
+EV_ONLINE = 7   # called upon consumer being online and consuming
+EV_CANCEL = 8   # consumer has been cancelled by BasicCancel.
                 # EV_OFFLINE will follow immediately
-EV_OFFLINE = 2  # channel down
-EV_MESSAGE = 3  # received a message
+EV_OFFLINE = 9  # channel down
+EV_MESSAGE = 10  # received a message
 
 class Consumer(object):
     """
@@ -72,26 +72,32 @@ class Consumer(object):
         arg={EV_ONLINE} called directly after setup. self.state is not yet set!
         args={EV_CANCEL} seen a RabbitMQ consumer cancel notify. EV_OFFLINE follows
         args={EV_OFFLINE} sent when a channel is no longer usable. It may not yet have been torn down.
+                          this will be called only if EV_ONLINE was previously dispatched
         arg={EV_MESSAGE}
         """
+        assert event in (EV_OFFLINE, EV_CANCEL, EV_MESSAGE, EV_ONLINE)
+
         if event == EV_OFFLINE and (self.state is not ST_ONLINE):
             return # No point in processing that
 
         if event == EV_ONLINE:
+            print('Entering ST_ONLINE')
             self.state = ST_ONLINE
             assert self.receiver is None
             self.receiver = MessageReceiver(self)
 
         elif event == EV_OFFLINE:
+            self.receiver.on_gone()
             self.receiver = None
 
     def __stateto(self, st):
         """if st is not current state, statify it.
         As an extra if it's a transition to ST_OFFLINE, send an event"""
-        if (self.state != ST_OFFLINE) and (st == ST_OFFLINE):
-            self.on_event(ST_OFFLINE)
-        else:
-            self.state = st
+        if (self.state == ST_ONLINE) and (st == ST_OFFLINE):
+            # the only moment when EV_OFFLINE is generated
+            self.on_event(EV_OFFLINE)
+
+        self.state = st
 
     def on_close(self, payload=None):
         """
@@ -104,6 +110,8 @@ class Consumer(object):
         """
         should_retry = False
         release_channel = False
+
+        print('HAYWIRE ', payload)
 
         if isinstance(payload, BasicCancel):
             # Consumer Cancel Notification - by RabbitMQ
@@ -292,11 +300,49 @@ class MessageReceiver(object):
         self.state = 0  # 0 - waiting for Basic-Deliver
                         # 1 - waiting for Header
                         # 2 - waiting for Body [all]
+                        # 3 - gone!
 
         self.bdeliver = None    # payload of Basic-Deliver
         self.header = None      # AMQPHeaderFrame
         self.body = []          # list of payloads
         self.data_to_go = None  # set on receiving header, how much bytes we need yet
+
+        self.acks_pending = set()   # list of things to ack/reject
+
+    def on_gone(self):
+        """Called by Consumer to inform upon discarding this receiver"""
+        self.state = 3
+
+    def confirm(self, delivery_tag, success):
+        """
+        This crafts a constructor for confirming messages.
+
+        This should return a callable/0, whose calling will ACK or REJECT the message.
+        Calling it multiple times should have no ill effect.
+
+        If this receiver is long gone,
+
+        :param delivery_tag: delivery_tag to ack
+        :param success: True if ACK, False if REJECT
+        :return: callable/0
+        """
+
+        def callable():
+            if self.state == 3:
+                return  # Gone!
+
+            if delivery_tag not in self.acks_pending:
+                return  # already confirmed/rejected
+
+            if success:
+                self.consumer.connection.send([AMQPMethodFrame(self.consumer.channel_id,
+                                                               BasicAck(delivery_tag, False))])
+            else:
+                self.consumer.connection.send([AMQPMethodFrame(self.consumer.channel_id,
+                                                               BasicReject(delivery_tag, True))])
+
+        return callable
+
 
     def on_head(self, frame):
         assert self.state == 1
@@ -310,13 +356,37 @@ class MessageReceiver(object):
         self.state = 1
 
     def on_body(self, payload):
+        """:type payload: buffer"""
         assert self.state == 2
         self.body.append(payload)
         self.data_to_go -= len(payload)
         assert self.data_to_go >= 0
         if self.data_to_go == 0:
+            ack_expected = not self.consumer.no_ack
+
             # Message A-OK!
-            print('Yo, got a message of %s' % (u''.join(map(str, self.body))))
+
+            if ack_expected:
+                self.acks_pending.add(self.bdeliver.delivery_tag)
+
+            from coolamqp.messages import ReceivedMessage
+            rm = ReceivedMessage(
+                b''.join(map(six.binary_type, self.body)), #todo inefficient as FUUUCK
+                self.bdeliver.exchange,
+                self.bdeliver.routing_key,
+                self.header.properties,
+                self.bdeliver.delivery_tag,
+                None if self.consumer.no_ack else self.confirm(self.bdeliver.delivery_tag, True),
+                None if self.consumer.no_ack else self.confirm(self.bdeliver.delivery_tag, False),
+            )
+
+#            print('hello seal - %s\nctype: %s\ncencod: %s\n' % (rm.body,
+#                  rm.properties.__dict__.get('content_type', b'<EMPTY>'),
+#                  rm.properties.__dict__.get('content_encoding', b'<EMPTY>')))
+
+            if ack_expected:
+                rm.ack()
+
             self.state = 0
 
         # at this point it's safe to clear the body

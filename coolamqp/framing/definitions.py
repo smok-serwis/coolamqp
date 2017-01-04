@@ -924,6 +924,7 @@ class ChannelFlow(AMQPMethodPayload):
     def from_buffer(buf, start_offset):
         offset = start_offset
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         active = bool(_bit >> 0)
         offset += 1
         return ChannelFlow(active)
@@ -971,6 +972,7 @@ class ChannelFlowOk(AMQPMethodPayload):
     def from_buffer(buf, start_offset):
         offset = start_offset
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         active = bool(_bit >> 0)
         offset += 1
         return ChannelFlowOk(active)
@@ -1144,6 +1146,7 @@ class ExchangeBind(AMQPMethodPayload):
         routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
         arguments, delta = deframe_table(buf, offset)
@@ -1286,6 +1289,7 @@ class ExchangeDeclare(AMQPMethodPayload):
         type_ = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         passive = bool(_bit >> 0)
         durable = bool(_bit >> 1)
         auto_delete = bool(_bit >> 2)
@@ -1356,6 +1360,7 @@ class ExchangeDelete(AMQPMethodPayload):
         exchange = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         if_unused = bool(_bit >> 0)
         no_wait = bool(_bit >> 1)
         offset += 1
@@ -1499,6 +1504,7 @@ class ExchangeUnbind(AMQPMethodPayload):
         routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
         arguments, delta = deframe_table(buf, offset)
@@ -1636,6 +1642,7 @@ class QueueBind(AMQPMethodPayload):
         routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
         arguments, delta = deframe_table(buf, offset)
@@ -1768,6 +1775,7 @@ class QueueDeclare(AMQPMethodPayload):
         queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         passive = bool(_bit >> 0)
         durable = bool(_bit >> 1)
         exclusive = bool(_bit >> 2)
@@ -1844,6 +1852,7 @@ class QueueDelete(AMQPMethodPayload):
         queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         if_unused = bool(_bit >> 0)
         if_empty = bool(_bit >> 1)
         no_wait = bool(_bit >> 2)
@@ -2008,6 +2017,7 @@ class QueuePurge(AMQPMethodPayload):
         queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
         return QueuePurge(queue, no_wait)
@@ -2285,7 +2295,7 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         """
         # extract property flags
         pfl = 2
-        while ord(buf[offset + pfl]) & 1:
+        while ord(buf[offset + pfl - 1]) & 1:
             pfl += 2
         zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
@@ -2351,11 +2361,10 @@ class BasicAck(AMQPMethodPayload):
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        offset += 8
         multiple = bool(_bit >> 0)
         offset += 1
-        delivery_tag, = struct.unpack_from('!Q', buf, offset)
-        offset += 8
         return BasicAck(delivery_tag, multiple)
 
 
@@ -2443,6 +2452,7 @@ class BasicConsume(AMQPMethodPayload):
         consumer_tag = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         no_local = bool(_bit >> 0)
         no_ack = bool(_bit >> 1)
         exclusive = bool(_bit >> 2)
@@ -2514,6 +2524,7 @@ class BasicCancel(AMQPMethodPayload):
         consumer_tag = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
         return BasicCancel(consumer_tag, no_wait)
@@ -2679,11 +2690,12 @@ class BasicDeliver(AMQPMethodPayload):
         offset += 1
         consumer_tag = buf[offset:offset+s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        offset += 8
         redelivered = bool(_bit >> 0)
         offset += 1
-        delivery_tag, s_len, = struct.unpack_from('!QB', buf, offset)
-        offset += 9
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
         exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
@@ -2746,6 +2758,7 @@ class BasicGet(AMQPMethodPayload):
         queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         no_ack = bool(_bit >> 0)
         offset += 1
         return BasicGet(queue, no_ack)
@@ -2811,11 +2824,12 @@ class BasicGetOk(AMQPMethodPayload):
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        offset += 8
         redelivered = bool(_bit >> 0)
         offset += 1
-        delivery_tag, s_len, = struct.unpack_from('!QB', buf, offset)
-        offset += 9
+        s_len, = struct.unpack_from('!B', buf, offset)
+        offset += 1
         exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
@@ -2925,12 +2939,11 @@ class BasicNack(AMQPMethodPayload):
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        offset += 8
         multiple = bool(_bit >> 0)
         requeue = bool(_bit >> 1)
         offset += 1
-        delivery_tag, = struct.unpack_from('!Q', buf, offset)
-        offset += 8
         return BasicNack(delivery_tag, multiple, requeue)
 
 
@@ -3013,6 +3026,7 @@ class BasicPublish(AMQPMethodPayload):
         routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         mandatory = bool(_bit >> 0)
         immediate = bool(_bit >> 1)
         offset += 1
@@ -3090,11 +3104,10 @@ class BasicQos(AMQPMethodPayload):
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        prefetch_size, prefetch_count, _bit, = struct.unpack_from('!IHB', buf, offset)
+        offset += 6
         global_ = bool(_bit >> 0)
         offset += 1
-        prefetch_size, prefetch_count, = struct.unpack_from('!IH', buf, offset)
-        offset += 6
         return BasicQos(prefetch_size, prefetch_count, global_)
 
 
@@ -3249,11 +3262,10 @@ class BasicReject(AMQPMethodPayload):
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        offset += 8
         requeue = bool(_bit >> 0)
         offset += 1
-        delivery_tag, = struct.unpack_from('!Q', buf, offset)
-        offset += 8
         return BasicReject(delivery_tag, requeue)
 
 
@@ -3302,6 +3314,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
     def from_buffer(buf, start_offset):
         offset = start_offset
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         requeue = bool(_bit >> 0)
         offset += 1
         return BasicRecoverAsync(requeue)
@@ -3352,6 +3365,7 @@ class BasicRecover(AMQPMethodPayload):
     def from_buffer(buf, start_offset):
         offset = start_offset
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         requeue = bool(_bit >> 0)
         offset += 1
         return BasicRecover(requeue)
@@ -3653,6 +3667,7 @@ class ConfirmSelect(AMQPMethodPayload):
     def from_buffer(buf, start_offset):
         offset = start_offset
         _bit, = struct.unpack_from('!B', buf, offset)
+        offset += 0
         nowait = bool(_bit >> 0)
         offset += 1
         return ConfirmSelect(nowait)

@@ -35,17 +35,23 @@ class BaseSocket(object):
         assert sock is not None
         self.sock = sock
         self.data_to_send = collections.deque()
+        self.priority_queue = collections.deque()   # when a piece of data is finished, this queue is checked first
         self.my_on_read = on_read
         self.on_fail = on_fail
         self.on_time = on_time
 
-    def send(self, data):
+    def send(self, data, priority=True):
         """
-        Schedule to send some data
+        Schedule to send some data.
 
-        :param data: data to send, or None to terminate this socket
+        :param data: data to send, or None to terminate this socket.
+            Note that data will be sent atomically, ie. without interruptions.
+        :param priority: preempt other datas. Property of sending data atomically will be maintained.
         """
-        raise Exception('Abstract; listener should override that')
+        if priority:
+            self.priority_queue.append(data)
+        else:
+            self.data_to_send.append(data)
 
     def oneshot(self, seconds_after, callable):
         """
@@ -81,13 +87,18 @@ class BaseSocket(object):
     def on_write(self):
         """
         Socket is writable, called by Listener
-        :return: (bool) I finished sending all the data for now
         :raises SocketFailed: on socket error
+        :return: True if I'm done sending shit for now
         """
-        if len(self.data_to_send) == 0:
-            return True # No data to send
 
-        while len(self.data_to_send) > 0:
+        while True:
+            if len(self.data_to_send) == 0:
+                if len(self.priority_queue) == 0:
+                    return True
+                else:
+                    self.data_to_send.appendleft(self.priority_queue.popleft())
+
+            assert len(self.data_to_send) > 0
 
             if self.data_to_send[0] is None:
                 raise SocketFailed() # We should terminate the connection!
@@ -100,11 +111,15 @@ class BaseSocket(object):
             if sent < len(self.data_to_send[0]):
                 # Not everything could be sent
                 self.data_to_send[0] = buffer(self.data_to_send[0], sent)
-                return False    # I want to send more
+                return False
             else:
-                self.data_to_send.popleft()     # Sent all!
+                # Looks like everything has been sent
+                self.data_to_send.popleft()     # mark as sent
 
-        return True # all for now
+                if len(self.priority_queue) > 0:
+                    # We can send a priority pack
+                    print('Deploying priority data')
+                    self.data_to_send.appendleft(self.priority_queue.popleft())
 
     def fileno(self):
         """Return descriptor number"""

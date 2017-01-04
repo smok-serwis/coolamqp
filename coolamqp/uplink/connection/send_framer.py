@@ -28,15 +28,17 @@ class SendingFramer(object):
     """
     def __init__(self, on_send=lambda data: None):
         """
-        :param on_send: a callable that can be called with some data to send
+        :param on_send: a callable(data, priority=False) that can be called with some data to send
+            data will always be entire AMQP frames!
         """
         self.on_send = on_send
 
 
-    def send(self, frames):
+    def send(self, frames, priority=False):
         """
         Schedule to send some frames.
         :param frames: list of AMQPFrame instances
+        :param priority: preempty existing frames
         """
         length = sum(frame.get_size() for frame in frames)
         buf = io.BytesIO(bytearray(length))
@@ -45,4 +47,4 @@ class SendingFramer(object):
             frame.write_to(buf)
 
         q = buf.getvalue()
-        self.on_send(q)
+        self.on_send(q, priority)

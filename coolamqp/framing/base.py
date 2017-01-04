@@ -11,18 +11,18 @@ AMQP_HELLO_HEADER = b'AMQP\x00\x00\x09\x01'
 
 
 # name => (length|None, struct ID|None, reserved-field-value : for struct if structable, bytes else, length of default)
-BASIC_TYPES = {'bit': (None, None, "0", None),          # special case
-               'octet': (1, 'B', "b'\\x00'", 1),
-               'short': (2, 'H', "b'\\x00\\x00'", 2),
-               'long': (4, 'I', "b'\\x00\\x00\\x00\\x00'", 4),
-               'longlong': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
-               'timestamp': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
-               'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),          # special case
-               'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),        # special case
-               'shortstr': (None, None, "b'\\x00'", 1),                        # special case
+BASIC_TYPES = {u'bit': (None, None, "0", None),          # special case
+               u'octet': (1, 'B', "b'\\x00'", 1),
+               u'short': (2, 'H', "b'\\x00\\x00'", 2),
+               u'long': (4, 'I', "b'\\x00\\x00\\x00\\x00'", 4),
+               u'longlong': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
+               u'timestamp': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
+               u'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),          # special case
+               u'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),        # special case
+               u'shortstr': (None, None, "b'\\x00'", 1),                        # special case
                }
 
-DYNAMIC_BASIC_TYPES = ('table', 'longstr', 'shortstr')
+DYNAMIC_BASIC_TYPES = (u'table', u'longstr', u'shortstr')
 
 
 class AMQPFrame(object):        # base class for framing

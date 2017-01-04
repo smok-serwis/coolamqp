@@ -21,7 +21,9 @@ class Connection(object):
     """
     An object that manages a connection in a comprehensive way.
 
-    It allows for sending and registering watches for particular things.
+    It allows for sending and registering watches for particular things. Watch will
+    listen for eg. frame on particular channel, frame on any channel, or connection teardown.
+    Watches will also get a callback for connection being non-operational (eg. torn down).
 
     WARNING: Thread-safety of watch operation hinges on atomicity
     of .append and .pop.
@@ -48,6 +50,7 @@ class Connection(object):
         self.recvf = ReceivingFramer(self.on_frame)
 
         self.watches = {}    # channel => list of [Watch instance]
+        self.any_watches = []   # list of Watches that should check everything
 
         self.state = ST_CONNECTING
 
@@ -119,7 +122,11 @@ class Connection(object):
             for watch in watchlist:
                 watch.failed()
 
+        for watch in self.any_watches:
+            watch.failed()
+
         self.watches = {}                       # Clear the watch list
+        self.any_watches = []
 
     def on_connection_close(self, payload):
         """
@@ -135,18 +142,18 @@ class Connection(object):
         elif isinstance(payload, ConnectionCloseOk):
             self.send(None)
 
-    def send(self, frames):
+    def send(self, frames, priority=False):
         """
         :param frames: list of frames or None to close the link
         :param reason: optional human-readable reason for this action
         """
         if frames is not None:
-            for frame in frames:
-                if isinstance(frame, AMQPMethodFrame):
-                    print('Sending ', frame.payload)
-                else:
-                    print('Sending ', frame)
-            self.sendf.send(frames)
+            # for frame in frames:
+            #     if isinstance(frame, AMQPMethodFrame):
+            #         print('Sending ', frame.payload)
+            #     else:
+            #         print('Sending ', frame)
+            self.sendf.send(frames, priority=priority)
         else:
             # Listener socket will kill us when time is right
             self.listener_socket.send(None)
@@ -162,12 +169,14 @@ class Connection(object):
 
         :param frame: AMQPFrame that was received
         """
-        if isinstance(frame, AMQPMethodFrame):      # temporary, for debugging
-            print('RECEIVED', frame.payload.NAME)
-        else:
-            print('RECEIVED ', frame)
+        # if isinstance(frame, AMQPMethodFrame):      # temporary, for debugging
+        #     print('RECEIVED', frame.payload.NAME)
+        # else:
+        #     print('RECEIVED ', frame)
 
         watch_handled = False   # True if ANY watch handled this
+
+        # ==================== process per-channel watches
         if frame.channel in self.watches:
             watches = self.watches[frame.channel]       # a list
 
@@ -187,6 +196,20 @@ class Connection(object):
 
             for watch in alive_watches:
                 watches.append(watch)
+
+        # ==================== process "any" watches
+        alive_watches = []
+        while len(self.any_watches):
+            watch = self.any_watches.pop()
+            watch_triggered = watch.is_triggered_by(frame)
+            watch_handled |= watch_triggered
+
+            if (not watch_triggered) or (not watch.oneshot):
+                # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
+                alive_watches.append(watch)
+
+        for watch in alive_watches:
+            self.any_watches.append(watch)
 
         if not watch_handled:
             logger.critical('Unhandled frame %s', frame)
@@ -212,7 +235,9 @@ class Connection(object):
         Register a watch.
         :param watch: Watch to register
         """
-        if watch.channel not in self.watches:
+        if watch.channel is None:
+            self.any_watches.append(watch)
+        elif watch.channel not in self.watches:
             self.watches[watch.channel] = collections.deque([watch])
         else:
             self.watches[watch.channel].append(watch)

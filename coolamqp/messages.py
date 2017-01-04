@@ -22,10 +22,16 @@ class Message(object):
         self.properties = properties or {}
 
 
+LAMBDA_NONE = lambda: None
+
 class ReceivedMessage(Message):
     """Message as received from AMQP system"""
 
-    def __init__(self, body, cht, connect_id, exchange_name, routing_key, properties=None, delivery_tag=None):
+    def __init__(self, body, exchange_name, routing_key,
+                 properties=None,
+                 delivery_tag=None,
+                 ack=None,
+                 nack=None):
         """
         :param body: message body. A stream of octets.
         :type body: str (py2) or bytes (py3)
@@ -34,39 +40,22 @@ class ReceivedMessage(Message):
             not to ack messages that were received from a dead connection
         :param exchange_name: name of exchange this message was submitted to
         :param routing_key: routing key with which this message was sent
-        :param properties: dictionary. Headers received from AMQP or None for empty dict
+        :param properties: a suitable BasicContentPropertyList subinstance
 
-        :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message.
-            leave None if auto-ack
+        :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message
+        :param ack: a callable to call when you want to ack (via basic.ack) this message. None if received
+             by the no-ack mechanism
+        :param nack: a callable to call when you want to nack (via basic.reject) this message. None if received
+             by the no-ack mechanism
         """
         Message.__init__(self, body, properties=properties)
 
-        self.cht = cht
-        self.connect_id = connect_id
         self.delivery_tag = delivery_tag
         self.exchange_name = exchange_name
         self.routing_key = routing_key
 
-    def nack(self, on_completed=None):
-        """
-        Negative-acknowledge this message to the broker.
-
-        This internally results in a basic.reject
-
-        :param on_completed: callable/0 to call on acknowledged. Callable will be executed in
-            ClusterHandlerThread's context.
-        :return: an Order, that can ve waited upon for a result
-        """
-        return self.cht._do_nackmessage(self, on_completed=on_completed)
-
-    def ack(self, on_completed=None):
-        """
-        Acknowledge this message to the broker.
-        :param on_completed: callable/0 to call on acknowledged. Callable will be executed in
-            ClusterHandlerThread's context.
-        :return: an Order, that can ve waited upon for a result
-        """
-        return self.cht._do_ackmessage(self, on_completed=on_completed)
+        self.ack = ack or LAMBDA_NONE
+        self.nack = nack or LAMBDA_NONE
 
 
 class Exchange(object):

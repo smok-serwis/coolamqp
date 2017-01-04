@@ -282,7 +282,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         """
         # extract property flags
         pfl = 2
-        while ord(buf[offset + pfl]) & 1:
+        while ord(buf[offset + pfl - 1]) & 1:
             pfl += 2
         zpf = %s.zero_property_flags(buf[offset:offset+pfl])
         if zpf in %s.PARTICULAR_CLASSES:
@@ -403,7 +403,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         offset = start_offset
 ''')
 
-            line(get_from_buffer(method.fields, '', 2))
+            line(get_from_buffer(method.fields, '', 2, remark=(method.name == 'deliver')))
             line("        return %s(%s)",
                  full_class_name,
                  u', '.join(format_field_name(field.name) for field in method.fields if not field.reserved))
