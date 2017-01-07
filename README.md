@@ -8,6 +8,8 @@ CoolAMQP
 [![PyPI](https://img.shields.io/pypi/pyversions/CoolAMQP.svg)]()
 [![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
 
+**API WILL CHANGE MASSIVELY IN v1.0!!!! DO NOT USE FOR NOW!!!!**
+
 When you're tired of fucking with AMQP reconnects.
 
 When a connection made by CoolAMQP to your broker fails, it will pick another
