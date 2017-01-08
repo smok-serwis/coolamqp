@@ -6,7 +6,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+.pycharm_helpers/
 # Distribution / packaging
 .Python
 env/

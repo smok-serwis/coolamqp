@@ -8,3 +8,4 @@ Attache should also register at least one on_fail watch, so it can handle things
 """
 
 from coolamqp.attaches.consumer import Consumer
+from coolamqp.attaches.publisher import Publisher, MODE_NOACK, MODE_CNPUB

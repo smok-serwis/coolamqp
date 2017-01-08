@@ -84,12 +84,9 @@ Exchange.direct = Exchange()
 class Queue(object):
     """
     This object represents a Queue that applications consume from or publish to.
-
-    Caveat: Please note the locked_after_reconnect option in constructor
     """
 
-    def __init__(self, name='', durable=False, exchange=None, exclusive=False, auto_delete=False,
-                 locked_after_reconnect='retry'):
+    def __init__(self, name='', durable=False, exchange=None, exclusive=False, auto_delete=False):
         """
         Create a queue definition.
 
@@ -102,12 +99,6 @@ class Queue(object):
         :param exchange: Exchange for this queue to bind to. None for no binding.
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
-        :param locked_after_reconnect: Behaviour when queue is exclusive and ACCESS_REFUSED/RESOURCE_LOCKED
-            is seen on reconnect. Because broker might not know that we have failed, 'retry' will
-            try again until succeeds (default option). This might block for a long time, until the broker
-            realizes previous connection is dead and deletes the queue.
-            'cancel' will return a ConsumerCancelled to client
-            'defer' will attempt to configure the queue later, but will not block other tasks from progressing.
         """
         self.name = name
         # if name is '', this will be filled in with broker-generated name upon declaration
@@ -119,5 +110,9 @@ class Queue(object):
         self.anonymous = name == ''  # if this queue is anonymous, it must be regenerated upon reconnect
 
         self.consumer_tag = name if name != '' else uuid.uuid4().hex    # consumer tag to use in AMQP comms
-        self.locked_after_reconnect = locked_after_reconnect
-        assert locked_after_reconnect in ('retry', 'cancel', 'defer')
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)

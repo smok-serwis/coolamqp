@@ -1,49 +1,22 @@
 # coding=UTF-8
-class AMQPError(Exception):
-    """Connection errors and bawking of AMQP server"""
-    code = None
-    reply_text = 'AMQP error'
-
-    def __repr__(self):
-        return u'AMQPError()'
+from __future__ import absolute_import, division, print_function
 
 
-class ConnectionFailedError(AMQPError):
-    """Connection to broker failed"""
-    reply_text = 'failed connecting to broker'
-
-    def __repr__(self):
-        return u'ConnectionFailedError("%s")' % map(repr, (self.reply_text, ))
+from coolamqp.backends.base import AMQPBackend
 
 
-class Cancelled(Exception):
-    """Cancel ordered by user"""
+# Create a global ListenerThread
+from coolamqp.uplink import ListenerThread
+GLOBALS = {
+    'listener': ListenerThread()
+}
 
 
-class RemoteAMQPError(AMQPError):
+class CoolAMQPBackend(AMQPBackend):
     """
-    Remote AMQP broker responded with an error code
+    A backend utilizing CoolAMQP's coolamqp.attaches and coolamqp.connection.
+    Backend starts with creating a connection, and ends with blanging it.
     """
-    def __init__(self, code, text=None):
-        """
-        :param code: AMQP error code
-        :param text: AMQP error text (optional)
-        """
-        AMQPError.__init__(self, text)
-        self.code = code
-        self.text = text or 'server sent back an error'
-
-    def __repr__(self):
-        return u'RemoteAMQPError(%s, %s)' % map(repr, (self.code, self.text))
-
-class AMQPBackend(object):
-    """
-    Dummy AMQP backend.
-
-    Every method may raise either ConnectionFailedError (if connection failed)
-    or RemoteAMQPError (if broker returned an error response)
-    """
-
     def __init__(self, cluster_node, cluster_handler_thread):
         """
         Connects to an AMQP backend.

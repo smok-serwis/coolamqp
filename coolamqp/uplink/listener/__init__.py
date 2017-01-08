@@ -16,4 +16,3 @@ from __future__ import absolute_import, division, print_function
 
 
 from coolamqp.uplink.listener.thread import ListenerThread
-from coolamqp.uplink.connection import Connection

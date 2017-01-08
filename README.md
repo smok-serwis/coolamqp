@@ -18,3 +18,8 @@ The project is actively maintained and used in a commercial project. Tests can r
 either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.
 
 Enjoy!
+
+
+## Notes
+Assertions are sprinkled throughout the code. You may wish to run with optimizations enabled
+if you need every CPU cycle you can get.

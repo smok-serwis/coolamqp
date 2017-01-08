@@ -9,9 +9,13 @@ from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
 
+
+PUBLISHER_CONFIRMS = b'publisher_confirms'
+CONSUMER_CANCEL_NOTIFY = b'consumer_cancel_notify'
+
 SUPPORTED_EXTENSIONS = [
-    b'publisher_confirms',
-    b'consumer_cancel_notify'
+    PUBLISHER_CONFIRMS,
+    CONSUMER_CANCEL_NOTIFY
 ]
 
 CLIENT_DATA = [
@@ -32,8 +36,7 @@ class Handshaker(object):
     Object that given a connection rolls the handshake.
     """
 
-    def __init__(self, connection, node_definition,
-                 on_success):
+    def __init__(self, connection, node_definition, on_success):
         """
         :param connection: Connection instance to use
         :type node_definition: NodeDefinition
@@ -74,6 +77,7 @@ class Handshaker(object):
         server_props = dict(payload.server_properties)
         if b'capabilities' in server_props:
             for label, fv in server_props[b'capabilities'][0]:
+                print('Detected extension: %s' % (label, ))
                 if label in SUPPORTED_EXTENSIONS:
                     if fv[0]:
                         self.connection.extensions.append(label)
