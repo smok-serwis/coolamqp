@@ -115,7 +115,7 @@ class ConnectionBlocked(AMQPMethodPayload):
     
     and does not accept new publishes.
     """
-    __slots__ = (u'reason')
+    __slots__ = (u'reason', )
 
     NAME = u'connection.blocked'
 
@@ -166,7 +166,7 @@ class ConnectionClose(AMQPMethodPayload):
     a specific method, i.e. an exception. When a close is due to an exception, the
     sender provides the class and method id of the method which caused the exception.
     """
-    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id')
+    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id', )
 
     NAME = u'connection.close'
 
@@ -266,7 +266,7 @@ class ConnectionOpen(AMQPMethodPayload):
     The server may apply arbitrary limits per virtual host, such as the number
     of each type of entity that may be used, per connection and/or in total.
     """
-    __slots__ = (u'virtual_host')
+    __slots__ = (u'virtual_host', )
 
     NAME = u'connection.open'
 
@@ -365,7 +365,7 @@ class ConnectionStart(AMQPMethodPayload):
     protocol version that the server proposes, along with a list of security mechanisms
     which the client can use for authentication.
     """
-    __slots__ = (u'version_major', u'version_minor', u'server_properties', u'mechanisms', u'locales')
+    __slots__ = (u'version_major', u'version_minor', u'server_properties', u'mechanisms', u'locales', )
 
     NAME = u'connection.start'
 
@@ -456,7 +456,7 @@ class ConnectionSecure(AMQPMethodPayload):
     received sufficient information to authenticate each other. This method challenges
     the client to provide more information.
     """
-    __slots__ = (u'challenge')
+    __slots__ = (u'challenge', )
 
     NAME = u'connection.secure'
 
@@ -507,7 +507,7 @@ class ConnectionStartOk(AMQPMethodPayload):
     
     This method selects a SASL security mechanism.
     """
-    __slots__ = (u'client_properties', u'mechanism', u'response', u'locale')
+    __slots__ = (u'client_properties', u'mechanism', u'response', u'locale', )
 
     NAME = u'connection.start-ok'
 
@@ -594,7 +594,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
     This method attempts to authenticate, passing a block of SASL data for the security
     mechanism at the server side.
     """
-    __slots__ = (u'response')
+    __slots__ = (u'response', )
 
     NAME = u'connection.secure-ok'
 
@@ -646,7 +646,7 @@ class ConnectionTune(AMQPMethodPayload):
     This method proposes a set of connection configuration values to the client. The
     client can accept and/or adjust these.
     """
-    __slots__ = (u'channel_max', u'frame_max', u'heartbeat')
+    __slots__ = (u'channel_max', u'frame_max', u'heartbeat', )
 
     NAME = u'connection.tune'
 
@@ -709,7 +709,7 @@ class ConnectionTuneOk(AMQPMethodPayload):
     This method sends the client's connection tuning parameters to the server.
     Certain fields are negotiated, others provide capability information.
     """
-    __slots__ = (u'channel_max', u'frame_max', u'heartbeat')
+    __slots__ = (u'channel_max', u'frame_max', u'heartbeat', )
 
     NAME = u'connection.tune-ok'
 
@@ -815,7 +815,7 @@ class ChannelClose(AMQPMethodPayload):
     method, i.e. an exception. When a close is due to an exception, the sender provides
     the class and method id of the method which caused the exception.
     """
-    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id')
+    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id', )
 
     NAME = u'channel.close'
 
@@ -916,7 +916,7 @@ class ChannelFlow(AMQPMethodPayload):
     it can process. Note that this method is not intended for window control. It does
     not affect contents returned by Basic.Get-Ok methods.
     """
-    __slots__ = (u'active')
+    __slots__ = (u'active', )
 
     NAME = u'channel.flow'
 
@@ -966,7 +966,7 @@ class ChannelFlowOk(AMQPMethodPayload):
     
     Confirms to the peer that a flow command was received and processed.
     """
-    __slots__ = (u'active')
+    __slots__ = (u'active', )
 
     NAME = u'channel.flow-ok'
 
@@ -1104,7 +1104,7 @@ class ExchangeBind(AMQPMethodPayload):
     
     This method binds an exchange to an exchange.
     """
-    __slots__ = (u'destination', u'source', u'routing_key', u'no_wait', u'arguments')
+    __slots__ = (u'destination', u'source', u'routing_key', u'no_wait', u'arguments', )
 
     NAME = u'exchange.bind'
 
@@ -1230,7 +1230,7 @@ class ExchangeDeclare(AMQPMethodPayload):
     This method creates an exchange if it does not already exist, and if the exchange
     exists, verifies that it is of the correct and expected class.
     """
-    __slots__ = (u'exchange', u'type_', u'passive', u'durable', u'auto_delete', u'internal', u'no_wait', u'arguments')
+    __slots__ = (u'exchange', u'type_', u'passive', u'durable', u'auto_delete', u'internal', u'no_wait', u'arguments', )
 
     NAME = u'exchange.declare'
 
@@ -1350,7 +1350,7 @@ class ExchangeDelete(AMQPMethodPayload):
     This method deletes an exchange. When an exchange is deleted all queue bindings on
     the exchange are cancelled.
     """
-    __slots__ = (u'exchange', u'if_unused', u'no_wait')
+    __slots__ = (u'exchange', u'if_unused', u'no_wait', )
 
     NAME = u'exchange.delete'
 
@@ -1480,7 +1480,7 @@ class ExchangeUnbind(AMQPMethodPayload):
     
     This method unbinds an exchange from an exchange.
     """
-    __slots__ = (u'destination', u'source', u'routing_key', u'no_wait', u'arguments')
+    __slots__ = (u'destination', u'source', u'routing_key', u'no_wait', u'arguments', )
 
     NAME = u'exchange.unbind'
 
@@ -1613,7 +1613,7 @@ class QueueBind(AMQPMethodPayload):
     are bound to a direct exchange and subscription queues are bound to a topic
     exchange.
     """
-    __slots__ = (u'queue', u'exchange', u'routing_key', u'no_wait', u'arguments')
+    __slots__ = (u'queue', u'exchange', u'routing_key', u'no_wait', u'arguments', )
 
     NAME = u'queue.bind'
 
@@ -1743,7 +1743,7 @@ class QueueDeclare(AMQPMethodPayload):
     specify various properties that control the durability of the queue and its
     contents, and the level of sharing for the queue.
     """
-    __slots__ = (u'queue', u'passive', u'durable', u'exclusive', u'auto_delete', u'no_wait', u'arguments')
+    __slots__ = (u'queue', u'passive', u'durable', u'exclusive', u'auto_delete', u'no_wait', u'arguments', )
 
     NAME = u'queue.declare'
 
@@ -1853,7 +1853,7 @@ class QueueDelete(AMQPMethodPayload):
     to a dead-letter queue if this is defined in the server configuration, and all
     consumers on the queue are cancelled.
     """
-    __slots__ = (u'queue', u'if_unused', u'if_empty', u'no_wait')
+    __slots__ = (u'queue', u'if_unused', u'if_empty', u'no_wait', )
 
     NAME = u'queue.delete'
 
@@ -1927,7 +1927,7 @@ class QueueDeclareOk(AMQPMethodPayload):
     This method confirms a Declare method and confirms the name of the queue, essential
     for automatically-named queues.
     """
-    __slots__ = (u'queue', u'message_count', u'consumer_count')
+    __slots__ = (u'queue', u'message_count', u'consumer_count', )
 
     NAME = u'queue.declare-ok'
 
@@ -1989,7 +1989,7 @@ class QueueDeleteOk(AMQPMethodPayload):
     
     This method confirms the deletion of a queue.
     """
-    __slots__ = (u'message_count')
+    __slots__ = (u'message_count', )
 
     NAME = u'queue.delete-ok'
 
@@ -2036,7 +2036,7 @@ class QueuePurge(AMQPMethodPayload):
     This method removes all messages from a queue which are not awaiting
     acknowledgment.
     """
-    __slots__ = (u'queue', u'no_wait')
+    __slots__ = (u'queue', u'no_wait', )
 
     NAME = u'queue.purge'
 
@@ -2095,7 +2095,7 @@ class QueuePurgeOk(AMQPMethodPayload):
     
     This method confirms the purge of a queue.
     """
-    __slots__ = (u'message_count')
+    __slots__ = (u'message_count', )
 
     NAME = u'queue.purge-ok'
 
@@ -2141,7 +2141,7 @@ class QueueUnbind(AMQPMethodPayload):
     
     This method unbinds a queue from an exchange.
     """
-    __slots__ = (u'queue', u'exchange', u'routing_key', u'arguments')
+    __slots__ = (u'queue', u'exchange', u'routing_key', u'arguments', )
 
     NAME = u'queue.unbind'
 
@@ -2391,7 +2391,7 @@ class BasicAck(AMQPMethodPayload):
     The acknowledgement can be for a single message or a set of
     messages up to and including a specific message.
     """
-    __slots__ = (u'delivery_tag', u'multiple')
+    __slots__ = (u'delivery_tag', u'multiple', )
 
     NAME = u'basic.ack'
 
@@ -2450,7 +2450,7 @@ class BasicConsume(AMQPMethodPayload):
     messages from a specific queue. Consumers last as long as the channel they were
     declared on, or until the client cancels them.
     """
-    __slots__ = (u'queue', u'consumer_tag', u'no_local', u'no_ack', u'exclusive', u'no_wait', u'arguments')
+    __slots__ = (u'queue', u'consumer_tag', u'no_local', u'no_ack', u'exclusive', u'no_wait', u'arguments', )
 
     NAME = u'basic.consume'
 
@@ -2558,7 +2558,7 @@ class BasicCancel(AMQPMethodPayload):
     capable of accepting the method, through some means of
     capability negotiation.
     """
-    __slots__ = (u'consumer_tag', u'no_wait')
+    __slots__ = (u'consumer_tag', u'no_wait', )
 
     NAME = u'basic.cancel'
 
@@ -2615,7 +2615,7 @@ class BasicConsumeOk(AMQPMethodPayload):
     The server provides the client with a consumer tag, which is used by the client
     for methods called on the consumer at a later stage.
     """
-    __slots__ = (u'consumer_tag')
+    __slots__ = (u'consumer_tag', )
 
     NAME = u'basic.consume-ok'
 
@@ -2664,7 +2664,7 @@ class BasicCancelOk(AMQPMethodPayload):
     
     This method confirms that the cancellation was completed.
     """
-    __slots__ = (u'consumer_tag')
+    __slots__ = (u'consumer_tag', )
 
     NAME = u'basic.cancel-ok'
 
@@ -2715,7 +2715,7 @@ class BasicDeliver(AMQPMethodPayload):
     the server responds with Deliver methods as and when messages arrive for that
     consumer.
     """
-    __slots__ = (u'consumer_tag', u'delivery_tag', u'redelivered', u'exchange', u'routing_key')
+    __slots__ = (u'consumer_tag', u'delivery_tag', u'redelivered', u'exchange', u'routing_key', )
 
     NAME = u'basic.deliver'
 
@@ -2797,7 +2797,7 @@ class BasicGet(AMQPMethodPayload):
     dialogue that is designed for specific types of application where synchronous
     functionality is more important than performance.
     """
-    __slots__ = (u'queue', u'no_ack')
+    __slots__ = (u'queue', u'no_ack', )
 
     NAME = u'basic.get'
 
@@ -2858,7 +2858,7 @@ class BasicGetOk(AMQPMethodPayload):
     delivered by 'get-ok' must be acknowledged unless the no-ack option was set in the
     get method.
     """
-    __slots__ = (u'delivery_tag', u'redelivered', u'exchange', u'routing_key', u'message_count')
+    __slots__ = (u'delivery_tag', u'redelivered', u'exchange', u'routing_key', u'message_count', )
 
     NAME = u'basic.get-ok'
 
@@ -2980,7 +2980,7 @@ class BasicNack(AMQPMethodPayload):
     confirm mode of unhandled messages.  If a publisher receives this method, it
     probably needs to republish the offending messages.
     """
-    __slots__ = (u'delivery_tag', u'multiple', u'requeue')
+    __slots__ = (u'delivery_tag', u'multiple', u'requeue', )
 
     NAME = u'basic.nack'
 
@@ -3047,7 +3047,7 @@ class BasicPublish(AMQPMethodPayload):
     to queues as defined by the exchange configuration and distributed to any active
     consumers when the transaction, if any, is committed.
     """
-    __slots__ = (u'exchange', u'routing_key', u'mandatory', u'immediate')
+    __slots__ = (u'exchange', u'routing_key', u'mandatory', u'immediate', )
 
     NAME = u'basic.publish'
 
@@ -3137,7 +3137,7 @@ class BasicQos(AMQPMethodPayload):
     qos method could in principle apply to both peers, it is currently meaningful only
     for the server.
     """
-    __slots__ = (u'prefetch_size', u'prefetch_count', u'global_')
+    __slots__ = (u'prefetch_size', u'prefetch_count', u'global_', )
 
     NAME = u'basic.qos'
 
@@ -3249,7 +3249,7 @@ class BasicReturn(AMQPMethodPayload):
     reply code and text provide information about the reason that the message was
     undeliverable.
     """
-    __slots__ = (u'reply_code', u'reply_text', u'exchange', u'routing_key')
+    __slots__ = (u'reply_code', u'reply_text', u'exchange', u'routing_key', )
 
     NAME = u'basic.return'
 
@@ -3324,7 +3324,7 @@ class BasicReject(AMQPMethodPayload):
     cancel large incoming messages, or return untreatable messages to their original
     queue.
     """
-    __slots__ = (u'delivery_tag', u'requeue')
+    __slots__ = (u'delivery_tag', u'requeue', )
 
     NAME = u'basic.reject'
 
@@ -3379,7 +3379,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
     specified channel. Zero or more messages may be redelivered.  This method
     is deprecated in favour of the synchronous Recover/Recover-Ok.
     """
-    __slots__ = (u'requeue')
+    __slots__ = (u'requeue', )
 
     NAME = u'basic.recover-async'
 
@@ -3432,7 +3432,7 @@ class BasicRecover(AMQPMethodPayload):
     specified channel. Zero or more messages may be redelivered.  This method
     replaces the asynchronous Recover.
     """
-    __slots__ = (u'requeue')
+    __slots__ = (u'requeue', )
 
     NAME = u'basic.recover'
 
@@ -3751,7 +3751,7 @@ class ConfirmSelect(AMQPMethodPayload):
     The client can only use this method on a non-transactional
     channel.
     """
-    __slots__ = (u'nowait')
+    __slots__ = (u'nowait', )
 
     NAME = u'confirm.select'
 

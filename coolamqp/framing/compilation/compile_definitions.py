@@ -310,6 +310,11 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
             is_content_static = len([f for f in method.fields if not f.reserved]) == 0
 
+            if len(non_reserved_fields) == 0:
+                slots = u''
+            else:
+                slots = (u', '.join(map(lambda f: frepr(format_field_name(f.name)), non_reserved_fields)))+u', '
+
             line('''\nclass %s(AMQPMethodPayload):
     """
     %s
@@ -329,7 +334,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
                  full_class_name,
                  to_docstring(method.label, method.docs),
-                 u', '.join(map(lambda f: frepr(format_field_name(f.name)), non_reserved_fields)),
+                 slots,
                  frepr(cls.name + '.' + method.name),
                  frepr(cls.index), frepr(method.index),
                  to_code_binary(struct.pack("!HH", cls.index, method.index)),

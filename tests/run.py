@@ -33,7 +33,8 @@ if __name__ == '__main__':
             pub2 = Publisher(Publisher.MODE_NOACK)
             pub2.attach(con)
             while True:
-                pub2.publish(Message(b'you dawg'), routing_key=b'siema-eniu')
+                pub2.publish(Message(b'you dawg', properties=MessageProperties(content_type='text/plain')),
+                             routing_key=b'siema-eniu')
 
 
     IPublishThread().start()

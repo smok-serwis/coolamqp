@@ -61,6 +61,18 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     mod.append(u'''
     """
+''')
+
+    if len(present_fields) == 0:
+        slots = u''
+    else:
+        slots = (u', '.join((u"u'%s'" % format_field_name(field.name) for field in present_fields)))+u', '
+
+    mod.append(u'''
+    __slots__ = (%s)
+''' % slots)
+
+    mod.append(u'''
     # A value for property flags that is used, assuming all bit fields are FALSE (0)
     ZERO_PROPERTY_FLAGS = %s
 ''' % (x, ))
@@ -106,5 +118,6 @@ def _compile_particular_content_property_list_class(zpf, fields):
 def compile_particular_content_property_list_class(zpf, fields):
     q = _compile_particular_content_property_list_class(zpf, fields)
     logger.debug('Compiling\n%s', q)
+    print(q)
     exec(q)
     return ParticularContentTypeList
