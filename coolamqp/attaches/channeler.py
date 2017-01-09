@@ -73,6 +73,7 @@ class Channeler(Attache):
         :param connection: Connection instance to use
         """
         super(Channeler, self).attach(connection)
+        assert self.connection is not None
         connection.call_on_connected(self.on_uplink_established)
 
     # ------- event handlers
@@ -178,6 +179,7 @@ class Channeler(Attache):
 
     def on_uplink_established(self):
         """Called by connection. Connection reports being ready to do things."""
+        assert self.connection is not None
         self.state = ST_SYNCING
         self.channel_id = self.connection.free_channels.pop()
 

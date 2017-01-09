@@ -21,7 +21,6 @@ class Heartbeater(object):
         self.connection.watch(AnyWatch(self.on_heartbeat))
 
     def on_heartbeat(self, frame):
-        print('Heart Beat!')
         self.last_heartbeat_on = monotonic.monotonic()
 
     def on_any_frame(self):
@@ -42,11 +41,9 @@ class Heartbeater(object):
     def on_timer(self):
         """Timer says we should send a heartbeat"""
         self.connection.send([AMQPHeartbeatFrame()], priority=True)
-        print('Timer')
 
         if (monotonic.monotonic() - self.last_heartbeat_on) > 2*self.heartbeat_interval:
             # closing because of heartbeat
-            print('TERMINATING BECAUSE NO HEARTBEAT!!!!')
             self.connection.send(None)
 
         self.connection.watchdog(self.heartbeat_interval, self.on_timer)

@@ -12,6 +12,7 @@ from __future__ import absolute_import, division, print_function
 
 import collections
 import logging
+import struct
 import warnings
 
 from coolamqp.framing.definitions import ChannelOpenOk, BasicPublish, Basic, BasicAck
@@ -25,7 +26,7 @@ except ImportError:
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch, FailWatch
-from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable
+from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
 
 from coolamqp.objects import Future
 
@@ -37,7 +38,7 @@ CnpubMessageSendOrder = collections.namedtuple('CnpubMessageSendOrder', ('messag
                                                                          'routing_key', 'future'))
 
 
-class Publisher(Channeler):
+class Publisher(Channeler, Synchronized):
     """
     An object that is capable of sucking into a Connection and sending messages.
     Depending on it's characteristic, it may process messages in:
@@ -51,6 +52,10 @@ class Publisher(Channeler):
                                   and emit a warning.
 
         Other modes may be added in the future.
+
+    Since this may be called by other threads than ListenerThread, this has locking.
+
+    _pub and on_fail are synchronized so that _pub doesn't see a partially destroyed class.
     """
     MODE_NOACK = 0      # no-ack publishing
     MODE_CNPUB = 1      # RabbitMQ publisher confirms extension
@@ -66,7 +71,9 @@ class Publisher(Channeler):
         :type mode: MODE_NOACK or MODE_CNPUB
         :raise ValueError: mode invalid
         """
-        super(Publisher, self).__init__()
+        Channeler.__init__(self)
+        Synchronized.__init__(self)
+
         if mode not in (Publisher.MODE_NOACK, Publisher.MODE_CNPUB):
             raise ValueError(u'Invalid publisher mode')
 
@@ -82,16 +89,22 @@ class Publisher(Channeler):
         super(Publisher, self).attach(connection)
         connection.watch(FailWatch(self.on_fail))
 
+    @Synchronized.synchronized
     def on_fail(self):
         """
         Registered as a fail watch for connection
         """
         self.state = ST_OFFLINE
         self.connection = None
+        print('Publisher is FAILED')
 
+    @Synchronized.synchronized
     def _pub(self, message, exchange_name, routing_key):
         """
-        Just send the message. Sends BasicDeliver + header + body
+        Just send the message. Sends BasicDeliver + header + body.
+
+        BECAUSE OF publish THIS CAN GET CALLED BY FOREIGN THREAD.
+
         :param message: Message instance
         :param exchange_name: exchange to use
         :param routing_key: routing key to use

@@ -54,6 +54,13 @@ class BaseSocket(object):
         :param priority: preempt other datas. Property of sending data atomically will be maintained.
         """
         if self.is_failed: return
+
+        if data is None:
+            # THE POPE OF NOPE
+            self.priority_queue = collections.deque()
+            self.data_to_send = collections.deque([None])
+            return
+
         if priority:
             self.priority_queue.append(data)
         else:

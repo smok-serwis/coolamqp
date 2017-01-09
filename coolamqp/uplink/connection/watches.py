@@ -56,7 +56,7 @@ class AnyWatch(Watch):
     as it wants.
     """
     def __init__(self, callable):
-        Watch.__init__(self, None, False)
+        super(AnyWatch, self).__init__(None, False)
         self.callable = callable
 
     def is_triggered_by(self, frame):
@@ -69,16 +69,14 @@ class FailWatch(Watch):
     A special kind of watch that fires when connection has died
     """
     def __init__(self, callable):
-        Watch.__init__(self, None, True)
+        super(FailWatch, self).__init__(None, True)
         self.callable = callable
 
     def is_triggered_by(self, frame):
         return False
 
-    def fire(self):
-        """
-        Connection failed!
-        """
+    def failed(self):
+        """Connection failed!"""
         self.callable()
 
 

@@ -10,7 +10,7 @@ from __future__ import print_function, absolute_import, division
 import six
 import logging
 
-from coolamqp.uplink import FailWatch, Connection
+from coolamqp.uplink import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +31,13 @@ class SingleNodeReconnector(object):
     def connect(self):
         assert self.connection is None
 
-        # Initiate connecting
+        # Initiate connecting - this order is very important!
         self.connection = Connection(self.node_def, self.listener_thread)
-        self.connection.start()
-        self.connection.watch(FailWatch(self.on_fail))
         self.attache_group.attach(self.connection)
+        self.connection.start()
+        self.connection.add_finalizer(self.on_fail)
 
     def on_fail(self):
-        logger.info('Reconnecting...')
+        print('I am failed, but will recover!')
         self.connection = None
         self.connect()

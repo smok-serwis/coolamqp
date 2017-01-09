@@ -28,8 +28,15 @@ class EpollSocket(BaseSocket):
         self.priority_queue = collections.deque()
 
     def send(self, data, priority=False):
+        """
+        This can actually get called not by ListenerThread.
+        """
         BaseSocket.send(self, data, priority=priority)
-        self.listener.epoll.modify(self, RW)
+        try:
+            self.listener.epoll.modify(self, RW)
+        except socket.error:
+            # silence. If there are errors, it's gonna get nuked soon.
+            pass
 
     def oneshot(self, seconds_after, callable):
         """

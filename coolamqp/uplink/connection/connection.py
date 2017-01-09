@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import collections
+import time
 import socket
 import six
 
@@ -52,6 +53,9 @@ class Connection(object):
         self.watches = {}    # channel => list of [Watch instance]
         self.any_watches = []   # list of Watches that should check everything
 
+        self.finalizers = []
+
+
         self.state = ST_CONNECTING
 
         self.callables_on_connected = []    # list of callable/0
@@ -87,10 +91,21 @@ class Connection(object):
         """
         Start processing events for this connect. Create the socket,
         transmit 'AMQP\x00\x00\x09\x01' and roll.
+
+        Warning: This will block for as long as the TCP connection setup takes.
         """
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.node_definition.host, self.node_definition.port))
+
+        while True:
+            try:
+                sock.connect((self.node_definition.host, self.node_definition.port))
+            except socket.error as e:
+                print(e)
+                time.sleep(0.5) # Connection refused? Very bad things?
+            else:
+                break
+
         sock.settimeout(0)
         sock.send('AMQP\x00\x00\x09\x01')
 
@@ -100,6 +115,19 @@ class Connection(object):
                                                             on_fail=self.on_fail)
         self.sendf = SendingFramer(self.listener_socket.send)
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk), self.on_connection_close)
+
+    def add_finalizer(self, callable):
+        """
+        Add a callable to be executed when all watches were failed and we're really going down.
+
+        Finalizers are not used for logic stuff, but for situations like making TCP reconnects.
+        When we are making a reconnect, we need to be sure that all watches fired - so logic is intact.
+
+        DO NOT PUT CALLABLES THAT HAVE TO DO WITH STATE THINGS, ESPECIALLY ATTACHES.
+
+        :param callable: callable/0
+        """
+        self.finalizers.append(callable)
 
     def on_fail(self):
         """
@@ -128,12 +156,17 @@ class Connection(object):
         self.watches = {}                       # Clear the watch list
         self.any_watches = []
 
+        # call finalizers
+        for finalizer in self.finalizers:
+            finalizer()
+
     def on_connection_close(self, payload):
         """
         Server attempted to close the connection.. or maybe we did?
 
         Called by ListenerThread.
         """
+        print('We are GOING DOOOWN')
         self.on_fail()      # it does not make sense to prolong the agony
 
         if isinstance(payload, ConnectionClose):
@@ -153,11 +186,6 @@ class Connection(object):
         :param reason: optional human-readable reason for this action
         """
         if frames is not None:
-            for frame in frames:
-                if isinstance(frame, AMQPMethodFrame):
-                    print('Sending ', frame.payload)
-                else:
-                    print('Sending ', frame)
             self.sendf.send(frames, priority=priority)
         else:
             # Listener socket will kill us when time is right

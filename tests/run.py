@@ -36,6 +36,7 @@ if __name__ == '__main__':
             while True:
                 pub2.publish(Message(b'you dawg', properties=MessageProperties(content_type='text/plain')),
                              routing_key=b'siema-eniu')
+                time.sleep(0.1)
 
     IPublishThread(ag).start()
 

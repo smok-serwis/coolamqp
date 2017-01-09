@@ -3,6 +3,7 @@ from __future__ import print_function, absolute_import, division
 import six
 import logging
 import threading
+import functools
 
 logger = logging.getLogger(__name__)
 
@@ -203,3 +204,30 @@ class AtomicTagger(object):
         with self.lock:
             self.next_tag += 1
             return self.next_tag - 1
+
+
+class Synchronized(object):
+    """
+    I have a lock and can sync on it. Use like:
+
+    class Synced(Synchronized):
+
+        @synchronized
+        def mandatorily_a_instance_method(self, ...):
+            ...
+
+    """
+
+    def __init__(self):
+        self._monitor_lock = threading.Lock()
+
+    @staticmethod
+    def synchronized(fun):
+        @functools.wraps(fun)
+        def monitored(*args, **kwargs):
+            with args[0]._monitor_lock:
+                return fun(*args, **kwargs)
+
+        return monitored
+
+
