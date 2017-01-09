@@ -47,6 +47,9 @@ class Consumer(Channeler):
         self.cancelled = False  # did the client want to STOP using this consumer?
         self.receiver = None  # MessageReceiver instance
 
+        self.attache_group = None   # attache group this belongs to.
+                                    # if this is not None, then it has an attribute
+                                    # on_cancel_customer(Consumer instance)
 
     def cancel(self):
         """
@@ -59,6 +62,9 @@ class Consumer(Channeler):
         """
         self.cancelled = True
         self.method(ChannelClose(0, b'consumer cancelled', 0, 0))
+        if self.attache_group is not None:
+            self.attache_group.on_cancel_customer(self)
+
 
     def on_operational(self, operational):
         super(Consumer, self).on_operational(operational)
@@ -200,8 +206,6 @@ class Consumer(Channeler):
 
             self.state = ST_ONLINE
             self.on_operational(True)
-
-
 
 
 
