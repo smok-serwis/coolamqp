@@ -18,7 +18,26 @@ ST_SYNCING = 1  # A process targeted at consuming has been started
 ST_ONLINE = 2   # Consumer is declared all right
 
 
-class Channeler(object):
+
+class Attache(object):
+    """
+    Something that can be attached to connection.
+    """
+    def __init__(self):
+        self.cancelled = False      #: public, if this is True, it won't be attached to next connection
+        self.state = ST_OFFLINE
+        self.connection = None
+
+    def attach(self, connection):
+        """
+        Attach to a connection.
+
+        :param connection: Connection instance of any state
+        """
+        self.connection = connection
+
+
+class Channeler(Attache):
     """
     A base class for Consumer/Publisher implementing link set up and tear down.
 
@@ -44,8 +63,7 @@ class Channeler(object):
         """
         [EXTEND ME!]
         """
-        self.state = ST_OFFLINE
-        self.connection = None
+        super(Channeler, self).__init__()
         self.channel_id = None      # channel obtained from Connection
 
     def attach(self, connection):
@@ -54,7 +72,7 @@ class Channeler(object):
 
         :param connection: Connection instance to use
         """
-        self.connection = connection
+        super(Channeler, self).attach(connection)
         connection.call_on_connected(self.on_uplink_established)
 
     # ------- event handlers
