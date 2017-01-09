@@ -302,6 +302,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             # annotate types
             method.fields = [field._replace(basic_type=domain_to_basic_type[field.type]) for field in method.fields]
 
+            non_reserved_fields = [field for field in method.fields if not field.reserved]
+
             is_static = method.is_static()
             if is_static:
                 static_size = get_size(method.fields)
@@ -312,6 +314,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     """
     %s
     """
+    __slots__ = (%s)
+
     NAME = %s
 
     INDEX = (%s, %s)          # (Class ID, Method ID)
@@ -322,8 +326,10 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     IS_SIZE_STATIC = %s     # this means that argument part has always the same length
     IS_CONTENT_STATIC = %s  # this means that argument part has always the same content
 ''',
+
                  full_class_name,
                  to_docstring(method.label, method.docs),
+                 u', '.join(map(lambda f: frepr(format_field_name(f.name)), non_reserved_fields)),
                  frepr(cls.name + '.' + method.name),
                  frepr(cls.index), frepr(method.index),
                  to_code_binary(struct.pack("!HH", cls.index, method.index)),
@@ -358,7 +364,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
                 line('    ]\n')
 
-            non_reserved_fields = [field for field in method.fields if not field.reserved]
+
 
             # constructor
             line('''\n    def __init__(%s):

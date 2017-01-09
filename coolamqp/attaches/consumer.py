@@ -28,10 +28,10 @@ class Consumer(Channeler):
     Since this implies cancelling the consumer, here you go.
     """
 
-    def __init__(self, queue, no_ack=True, qos=None, dont_pause=False):
+    def __init__(self, queue, no_ack=True, qos=None, dont_pause=False,
+                 future_to_notify=None
+                 ):
         """
-        To be instantiated only by Cluster
-
         :param state: state of the consumer
         :param queue: Queue object, being consumed from right now.
             Note that name of anonymous queue might change at any time!
