@@ -2,12 +2,12 @@
 from __future__ import absolute_import, division, print_function
 from coolamqp.uplink import ListenerThread
 import time, logging, threading
-from coolamqp.messages import Message, MessageProperties
+from coolamqp.objects import Message, MessageProperties
 from coolamqp.connection import NodeDefinition
 from coolamqp.uplink import Connection
 
 from coolamqp.attaches import Consumer, Publisher, MODE_NOACK, MODE_CNPUB
-from coolamqp.messages import Queue
+from coolamqp.objects import Queue
 import time
 
 

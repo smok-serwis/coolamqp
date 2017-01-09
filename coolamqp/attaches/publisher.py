@@ -27,8 +27,7 @@ from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable
 
-from coolamqp.futures import Future
-
+from coolamqp.objects import Future
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +117,11 @@ class Publisher(Channeler):
         while len(self.messages) > 0:
             msg, xchg, rk, fut = self.messages.popleft()
 
+            if fut.cancelled:
+                # Ok, don't do this.
+                fut.set_cancel()
+                continue
+
             self.tagger.deposit(self.tagger.get_key(), FutureConfirmableRejectable(fut))
             self._pub(msg, xchg, rk)
 
@@ -142,6 +146,8 @@ class Publisher(Channeler):
             this function will return a Future. Future can end either with success (result will be None),
             or exception (a plain Exception instance). Exception will happen when broker NACKs the message:
             that, according to RabbitMQ, means an internal error in Erlang process.
+
+            Returned Future can be cancelled - this will prevent from sending the message, if it hasn't commenced yet.
 
         If mode is MODE_NOACK:
             this function returns None. Messages are dropped on the floor if there's no connection.

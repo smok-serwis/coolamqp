@@ -275,7 +275,7 @@ class MessageReceiver(object):
             if ack_expected:
                 self.acks_pending.add(self.bdeliver.delivery_tag)
 
-            from coolamqp.messages import ReceivedMessage
+            from coolamqp.objects import ReceivedMessage
             rm = ReceivedMessage(
                 b''.join(map(six.binary_type, self.body)), #todo inefficient as FUUUCK
                 self.bdeliver.exchange,

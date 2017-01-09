@@ -1,18 +1,29 @@
 # coding=UTF-8
+"""
+Core objects used in CoolAMQP
+"""
+import threading
 import uuid
 import six
+import logging
+import concurrent.futures
 
 from coolamqp.framing.definitions import BasicContentPropertyList as MessageProperties
 
+__all__ = ('Message', 'ReceivedMessage', 'MessageProperties', 'Queue', 'Exchange', 'Future')
 
-__all__ = ('Message', 'ReceivedMessage', 'MessageProperties')
-
+logger = logging.getLogger(__name__)
 
 EMPTY_PROPERTIES = MessageProperties()
 
 
 class Message(object):
-    """AMQP message object"""
+    """
+    An AMQP message. Has a binary body, and some properties.
+
+    Properties is a highly regularized class - see coolamqp.framing.definitions.BasicContentPropertyList
+    for a list of possible properties.
+    """
 
     def __init__(self, body, properties=None):
         """
@@ -34,7 +45,14 @@ class Message(object):
 LAMBDA_NONE = lambda: None
 
 class ReceivedMessage(Message):
-    """Message as received from AMQP system"""
+    """
+    A message that was received from the AMQP broker.
+
+    It additionally has an exchange name, routing key used, it's delivery tag,
+    and methods for ack() or nack().
+
+    Note that if the consumer that generated this message was no_ack, .ack() and .nack() are no-ops.
+    """
 
     def __init__(self, body, exchange_name, routing_key,
                  properties=None,
@@ -125,3 +143,77 @@ class Queue(object):
 
     def __hash__(self):
         return hash(self.name)
+
+
+class Future(concurrent.futures.Future):
+    """
+    Future returned by asynchronous CoolAMQP methods.
+
+    A strange future (only one thread may wait for it)
+    """
+    __slots__ = ('lock', 'completed', 'successfully', '_result', 'running', 'callables', 'cancelled')
+
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.lock.acquire()
+
+        self.completed = False
+        self.successfully = None
+        self._result = None
+        self.cancelled = False
+        self.running = True
+
+        self.callables = []
+
+    def add_done_callback(self, fn):
+        self.callables.append(fn)
+
+    def result(self, timeout=None):
+        assert timeout is None, u'Non-none timeouts not supported'
+        self.lock.acquire()
+
+        if self.completed:
+            if self.successfully:
+                return self._result
+            else:
+                raise self._result
+        else:
+            if self.cancelled:
+                raise concurrent.futures.CancelledError()
+            else:
+                # it's invalid to release the lock, not do the future if it's not cancelled
+                raise RuntimeError(u'Invalid state!')
+
+    def cancel(self):
+        """
+        When cancelled, future will attempt not to complete (completed=False).
+        :return:
+        """
+        self.cancelled = True
+
+    def __finish(self, result, successful):
+        self.completed = True
+        self.successfully = successful
+        self._result = result
+        self.lock.release()
+
+        for callable in self.callables:
+            try:
+                callable(self)
+            except Exception as e:
+                logger.error('Exception in base order future: %s', repr(e))
+            except BaseException as e:
+                logger.critical('WILD NASAL DEMON APPEARED: %s', repr(e))
+
+    def set_result(self, result=None):
+        self.__finish(result, True)
+
+    def set_exception(self, exception):
+        self.__finish(exception, False)
+
+    def set_cancel(self):
+        """Executor has seen that this is cancelled, and discards it from list of things to do"""
+        assert self.cancelled
+        self.completed = False
+        self.lock.release()
