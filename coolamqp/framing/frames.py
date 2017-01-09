@@ -5,6 +5,7 @@ Concrete frame definitions
 from __future__ import absolute_import, division, print_function
 
 import struct
+import six
 
 from coolamqp.framing.base import AMQPFrame
 from coolamqp.framing.definitions import FRAME_METHOD, FRAME_HEARTBEAT, FRAME_BODY, FRAME_HEADER, FRAME_END, \
@@ -88,11 +89,14 @@ class AMQPHeaderFrame(AMQPFrame):
 class AMQPBodyFrame(AMQPFrame):
     FRAME_TYPE = FRAME_BODY
 
+    FRAME_SIZE_WITHOUT_PAYLOAD = 8
+
     def __init__(self, channel, data):
         """
         :type data: binary
         """
         AMQPFrame.__init__(self, channel)
+        assert isinstance(data, (six.binary_type, buffer, memoryview))
         self.data = data
 
     def write_to(self, buf):

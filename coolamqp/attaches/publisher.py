@@ -9,26 +9,36 @@ If you use a broker that doesn't support these, just don't use MODE_CNPUB. CoolA
 to check with the broker beforehand.
 """
 from __future__ import absolute_import, division, print_function
-import six
-import warnings
-import logging
+
 import collections
-from coolamqp.framing.definitions import ChannelOpenOk
+import logging
+import warnings
+
+from coolamqp.framing.definitions import ChannelOpenOk, BasicPublish, Basic, BasicAck
+from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, AMQPHeaderFrame
 
 try:
     # these extensions will be available
-    from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk
+    from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk, BasicNack
 except ImportError:
     pass
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
-from coolamqp.uplink import PUBLISHER_CONFIRMS
+from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch
+from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable
+
+from coolamqp.futures import Future
 
 
 logger = logging.getLogger(__name__)
 
 MODE_NOACK = 0
 MODE_CNPUB = 1  # this will be available only if suitable extensions were used
+
+
+# for holding messages when MODE_CNPUB and link is down
+CnpubMessageSendOrder = collections.namedtuple('CnpubMessageSendOrder', ('message', 'exchange_name',
+                                                                         'routing_key', 'future'))
 
 
 class Publisher(Channeler):
@@ -67,52 +77,101 @@ class Publisher(Channeler):
                                             # tuple of (Message object, exchange name::str, routing_key::str,
                                             #           Future to confirm or None, flags as tuple|empty tuple
 
-        self.delivery_tag = 0       # next delivery tag
+        self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
 
+    def _pub(self, message, exchange_name, routing_key):
+        """
+        Just send the message. Sends BasicDeliver + header + body
+        :param message: Message instance
+        :param exchange_name: exchange to use
+        :param routing_key: routing key to use
+        :type exchange_name: bytes
+        :param routing_key: bytes
+        """
+        # Break down large bodies
+        bodies = []
+
+        body = buffer(message.body)
+        max_body_size = self.connection.frame_max - AMQPBodyFrame.FRAME_SIZE_WITHOUT_PAYLOAD
+        while len(body) > 0:
+            bodies.append(buffer(body, 0, max_body_size))
+            body = buffer(body, max_body_size)
+
+        self.connection.send([
+            AMQPMethodFrame(self.channel_id, BasicPublish(exchange_name, routing_key, False, False)),
+            AMQPHeaderFrame(self.channel_id, Basic.INDEX, 0, len(message.body), message.properties)
+        ])
+
+        # todo optimize it - if there's only one frame it can with previous send
+        for body in bodies:
+            self.connection.send([AMQPBodyFrame(self.channel_id, body)])
+
+    def _mode_cnpub_process_deliveries(self):
+        """
+        Dispatch all frames that are waiting to be sent
+
+        To be used when  mode is MODE_CNPUB and we just got ST_ONLINE
+        """
+        assert self.state == ST_ONLINE
+        assert self.mode == MODE_CNPUB
+
+        while len(self.messages) > 0:
+            msg, xchg, rk, fut = self.messages.popleft()
+
+            self.tagger.deposit(self.tagger.get_key(), FutureConfirmableRejectable(fut))
+            self._pub(msg, xchg, rk)
+
+    def _on_cnpub_delivery(self, payload):
+        """
+        This gets called on BasicAck and BasicNack, if mode is MODE_CNPUB
+        """
+        assert self.mode == MODE_CNPUB
+
+        print('Got %s with dt=%s' % (payload, payload.delivery_tag))
+
+        if isinstance(payload, BasicAck):
+            self.tagger.ack(payload.delivery_tag, payload.multiple)
+        elif isinstance(payload, BasicNack):
+            self.tagger.nack(payload.delivery_tag, payload.multiple)
 
     def publish(self, message, exchange_name=b'', routing_key=b''):
         """
         Schedule to have a message published.
 
+        If mode is MODE_CNPUB:
+            this function will return a Future. Future can end either with success (result will be None),
+            or exception (a plain Exception instance). Exception will happen when broker NACKs the message:
+            that, according to RabbitMQ, means an internal error in Erlang process.
+
+        If mode is MODE_NOACK:
+            this function returns None. Messages are dropped on the floor if there's no connection.
+
         :param message: Message object to send
         :param exchange_name: exchange name to use. Default direct exchange by default
         :param routing_key: routing key to use
-        :return: a Future object symbolizing delivering the message to AMQP (or any else guarantees publisher mode
-            will make).
-            This is None when mode is noack
+        :return: a Future instance, or None
         """
         # Formulate the request
         if self.mode == MODE_NOACK:
-
             # If we are not connected right now, drop the message on the floor and log it with DEBUG
             if self.state != ST_ONLINE:
                 logger.debug(u'Publish request, but not connected - dropping the message')
             else:
-                # Dispatch!
-                pass
+                self._pub(message, exchange_name, routing_key)
 
+        elif self.mode == MODE_CNPUB:
+            fut = Future()
 
+            #todo can optimize this not to create an object if ST_ONLINE already
+            cnpo = CnpubMessageSendOrder(message, exchange_name, routing_key, fut)
+            self.messages.append(cnpo)
 
-            self.messages.append((
-                message,
-                exchange_name,
-                routing_key,
-                None,
-                ()
-            ))
-        else:
-            fut = u'banana banana banana'
-            self.messages.append((
-                message,
-                exchange_name,
-                routing_key,
-                fut
-            ))
+            if self.state == ST_ONLINE:
+                self._mode_cnpub_process_deliveries()
+
             return fut
-
-        # Attempt dispatching messages as possible
-        if self.mode == MODE_NOACK:
-            pass
+        else:
+            raise Exception(u'Invalid mode')
 
     def on_setup(self, payload):
 
@@ -142,5 +201,11 @@ class Publisher(Channeler):
                 self.state = ST_ONLINE
                 self.on_operational(True)
 
+                self.tagger = AtomicTagger()
 
+                # now we need to listen for BasicAck and BasicNack
 
+                mw = MethodWatch(self.channel_id, (BasicAck, BasicNack), self._on_cnpub_delivery)
+                mw.oneshot = False
+                self.connection.watch(mw)
+                self._mode_cnpub_process_deliveries()

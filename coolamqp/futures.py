@@ -8,10 +8,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class BaseOrder(concurrent.futures.Future):
+class Future(concurrent.futures.Future):
     """
-    A strange future - only one thread may .wait() for it.
-    And it's for the best.
+    A strange future (only one thread may wait for it)
     """
     def __init__(self):
         self.lock = threading.Lock()
@@ -19,7 +18,7 @@ class BaseOrder(concurrent.futures.Future):
 
         self.completed = False
         self.successfully = None
-        self.result = None
+        self._result = None
         self.cancelled = False
         self.running = True
 
@@ -28,13 +27,33 @@ class BaseOrder(concurrent.futures.Future):
     def add_done_callback(self, fn):
         self.callables.append(fn)
 
+    def result(self, timeout=None):
+        assert timeout is None, u'Non-none timeouts not supported'
+        self.lock.acquire()
+
+        if self.completed:
+            if self.successfully:
+                return self._result
+            else:
+                raise self._result
+        else:
+            if self.cancelled:
+                raise concurrent.futures.CancelledError()
+            else:
+                # it's invalid to release the lock, not do the future if it's not cancelled
+                raise RuntimeError(u'Invalid state!')
+
     def cancel(self):
+        """
+        When cancelled, future will attempt not to complete (completed=False).
+        :return:
+        """
         self.cancelled = True
 
     def __finish(self, result, successful):
         self.completed = True
         self.successfully = successful
-        self.result = result
+        self._result = result
         self.lock.release()
 
         for callable in self.callables:
@@ -50,22 +69,3 @@ class BaseOrder(concurrent.futures.Future):
 
     def set_exception(self, exception):
         self.__finish(exception, False)
-
-
-class SendMessage(BaseOrder):
-    """
-    An order to send a message somewhere, such that message will survive disconnects
-    from broker and so on.
-    """
-    def __init__(self, message, exchange_name, routing_key):
-        """
-        :param message: Message object to send
-        :param exchange_name: bytes, name of exchange
-        :param routing_key: bytes, routing key
-        """
-        BaseOrder.__init__(self)
-
-        self.message = message
-        self.exchange_name = exchange_name
-        self.routing_key = routing_key
-

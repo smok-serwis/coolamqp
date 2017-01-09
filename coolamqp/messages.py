@@ -2,6 +2,14 @@
 import uuid
 import six
 
+from coolamqp.framing.definitions import BasicContentPropertyList as MessageProperties
+
+
+__all__ = ('Message', 'ReceivedMessage', 'MessageProperties')
+
+
+EMPTY_PROPERTIES = MessageProperties()
+
 
 class Message(object):
     """AMQP message object"""
@@ -14,12 +22,13 @@ class Message(object):
 
         :param body: stream of octets
         :type body: str (py2) or bytes (py3)
-        :param properties: AMQP properties to be sent along
+        :param properties: AMQP properties to be sent along.
+                           default is 'no properties at all'
         """
         if isinstance(body, six.text_type):
             raise TypeError('body cannot be a text type!')
         self.body = six.binary_type(body)
-        self.properties = properties or {}
+        self.properties = properties or EMPTY_PROPERTIES
 
 
 LAMBDA_NONE = lambda: None

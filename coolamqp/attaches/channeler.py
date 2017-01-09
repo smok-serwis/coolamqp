@@ -13,7 +13,6 @@ from coolamqp.framing.definitions import ChannelOpen, ChannelOpenOk, BasicConsum
 from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
 
 
-
 ST_OFFLINE = 0  # Consumer is *not* consuming, no setup attempts are being made
 ST_SYNCING = 1  # A process targeted at consuming has been started
 ST_ONLINE = 2   # Consumer is declared all right

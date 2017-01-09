@@ -63,9 +63,12 @@ def _compile_particular_content_property_list_class(zpf, fields):
     """
     # A value for property flags that is used, assuming all bit fields are FALSE (0)
     ZERO_PROPERTY_FLAGS = %s
+''' % (x, ))
 
+    if len(present_fields) > 0:
+        mod.append(u'''
     def __init__(self, %s):
-''' % (x, u', '.join(format_field_name(field.name) for field in present_fields)))
+''' % (u', '.join(format_field_name(field.name) for field in present_fields)))
 
     for field in present_fields:
         mod.append(u'        self.%s = %s\n'.replace(u'%s', format_field_name(field.name)))

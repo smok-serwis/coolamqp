@@ -144,15 +144,20 @@ class Connection(object):
 
     def send(self, frames, priority=False):
         """
+        Schedule to send some frames.
+
+        Take care: This won't stop you from sending frames larger tham frame_max.
+        Broker will probably close the connection if he sees that.
+
         :param frames: list of frames or None to close the link
         :param reason: optional human-readable reason for this action
         """
         if frames is not None:
-            # for frame in frames:
-            #     if isinstance(frame, AMQPMethodFrame):
-            #         print('Sending ', frame.payload)
-            #     else:
-            #         print('Sending ', frame)
+            for frame in frames:
+                if isinstance(frame, AMQPMethodFrame):
+                    print('Sending ', frame.payload)
+                else:
+                    print('Sending ', frame)
             self.sendf.send(frames, priority=priority)
         else:
             # Listener socket will kill us when time is right
@@ -169,10 +174,10 @@ class Connection(object):
 
         :param frame: AMQPFrame that was received
         """
-        # if isinstance(frame, AMQPMethodFrame):      # temporary, for debugging
-        #     print('RECEIVED', frame.payload.NAME)
-        # else:
-        #     print('RECEIVED ', frame)
+        if isinstance(frame, AMQPMethodFrame):      # temporary, for debugging
+            print('RECEIVED', frame.payload.NAME)
+        else:
+            print('RECEIVED ', frame)
 
         watch_handled = False   # True if ANY watch handled this
 

@@ -25,23 +25,19 @@ class ConfirmableRejectable(object):
         :return: don't care
         """
 
-class ManualConfirmableRejectable(ConfirmableRejectable):
+class FutureConfirmableRejectable(ConfirmableRejectable):
     """
-    A callback-based way to create ConfirmableRejectable objects
+    A ConfirmableRejectable that can result a future (with None),
+    or Exception it with a message
     """
-    def __init__(self, on_ack, on_nack):
-        """
-        :param on_ack: callable/0, will be called on .confirm
-        :param on_nack: callable/0, will be called on .reject
-        """
-        self.on_ack = on_ack
-        self.on_nack = on_nack
+    def __init__(self, future):
+        self.future = future
 
     def confirm(self):
-        self.on_ack()
+        self.future.set_result()
 
     def reject(self):
-        self.on_nack()
+        self.future.set_exception(Exception())
 
 
 class AtomicTagger(object):
