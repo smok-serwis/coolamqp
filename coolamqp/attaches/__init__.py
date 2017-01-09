@@ -8,6 +8,8 @@ The attache becomes then responsible for closing this channel.
 Attache should also register at least one on_fail watch, so it can handle things if they go south.
 
 Multiple attaches can be "abstracted" as single one via AttacheGroup (which is also an Attache)
+
+EVERYTHING HERE IS CALLED BY LISTENER THREAD UNLESS STATED OTHERWISE.
 """
 
 from coolamqp.attaches.consumer import Consumer

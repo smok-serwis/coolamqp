@@ -118,16 +118,16 @@ class Channeler(Attache):
 
         if payload is None:
             # Connection went down HARD
-            self.connection.free_channels.put(self.channel_id)
+            self.connection.free_channels.append(self.channel_id)
             self.channel_id = None
         elif isinstance(payload, ChannelClose):
             # We have failed
             print('Channel close: RC=%s RT=%s', payload.reply_code, payload.reply_text)
-            self.connection.free_channels.put(self.channel_id)
+            self.connection.free_channels.append(self.channel_id)
             self.channel_id = None
 
         elif isinstance(payload, ChannelCloseOk):
-            self.connection.free_channels.put(self.channel_id)
+            self.connection.free_channels.append(self.channel_id)
             self.channel_id = None
         else:
             raise Exception('Unrecognized payload - did you forget to handle something? :D')

@@ -4,6 +4,7 @@ import six
 import logging
 import select
 import monotonic
+import socket
 import collections
 import heapq
 

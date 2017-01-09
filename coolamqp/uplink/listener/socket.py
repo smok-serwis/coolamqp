@@ -37,8 +37,13 @@ class BaseSocket(object):
         self.data_to_send = collections.deque()
         self.priority_queue = collections.deque()   # when a piece of data is finished, this queue is checked first
         self.my_on_read = on_read
-        self.on_fail = on_fail
+        self._on_fail = on_fail
         self.on_time = on_time
+        self.is_failed = False
+
+    def on_fail(self):
+        self.is_failed = True
+        self._on_fail()
 
     def send(self, data, priority=True):
         """
@@ -48,6 +53,7 @@ class BaseSocket(object):
             Note that data will be sent atomically, ie. without interruptions.
         :param priority: preempt other datas. Property of sending data atomically will be maintained.
         """
+        if self.is_failed: return
         if priority:
             self.priority_queue.append(data)
         else:
@@ -71,6 +77,7 @@ class BaseSocket(object):
 
     def on_read(self):
         """Socket is readable, called by Listener"""
+        if self.is_failed: return
         try:
             data = self.sock.recv(2048)
         except (IOError, socket.error):
@@ -90,6 +97,7 @@ class BaseSocket(object):
         :raises SocketFailed: on socket error
         :return: True if I'm done sending shit for now
         """
+        if self.is_failed: return
 
         while True:
             if len(self.data_to_send) == 0:

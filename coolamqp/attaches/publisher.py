@@ -24,7 +24,7 @@ except ImportError:
     pass
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
-from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch
+from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch, FailWatch
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable
 
 from coolamqp.objects import Future
@@ -77,6 +77,17 @@ class Publisher(Channeler):
                                             #           Future to confirm or None, flags as tuple|empty tuple
 
         self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
+
+    def attach(self, connection):
+        super(Publisher, self).attach(connection)
+        connection.watch(FailWatch(self.on_fail))
+
+    def on_fail(self):
+        """
+        Registered as a fail watch for connection
+        """
+        self.state = ST_OFFLINE
+        self.connection = None
 
     def _pub(self, message, exchange_name, routing_key):
         """

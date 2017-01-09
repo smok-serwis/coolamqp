@@ -35,12 +35,10 @@ class AttacheGroup(Attache):
         :param attache: Attache instance
         """
         assert attache not in self.attaches
-        print('Adding %s' % (attache, ))
         self.attaches.append(attache)
 
         # If we have any connection, and it's not dead, attach
         if self.connection is not None and self.connection.state != ST_OFFLINE:
-            print('Attach to me %s' % (attache, ))
             attache.attach(self.connection)
 
         if isinstance(attache, Consumer):
@@ -67,7 +65,6 @@ class AttacheGroup(Attache):
         for attache in self.attaches:
             if not attache.cancelled:
                 if attache.connection != connection:
-                    print('Attach to me %s' % (attache, ))
                     attache.attach(connection)
 
 

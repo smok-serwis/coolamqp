@@ -72,6 +72,9 @@ class FailWatch(Watch):
         Watch.__init__(self, None, True)
         self.callable = callable
 
+    def is_triggered_by(self, frame):
+        return False
+
     def fire(self):
         """
         Connection failed!

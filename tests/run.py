@@ -7,6 +7,7 @@ from coolamqp.uplink import Connection
 
 from coolamqp.attaches import Consumer, Publisher, AttacheGroup
 from coolamqp.objects import Queue
+from coolamqp.persistence import SingleNodeReconnector
 import time
 
 
@@ -17,13 +18,11 @@ if __name__ == '__main__':
     lt = ListenerThread()
     lt.start()
 
-    con = Connection(NODE, lt)
-    con.start()
-
     ag = AttacheGroup()
+    snr = SingleNodeReconnector(NODE, ag, lt)
+    snr.connect()
 
     ag.add(Consumer(Queue('siema-eniu'), no_ack=True))
-
 
     class IPublishThread(threading.Thread):
         def __init__(self, ag):
@@ -37,8 +36,6 @@ if __name__ == '__main__':
             while True:
                 pub2.publish(Message(b'you dawg', properties=MessageProperties(content_type='text/plain')),
                              routing_key=b'siema-eniu')
-
-    ag.attach(con)
 
     IPublishThread(ag).start()
 
