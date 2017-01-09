@@ -39,6 +39,9 @@ if __name__ == '__main__':
     IPublishThread().start()
 
     while True:
-        time.sleep(10)
+        time.sleep(30)
+
+        if not cons.cancelled:
+            cons.cancel()
 
     lt.terminate()

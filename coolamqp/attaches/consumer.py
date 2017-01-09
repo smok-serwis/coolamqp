@@ -48,6 +48,18 @@ class Consumer(Channeler):
         self.receiver = None  # MessageReceiver instance
 
 
+    def cancel(self):
+        """
+        Cancel the customer.
+
+        Note that this is a departure form AMQP specification. We don't attempt to cancel the customer,
+        we simply trash the channel. Idk if it's a good idea...
+
+        .ack() or .nack() for messages from this customer will have no effect.
+        """
+        self.cancelled = True
+        self.method(ChannelClose(0, b'consumer cancelled', 0, 0))
+
     def on_operational(self, operational):
         super(Consumer, self).on_operational(operational)
 
@@ -88,6 +100,8 @@ class Consumer(Channeler):
             super(Consumer, self).on_close(payload)
         else:
             super(Consumer, self).on_close(payload)
+
+        should_retry = should_retry and (not self.cancelled)
 
         if should_retry:
             self.attach(self.connection)
@@ -238,6 +252,9 @@ class MessageReceiver(object):
         def callable():
             if self.state == 3:
                 return  # Gone!
+
+            if self.consumer.cancelled:
+                return # cancelled!
 
             if delivery_tag not in self.acks_pending:
                 return  # already confirmed/rejected
