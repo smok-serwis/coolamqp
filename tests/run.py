@@ -5,7 +5,7 @@ import time, logging, threading
 from coolamqp.objects import Message, MessageProperties, NodeDefinition
 from coolamqp.uplink import Connection
 
-from coolamqp.attaches import Consumer, Publisher, MODE_NOACK, MODE_CNPUB
+from coolamqp.attaches import Consumer, Publisher
 from coolamqp.objects import Queue
 import time
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
             self.daemon = True
 
         def run(self):
-            pub2 = Publisher(MODE_NOACK)
+            pub2 = Publisher(Publisher.MODE_NOACK)
             pub2.attach(con)
             while True:
                 pub2.publish(Message(b'you dawg'), routing_key=b'siema-eniu')
