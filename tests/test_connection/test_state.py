@@ -4,7 +4,7 @@ import unittest
 
 
 from coolamqp.connection.state import Broker
-from coolamqp.connection import NodeDefinition
+from coolamqp.objects import NodeDefinition
 from coolamqp.uplink import ListenerThread, Connection, Handshaker
 import socket
 import time
