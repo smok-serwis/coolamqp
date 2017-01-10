@@ -23,6 +23,7 @@ Vagrant.configure("2") do |config|
      sudo service rabbitmq-server restart
      rabbitmqctl add_user user user
      rabbitmqctl set_permissions -p / user ".*" ".*" ".*"
+     rabbitmqctl set_permissions -p / guest ".*" ".*" ".*"
      rabbitmqctl set_user_tags user administrator
 
      # Install deps

@@ -108,7 +108,7 @@ class Exchange(object):
 
     direct = None   # the direct exchange
 
-    def __init__(self, name='', type='direct', durable=True, auto_delete=False):
+    def __init__(self, name=u'', type='direct', durable=True, auto_delete=False):
         self.name = name
         self.type = type
         self.durable = durable
@@ -142,7 +142,7 @@ class Queue(object):
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
         """
-        self.name = name.encode('utf8')
+        self.name = name.encode('utf8')     #: public, this is of type bytes ALWAYS
         # if name is '', this will be filled in with broker-generated name upon declaration
         self.durable = durable
         self.exchange = exchange

@@ -36,7 +36,8 @@ setup(name='CoolAMQP',
             'Programming Language :: Python :: Implementation :: CPython',
             'Programming Language :: Python :: Implementation :: PyPy',
             'Operating System :: OS Independent',
-            'Development Status :: 5 - Production/Stable',
+#            'Development Status :: 5 - Production/Stable',
+            'Development Status :: 4 - Beta',
             'License :: OSI Approved :: MIT License',
             'Topic :: Software Development :: Libraries'
       ]

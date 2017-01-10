@@ -159,7 +159,7 @@ class Consumer(Channeler):
 
         if isinstance(payload, BasicCancel):
             # Consumer Cancel Notification - by RabbitMQ
-            self.methods([BasicCancelOk(), ChannelClose(0, b'Received basic.cancel', 0, 0)])
+            self.methods([BasicCancelOk(payload.consumer_tag.tobytes()), ChannelClose(0, b'Received basic.cancel', 0, 0)])
             return
 
         if isinstance(payload, BasicCancelOk):
@@ -243,7 +243,7 @@ class Consumer(Channeler):
         elif isinstance(payload, ExchangeDeclareOk):
             # Declare the queue
 
-            name = b'' if self.queue.anonymous else self.queue.name.encode('utf8')
+            name = b'' if self.queue.anonymous else self.queue.name
 
             self.connection.method_and_watch(
                 self.channel_id,
@@ -263,13 +263,13 @@ class Consumer(Channeler):
         elif isinstance(payload, QueueDeclareOk):
             # did we need an anonymous name?
             if self.queue.anonymous:
-                self.queue.name = payload.queue_name.decode('utf8')
+                self.queue.name = payload.queue_name.tobytes()
 
             # We need any form of binding.
             if self.queue.exchange is not None:
                 self.method_and_watch(
                     QueueBind(
-                        self.queue.name.encode('utf8'), self.queue.exchange.name.encode('utf8'),
+                        self.queue.name, self.queue.exchange.name.encode('utf8'),
                         b'', False, []),
                     QueueBindOk,
                     self.on_setup
@@ -282,7 +282,7 @@ class Consumer(Channeler):
             if self.qos is not None:
                 self.method(BasicQos(self.qos[0], self.qos[1], False))
             self.method_and_watch(
-                BasicConsume(self.queue.name.encode('utf8'), self.queue.name.encode('utf8'),
+                BasicConsume(self.queue.name, self.queue.name,
                     False, self.no_ack, self.queue.exclusive, False, []),
                 BasicConsumeOk,
                 self.on_setup
