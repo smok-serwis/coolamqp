@@ -35,6 +35,8 @@ class Consumer(Channeler):
     Note that does not attempt to cancel consumers, or any of such nonsense. Having
     a channel per consumer gives you the unique possibility of simply closing the channel.
     Since this implies cancelling the consumer, here you go.
+
+    WARNING: READ DEFAULT VALUES IN CONSTRUCTOR! TAKE CARE WHAT YOUR CONSUMERS DO!
     """
 
     def __init__(self, queue, on_message, no_ack=True, qos=None, cancel_on_failure=False,

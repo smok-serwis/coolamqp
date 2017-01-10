@@ -4,7 +4,7 @@ from setuptools import setup
 
 
 setup(name=u'CoolAMQP',
-      version='0.8',
+      version='0.80',
       description=u'The fastest AMQP client',
       author=u'DMS Serwis s.c.',
       author_email=u'piotrm@smok.co',

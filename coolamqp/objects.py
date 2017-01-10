@@ -243,16 +243,27 @@ class NodeDefinition(object):
         """
         Create a cluster node definition.
 
-            a = ClusterNode(host='192.168.0.1', user='admin', password='password',
+            a = NodeDefinition(host='192.168.0.1', user='admin', password='password',
                             virtual_host='vhost')
 
         or
 
-            a = ClusterNode('192.168.0.1', 'admin', 'password')
+            a = NodeDefinition('192.168.0.1', 'admin', 'password')
+            
+        or
+        
+            a = NodeDefinition('amqp://user:password@host/virtual_host')
+        
+        or
+        
+            a = NodeDefinition('amqp://user:password@host:port/virtual_host', hearbeat=20)
+        
 
         Additional keyword parameters that can be specified:
             heartbeat - heartbeat interval in seconds
             port - TCP port to use. Default is 5672
+            
+        :raise ValueError: invalid parameters
         """
 
         self.heartbeat = kwargs.pop('heartbeat', None)
@@ -269,8 +280,47 @@ class NodeDefinition(object):
             self.virtual_host = '/'
         elif len(args) == 4:
             self.host, self.user, self.password, self.virtual_host = args
+        elif len(args) == 1 and isinstance(args[0], six.text_type):
+            # AMQP connstring
+            connstr = args[0]
+            if not connstr.startswith(u'amqp://'):
+                raise ValueError(u'should begin with amqp://')
+
+            connstr = connstr.replace(u'amqp://', u'')
+            self.user, connstr = connstr.split(u':', 1)
+            self.password, connstr = connstr.split(u'@', 1)
+            self.host, self.virtual_host = connstr.split(u'/', 1)
+
+            if len(self.virtual_host) == 0:
+                # empty virtual host is /
+                self.virtual_host = u'/'
+
+            if u':' in self.host:
+                host, port = self.host.split(u':', 1)
+                self.port = int(port)
+            # else get that port from kwargs
         else:
-            raise NotImplementedError #todo implement this
+            raise ValueError(u'What did you exactly pass?')
+
+    @staticmethod
+    def from_str(connstr, **kwargs):
+        """
+        Return a NodeDefinition from an AMQP connection string.
+
+        It should look like:
+
+
+
+        :param connstr: a unicode
+
+        :param heartbeat: heartbeat to use
+
+        :return: NodeDefinition instance
+        :raise ValueError: invalid string
+        """
+  
+        return NodeDefinition(host=host, port=5672, user=user, password=passw, virtual_host=virtual_host, heartbeat=kwargs.get('heartbeat', None))
+
 
     def __str__(self):
         return six.text_type(b'amqp://%s:%s@%s/%s'.encode('utf8') % (self.host, self.port, self.user, self.virtual_host))
