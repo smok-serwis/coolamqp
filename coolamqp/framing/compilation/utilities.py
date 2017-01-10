@@ -177,6 +177,8 @@ def frepr(p, sop=six.text_type):
 def to_code_binary(p):
     body = []
     for q in p:
+        if isinstance(q, int):
+            q = six.int2byte(q)
         z = (hex(ord(q))[2:].upper())
         if len(z) == 1:
             z = u'0' + z
