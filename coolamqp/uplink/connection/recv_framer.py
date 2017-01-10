@@ -69,7 +69,6 @@ class ReceivingFramer(object):
             self.chunks[0] = self.chunks[0][up_to:]
 
         self.total_data_len -= len(q)
-        print(repr(q))
         return q
 
     def _statemachine(self):
