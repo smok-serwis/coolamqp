@@ -16,11 +16,11 @@ import struct
 import six
 
 
-def enframe_decimal(buf, v):       # convert decimal to bytes
+def enframe_decimal(buf, v):  # convert decimal to bytes
     dps = 0
     for k in six.moves.xrange(20):
         k = v * (10 ** dps)
-        if abs(k-int(k)) < 0.00001: # epsilon
+        if abs(k - int(k)) < 0.00001:  # epsilon
             return buf.write(struct.pack('!BI', dps, k))
 
     raise ValueError('Could not convert %s to decimal', v)
@@ -31,9 +31,9 @@ def deframe_decimal(buf, offset):
     return val / (10 ** scale), 5
 
 
-def deframe_shortstr(buf, offset):      # -> value, bytes_eaten
+def deframe_shortstr(buf, offset):  # -> value, bytes_eaten
     ln, = struct.unpack_from('!B', buf, offset)
-    return buf[offset+1:offset+1+ln], 1+ln
+    return buf[offset + 1:offset + 1 + ln], 1 + ln
 
 
 def enframe_shortstr(buf, value):
@@ -43,7 +43,7 @@ def enframe_shortstr(buf, value):
 
 def deframe_longstr(buf, offset):  # -> value, bytes_eaten
     ln, = struct.unpack_from('!I', buf, offset)
-    return buf[offset+4:offset+4+ln], 4 + ln
+    return buf[offset + 4:offset + 4 + ln], 4 + ln
 
 
 def enframe_longstr(buf, value):
@@ -52,10 +52,10 @@ def enframe_longstr(buf, value):
 
 
 FIELD_TYPES = {
-        # length, struct, (option)to_bytes (callable(buffer, value)),
-        #                 (option)from_bytes (callable(buffer, offset) -> value, bytes_consumed),
-        #                 (option)get_len (callable(value) -> length in bytes)
-    't': (1, '!?'),      # boolean
+    # length, struct, (option)to_bytes (callable(buffer, value)),
+    #                 (option)from_bytes (callable(buffer, offset) -> value, bytes_consumed),
+    #                 (option)get_len (callable(value) -> length in bytes)
+    't': (1, '!?'),  # boolean
     'b': (1, '!b'),
     'B': (1, '!B'),
     'U': (2, '!H'),
@@ -66,11 +66,11 @@ FIELD_TYPES = {
     'l': (8, '!q'),
     'f': (4, '!f'),
     'd': (8, '!d'),
-    'D': (5, None, enframe_decimal, deframe_decimal), # decimal-value
-    's': (None, None, enframe_shortstr, deframe_shortstr, lambda val: len(val)+1),    # shortstr
-    'S': (None, None, enframe_longstr, deframe_longstr, lambda val: len(val)+4),  # longstr
+    'D': (5, None, enframe_decimal, deframe_decimal),  # decimal-value
+    's': (None, None, enframe_shortstr, deframe_shortstr, lambda val: len(val) + 1),  # shortstr
+    'S': (None, None, enframe_longstr, deframe_longstr, lambda val: len(val) + 4),  # longstr
     'T': (8, '!Q'),
-    'V': (0, None, lambda buf, v: None, lambda buf, ofs: None, 0),       # rendered as None
+    'V': (0, None, lambda buf, v: None, lambda buf, ofs: None, 0),  # rendered as None
 }
 
 
@@ -114,20 +114,20 @@ def deframe_array(buf, offset):
     offset += 4
 
     values = []
-    while offset < (start_offset+1+ln):
+    while offset < (start_offset + 1 + ln):
         v, t, delta = deframe_field_value(buf, offset)
         offset += delta
-        values.append((v,t))
+        values.append((v, t))
 
-    if offset != start_offset+4+ln:
+    if offset != start_offset + 4 + ln:
         raise ValueError('Array longer than expected, took %s, expected %s bytes',
-                         (offset-(start_offset+ln+4), ln+4))
+                         (offset - (start_offset + ln + 4), ln + 4))
 
-    return values, ln+4
+    return values, ln + 4
 
 
 def enframe_array(buf, array):
-    buf.write(struct.pack('!I', frame_array_size(array)-4))
+    buf.write(struct.pack('!I', frame_array_size(array) - 4))
     for fv in array:
         enframe_field_value(buf, fv)
 
@@ -139,7 +139,7 @@ def enframe_table(buf, table):
     :param table:
     :return:
     """
-    buf.write(struct.pack('!I', frame_table_size(table)-4))
+    buf.write(struct.pack('!I', frame_table_size(table) - 4))
 
     for name, fv in table:
         buf.write(struct.pack('!B', len(name)))
@@ -147,7 +147,7 @@ def enframe_table(buf, table):
         enframe_field_value(buf, fv)
 
 
-def deframe_table(buf, start_offset): # -> (table, bytes_consumed)
+def deframe_table(buf, start_offset):  # -> (table, bytes_consumed)
     """:return: tuple (table, bytes consumed)"""
     offset = start_offset
     table_length, = struct.unpack_from('!L', buf, start_offset)
@@ -156,22 +156,22 @@ def deframe_table(buf, start_offset): # -> (table, bytes_consumed)
     # we will check if it's really so.
     fields = []
 
-    while offset < (start_offset+table_length+4):
+    while offset < (start_offset + table_length + 4):
         field_name, ln = deframe_shortstr(buf, offset)
         offset += ln
         fv, delta = deframe_field_value(buf, offset)
         offset += delta
         fields.append((field_name.tobytes(), fv))
 
-    if offset > (start_offset+table_length+4):
+    if offset > (start_offset + table_length + 4):
         raise ValueError('Table turned out longer than expected! Found %s bytes expected %s',
-                         (offset-start_offset, table_length))
+                         (offset - start_offset, table_length))
 
-    return fields, table_length+4
+    return fields, table_length + 4
 
 
 def frame_field_value_size(fv):
-    v,t=fv
+    v, t = fv
     if FIELD_TYPES[t][0] is None:
         return FIELD_TYPES[t][4](v) + 1
     else:

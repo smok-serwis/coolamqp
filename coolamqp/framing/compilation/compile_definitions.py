@@ -13,16 +13,17 @@ from coolamqp.framing.compilation.utilities import get_constants, get_classes, g
     frepr, get_size
 
 TYPE_TRANSLATOR = {
-        'shortstr': 'binary type (max length 255)',
-        'longstr': 'binary type',
-        'table': 'table. See coolamqp.uplink.framing.field_table',
-        'bit': 'bool',
-        'octet': 'int, 8 bit unsigned',
-        'short': 'int, 16 bit unsigned',
-        'long': 'int, 32 bit unsigned',
-        'longlong': 'int, 64 bit unsigned',
-        'timestamp': '64 bit signed POSIX timestamp (in seconds)',
+    'shortstr': 'binary type (max length 255)',
+    'longstr': 'binary type',
+    'table': 'table. See coolamqp.uplink.framing.field_table',
+    'bit': 'bool',
+    'octet': 'int, 8 bit unsigned',
+    'short': 'int, 16 bit unsigned',
+    'long': 'int, 32 bit unsigned',
+    'longlong': 'int, 64 bit unsigned',
+    'timestamp': '64 bit signed POSIX timestamp (in seconds)',
 }
+
 
 def compile_definitions(xml_file='resources/amqp0-9-1.extended.xml', out_file='coolamqp/framing/definitions.py'):
     """parse resources/amqp-0-9-1.xml into """
@@ -90,7 +91,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             line(' # %s\n', lines[0])
             if len(lines) > 1:
                 for ln in lines[1:]:
-                    line(u' '*len(g))
+                    line(u' ' * len(g))
                     line(u' # %s\n', ln)
         else:
             line('\n')
@@ -113,8 +114,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     class_id_to_contentpropertylist = {}
 
     # below are stored as strings!
-    methods_that_are_reply_reasons_for = {}   # eg. ConnectionOpenOk: ConnectionOk
-    methods_that_are_replies_for = {}    # eg. ConnectionOk: [ConnectionOpenOk]
+    methods_that_are_reply_reasons_for = {}  # eg. ConnectionOpenOk: ConnectionOk
+    methods_that_are_replies_for = {}  # eg. ConnectionOk: [ConnectionOpenOk]
 
     # Output classes
     for cls in get_classes(xml):
@@ -132,7 +133,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
              name_class(cls.name), to_docstring(None, cls.docs), frepr(cls.name), cls.index)
 
         if len(cls.properties) > 0:
-            class_id_to_contentpropertylist[cls.index] = name_class(cls.name)+'ContentPropertyList'
+            class_id_to_contentpropertylist[cls.index] = name_class(cls.name) + 'ContentPropertyList'
 
             line('''\nclass %sContentPropertyList(AMQPContentPropertyList):
     """
@@ -149,7 +150,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 if property.basic_type == 'bit':
                     raise ValueError('bit properties are not supported!'
                                      )
-                line('        Field(%s, %s, %s, %s),\n', frepr(property.name), frepr(property.type), frepr(property.basic_type), repr(property.reserved))
+                line('        Field(%s, %s, %s, %s),\n', frepr(property.name), frepr(property.type),
+                     frepr(property.basic_type), repr(property.reserved))
             line('''    ]
     # A dictionary from a zero property list to a class typized with
     # some fields
@@ -168,12 +170,13 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             my_props = [prop for prop in cls.properties if (not prop.reserved)]
             for property in my_props:
                 line('        :param %s: %s\n', format_field_name(property.name), property.label)
-                line('        :type %s: %s (AMQP as %s)\n', format_field_name(property.name), TYPE_TRANSLATOR[property.basic_type], property.basic_type)
+                line('        :type %s: %s (AMQP as %s)\n', format_field_name(property.name),
+                     TYPE_TRANSLATOR[property.basic_type], property.basic_type)
             line('        """\n')
             zpf_len = int(math.ceil(len(cls.properties) // 15))
 
-            first_byte = True   # in 2-byte group
-            piece_index = 7 # from 7 downto 0
+            first_byte = True  # in 2-byte group
+            piece_index = 7  # from 7 downto 0
             fields_remaining = len(cls.properties)
 
             byte_chunk = []
@@ -183,18 +186,18 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 # a bit
                 if piece_index > 0:
                     if field.reserved or field.basic_type == 'bit':
-                        pass # zero anyway
+                        pass  # zero anyway
                     else:
                         byte_chunk.append(u"(('%s' in kwargs) << %s)" % (format_field_name(field.name), piece_index))
                     piece_index -= 1
                 else:
                     if first_byte:
                         if field.reserved or field.basic_type == 'bit':
-                            pass    # zero anyway
+                            pass  # zero anyway
                         else:
                             byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
                     else:
-                       # this is the "do we need moar flags" section
+                        # this is the "do we need moar flags" section
                         byte_chunk.append(u"kwargs['%s']" % (
                             int(fields_remaining > 1)
                         ))
@@ -207,7 +210,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 fields_remaining -= 1
 
             if len(byte_chunk) > 0:
-                line(u'            %s\n', u' | '.join(byte_chunk))    # We did not finish
+                line(u'            %s\n', u' | '.join(byte_chunk))  # We did not finish
 
             line(u'        ])\n        zpf = six.binary_type(zpf)\n')
             line(u'''
@@ -255,14 +258,14 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 # a bit
                 if piece_index > 0:
                     if field.reserved or field.basic_type == 'bit':
-                        pass # zero
+                        pass  # zero
                     else:
                         byte_chunk.append(u"(('%s' in fields) << %s)" % (format_field_name(field.name), piece_index))
                     piece_index -= 1
                 else:
                     if first_byte:
                         if field.reserved or field.basic_type == 'bit':
-                            pass #zero
+                            pass  # zero
                         else:
                             byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
                     else:
@@ -336,7 +339,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             if len(non_reserved_fields) == 0:
                 slots = u''
             else:
-                slots = (u', '.join(map(lambda f: frepr(format_field_name(f.name)), non_reserved_fields)))+u', '
+                slots = (u', '.join(map(lambda f: frepr(format_field_name(f.name)), non_reserved_fields))) + u', '
 
             line('''\nclass %s(AMQPMethodPayload):
     """
@@ -375,7 +378,6 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 methods_that_are_replies_for[full_class_name].append(_namify(response))
 
             if is_content_static:
-
                 line('''    STATIC_CONTENT = %s  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 ''',
                      to_code_binary(struct.pack('!LHH', static_size + 4, cls.index, method.index) + \
@@ -388,11 +390,10 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 line('    FIELDS = [ \n')
 
                 for field in method.fields:
-                    line('        Field(%s, %s, %s, reserved=%s),\n', frepr(field.name), frepr(field.type), frepr(field.basic_type), repr(field.reserved))
+                    line('        Field(%s, %s, %s, reserved=%s),\n', frepr(field.name), frepr(field.type),
+                         frepr(field.basic_type), repr(field.reserved))
 
                 line('    ]\n')
-
-
 
             # constructor
             line('''\n    def __init__(%s):
@@ -411,9 +412,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                     line('        :param %s: %s\n', format_field_name(field.name),
                          to_docstring(field.label, field.docs, prefix=12, blank=False))
 
-
-
-                line('        :type %s: %s (%s in AMQP)\n', format_field_name(field.name), TYPE_TRANSLATOR[field.basic_type], field.type)
+                line('        :type %s: %s (%s in AMQP)\n', format_field_name(field.name),
+                     TYPE_TRANSLATOR[field.basic_type], field.type)
 
             line('        """\n')
 
@@ -449,7 +449,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         dct = {}
         for cls in get_classes(xml):
             for method in cls.methods:
-                dct[((cls.index, method.index))] = '%s%s' % (name_class(cls.name), format_method_class_name(method.name))
+                dct[((cls.index, method.index))] = '%s%s' % (
+                name_class(cls.name), format_method_class_name(method.name))
 
     line('\nIDENT_TO_METHOD = {\n')
     for k, v in dct.items():
@@ -462,7 +463,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     line('}\n\n')
 
     line('\nCLASS_ID_TO_CONTENT_PROPERTY_LIST = {\n')
-    for k,v in class_id_to_contentpropertylist.items():
+    for k, v in class_id_to_contentpropertylist.items():
         line('    %s: %s,\n', k, v)
     line('}\n\n')
 
@@ -470,7 +471,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 # if a method is NOT a reply, it will not be in this dict
 # a method may be a reply for AT MOST one method
 REPLY_REASONS_FOR = {\n''')
-    for k,v in methods_that_are_reply_reasons_for.items():
+    for k, v in methods_that_are_reply_reasons_for.items():
         line(u'    %s: %s,\n' % (k, v))
 
     line(u'''}
@@ -480,7 +481,7 @@ REPLY_REASONS_FOR = {\n''')
 # if a method has no replies, it will have an empty list as value here
 REPLIES_FOR= {\n''')
 
-    for k,v in methods_that_are_replies_for.items():
+    for k, v in methods_that_are_replies_for.items():
         line(u'    %s: [%s],\n' % (k, u', '.join(map(str, v))))
     line(u'}\n')
 

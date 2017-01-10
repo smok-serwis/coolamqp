@@ -21,6 +21,7 @@ import math
 from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 from coolamqp.framing.compilation.utilities import format_field_name, get_size
 
+
 def get_counter(fields, prefix=u'', indent_level=2):
     """
     Emit code that counts how long this struct is.
@@ -36,7 +37,7 @@ def get_counter(fields, prefix=u'', indent_level=2):
     bits = 0
     for field in fields:
         bt = field.basic_type
-        nam = prefix+format_field_name(field.name)
+        nam = prefix + format_field_name(field.name)
 
         if (bits > 0) and (bt != 'bit'):  # sync bits if not
             accumulator += int(math.ceil(bits / 8))
@@ -49,21 +50,21 @@ def get_counter(fields, prefix=u'', indent_level=2):
         elif BASIC_TYPES[bt][0] is not None:
             accumulator += BASIC_TYPES[field.basic_type][0]
         elif bt == 'shortstr':
-            parts.append('len('+nam+')')
+            parts.append('len(' + nam + ')')
             accumulator += 1
         elif bt == 'longstr':
             parts.append('len(' + nam + ')')
             accumulator += 4
         elif bt == 'table':
             parts.append('frame_table_size(' + nam + ')')
-            accumulator += 0    # because frame_table_size accounts for that 4 leading bytes
+            accumulator += 0  # because frame_table_size accounts for that 4 leading bytes
         else:
             raise Exception()
 
     if bits > 0:  # sync bits
         accumulator += int(math.ceil(bits / 8))
 
-    return (u'    '*indent_level)+u'return '+(u' + '.join([str(accumulator)]+parts))+u'\n'
+    return (u'    ' * indent_level) + u'return ' + (u' + '.join([str(accumulator)] + parts)) + u'\n'
 
 
 def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
@@ -72,15 +73,15 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
     :param remark: BE FUCKING VERBOSE! #DEBUG
     """
     code = []
+
     def emit(fmt, *args):
         args = list(args)
-        code.append(u'    '*indent_level)
+        code.append(u'    ' * indent_level)
         assert fmt.count('%s') == len(args)
         for arg in args:
             fmt = fmt.replace('%s', str(arg), 1)
         code.append(fmt)
         code.append('\n')
-
 
     # actually go and load it
 
@@ -112,7 +113,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
             emit_bits()
         if len(to_struct) == 0:
             return
-        fffnames = [a for a, b in to_struct if a != u'_'] # skip reserved
+        fffnames = [a for a, b in to_struct if a != u'_']  # skip reserved
         ffffmts = [b for a, b in to_struct]
         emit("%s, = struct.unpack_from('!%s', buf, offset)", u', '.join(fffnames), u''.join(ffffmts))
         emit("offset += %s", ln['ln'])
@@ -120,7 +121,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
         del to_struct[:]
 
     for field in fields:
-        fieldname = prefix+format_field_name(field.name)
+        fieldname = prefix + format_field_name(field.name)
 
         if (len(bits) > 0) and (field.basic_type != u'bit'):
             emit_bits()
@@ -143,7 +144,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
             ln['ln'] += BASIC_TYPES[field.basic_type][0]
         elif field.basic_type == u'bit':
             bits.append('_' if field.reserved else fieldname)
-        elif field.basic_type == u'table': # oh my god
+        elif field.basic_type == u'table':  # oh my god
             emit_structures()
 
             assert len(bits) == 0
@@ -151,7 +152,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
 
             emit("%s, delta = deframe_table(buf, offset)", fieldname)
             emit("offset += delta")
-        else:   # longstr or shortstr
+        else:  # longstr or shortstr
             f_q, f_l = ('L', 4) if field.basic_type == u'longstr' else ('B', 1)
             to_struct.append(('s_len', f_q))
             ln['ln'] += f_l
@@ -183,7 +184,7 @@ def get_serializer(fields, prefix='', indent_level=2):
 
     def emit(fmt, *args):
         args = list(args)
-        code.append(u'    '*indent_level)
+        code.append(u'    ' * indent_level)
         while len(args) > 0:
             fmt = fmt.replace('%s', args[0], 1)
             del args[0]
@@ -202,7 +203,7 @@ def get_serializer(fields, prefix='', indent_level=2):
         else:
             for bit_name, modif in zip(bits, range(8)):
                 if bit_name != 'False':
-                    p.append('('+bit_name+' << %s)' % (modif, ))  # yes you can << bools
+                    p.append('(' + bit_name + ' << %s)' % (modif,))  # yes you can << bools
             format_args.append(u' | '.join(p))
         del bits[:]
 
@@ -212,7 +213,7 @@ def get_serializer(fields, prefix='', indent_level=2):
         del format_args[:]
 
     for field in fields:
-        nam = prefix+format_field_name(field.name)
+        nam = prefix + format_field_name(field.name)
 
         if (len(bits) == 8) or ((len(bits) > 0) and field.basic_type != 'bit'):
             emit_bits()
@@ -228,7 +229,7 @@ def get_serializer(fields, prefix='', indent_level=2):
         else:
             if field.basic_type in ('shortstr', 'longstr'):
                 formats.append('B' if field.basic_type == 'shortstr' else 'I')
-                format_args.append('len('+nam+')')
+                format_args.append('len(' + nam + ')')
                 emit_single_struct_pack()
                 emit('buf.write(%s)', nam)
             elif field.basic_type == 'table':
@@ -246,7 +247,6 @@ def get_serializer(fields, prefix='', indent_level=2):
     if len(formats) > 0:
         emit_single_struct_pack()
 
-    emit('')    # eol
+    emit('')  # eol
 
     return u''.join(code)
-
