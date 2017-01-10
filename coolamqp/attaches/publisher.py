@@ -13,6 +13,7 @@ from __future__ import absolute_import, division, print_function
 import collections
 import logging
 import struct
+import six
 import warnings
 
 from coolamqp.framing.definitions import ChannelOpenOk, BasicPublish, Basic, BasicAck
@@ -114,11 +115,19 @@ class Publisher(Channeler, Synchronized):
         # Break down large bodies
         bodies = []
 
+        if six.PY3:     # memoryview
+            buffer = memoryview
+
         body = buffer(message.body)
         max_body_size = self.connection.frame_max - AMQPBodyFrame.FRAME_SIZE_WITHOUT_PAYLOAD
         while len(body) > 0:
-            bodies.append(buffer(body, 0, max_body_size))
-            body = buffer(body, max_body_size)
+            if six.PY3:
+                bodies.append(body[:max_body_size])
+                body = body[max_body_size:]
+            else:
+                bodies.append(buffer(body, 0, max_body_size))
+                body = buffer(body, max_body_size)
+
 
         self.connection.send([
             AMQPMethodFrame(self.channel_id, BasicPublish(exchange_name, routing_key, False, False)),

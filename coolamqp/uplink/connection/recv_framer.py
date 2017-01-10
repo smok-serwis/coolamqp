@@ -55,6 +55,8 @@ class ReceivingFramer(object):
         :param data: received data
         """
         self.total_data_len += len(data)
+        if six.PY3:
+            buffer = memoryview
         self.chunks.append(buffer(data))
 
         while self._statemachine():
@@ -65,8 +67,12 @@ class ReceivingFramer(object):
         if up_to >= len(self.chunks[0]):
             q =  self.chunks.popleft()
         else:
-            q = buffer(self.chunks[0], 0, up_to)
-            self.chunks[0] = buffer(self.chunks[0], up_to)
+            if six.PY3:
+                q = self.chunks[0][:up_to]
+                self.chunks[0] = self.chunks[0][up_to:]
+            else:
+                q = buffer(self.chunks[0], 0, up_to)
+                self.chunks[0] = buffer(self.chunks[0], up_to)
 
         self.total_data_len -= len(q)
         return q

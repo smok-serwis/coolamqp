@@ -3,9 +3,13 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import io
 import struct
+import six
 from coolamqp.framing.frames import AMQPHeaderFrame
 from coolamqp.framing.definitions import BasicContentPropertyList, FRAME_HEADER, FRAME_END, ConnectionStartOk
 
+
+if six.PY3:
+    buffer = memoryview
 
 class TestShitSerializesRight(unittest.TestCase):
 

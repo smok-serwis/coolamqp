@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 import collections
 import socket
+import six
 
 
 class SocketFailed(IOError):
@@ -125,7 +126,10 @@ class BaseSocket(object):
 
             if sent < len(self.data_to_send[0]):
                 # Not everything could be sent
-                self.data_to_send[0] = buffer(self.data_to_send[0], sent)
+                if six.PY3:
+                    self.data_to_send[0] = self.data_to_send[0][sent:]
+                else:
+                    self.data_to_send[0] = buffer(self.data_to_send[0], sent)
                 return False
             else:
                 # Looks like everything has been sent

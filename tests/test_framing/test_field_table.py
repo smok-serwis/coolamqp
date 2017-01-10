@@ -3,10 +3,14 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import struct
 import io
+import six
 
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size, \
                                          enframe_field_value, deframe_field_value, frame_field_value_size
 
+
+if six.PY3:
+    buffer = memoryview
 
 class TestFramingTables(unittest.TestCase):
     def test_frame_unframe_table(self):
