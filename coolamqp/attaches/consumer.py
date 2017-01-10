@@ -375,7 +375,7 @@ class MessageReceiver(object):
 
         if self.header.body_size == 0:
             # An empty message is no common guest. It won't have a BODY field though...
-            self.on_body(b'')           # trigger it manually
+            self.on_body(memoryview(b''))           # trigger it manually
 
     def on_basic_deliver(self, payload):
         assert self.state == 0
@@ -398,11 +398,9 @@ class MessageReceiver(object):
 
             from coolamqp.objects import ReceivedMessage
 
-
-            if self.consumer.fucking_memoryviews:
-                body = self.body
-            else:
-                b''.join((mv.tobytes() for mv in self.body))
+            body = self.body
+            if not self.consumer.fucking_memoryviews:
+                body = b''.join((mv.tobytes() for mv in body))
 
             rm = ReceivedMessage(
                 body,

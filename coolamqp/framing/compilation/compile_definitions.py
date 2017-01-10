@@ -73,7 +73,13 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     for constant in get_constants(xml):
         if pythonify_name(constant.name) == 'FRAME_END':
             FRAME_END = constant.value
-        g = ffmt('%s = %s', pythonify_name(constant.name), constant.value)
+        g = ffmt('%s = %s\n', pythonify_name(constant.name), constant.value)
+        line(g)
+        if 0 <= constant.value <= 255:
+            z = repr(six.int2byte(constant.value))
+            if not z.startswith(u'b'):
+                z = u'b' + z
+            g = ffmt('%s_BYTE = %s\n', pythonify_name(constant.name), z)
         line(g)
         if constant.docs:
             lines = constant.docs.split('\n')
@@ -293,7 +299,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         pfl = 2
         while ord(buf[offset + pfl - 1]) & 1:
             pfl += 2
-        zpf = %s.zero_property_flags(buf[offset:offset+pfl])
+        zpf = %s.zero_property_flags(buf[offset:offset+pfl]).tobytes()
         if zpf in %s.PARTICULAR_CLASSES:
             return %s.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
         else:

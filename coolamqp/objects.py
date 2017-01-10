@@ -34,7 +34,8 @@ class Message(object):
         Please take care with passing empty bodies, as py-amqp has some failure on it.
 
         :param body: stream of octets
-        :type body: str (py2) or bytes (py3)
+        :type body: str (py2) or bytes (py3) or ...
+                    a list of memoryviews, if you find the right option. It's disabled by default.
         :param properties: AMQP properties to be sent along.
                            default is 'no properties at all'
                            You can pass a dict - it will be passed to MessageProperties,
@@ -43,7 +44,8 @@ class Message(object):
         """
         if isinstance(body, six.text_type):
             raise TypeError('body cannot be a text type!')
-        self.body = six.binary_type(body)
+
+        self.body = body
 
         if isinstance(properties, dict):
             self.properties = MessageProperties(**properties)

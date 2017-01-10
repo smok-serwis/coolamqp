@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
+import six
 import struct
 
 logger = logging.getLogger(__name__)
@@ -143,7 +144,7 @@ class AMQPMethodPayload(AMQPPayload):
             buf.write(struct.pack('!I', self.get_size()+2))
             buf.write(self.BINARY_HEADER)
             self.write_arguments(buf)
-            buf.write(chr(FRAME_END))
+            buf.write(six.int2byte(FRAME_END))
 
     def get_size(self):
         """
