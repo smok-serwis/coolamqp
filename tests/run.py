@@ -22,7 +22,7 @@ if __name__ == '__main__':
     snr = SingleNodeReconnector(NODE, ag, lt)
     snr.connect()
 
-    ag.add(Consumer(Queue('siema-eniu'), no_ack=True))
+    ag.add(Consumer(Queue('siema-eniu'), no_ack=False, qos=(None, 20)))
 
     class IPublishThread(threading.Thread):
         def __init__(self, ag):
@@ -42,5 +42,7 @@ if __name__ == '__main__':
 
     while True:
         time.sleep(30)
+
+
 
     lt.terminate()
