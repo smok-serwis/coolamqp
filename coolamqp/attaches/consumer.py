@@ -159,7 +159,7 @@ class Consumer(Channeler):
 
         if isinstance(payload, BasicCancel):
             # Consumer Cancel Notification - by RabbitMQ
-            self.methods([BasicCancelOk(payload.consumer_tag.tobytes()), ChannelClose(0, b'Received basic.cancel', 0, 0)])
+            self.methods([BasicCancelOk(payload.consumer_tag), ChannelClose(0, b'Received basic.cancel', 0, 0)])
             return
 
         if isinstance(payload, BasicCancelOk):
