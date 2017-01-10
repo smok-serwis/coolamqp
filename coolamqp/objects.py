@@ -34,9 +34,7 @@ class Message(object):
         Please take care with passing empty bodies, as py-amqp has some failure on it.
 
         :param body: stream of octets
-        :type body: str (py2) or bytes (py3) or ...
-                    a list of memoryviews, if you find the right option. It's disabled by default.
-                    check coolamqp.attaches.consumer.Consumer() for details
+        :type body: str (py2) or bytes (py3)
         :param properties: AMQP properties to be sent along.
                            default is 'no properties at all'
                            You can pass a dict - it will be passed to MessageProperties,
@@ -44,7 +42,7 @@ class Message(object):
         :type properties: MessageProperties instance, None or a dict
         """
         if isinstance(body, six.text_type):
-            raise TypeError('body cannot be a text type!')
+            raise TypeError(u'body cannot be a text type!')
 
         self.body = body
 
