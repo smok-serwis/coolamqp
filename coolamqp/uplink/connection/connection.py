@@ -108,7 +108,7 @@ class Connection(object):
                 break
 
         sock.settimeout(0)
-        sock.send('AMQP\x00\x00\x09\x01')
+        sock.send(b'AMQP\x00\x00\x09\x01')
 
         Handshaker(self, self.node_definition, self.on_connected)
         self.listener_socket = self.listener_thread.register(sock,
