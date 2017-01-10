@@ -165,7 +165,7 @@ def format_field_name(field):
     return field.replace('-', '_')
 
 def frepr(p, sop=six.text_type):
-    if isinstance(p, basestring):
+    if isinstance(p, (six.binary_type, six.text_type)):
         p = sop(p)
     s = repr(p)
 
