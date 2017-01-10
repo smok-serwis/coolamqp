@@ -23,3 +23,7 @@ Enjoy!
 ## Notes
 Assertions are sprinkled throughout the code. You may wish to run with optimizations enabled
 if you need every CPU cycle you can get.
+
+**v0.8** series has unstable API.
+
+**v0.9** series will have a stable API.

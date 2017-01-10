@@ -4,7 +4,7 @@ from setuptools import setup
 
 
 setup(name='CoolAMQP',
-      version='0.12',
+      version='0.8',
       description='AMQP client with sane reconnects',
       author='DMS Serwis s.c.',
       author_email='piotrm@smok.co',
