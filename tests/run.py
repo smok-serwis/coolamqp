@@ -7,7 +7,7 @@ from coolamqp.clustering import Cluster
 import time
 
 
-NODE = NodeDefinition('127.0.0.1', 'user', 'user', heartbeat=20)
+NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
 if __name__ == '__main__':

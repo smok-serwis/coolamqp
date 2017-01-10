@@ -11,8 +11,8 @@ from coolamqp.clustering import Cluster
 
 import time
 
-
-NODE = NodeDefinition('127.0.0.1', 'user', 'user', heartbeat=20)
+#todo handle bad auth
+NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
 
