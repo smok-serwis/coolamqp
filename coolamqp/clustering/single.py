@@ -19,6 +19,8 @@ class SingleNodeReconnector(object):
         self.attache_group = attache_group
         self.connection = None
 
+        self.terminating = False
+
     def is_connected(self):
         return self.connection is not None
 
@@ -32,11 +34,15 @@ class SingleNodeReconnector(object):
         self.connection.add_finalizer(self.on_fail)
 
     def on_fail(self):
+        if self.terminating:
+            return
+
         self.connection = None
         self.connect()
 
     def shutdown(self):
         """Close this connection"""
+        self.terminating = True
         if self.connection is not None:
             self.connection.send(None)
             self.connection = None
