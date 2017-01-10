@@ -63,4 +63,20 @@ class TestA(unittest.TestCase):
 
         self.assertTrue(P['q'])
 
+    def test_send_recv_nonzerolen_fuckingmemoryviews(self):
+
+        P = {'q': False}
+
+        def ok(e):
+            self.assertIsInstance(e, ReceivedMessage)
+            self.assertIsInstance(e.body[0], memoryview)
+            P['q'] = True
+
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True), on_message=ok, no_ack=True, fucking_memoryviews=True)
+        fut.result()
+        self.c.publish(Message(b'hello'), routing_key=u'hello', tx=True).result()
+
+        time.sleep(1)
+
+        self.assertTrue(P['q'])
 

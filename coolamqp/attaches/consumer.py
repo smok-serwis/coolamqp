@@ -62,7 +62,9 @@ class Consumer(Channeler):
                                                    SECOND declaration, ie. it will retry ad infinitum
         :type fail_on_first_time_resource_locked: bool
         :param fucking_memoryviews: if you set that to True, bodies of your ReceivedMessages will be iterables
-                                    of memoryviews, instead of bytes. Fast as fuck :/
+                                    of memoryviews, instead of bytes.
+                                    AT LEAST YOU WILL BE FAST AS FUUUUCK
+        :type fucking_memoryviews: bool
         """
         super(Consumer, self).__init__()
 

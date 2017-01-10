@@ -89,6 +89,8 @@ def enframe_field_value(buf, fv):
 def deframe_field_value(buf, offset):  # -> (value, type), bytes_consumed
     start_offset = offset
     field_type = buf[offset]
+    if six.PY3:
+        field_type = bytes([field_type])    #todo slow
     offset += 1
 
     if field_type not in FIELD_TYPES.keys():
