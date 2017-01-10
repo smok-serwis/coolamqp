@@ -22,7 +22,8 @@ setup(name=u'CoolAMQP',
           'coolamqp.framing.compilation',
       ],
       license=u'MIT License',
-      long_description=u'''AMQP client, but with dynamic class generation and memoryviews FOR THE GODSPEED.
+      long_description=u'''Pure Python AMQP client, but with dynamic class generation and memoryviews FOR THE GODSPEED.
+
 Also, handles your reconnects and transactionality THE RIGHT WAY''',
       requires=['amqp', 'six', 'monotonic'],
       tests_require=["nose"],
