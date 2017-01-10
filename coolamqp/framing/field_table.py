@@ -76,7 +76,7 @@ FIELD_TYPES = {
 
 def enframe_field_value(buf, fv):
     value, type = fv
-    buf.write(type)
+    buf.write(type.encode('utf8'))
 
     opt = FIELD_TYPES[type]
 

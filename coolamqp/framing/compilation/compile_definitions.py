@@ -42,13 +42,14 @@ AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 
 
-###########################################
-# IMPORTANT NOTE
-# Type of field may depend on the origin of packet.
-# strings will be memoryviews if we received the packet
-# while they may be bytes if we created it
-#
-# this has some use - speed :D
+###########################################################
+# IMPORTANT NOTE                                          #
+# Type of field may depend on the origin of packet.       #
+# strings will be memoryviews if we received the packet   #
+# while they may be bytes if we created it                #
+#                                                         #
+# this has some use - speed :D                            #
+###########################################################
 """
 
 import struct, collections, warnings, logging, six

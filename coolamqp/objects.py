@@ -79,7 +79,9 @@ class ReceivedMessage(Message):
         :param connect_id: connection ID. ClusterHandlerThread will check this in order
             not to ack messages that were received from a dead connection
         :param exchange_name: name of exchange this message was submitted to
+        :type exchange_name: memoryview
         :param routing_key: routing key with which this message was sent
+        :type routing_key: memoryview
         :param properties: a suitable BasicContentPropertyList subinstance
 
         :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message
