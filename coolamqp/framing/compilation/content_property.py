@@ -89,12 +89,12 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(u'\n    def write_to(self, buf):\n')
     mod.append(u'        buf.write(')
     repred_zpf = repr(zpf)
-    if not zpf.startswith(u'b'):
+    if not repred_zpf.startswith(u'b'):
         repred_zpf = u'b' + repred_zpf
     mod.append(repred_zpf)
     mod.append(u')\n')
 
-    mod.append(get_serializer(present_fields, prefix='self.', indent_level=2))
+    mod.append(get_serializer(present_fields, prefix=u'self.', indent_level=2))
 
     # from_buffer
     # note that non-bit values
@@ -109,7 +109,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     # get_size
     mod.append(u'\n    def get_size(self):\n')
-    mod.append(get_counter(present_fields, prefix='self.', indent_level=2)[:-1])    # skip eol
+    mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[:-1])    # skip eol
     mod.append(u' + %s\n' % (zpf_length, ))   # account for pf length
 
     return u''.join(mod)
