@@ -40,6 +40,15 @@ See coolamqp.uplink.framing.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
+
+
+###########################################
+# IMPORTANT NOTE
+# Type of field may depend on the origin of packet.
+# strings will be memoryviews if we received the packet
+# while they may be bytes if we created it
+#
+# this has some use - speed :D
 """
 
 import struct, collections, warnings, logging, six
@@ -415,6 +424,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 ''')
 
             line(get_from_buffer(method.fields, '', 2, remark=(method.name == 'deliver')))
+
             line("        return %s(%s)",
                  full_class_name,
                  u', '.join(format_field_name(field.name) for field in method.fields if not field.reserved))

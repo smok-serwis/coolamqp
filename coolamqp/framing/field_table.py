@@ -8,6 +8,8 @@ An array is of form [field-value1, field-value2, ...]
 
 A table is of form ( (name1::bytes, fv1), (name2::bytes, fv2), ...)
 
+
+NOTE: it's not buffers, it's memoryview all along
 """
 from __future__ import absolute_import, division, print_function
 import struct
@@ -31,7 +33,7 @@ def deframe_decimal(buf, offset):
 
 def deframe_shortstr(buf, offset):      # -> value, bytes_eaten
     ln, = struct.unpack_from('!B', buf, offset)
-    return buf[offset+1:offset+1+ln], 1+ln
+    return buf[offset+1:offset+1+ln].tobytes(), 1+ln
 
 
 def enframe_shortstr(buf, value):
@@ -41,7 +43,7 @@ def enframe_shortstr(buf, value):
 
 def deframe_longstr(buf, offset):  # -> value, bytes_eaten
     ln, = struct.unpack_from('!I', buf, offset)
-    return buf[offset+4:offset+4+ln], 4 + ln
+    return buf[offset+4:offset+4+ln].tobytes(), 4 + ln
 
 
 def enframe_longstr(buf, value):

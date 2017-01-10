@@ -8,6 +8,15 @@ See coolamqp.uplink.framing.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
+
+
+###########################################
+# IMPORTANT NOTE
+# Type of field may depend on the origin of packet.
+# strings will be memoryviews if we received the packet
+# while they may be bytes if we created it
+#
+# this has some use - speed :D
 """
 
 import struct, collections, warnings, logging, six
@@ -2369,7 +2378,7 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         pfl = 2
         while ord(buf[offset + pfl - 1]) & 1:
             pfl += 2
-        zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset+pfl])
+        zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset+pfl]).tobytes()
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
         else:

@@ -55,9 +55,7 @@ class ReceivingFramer(object):
         :param data: received data
         """
         self.total_data_len += len(data)
-        if six.PY3:
-            buffer = memoryview
-        self.chunks.append(buffer(data))
+        self.chunks.append(memoryview(data))
 
         while self._statemachine():
             pass
@@ -67,14 +65,11 @@ class ReceivingFramer(object):
         if up_to >= len(self.chunks[0]):
             q =  self.chunks.popleft()
         else:
-            if six.PY3:
-                q = self.chunks[0][:up_to]
-                self.chunks[0] = self.chunks[0][up_to:]
-            else:
-                q = buffer(self.chunks[0], 0, up_to)
-                self.chunks[0] = buffer(self.chunks[0], up_to)
+            q = self.chunks[0][:up_to]
+            self.chunks[0] = self.chunks[0][up_to:]
 
         self.total_data_len -= len(q)
+        print(repr(q))
         return q
 
     def _statemachine(self):
@@ -91,7 +86,7 @@ class ReceivingFramer(object):
         elif (self.frame_type == FRAME_HEARTBEAT) and (self.total_data_len >= AMQPHeartbeatFrame.LENGTH-1):
             data = b''
             while len(data) < AMQPHeartbeatFrame.LENGTH-1:
-                data = data + six.binary_type(self._extract(AMQPHeartbeatFrame.LENGTH-1 - len(data)))
+                data = data + self._extract(AMQPHeartbeatFrame.LENGTH-1 - len(data)).tobytes()
 
             if data != AMQPHeartbeatFrame.DATA[1:]:
                 # Invalid heartbeat frame!
@@ -106,9 +101,9 @@ class ReceivingFramer(object):
         elif (self.frame_type != FRAME_HEARTBEAT) and (self.frame_type is not None) and (self.frame_size is None) and (self.total_data_len > 6):
             hdr = b''
             while len(hdr) < 6:
-                hdr = hdr + six.binary_type(self._extract(6 - len(hdr)))
+                hdr = hdr + self._extract(6 - len(hdr)).tobytes()
 
-            self.frame_channel, self.frame_size = struct.unpack('!HI', hdr)
+            self.frame_channel, self.frame_size = struct.unpack('!HI',hdr)
 
             return True
 

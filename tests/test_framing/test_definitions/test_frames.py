@@ -8,9 +8,6 @@ from coolamqp.framing.frames import AMQPHeaderFrame
 from coolamqp.framing.definitions import BasicContentPropertyList, FRAME_HEADER, FRAME_END, ConnectionStartOk
 
 
-if six.PY3:
-    buffer = memoryview
-
 class TestShitSerializesRight(unittest.TestCase):
 
     def test_unser_header_frame(self):
@@ -18,7 +15,7 @@ class TestShitSerializesRight(unittest.TestCase):
             b'\x00\x00\x00\x00\x00\x00\x00\x0A' + \
             b'\xC0\x00\x0Atext/plain\x04utf8'
 
-        hf = AMQPHeaderFrame.unserialize(0, buffer(s))
+        hf = AMQPHeaderFrame.unserialize(0, memoryview(s))
 
         self.assertEquals(hf.class_id, 60)
         self.assertEquals(hf.weight, 0)

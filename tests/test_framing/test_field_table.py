@@ -28,7 +28,7 @@ class TestFramingTables(unittest.TestCase):
 
         self.assertEquals(buf, struct.pack('!I', 10) + b'\x05fields\x02yo')
 
-        tab, delta = deframe_table(buffer(buf), 0)
+        tab, delta = deframe_table(memoryview(buf), 0)
 
         self.assertEquals(len(tab), 1)
         self.assertEquals(delta, 14)
@@ -43,7 +43,7 @@ class TestFramingTables(unittest.TestCase):
         buf = buf.getvalue()
         self.assertEquals(b's\x02yo', buf)
 
-        fv, delta = deframe_field_value(buffer(buf), 0)
+        fv, delta = deframe_field_value(memoryview(buf), 0)
         self.assertEquals(fv, (b'yo', b's'))
         self.assertEquals(delta, 4)
 

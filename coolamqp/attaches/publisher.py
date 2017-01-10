@@ -115,18 +115,11 @@ class Publisher(Channeler, Synchronized):
         # Break down large bodies
         bodies = []
 
-        if six.PY3:     # memoryview
-            buffer = memoryview
-
-        body = buffer(message.body)
+        body = memoryview(message.body)
         max_body_size = self.connection.frame_max - AMQPBodyFrame.FRAME_SIZE_WITHOUT_PAYLOAD
         while len(body) > 0:
-            if six.PY3:
-                bodies.append(body[:max_body_size])
-                body = body[max_body_size:]
-            else:
-                bodies.append(buffer(body, 0, max_body_size))
-                body = buffer(body, max_body_size)
+            bodies.append(body[:max_body_size])
+            body = body[max_body_size:]
 
 
         self.connection.send([

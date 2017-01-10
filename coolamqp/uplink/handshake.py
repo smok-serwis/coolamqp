@@ -66,8 +66,8 @@ class Handshaker(object):
 
     def on_connection_start(self, payload):
 
-        sasl_mechanisms = payload.mechanisms.split(b' ')
-        locale_supported = payload.locales.split(b' ')
+        sasl_mechanisms = payload.mechanisms.tobytes().split(b' ')
+        locale_supported = payload.locales.tobytes().split(b' ')
 
         # Select a mechanism
         if b'PLAIN' not in sasl_mechanisms:
