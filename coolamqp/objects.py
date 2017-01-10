@@ -279,6 +279,8 @@ class NodeDefinition(object):
         or
         
             a = NodeDefinition('amqp://user:password@host:port/virtual_host', hearbeat=20)
+
+        AMQP connection string may be either bytes or str/unicode
         
 
         Additional keyword parameters that can be specified:
@@ -302,9 +304,14 @@ class NodeDefinition(object):
             self.virtual_host = '/'
         elif len(args) == 4:
             self.host, self.user, self.password, self.virtual_host = args
-        elif len(args) == 1 and isinstance(args[0], six.text_type):
+        elif len(args) == 1 and isinstance(args[0], (six.text_type, six.binary_type)):
+
+            if isinstance(args[0], six.binary_type):
+                connstr = args[0].decode('utf8')
+            else:
+                connstr = args[0]
+
             # AMQP connstring
-            connstr = args[0]
             if not connstr.startswith(u'amqp://'):
                 raise ValueError(u'should begin with amqp://')
 
