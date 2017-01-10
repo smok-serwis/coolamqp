@@ -92,18 +92,17 @@ class Cluster(object):
         :param tx: Whether to publish it transactionally.
                    If you choose so, you will receive a Future that can be used
                    to check it broker took responsibility for this message.
+                   Note that if tx if False, and message cannot be delivered to broker at once,
+                   it will be discarded.
         :return: Future or None
         """
-
-        publisher = (self.pub_tr if tx else self.pub_na)
-
         if isinstance(exchange, Exchange):
             exchange = exchange.name
 
         try:
-            return publisher.publish(message, exchange.encode('utf8'), routing_key.encode('utf8'))
+            return (self.pub_tr if tx else self.pub_na).publish(message, exchange.encode('utf8'), routing_key.encode('utf8'))
         except Publisher.UnusablePublisher:
-            raise NotImplementedError(u'Sorry, this functionality if not yet implemented!')
+            raise NotImplementedError(u'Sorry, this functionality is not yet implemented!')
 
 
     def start(self, wait=True):
