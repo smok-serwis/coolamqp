@@ -97,10 +97,14 @@ class Cluster(object):
         :return: Future or None
         """
         if isinstance(exchange, Exchange):
-            exchange = exchange.name
+            exchange = exchange.name.encode('utf8')
+        elif exchange is None:
+            exchange = b''
+        else:
+            exchange = exchange.encode('utf8')
 
         try:
-            return (self.pub_tr if tx else self.pub_na).publish(message, exchange.encode('utf8'), routing_key.encode('utf8'))
+            return (self.pub_tr if tx else self.pub_na).publish(message, exchange, routing_key.encode('utf8'))
         except Publisher.UnusablePublisher:
             raise NotImplementedError(u'Sorry, this functionality is not yet implemented!')
 

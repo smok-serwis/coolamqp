@@ -367,6 +367,10 @@ class MessageReceiver(object):
         self.data_to_go = frame.body_size
         self.state = 2
 
+        if self.header.body_size == 0:
+            # An empty message is no common guest. It won't have a BODY field though...
+            self.on_body(b'')           # trigger it manually
+
     def on_basic_deliver(self, payload):
         assert self.state == 0
         self.bdeliver = payload
