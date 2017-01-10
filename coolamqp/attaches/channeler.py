@@ -138,7 +138,6 @@ class Channeler(Attache):
 
         self.connection = None
         self.channel_id = None
-        print(self, 'pwned with', payload)
 
         if isinstance(payload, ChannelClose):
             logger.debug('Channel closed: %s %s', payload.reply_code, payload.reply_text)

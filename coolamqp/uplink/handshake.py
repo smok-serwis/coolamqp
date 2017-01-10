@@ -94,7 +94,6 @@ class Handshaker(object):
     def on_connection_tune(self, payload):
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
-        print('Selected', payload.channel_max, 'channels')
         for channel in six.moves.xrange(1, (65535 if payload.channel_max == 0 else payload.channel_max)+1):
             self.connection.free_channels.append(channel)
 

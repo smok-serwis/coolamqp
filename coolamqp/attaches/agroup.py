@@ -65,10 +65,8 @@ class AttacheGroup(Attache):
 
         for attache in self.attaches:
             if not attache.cancelled:
-                print('Attaching', attache)
                 attache.attach(connection)
             else:
-                print('lol wut')
                 raise Exception
 
 

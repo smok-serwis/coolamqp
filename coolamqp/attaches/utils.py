@@ -155,8 +155,6 @@ class AtomicTagger(object):
                 # Oh, I know the range!
                 stop = len(self.tags)
 
-            print('Range computed of %s:%s' % (start, stop))
-
             items = self.tags[start:stop]
             del self.tags[start:stop]
 

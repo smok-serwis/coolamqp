@@ -133,7 +133,6 @@ class BaseSocket(object):
 
                 if len(self.priority_queue) > 0:
                     # We can send a priority pack
-                    print('Deploying priority data')
                     self.data_to_send.appendleft(self.priority_queue.popleft())
 
     def fileno(self):

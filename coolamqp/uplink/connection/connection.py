@@ -84,7 +84,6 @@ class Connection(object):
 
     def on_connected(self):
         """Called by handshaker upon reception of final connection.open-ok"""
-        print(self.free_channels)
         self.state = ST_ONLINE
 
         while len(self.callables_on_connected) > 0:
@@ -104,7 +103,6 @@ class Connection(object):
             try:
                 sock.connect((self.node_definition.host, self.node_definition.port))
             except socket.error as e:
-                print(e)
                 time.sleep(0.5) # Connection refused? Very bad things?
             else:
                 break
@@ -170,11 +168,9 @@ class Connection(object):
 
         Called by ListenerThread.
         """
-        print('We are GOING DOOOWN')
         self.on_fail()      # it does not make sense to prolong the agony
 
         if isinstance(payload, ConnectionClose):
-            print(payload.reply_code, payload.reply_text)
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
         elif isinstance(payload, ConnectionCloseOk):
             self.send(None)
@@ -206,11 +202,6 @@ class Connection(object):
 
         :param frame: AMQPFrame that was received
         """
-        if isinstance(frame, AMQPMethodFrame):      # temporary, for debugging
-            print('RECEIVED', frame.payload.NAME)
-        else:
-            print('RECEIVED ', frame)
-
         watch_handled = False   # True if ANY watch handled this
 
         # ==================== process per-channel watches
@@ -249,7 +240,7 @@ class Connection(object):
             self.any_watches.append(watch)
 
         if not watch_handled:
-            logger.critical('Unhandled frame %s', frame)
+            logger.warn('Unhandled frame %s', frame)
 
     def watchdog(self, delay, callback):
         """

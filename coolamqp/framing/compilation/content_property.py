@@ -89,7 +89,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(u'\n    def write_to(self, buf):\n')
     mod.append(u'        buf.write(')
     repred_zpf = repr(zpf)
-    if not zpf.startswith('b'):
+    if not zpf.startswith(b'b'):
         repred_zpf = 'b' + repred_zpf
     mod.append(repred_zpf)
     mod.append(u')\n')

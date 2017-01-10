@@ -98,7 +98,6 @@ class Publisher(Channeler, Synchronized):
     @Synchronized.synchronized
     def on_fail(self):
         self.state = ST_OFFLINE
-        print('Publisher is FAILED')
 
     def _pub(self, message, exchange_name, routing_key):
         """
@@ -155,8 +154,6 @@ class Publisher(Channeler, Synchronized):
         This gets called on BasicAck and BasicNack, if mode is MODE_CNPUB
         """
         assert self.mode == Publisher.MODE_CNPUB
-
-        print('Got %s with dt=%s' % (payload, payload.delivery_tag))
 
         if isinstance(payload, BasicAck):
             self.tagger.ack(payload.delivery_tag, payload.multiple)
