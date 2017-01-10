@@ -97,7 +97,7 @@ class AMQPBodyFrame(AMQPFrame):
         :type data: binary
         """
         AMQPFrame.__init__(self, channel)
-        assert isinstance(data, (six.binary_type, buffer, memoryview))
+        assert isinstance(data, (six.binary_type, memoryview))
         self.data = data
 
     def write_to(self, buf):

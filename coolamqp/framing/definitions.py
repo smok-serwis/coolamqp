@@ -2438,7 +2438,7 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
         else:
-            logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            logger.debug(u'Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
             c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
             BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
             return c.from_buffer(buf, offset)
