@@ -11,10 +11,13 @@ from coolamqp.uplink import ListenerThread
 from coolamqp.clustering.single import SingleNodeReconnector
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer
 from coolamqp.objects import Future, Exchange
-from six.moves.queue import Queue
 
+
+from coolamqp.clustering.events import ConnectionLost, MessageReceived, NothingMuch
 
 logger = logging.getLogger(__name__)
+
+THE_POPE_OF_NOPE = NothingMuch()
 
 
 class Cluster(object):
@@ -48,7 +51,10 @@ class Cluster(object):
 
         self.attache_group = AttacheGroup()
 
+        self.events = six.moves.queue.Queue()   # for coolamqp.clustering.events.*
+
         self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
+        self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
 
         # Spawn a transactional publisher and a noack publisher
         self.pub_tr = Publisher(Publisher.MODE_CNPUB)
@@ -57,7 +63,19 @@ class Cluster(object):
         self.attache_group.add(self.pub_tr)
         self.attache_group.add(self.pub_na)
 
-        self.events = Queue()   # for
+    def drain(self, timeout):
+        """
+        Return an Event.
+        :param timeout: time to wait for an event. 0 means return immediately. None means block forever
+        :return: an Event instance. NothingMuch is returned when there's nothing within a given timoeout
+        """
+        try:
+            if timeout == 0:
+                return self.events.get_nowait()
+            else:
+                return self.events.get(True, timeout)
+        except six.moves.queue.Empty:
+            return THE_POPE_OF_NOPE
 
     def consume(self, queue, on_message=None, *args, **kwargs):
         """
@@ -76,7 +94,7 @@ class Cluster(object):
         :return: a tuple (Consumer instance, and a Future), that tells, when consumer is ready
         """
         fut = Future()
-        on_message = on_message or self.events.put_nowait
+        on_message = on_message or (lambda rmsg: self.events.put_nowait(MessageReceived(rmsg)))
         con = Consumer(queue, on_message, future_to_notify=fut, *args, **kwargs)
         self.attache_group.add(con)
         return con, fut

@@ -13,7 +13,7 @@ from coolamqp.uplink.handshake import Handshaker
 from coolamqp.framing.definitions import ConnectionClose, ConnectionCloseOk
 from coolamqp.uplink.connection.watches import MethodWatch
 from coolamqp.uplink.connection.states import ST_ONLINE, ST_OFFLINE, ST_CONNECTING
-
+from coolamqp.objects import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class Connection(object):
         self.watches = {}    # channel => list of [Watch instance]
         self.any_watches = []   # list of Watches that should check everything
 
-        self.finalizers = []
+        self.finalize = Callable(oneshots=True)  #: public
 
 
         self.state = ST_CONNECTING
@@ -117,19 +117,6 @@ class Connection(object):
         self.sendf = SendingFramer(self.listener_socket.send)
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk), self.on_connection_close)
 
-    def add_finalizer(self, callable):
-        """
-        Add a callable to be executed when all watches were failed and we're really going down.
-
-        Finalizers are not used for logic stuff, but for situations like making TCP reconnects.
-        When we are making a reconnect, we need to be sure that all watches fired - so logic is intact.
-
-        DO NOT PUT CALLABLES THAT HAVE TO DO WITH STATE THINGS, ESPECIALLY ATTACHES.
-
-        :param callable: callable/0
-        """
-        self.finalizers.append(callable)
-
     def on_fail(self):
         """
         Called by event loop when the underlying connection is closed.
@@ -159,8 +146,7 @@ class Connection(object):
         self.any_watches = []
 
         # call finalizers
-        while len(self.finalizers) > 0:
-            self.finalizers.pop()()
+        self.finalize()
 
     def on_connection_close(self, payload):
         """

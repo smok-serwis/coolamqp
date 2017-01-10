@@ -4,6 +4,7 @@ import six
 import logging
 
 from coolamqp.uplink import Connection
+from coolamqp.objects import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,10 @@ class SingleNodeReconnector(object):
 
         self.terminating = False
 
+        self.on_fail = Callable()       #: public
+
+        self.on_fail.add(self._on_fail)
+
     def is_connected(self):
         return self.connection is not None
 
@@ -31,9 +36,9 @@ class SingleNodeReconnector(object):
         self.connection = Connection(self.node_def, self.listener_thread)
         self.attache_group.attach(self.connection)
         self.connection.start()
-        self.connection.add_finalizer(self.on_fail)
+        self.connection.finalize.add(self.on_fail)
 
-    def on_fail(self):
+    def _on_fail(self):
         if self.terminating:
             return
 

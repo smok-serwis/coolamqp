@@ -7,7 +7,7 @@ import six
 import unittest
 import time, logging, threading
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage
-from coolamqp.clustering import Cluster
+from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
 
 import time
 
@@ -125,3 +125,12 @@ class TestA(unittest.TestCase):
         con, fut = self.c.consume(Queue(u'hello', exclusive=True, auto_delete=True))
         fut.result()
         con.cancel().result()
+
+    def test_drain_1(self):
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True, auto_delete=True))
+        fut.result()
+
+        self.c.publish(Message(b'ioi'), routing_key=u'hello')
+
+        self.assertIsInstance(self.c.drain(2), MessageReceived)
+        self.assertIsInstance(self.c.drain(1), NothingMuch)

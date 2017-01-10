@@ -17,6 +17,26 @@ logger = logging.getLogger(__name__)
 EMPTY_PROPERTIES = MessageProperties()
 
 
+class Callable(object):
+    """
+    Add a bunch of callables to one list, and just invoke'm.
+    INTERNAL USE ONLY
+    """
+    def __init__(self, oneshots=False):
+        """:param oneshots: if True, callables will be called and discarded"""
+        self.callables = []
+        self.oneshots = oneshots
+
+    def add(self, callable):
+        self.callables.append(callable)
+
+    def __call__(self, *args, **kwargs):
+        for callable in self.callables:
+            callable(*args, **kwargs)
+        if self.oneshots:
+            self.callables = []
+
+
 class Message(object):
     """
     An AMQP message. Has a binary body, and some properties.
@@ -34,12 +54,12 @@ class Message(object):
         Please take care with passing empty bodies, as py-amqp has some failure on it.
 
         :param body: stream of octets
-        :type body: str (py2) or bytes (py3)
+        :type body: anything with a buffer interface
         :param properties: AMQP properties to be sent along.
                            default is 'no properties at all'
                            You can pass a dict - it will be passed to MessageProperties,
                            but it's slow - don't do that.
-        :type properties: MessageProperties instance, None or a dict
+        :type properties: MessageProperties instance, None or a dict (SLOW!)
         """
         if isinstance(body, six.text_type):
             raise TypeError(u'body cannot be a text type!')
@@ -55,6 +75,7 @@ class Message(object):
 
 
 LAMBDA_NONE = lambda: None
+
 
 class ReceivedMessage(Message):
     """
@@ -159,6 +180,7 @@ class Queue(object):
 
 class Future(concurrent.futures.Future):
     """
+    INTERNAL USE ONLY
     Future returned by asynchronous CoolAMQP methods.
 
     A strange future (only one thread may wait for it)
