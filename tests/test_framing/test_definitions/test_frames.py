@@ -33,14 +33,13 @@ class TestShitSerializesRight(unittest.TestCase):
         hdr = AMQPHeaderFrame(0, 60, 0, 0, a_cpl)
         hdr.write_to(buf)
 
-        s = b'\x00\x00\x00\x00' + \
+        s = b'\x00\x3C\x00\x00' + \
             b'\x00\x00\x00\x00\x00\x00\x00\x00' + \
             b'\x80\x00\x0Atext/plain'
+
         s = chr(FRAME_HEADER) + b'\x00\x00' + \
                   struct.pack('!L', len(s)) + s + chr(FRAME_END)
 
-        self.assertEquals(buf.getvalue(),
-
-                          )
+        self.assertEquals(buf.getvalue(), s)
 
 
