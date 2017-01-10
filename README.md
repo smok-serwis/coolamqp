@@ -11,7 +11,8 @@ CoolAMQP
 A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
 
 tl;dr - [this](coolamqp/framing/definitions.py) is **machine-generated** compile-time.
-[this](coolamqp/framing/compilation/content_property.py) **generates classes run-time**.
+[this](coolamqp/framing/compilation/content_property.py) **generates classes run-time**,
+and there are memoryviews **_everywhere_**.
 
 
 The project is actively maintained and used in a commercial project. Tests can run

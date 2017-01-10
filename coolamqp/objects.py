@@ -75,15 +75,14 @@ class ReceivedMessage(Message):
                  nack=None):
         """
         :param body: message body. A stream of octets.
-        :type body: str (py2) or bytes (py3)
-        :param connect_id: connection ID. ClusterHandlerThread will check this in order
-            not to ack messages that were received from a dead connection
+        :type body: str (py2) or bytes (py3) or a list of memoryviews, if particular disabled-by-default option
+                    is turned on.
         :param exchange_name: name of exchange this message was submitted to
         :type exchange_name: memoryview
         :param routing_key: routing key with which this message was sent
         :type routing_key: memoryview
-        :param properties: a suitable BasicContentPropertyList subinstance
-
+        :param properties: a suitable BasicContentPropertyList subinstance.
+                           be prepared that value of properties that are strings will be memoryviews
         :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message
         :param ack: a callable to call when you want to ack (via basic.ack) this message. None if received
              by the no-ack mechanism

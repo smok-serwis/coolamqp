@@ -298,8 +298,12 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         """
         # extract property flags
         pfl = 2
-        while ord(buf[offset + pfl - 1]) & 1:
-            pfl += 2
+        if six.PY2:
+            while ord(buf[offset + pfl - 1]) & 1:
+                pfl += 2
+        else:
+            while buf[offset + pfl - 1]) & 1:
+                pfl += 2
         zpf = %s.zero_property_flags(buf[offset:offset+pfl]).tobytes()
         if zpf in %s.PARTICULAR_CLASSES:
             return %s.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)

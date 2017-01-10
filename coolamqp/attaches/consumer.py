@@ -16,6 +16,9 @@ from coolamqp.exceptions import ResourceLocked, AMQPError
 logger = logging.getLogger(__name__)
 
 
+EMPTY_MEMORYVIEW = memoryview(b'')  # for empty messages
+
+
 class Consumer(Channeler):
     """
     This object represents a consumer in the system.
@@ -159,6 +162,7 @@ class Consumer(Channeler):
 
         if isinstance(payload, BasicCancel):
             # Consumer Cancel Notification - by RabbitMQ
+            # send them back those memoryviews :D
             self.methods([BasicCancelOk(payload.consumer_tag), ChannelClose(0, b'Received basic.cancel', 0, 0)])
             return
 
@@ -188,10 +192,8 @@ class Consumer(Channeler):
                     self.future_to_notify.set_exception(AMQPError(payload))
                     self.future_to_notify = None
 
-
         # We might not want to throw the connection away.
         should_retry = should_retry and (not self.cancelled)
-
 
         old_con = self.connection
 
@@ -375,7 +377,7 @@ class MessageReceiver(object):
 
         if self.header.body_size == 0:
             # An empty message is no common guest. It won't have a BODY field though...
-            self.on_body(memoryview(b''))           # trigger it manually
+            self.on_body(EMPTY_MEMORYVIEW)           # trigger it manually
 
     def on_basic_deliver(self, payload):
         assert self.state == 0
