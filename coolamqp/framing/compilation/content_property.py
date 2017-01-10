@@ -117,7 +117,6 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
 def compile_particular_content_property_list_class(zpf, fields):
     q = _compile_particular_content_property_list_class(zpf, fields)
-    logger.debug('Compiling\n%s', q)
     loc = {}
     exec(q, globals(), loc)
     return loc['ParticularContentTypeList']

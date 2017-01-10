@@ -84,6 +84,8 @@ class Connection(object):
 
     def on_connected(self):
         """Called by handshaker upon reception of final connection.open-ok"""
+        logger.info('Connection ready.')
+
         self.state = ST_ONLINE
 
         while len(self.callables_on_connected) > 0:
@@ -106,6 +108,8 @@ class Connection(object):
                 time.sleep(0.5) # Connection refused? Very bad things?
             else:
                 break
+
+        logger.info('Connected to broker, authentication in progress')
 
         sock.settimeout(0)
         sock.send(b'AMQP\x00\x00\x09\x01')
@@ -131,6 +135,8 @@ class Connection(object):
         and second time from ListenerThread when socket is disposed of
         Therefore we need to make sure callbacks are called EXACTLY once
         """
+        logger.info('Connection lost')
+
         self.state = ST_OFFLINE # Update state
 
         watchlists = [self.watches[channel] for channel in self.watches]
@@ -158,6 +164,8 @@ class Connection(object):
 
         if isinstance(payload, ConnectionClose):
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
+            logger.info(u'Broker closed our connection - code %s reason %s', payload.reply_code, payload.reply_text.tobytes().decode('utf8'))
+
         elif isinstance(payload, ConnectionCloseOk):
             self.send(None)
 
