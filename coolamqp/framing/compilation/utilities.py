@@ -169,7 +169,7 @@ def frepr(p, sop=six.text_type):
         p = sop(p)
     s = repr(p)
 
-    if isinstance(p, basestring) and not s.startswith('u'):
+    if isinstance(p, (six.binary_type, six.text_type)) and not s.startswith('u'):
         return ('u' if sop == six.text_type else 'b') + s
     else:
         return s
