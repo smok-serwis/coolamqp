@@ -183,6 +183,7 @@ class Future(concurrent.futures.Future):
     def result(self, timeout=None):
         assert timeout is None, u'Non-none timeouts not supported'
         self.lock.acquire()
+        self.lock.release()
 
         if self.completed:
             if self.successfully:

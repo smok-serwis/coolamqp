@@ -151,7 +151,9 @@ class Channeler(Attache):
 
         But moar performant.
         """
-        assert self.channel_id is not None
+        if self.channel_id is None:
+            return  # advanced teardown xD
+
         frames = [AMQPMethodFrame(self.channel_id, payload) for payload in payloads]
         self.connection.send(frames)
 

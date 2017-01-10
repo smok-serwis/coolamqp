@@ -1,6 +1,7 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 import unittest
+import struct
 import io
 
 
@@ -29,4 +30,4 @@ class TestBasicContentPropertyList(unittest.TestCase):
         bcpl.write_to(buf)
 
         ser = buf.getvalue()
-        self.assertEquals(ser, '\x80\x00' + chr(len('text/plain')) + b'text/plain')
+        self.assertEquals(ser, b'\x80\x00' + struct.pack('!B', len('text/plain')) + b'text/plain')
