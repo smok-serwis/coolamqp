@@ -21,11 +21,11 @@ SUPPORTED_EXTENSIONS = [
 CLIENT_DATA = [
         # because RabbitMQ is some kind of a fascist and does not allow
         # these fields to be of type short-string
-        (b'product', (b'CoolAMQP', b'S')),
-        (b'version', (b'develop', b'S')),
-        (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', b'S')),
-        (b'information', (b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details', b'S')),
-        (b'capabilities', ([(capa, (True, b't')) for capa in SUPPORTED_EXTENSIONS], b'F')),
+        (b'product', (b'CoolAMQP', 'S')),
+        (b'version', (b'develop', 'S')),
+        (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', 'S')),
+        (b'information', (b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details', 'S')),
+        (b'capabilities', ([(capa, (True, 't')) for capa in SUPPORTED_EXTENSIONS], 'F')),
       ]
 
 WATCHDOG_TIMEOUT = 10

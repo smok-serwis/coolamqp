@@ -2,7 +2,7 @@
 """
 That funny type, field-table...
 
-A field-value is of form (value::any, type::char)
+A field-value is of form (value::any, type::unicode)
 
 An array is of form [field-value1, field-value2, ...]
 

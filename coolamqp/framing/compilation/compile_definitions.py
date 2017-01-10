@@ -312,7 +312,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
         # ============================================ Do methods for this class
         for method in cls.methods:
-            full_class_name = '%s%s' % (name_class(cls.name), format_method_class_name(method.name))
+            full_class_name = u'%s%s' % (name_class(cls.name), format_method_class_name(method.name))
 
             # annotate types
             method.fields = [field._replace(basic_type=domain_to_basic_type[field.type]) for field in method.fields]

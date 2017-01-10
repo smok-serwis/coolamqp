@@ -21,7 +21,7 @@ import math
 from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 from coolamqp.framing.compilation.utilities import format_field_name, get_size
 
-def get_counter(fields, prefix='', indent_level=2):
+def get_counter(fields, prefix=u'', indent_level=2):
     """
     Emit code that counts how long this struct is.
 
