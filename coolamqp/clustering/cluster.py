@@ -147,7 +147,6 @@ class Cluster(object):
         """
         logger.info('Commencing shutdown')
 
-#        self.snr.shutdown()
         self.listener.terminate()
         if wait:
             self.listener.join()
