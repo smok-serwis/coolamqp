@@ -34,6 +34,8 @@ class Connection(object):
         Connection created  ->  state is ST_CONNECTING
         .start() called     ->  state is ST_CONNECTING
         connection.open-ok  ->  state is ST_ONLINE
+
+    This logger is talkative mostly on INFO, and regarding connection state
     """
 
     def __init__(self, node_definition, listener_thread):
@@ -109,7 +111,7 @@ class Connection(object):
             else:
                 break
 
-        logger.info('Connected to broker, authentication in progress')
+        logger.debug('TCP connection established, authentication in progress')
 
         sock.settimeout(0)
         sock.send(b'AMQP\x00\x00\x09\x01')
@@ -197,6 +199,9 @@ class Connection(object):
         :param frame: AMQPFrame that was received
         """
         watch_handled = False   # True if ANY watch handled this
+
+        if isinstance(frame, AMQPMethodFrame):
+            logger.debug('Received %s', frame.payload.NAME)
 
         # ==================== process per-channel watches
         if frame.channel in self.watches:
