@@ -50,6 +50,9 @@ CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
 #                                                         #
 # this has some use - speed :D                            #
 ###########################################################
+tl;dr - you received something and it's supposed to be a
+binary string? It's a memoryview all right.
+Only thing that isn't are field names in tables.
 """
 
 import struct, collections, warnings, logging, six
@@ -302,7 +305,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             while ord(buf[offset + pfl - 1]) & 1:
                 pfl += 2
         else:
-            while buf[offset + pfl - 1]) & 1:
+            while buf[offset + pfl - 1] & 1:
                 pfl += 2
         zpf = %s.zero_property_flags(buf[offset:offset+pfl]).tobytes()
         if zpf in %s.PARTICULAR_CLASSES:
