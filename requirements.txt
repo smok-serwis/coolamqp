@@ -1,4 +1,3 @@
-amqp
 six
 monotonic
 futures
