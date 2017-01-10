@@ -35,7 +35,8 @@ class Consumer(Channeler):
 
     def __init__(self, queue, on_message, no_ack=True, qos=None, cancel_on_failure=False,
                  future_to_notify=None,
-                 fail_on_first_time_resource_locked=False
+                 fail_on_first_time_resource_locked=False,
+                 fucking_memoryviews=False
                  ):
         """
         :param queue: Queue object, being consumed from right now.
@@ -60,6 +61,8 @@ class Consumer(Channeler):
                                                    of a connection fail - next reconnect will consider this to be
                                                    SECOND declaration, ie. it will retry ad infinitum
         :type fail_on_first_time_resource_locked: bool
+        :param fucking_memoryviews: if you set that to True, bodies of your ReceivedMessages will be iterables
+                                    of memoryviews, instead of bytes. Fast as fuck :/
         """
         super(Consumer, self).__init__()
 
@@ -84,6 +87,7 @@ class Consumer(Channeler):
         self.future_to_notify = future_to_notify
         self.fail_on_first_time_resource_locked = fail_on_first_time_resource_locked
         self.cancel_on_failure = cancel_on_failure
+        self.fucking_memoryviews = fucking_memoryviews
 
     def set_qos(self, prefetch_size, prefetch_count):
         """
@@ -391,8 +395,15 @@ class MessageReceiver(object):
                 self.acks_pending.add(self.bdeliver.delivery_tag)
 
             from coolamqp.objects import ReceivedMessage
+
+
+            if self.consumer.fucking_memoryviews:
+                body = self.body
+            else:
+                b''.join((mv.tobytes() for mv in self.body))
+
             rm = ReceivedMessage(
-                b''.join(map(six.binary_type, self.body)), #todo inefficient as FUUUCK
+                body,
                 self.bdeliver.exchange,
                 self.bdeliver.routing_key,
                 self.header.properties,

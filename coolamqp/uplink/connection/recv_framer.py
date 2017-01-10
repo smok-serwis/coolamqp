@@ -75,7 +75,10 @@ class ReceivingFramer(object):
     def _statemachine(self):
         # state rule 1
         if self.frame_type is None and self.total_data_len > 0:
-            self.frame_type = ord(self._extract(1)[0])
+            if six.PY3:
+                self.frame_type = self._extract(1)[0]
+            else:
+                self.frame_type = ord(self._extract(1)[0])
 
             if self.frame_type not in (FRAME_HEARTBEAT, FRAME_HEADER, FRAME_METHOD, FRAME_BODY):
                 raise ValueError('Invalid frame')
@@ -123,7 +126,11 @@ class ReceivingFramer(object):
 
                 payload = buffer(payload.getvalue())
 
-            if ord(self._extract(1)[0]) != FRAME_END:
+            z = self._extract(1)[0]
+            if six.PY2:
+                z = ord(z)
+
+            if z != FRAME_END:
                 raise ValueError('Invalid frame end')
 
             try:
