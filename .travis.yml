@@ -6,7 +6,6 @@ python:
  - "3.5"
  - "pypy"
 cache: pip
-sudo: required
 script:
  - nosetests --with-coverage
 install:
