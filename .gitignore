@@ -6,7 +6,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+.pycharm_helpers/
 # Distribution / packaging
 .Python
 env/
@@ -25,6 +25,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+*.pdf
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -2,8 +2,9 @@
 # coding=UTF-8
 from setuptools import setup
 
+
 setup(name='CoolAMQP',
-      version='0.12',
+      version='0.8',
       description='AMQP client with sane reconnects',
       author='DMS Serwis s.c.',
       author_email='piotrm@smok.co',
@@ -12,7 +13,12 @@ setup(name='CoolAMQP',
       keywords=['amqp', 'pyamqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=[
           'coolamqp',
-          'coolamqp.backends'
+          'coolamqp.backends',
+          'coolamqp.uplink',
+          'coolamqp.uplink.framing',
+          'coolamqp.uplink.framing.compilation',
+          'coolamqp.uplink.streams',
+
       ],
       license='MIT License',
       long_description=u'The AMQP client that handles reconnection madness for you',
