@@ -92,6 +92,8 @@ class AMQPContentPropertyList(object):
     """
     PROPERTIES = []
 
+    #todo they are immutable, so they could just serialize themselves...
+
     @staticmethod
     def zero_property_flags(property_flags):
         """
@@ -109,7 +111,7 @@ class AMQPContentPropertyList(object):
 
     def write_to(self, buf):
         """Serialize itself (flags + values) to a buffer"""
-        raise Exception('This is an abstract method')
+        raise Exception(u'This is an abstract method')
 
     @staticmethod
     def from_buffer(self, buf, start_offset):
@@ -120,14 +122,14 @@ class AMQPContentPropertyList(object):
 
         Buffer HAS TO start at property_flags
         """
-        raise Exception('This is an abstract method')
+        raise Exception(u'This is an abstract method')
 
     def get_size(self):
         """
         How long is property_flags + property_values
         :return: int
         """
-        raise Exception('This is an abstract method')
+        raise Exception(u'This is an abstract method')
 
 
 class AMQPMethodPayload(AMQPPayload):
@@ -140,7 +142,7 @@ class AMQPMethodPayload(AMQPPayload):
         Write own content to target buffer - starting from LENGTH, ending on FRAME_END
         :param buf: target buffer
         """
-        from coolamqp.framing.definitions import FRAME_END
+        from coolamqp.framing.definitions import FRAME_END_BYTE
 
         if self.IS_CONTENT_STATIC:
             buf.write(self.STATIC_CONTENT)
@@ -148,7 +150,7 @@ class AMQPMethodPayload(AMQPPayload):
             buf.write(struct.pack('!I', self.get_size()+2))
             buf.write(self.BINARY_HEADER)
             self.write_arguments(buf)
-            buf.write(six.int2byte(FRAME_END))
+            buf.write(FRAME_END_BYTE)
 
     def get_size(self):
         """
