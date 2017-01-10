@@ -84,7 +84,11 @@ class AMQPClass(object):
 
 class AMQPContentPropertyList(object):
     """
-    A class is intmately bound with content and content properties
+    A class is intmately bound with content and content properties.
+
+    WARNING: BE PREPARED that if you receive a content from the network,
+    string values will be memoryviews. Use .tobytes() to correct that.
+    If YOU create a property list, they will be bytes all right.
     """
     PROPERTIES = []
 

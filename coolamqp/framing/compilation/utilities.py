@@ -207,7 +207,7 @@ def to_docstring(label, doc, prefix=4, blank=True): # output a full docstring se
     if len(doc) == 1:
         return doc[0]
 
-    doc = filter(lambda p: len(p.strip()) > 0, doc)
+    doc = [p for p in doc if len(p.strip()) > 0]
 
     if blank:
         doc = [doc[0], u''] + doc[1:]
