@@ -124,7 +124,7 @@ class ReceivingFramer(object):
 
                 assert payload.tell() <= self.total_data_len
 
-                payload = buffer(payload.getvalue())
+                payload = memoryview(payload.getvalue())
 
             z = self._extract(1)[0]
             if six.PY2:
