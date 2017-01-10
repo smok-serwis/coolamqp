@@ -15,7 +15,6 @@ from coolamqp.uplink import Connection
 logger = logging.getLogger(__name__)
 
 
-
 class SingleNodeReconnector(object):
     """
     This has a Listener Thread, a Node Definition, and an attache group,
@@ -38,6 +37,5 @@ class SingleNodeReconnector(object):
         self.connection.add_finalizer(self.on_fail)
 
     def on_fail(self):
-        print('I am failed, but will recover!')
         self.connection = None
         self.connect()

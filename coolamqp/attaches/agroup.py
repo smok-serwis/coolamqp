@@ -60,7 +60,8 @@ class AttacheGroup(Attache):
 
         :param connection: Connection instance of any state
         """
-        super(AttacheGroup, self).attach(connection)
+        # since this attache does not watch for failures, it can't use typical method.
+        self.connection = connection
 
         for attache in self.attaches:
             if not attache.cancelled:

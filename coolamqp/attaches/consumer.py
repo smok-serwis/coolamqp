@@ -84,6 +84,9 @@ class Consumer(Channeler):
         1. self.state <- ST_OFFLINE, on_event(EV_OFFLINE)   upon detecting that no more messages will
            be there
         2. self.channel_id <- None, channel is returned to Connection - channel has been physically torn down
+
+        Note, this can be called multiple times, and eventually with None.
+
         """
         if self.state == ST_ONLINE:
             # The channel has just lost operationality!
@@ -95,22 +98,22 @@ class Consumer(Channeler):
         if isinstance(payload, BasicCancel):
             # Consumer Cancel Notification - by RabbitMQ
             self.methods([BasicCancelOk(), ChannelClose(0, b'Received basic.cancel', 0, 0)])
+            return
 
-        elif isinstance(payload, BasicCancelOk):
+        if isinstance(payload, BasicCancelOk):
             # OK, our cancelling went just fine - proceed with teardown
             self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
+            return
 
-        elif isinstance(payload, ChannelClose):
+        if isinstance(payload, ChannelClose):
             if payload.reply_code in (ACCESS_REFUSED, RESOURCE_LOCKED):
                 should_retry = True
-            super(Consumer, self).on_close(payload)
-        else:
-            super(Consumer, self).on_close(payload)
+
+        super(Consumer, self).on_close(payload)
 
         should_retry = should_retry and (not self.cancelled)
 
-        if should_retry:
-            self.attach(self.connection)
+        #todo retry on access denied
 
     def on_delivery(self, sth):
         """

@@ -34,6 +34,8 @@ class Attache(object):
 
         :param connection: Connection instance of any state
         """
+        assert self.connection is None
+        assert connection.state != ST_OFFLINE
         self.connection = connection
 
 
@@ -111,27 +113,30 @@ class Channeler(Attache):
 
         If you need to do something else than just close a channel, please extend or modify as necessary.
 
+        WARNING: THIS WILL GET CALLED TWICE.
+            Once on ChannelClose - if so,
+            Second with None - because socket dies.
+
+            Be prepared!
+
         """
+        if self.connection is None:
+            # teardown already done
+            return
+
         if self.state == ST_ONLINE:
             # The channel has just lost operationality!
             self.on_operational(False)
         self.state = ST_OFFLINE
 
-        if payload is None:
-            # Connection went down HARD
+        if isinstance(payload, (ChannelClose, ChannelCloseOk)):
+            assert self.channel_id is not None
             self.connection.free_channels.append(self.channel_id)
-            self.channel_id = None
-        elif isinstance(payload, ChannelClose):
-            # We have failed
-            print('Channel close: RC=%s RT=%s', payload.reply_code, payload.reply_text)
-            self.connection.free_channels.append(self.channel_id)
-            self.channel_id = None
+            # it's just dead don't bother with returning port
 
-        elif isinstance(payload, ChannelCloseOk):
-            self.connection.free_channels.append(self.channel_id)
-            self.channel_id = None
-        else:
-            raise Exception('Unrecognized payload - did you forget to handle something? :D')
+        self.connection = None
+        self.channel_id = None
+        print(self, 'pwned')
 
     def methods(self, payloads):
         """
@@ -180,6 +185,7 @@ class Channeler(Attache):
     def on_uplink_established(self):
         """Called by connection. Connection reports being ready to do things."""
         assert self.connection is not None
+        assert self.connection.state == ST_ONLINE, repr(self)
         self.state = ST_SYNCING
         self.channel_id = self.connection.free_channels.pop()
 

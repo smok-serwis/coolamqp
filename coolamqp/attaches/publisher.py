@@ -59,6 +59,7 @@ class Publisher(Channeler, Synchronized):
     """
     MODE_NOACK = 0      # no-ack publishing
     MODE_CNPUB = 1      # RabbitMQ publisher confirms extension
+    #todo add fallback using plain AMQP transactions
 
 
     def __init__(self, mode):
@@ -66,9 +67,8 @@ class Publisher(Channeler, Synchronized):
         Create a new publisher
         :param mode: Publishing mode to use. One of:
                          MODE_NOACK - use non-ack mode
-                         MODE_CNPUB - use consumer publishing mode. TypeError will be raised when this publisher
-                                      if attached to a consumer that doesn't have consumer publishes negotiated
-        :type mode: MODE_NOACK or MODE_CNPUB
+                         MODE_CNPUB - use consumer publishing mode. A switch to MODE_TXPUB will be made
+                                      if broker does not support these.
         :raise ValueError: mode invalid
         """
         Channeler.__init__(self)
@@ -85,20 +85,16 @@ class Publisher(Channeler, Synchronized):
 
         self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
 
+    @Synchronized.synchronized
     def attach(self, connection):
-        super(Publisher, self).attach(connection)
+        Channeler.attach(self, connection)
         connection.watch(FailWatch(self.on_fail))
 
     @Synchronized.synchronized
     def on_fail(self):
-        """
-        Registered as a fail watch for connection
-        """
         self.state = ST_OFFLINE
-        self.connection = None
         print('Publisher is FAILED')
 
-    @Synchronized.synchronized
     def _pub(self, message, exchange_name, routing_key):
         """
         Just send the message. Sends BasicDeliver + header + body.
@@ -162,6 +158,7 @@ class Publisher(Channeler, Synchronized):
         elif isinstance(payload, BasicNack):
             self.tagger.nack(payload.delivery_tag, payload.multiple)
 
+    @Synchronized.synchronized
     def publish(self, message, exchange_name=b'', routing_key=b''):
         """
         Schedule to have a message published.

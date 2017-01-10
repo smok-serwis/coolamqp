@@ -73,6 +73,8 @@ class Connection(object):
 
         If you call it while the connection IS up, callable will be called even before this returns.
 
+        You should be optimally an attached attache to receive this.
+
         :param callable: callable/0 to call
         """
         if self.state == ST_ONLINE:
@@ -82,6 +84,7 @@ class Connection(object):
 
     def on_connected(self):
         """Called by handshaker upon reception of final connection.open-ok"""
+        print(self.free_channels)
         self.state = ST_ONLINE
 
         while len(self.callables_on_connected) > 0:
@@ -141,6 +144,7 @@ class Connection(object):
 
         WARNING: Note that .on_fail can get called twice - once from .on_connection_close,
         and second time from ListenerThread when socket is disposed of
+        Therefore we need to make sure callbacks are called EXACTLY once
         """
         self.state = ST_OFFLINE # Update state
 
@@ -157,8 +161,8 @@ class Connection(object):
         self.any_watches = []
 
         # call finalizers
-        for finalizer in self.finalizers:
-            finalizer()
+        while len(self.finalizers) > 0:
+            self.finalizers.pop()()
 
     def on_connection_close(self, payload):
         """
@@ -268,6 +272,7 @@ class Connection(object):
         Register a watch.
         :param watch: Watch to register
         """
+        assert self.state != ST_OFFLINE
         if watch.channel is None:
             self.any_watches.append(watch)
         elif watch.channel not in self.watches:
