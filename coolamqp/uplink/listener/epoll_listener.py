@@ -113,7 +113,7 @@ class EpollListener(object):
         This object is unusable after this call.
         """
         self.time_events = []
-        for sock in six.itervalues(self.fd_to_sock):
+        for sock in list(six.itervalues(self.fd_to_sock)):
             sock.on_fail()
             sock.close()
 

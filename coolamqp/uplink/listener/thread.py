@@ -14,7 +14,7 @@ class ListenerThread(threading.Thread):
     """
 
     def __init__(self):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
         self.terminating = False
         self.listener = EpollListener()
