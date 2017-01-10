@@ -145,6 +145,7 @@ class Cluster(object):
         Terminate all connections, release resources - finish the job.
         :param wait: block until this is done
         """
+        logger.info('Commencing shutdown')
 
         self.snr.shutdown()
         self.listener.terminate()

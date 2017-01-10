@@ -4,12 +4,12 @@ from setuptools import setup
 
 
 setup(name=u'CoolAMQP',
-      version='0.80',
+      version='0.81',
       description=u'The fastest AMQP client',
       author=u'DMS Serwis s.c.',
       author_email=u'piotrm@smok.co',
       url=u'https://github.com/smok-serwis/coolamqp',
-      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.80.zip',
+      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.81.zip',
       keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=[
           'coolamqp',

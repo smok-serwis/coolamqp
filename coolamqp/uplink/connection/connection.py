@@ -249,7 +249,10 @@ class Connection(object):
         be called, and everything will process according to
         ListenerThread's on_fail callback.
         """
-        self.listener_socket.oneshot(delay, callback)
+        try:
+            self.listener_socket.oneshot(delay, callback)
+        except AttributeError:
+            print(dir(self))
 
     def unwatch_all(self, channel_id):
         """
