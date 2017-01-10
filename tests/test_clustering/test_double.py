@@ -9,7 +9,7 @@ import time, logging, threading
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage
 from coolamqp.clustering import Cluster
 NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
-
+from coolamqp.exceptions import ResourceLocked
 
 class TestDouble(unittest.TestCase):
 
@@ -28,13 +28,9 @@ class TestDouble(unittest.TestCase):
 
         q = Queue(u'yo', exclusive=True, auto_delete=True)
 
-        con, fut = self.c1.consume(q)
+        con, fut = self.c1.consume(q, qos=(None, 20))
         fut.result()
 
         con2, fut2 = self.c2.consume(q, fail_on_first_time_resource_locked=True)
 
-        from coolamqp.exceptions import ResourceLocked
-
         self.assertRaises(ResourceLocked, lambda: fut2.result())
-
-        

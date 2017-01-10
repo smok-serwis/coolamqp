@@ -30,6 +30,21 @@ class TestA(unittest.TestCase):
         fut.result()
         con.cancel()
 
+
+    def test_set_qos_but_later(self):
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True))
+
+        fut.result()
+
+        con.set_qos(100, 100)
+        time.sleep(1)
+        self.assertEquals(con.qos, (100, 100))
+
+        con.set_qos(None, 110)
+        time.sleep(1)
+        self.assertEquals(con.qos, (0, 110))
+
+
     def test_send_recv_zerolen(self):
 
         P = {'q': False}
@@ -105,3 +120,8 @@ class TestA(unittest.TestCase):
 
         self.assertTrue(P['q'])
 
+
+    def test_consumer_cancel(self):
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True, auto_delete=True))
+        fut.result()
+        con.cancel().result()

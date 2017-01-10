@@ -113,6 +113,7 @@ class Consumer(Channeler):
         we simply trash the channel. Idk if it's a good idea...
 
         .ack() or .nack() for messages from this customer will have no effect.
+        :return: a Future to tell when it's done. The future will always succeed - sooner, or later.
         """
         self.cancelled = True
         self.method(ChannelClose(0, b'consumer cancelled', 0, 0))
