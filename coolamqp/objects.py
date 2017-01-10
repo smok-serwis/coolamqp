@@ -25,6 +25,8 @@ class Message(object):
     for a list of possible properties.
     """
 
+    Properties = MessageProperties  # an alias for easier use
+
     def __init__(self, body, properties=None):
         """
         Create a Message object.
@@ -35,11 +37,20 @@ class Message(object):
         :type body: str (py2) or bytes (py3)
         :param properties: AMQP properties to be sent along.
                            default is 'no properties at all'
+                           You can pass a dict - it will be passed to MessageProperties,
+                           but it's slow - don't do that.
+        :type properties: MessageProperties instance, None or a dict
         """
         if isinstance(body, six.text_type):
             raise TypeError('body cannot be a text type!')
         self.body = six.binary_type(body)
-        self.properties = properties or EMPTY_PROPERTIES
+
+        if isinstance(properties, dict):
+            self.properties = MessageProperties(**properties)
+        elif properties is None:
+            self.properties = EMPTY_PROPERTIES
+        else:
+            self.properties = properties
 
 
 LAMBDA_NONE = lambda: None
@@ -113,7 +124,7 @@ class Queue(object):
     This object represents a Queue that applications consume from or publish to.
     """
 
-    def __init__(self, name='', durable=False, exchange=None, exclusive=False, auto_delete=False):
+    def __init__(self, name=u'', durable=False, exchange=None, exclusive=False, auto_delete=False):
         """
         Create a queue definition.
 
@@ -127,7 +138,7 @@ class Queue(object):
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
         """
-        self.name = name
+        self.name = name.encode('utf8')
         # if name is '', this will be filled in with broker-generated name upon declaration
         self.durable = durable
         self.exchange = exchange

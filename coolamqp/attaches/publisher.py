@@ -59,8 +59,11 @@ class Publisher(Channeler, Synchronized):
     """
     MODE_NOACK = 0      # no-ack publishing
     MODE_CNPUB = 1      # RabbitMQ publisher confirms extension
-    #todo add fallback using plain AMQP transactions
+    #todo add fallback using plain AMQP transactions - this will remove UnusablePublisher and stuff
 
+
+    class UnusablePublisher(Exception):
+        """This publisher will never work (eg. MODE_CNPUB on a broker not supporting publisher confirms)"""
 
     def __init__(self, mode):
         """
@@ -84,6 +87,8 @@ class Publisher(Channeler, Synchronized):
                                             #           Future to confirm or None, flags as tuple|empty tuple
 
         self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
+
+        self.critically_failed = False
 
     @Synchronized.synchronized
     def attach(self, connection):
@@ -177,6 +182,7 @@ class Publisher(Channeler, Synchronized):
         :param exchange_name: exchange name to use. Default direct exchange by default
         :param routing_key: routing key to use
         :return: a Future instance, or None
+        :raise Publisher.UnusablePublisher: this publisher will never work (eg. MODE_CNPUB on Non-RabbitMQ)
         """
         # Formulate the request
         if self.mode == Publisher.MODE_NOACK:
@@ -208,6 +214,7 @@ class Publisher(Channeler, Synchronized):
                 warnings.warn(u'Broker does not support publisher_confirms, refusing to start publisher',
                               RuntimeWarning)
                 self.state = ST_OFFLINE
+                self.critically_failed = True
                 return
 
         if isinstance(payload, ChannelOpenOk):

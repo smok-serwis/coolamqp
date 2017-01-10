@@ -11,12 +11,14 @@ from coolamqp.framing.definitions import ChannelOpen, ChannelOpenOk, BasicConsum
     QueueBind, QueueBindOk, ChannelClose, ChannelCloseOk, BasicCancel, BasicDeliver, \
     BasicAck, BasicReject, ACCESS_REFUSED, RESOURCE_LOCKED, BasicCancelOk
 from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
-
+import logging
 
 ST_OFFLINE = 0  # Consumer is *not* consuming, no setup attempts are being made
 ST_SYNCING = 1  # A process targeted at consuming has been started
 ST_ONLINE = 2   # Consumer is declared all right
 
+
+logger = logging.getLogger(__name__)
 
 
 class Attache(object):
@@ -136,7 +138,10 @@ class Channeler(Attache):
 
         self.connection = None
         self.channel_id = None
-        print(self, 'pwned')
+        print(self, 'pwned with', payload)
+
+        if isinstance(payload, ChannelClose):
+            logger.debug('Channel closed: %s %s', payload.reply_code, payload.reply_text)
 
     def methods(self, payloads):
         """

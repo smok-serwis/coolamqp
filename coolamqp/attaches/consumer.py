@@ -1,14 +1,19 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 import six
+import logging
 from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
 from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
     BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, ExchangeDeclareOk, \
     QueueBind, QueueBindOk, ChannelClose, BasicCancel, BasicDeliver, \
-    BasicAck, BasicReject, ACCESS_REFUSED, RESOURCE_LOCKED, BasicCancelOk, BasicQos
+    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, HARD_ERROR
 from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
+from coolamqp.exceptions import ResourceLocked, AMQPError
+
+
+logger = logging.getLogger(__name__)
 
 
 class Consumer(Channeler):
@@ -28,22 +33,40 @@ class Consumer(Channeler):
     Since this implies cancelling the consumer, here you go.
     """
 
-    def __init__(self, queue, no_ack=True, qos=None, dont_pause=False,
-                 future_to_notify=None
+    def __init__(self, queue, on_message, no_ack=True, qos=None, cancel_on_failure=False,
+                 future_to_notify=None,
+                 fail_on_first_time_resource_locked=False
                  ):
         """
-        :param state: state of the consumer
         :param queue: Queue object, being consumed from right now.
             Note that name of anonymous queue might change at any time!
+        :param on_message: callable that will process incoming messages
+        :type on_message: callable(ReceivedMessage instance)
         :param no_ack: Will this consumer require acknowledges from messages?
         :param qos: a tuple of (prefetch size, prefetch window) for this consumer
         :type qos: tuple(int, int) or tuple(None, int)
-        :param dont_pause: Consumer will fail on the spot instead of pausing
+        :param cancel_on_failure: Consumer will cancel itself when link goes down
+        :type cancel_on_failure: bool
+        :param future_to_notify: Future to succeed when this consumer goes online for the first time.
+                                 This future can also raise with:
+                                        AMQPError - a HARD_ERROR (see AMQP spec) was encountered
+                                        ResourceLocked - this was the first declaration, and
+                                            fail_on_first_time_resource_locked was set
+        :param fail_on_first_time_resource_locked: When consumer is declared for the first time,
+                                                   and RESOURCE_LOCKED is encountered, it will fail the
+                                                   future with ResourceLocked, and consumer will cancel itself.
+                                                   By default it will retry until success is made.
+                                                   If the consumer doesn't get the chance to be declared - because
+                                                   of a connection fail - next reconnect will consider this to be
+                                                   SECOND declaration, ie. it will retry ad infinitum
+        :type fail_on_first_time_resource_locked: bool
         """
         super(Consumer, self).__init__()
 
         self.queue = queue
         self.no_ack = no_ack
+
+        self.on_message = on_message
 
         # private
         self.cancelled = False  # did the client want to STOP using this consumer?
@@ -57,6 +80,10 @@ class Consumer(Channeler):
                 qos = 0, qos[1] # prefetch_size=0=undefined
         self.qos = qos
         self.qos_update_sent = False    # QoS was not sent to server
+
+        self.future_to_notify = future_to_notify
+        self.fail_on_first_time_resource_locked = fail_on_first_time_resource_locked
+        self.cancel_on_failure = cancel_on_failure
 
     def set_qos(self, prefetch_size, prefetch_count):
         """
@@ -90,6 +117,12 @@ class Consumer(Channeler):
         if operational:
             assert self.receiver is None
             self.receiver = MessageReceiver(self)
+
+            # notify the future
+            if self.future_to_notify is not None:
+                self.future_to_notify.set_result()
+                self.future_to_notify = None
+
         else:
             self.receiver.on_gone()
             self.receiver = None
@@ -106,6 +139,11 @@ class Consumer(Channeler):
         Note, this can be called multiple times, and eventually with None.
 
         """
+
+        if self.cancel_on_failure:
+            logger.debug('Consumer is cancel_on_failure and failure seen, cancelling')
+            self.cancel()
+
         if self.state == ST_ONLINE:
             # The channel has just lost operationality!
             self.on_operational(False)
@@ -124,17 +162,40 @@ class Consumer(Channeler):
             return
 
         if isinstance(payload, ChannelClose):
-            if payload.reply_code in (ACCESS_REFUSED, RESOURCE_LOCKED):
+            rc = payload.reply_code
+            if rc == RESOURCE_LOCKED:
+                # special handling
+                # This is because we might be reconnecting, and the broker doesn't know yet that we are dead.
+                # it won't release our exclusive channels, and that's why we'll get RESOURCE_LOCKED.
+
+                if self.fail_on_first_time_resource_locked:
+                    # still, a RESOURCE_LOCKED on a first declaration ever suggests something is very wrong
+                    if self.future_to_notify:
+                        self.future_to_notify.set_exception(ResourceLocked(payload))
+                        self.future_to_notify = None
+                        self.cancel()
+
                 should_retry = True
+            elif rc in HARD_ERROR:
+                logger.warn('Channel closed due to hard error, %s: %s', payload.reply_code, payload.reply_text)
+                if self.future_to_notify:
+                    self.future_to_notify.set_exception(AMQPError(payload))
+                    self.future_to_notify = None
+
 
         # We might not want to throw the connection away.
         should_retry = should_retry and (not self.cancelled)
 
 
-        super(Consumer, self).on_close(payload)
+        old_con = self.connection
 
+        super(Consumer, self).on_close(payload)     # this None's self.connection
+        self.fail_on_first_time_resource_locked = False
 
-        #todo retry on access denied
+        if should_retry:
+            if old_con.state == ST_ONLINE:
+                logger.info('Retrying with %s', self.queue.name)
+                self.attach(old_con)
 
     def on_delivery(self, sth):
         """
@@ -234,8 +295,8 @@ class Consumer(Channeler):
             self.on_operational(True)
 
             # resend QoS, in case of sth
-            self.set_qos(self.qos[0], self.qos[1])
-
+            if self.qos is not None:
+                self.set_qos(self.qos[0], self.qos[1])
 
 
 class MessageReceiver(object):
@@ -336,12 +397,7 @@ class MessageReceiver(object):
                 None if self.consumer.no_ack else self.confirm(self.bdeliver.delivery_tag, False),
             )
 
-#            print('hello seal - %s\nctype: %s\ncencod: %s\n' % (rm.body,
-#                  rm.properties.__dict__.get('content_type', b'<EMPTY>'),
-#                  rm.properties.__dict__.get('content_encoding', b'<EMPTY>')))
-
-            if ack_expected:
-                rm.ack()
+            self.consumer.on_message(rm)
 
             self.state = 0
 

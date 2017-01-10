@@ -1,0 +1,131 @@
+# coding=UTF-8
+"""
+THE object you interface with
+"""
+from __future__ import print_function, absolute_import, division
+import six
+import logging
+import warnings
+import time
+from coolamqp.uplink import ListenerThread
+from coolamqp.clustering.single import SingleNodeReconnector
+from coolamqp.attaches import Publisher, AttacheGroup, Consumer
+from coolamqp.objects import Future, Exchange
+from six.moves.queue import Queue
+
+
+logger = logging.getLogger(__name__)
+
+
+class Cluster(object):
+    """
+    Frontend for your AMQP needs.
+
+    This has ListenerThread.
+
+    Call .start() to connect to AMQP.
+    """
+
+    # Events you can be informed about
+    ST_LINK_LOST = 0            # Link has been lost
+    ST_LINK_REGAINED = 1        # Link has been regained
+
+
+    def __init__(self, nodes):
+        """
+        :param nodes: list of nodes, or a single node. For now, only one is supported.
+        :type nodes: NodeDefinition instance or a list of NodeDefinition instances
+        """
+        from coolamqp.objects import NodeDefinition
+        if isinstance(nodes, NodeDefinition):
+            nodes = [nodes]
+
+        if len(nodes) > 1:
+            raise NotImplementedError(u'Multiple nodes not supported yet')
+
+        self.listener = ListenerThread()
+        self.node, = nodes
+
+        self.attache_group = AttacheGroup()
+
+        self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
+
+        # Spawn a transactional publisher and a noack publisher
+        self.pub_tr = Publisher(Publisher.MODE_CNPUB)
+        self.pub_na = Publisher(Publisher.MODE_NOACK)
+
+        self.attache_group.add(self.pub_tr)
+        self.attache_group.add(self.pub_na)
+
+        self.events = Queue()   # for
+
+    def consume(self, queue, on_message=None, *args, **kwargs):
+        """
+        Start consuming from a queue.
+
+        args and kwargs will be passed to Consumer constructor (coolamqp.attaches.consumer.Consumer).
+        Don't use future_to_notify - it's done here!
+
+        Take care not to lose the Consumer object - it's the only way to cancel a consumer!
+
+        :param queue: Queue object, being consumed from right now.
+            Note that name of anonymous queue might change at any time!
+        :param on_message: callable that will process incoming messages
+                           if you leave it at None, messages will be .put into self.events
+        :type on_message: callable(ReceivedMessage instance) or None
+        :return: a tuple (Consumer instance, and a Future), that tells, when consumer is ready
+        """
+        fut = Future()
+        on_message = on_message or self.events.put_nowait
+        con = Consumer(queue, on_message, future_to_notify=fut, *args, **kwargs)
+        self.attache_group.add(con)
+        return con, fut
+
+    def publish(self, message, exchange=None, routing_key=u'', tx=False):
+        """
+        Publish a message.
+
+        :param message: Message to publish
+        :param exchange: exchange to use. Default is the "direct" empty-name exchange.
+        :type exchange: unicode/bytes (exchange name) or Exchange object.
+        :param routing_key: routing key to use
+        :param tx: Whether to publish it transactionally.
+                   If you choose so, you will receive a Future that can be used
+                   to check it broker took responsibility for this message.
+        :return: Future or None
+        """
+
+        publisher = (self.pub_tr if tx else self.pub_na)
+
+        if isinstance(exchange, Exchange):
+            exchange = exchange.name
+
+        try:
+            return publisher.publish(message, exchange.encode('utf8'), routing_key.encode('utf8'))
+        except Publisher.UnusablePublisher:
+            raise NotImplementedError(u'Sorry, this functionality if not yet implemented!')
+
+
+    def start(self, wait=True):
+        """
+        Connect to broker.
+        :param wait: block until connection is ready
+        """
+        self.listener.start()
+        self.snr.connect()
+
+        #todo not really elegant
+        if wait:
+            while not self.snr.is_connected():
+                time.sleep(0.1)
+
+    def shutdown(self, wait=True):
+        """
+        Terminate all connections, release resources - finish the job.
+        :param wait: block until this is done
+        """
+
+        self.snr.shutdown()
+        self.listener.terminate()
+        if wait:
+            self.listener.join()

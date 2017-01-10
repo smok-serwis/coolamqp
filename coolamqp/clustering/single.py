@@ -1,11 +1,4 @@
 # coding=UTF-8
-"""
-This is the layer that makes your consumers and publishers survive connection losses.
-It also renegotiates connections, shall they fail, and implements some sort of exponential delay policy.
-
-EVERYTHING HERE IS CALLED BY LISTENER THREAD UNLESS STATED OTHERWISE.
-
-"""
 from __future__ import print_function, absolute_import, division
 import six
 import logging
@@ -17,8 +10,7 @@ logger = logging.getLogger(__name__)
 
 class SingleNodeReconnector(object):
     """
-    This has a Listener Thread, a Node Definition, and an attache group,
-    and tries to keep all the things relatively alive.
+    Connection to one node. It will do it's best to remain alive.
     """
 
     def __init__(self, node_def, attache_group, listener_thread):
@@ -26,6 +18,9 @@ class SingleNodeReconnector(object):
         self.node_def = node_def
         self.attache_group = attache_group
         self.connection = None
+
+    def is_connected(self):
+        return self.connection is not None
 
     def connect(self):
         assert self.connection is None
@@ -39,3 +34,7 @@ class SingleNodeReconnector(object):
     def on_fail(self):
         self.connection = None
         self.connect()
+
+    def shutdown(self):
+        """Close this connection"""
+        self.connection.send(None)
