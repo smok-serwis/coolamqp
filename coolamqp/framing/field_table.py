@@ -33,7 +33,7 @@ def deframe_decimal(buf, offset):
 
 def deframe_shortstr(buf, offset):      # -> value, bytes_eaten
     ln, = struct.unpack_from('!B', buf, offset)
-    return buf[offset+1:offset+1+ln].tobytes(), 1+ln
+    return buf[offset+1:offset+1+ln], 1+ln
 
 
 def enframe_shortstr(buf, value):
@@ -43,7 +43,7 @@ def enframe_shortstr(buf, value):
 
 def deframe_longstr(buf, offset):  # -> value, bytes_eaten
     ln, = struct.unpack_from('!I', buf, offset)
-    return buf[offset+4:offset+4+ln].tobytes(), 4 + ln
+    return buf[offset+4:offset+4+ln], 4 + ln
 
 
 def enframe_longstr(buf, value):
@@ -90,7 +90,7 @@ def deframe_field_value(buf, offset):  # -> (value, type), bytes_consumed
     start_offset = offset
     field_type = buf[offset]
     if six.PY3:
-        field_type = bytes([field_type])    #todo slow
+        field_type = chr(field_type)
     offset += 1
 
     if field_type not in FIELD_TYPES.keys():
@@ -161,7 +161,7 @@ def deframe_table(buf, start_offset): # -> (table, bytes_consumed)
         offset += ln
         fv, delta = deframe_field_value(buf, offset)
         offset += delta
-        fields.append((field_name, fv))
+        fields.append((field_name.tobytes(), fv))
 
     if offset > (start_offset+table_length+4):
         raise ValueError('Table turned out longer than expected! Found %s bytes expected %s',
