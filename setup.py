@@ -3,12 +3,12 @@
 from setuptools import setup
 
 
-setup(name='CoolAMQP',
+setup(name=u'CoolAMQP',
       version='0.8',
-      description='AMQP client with sane reconnects',
-      author='DMS Serwis s.c.',
-      author_email='piotrm@smok.co',
-      url='https://github.com/smok-serwis/coolamqp',
+      description=u'AMQP client with sane reconnects',
+      author=u'DMS Serwis s.c.',
+      author_email=u'piotrm@smok.co',
+      url=u'https://github.com/smok-serwis/coolamqp',
 #      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.12.zip',
       keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=[
@@ -22,7 +22,7 @@ setup(name='CoolAMQP',
           'coolamqp.framing',
           'coolamqp.framing.compilation',
       ],
-      license='MIT License',
+      license=u'MIT License',
       long_description=u'Best-in-class Python AMQP client',
       requires=['amqp', 'six', 'monotonic'],
       tests_require=["nose"],

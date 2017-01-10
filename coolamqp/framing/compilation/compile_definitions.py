@@ -30,7 +30,7 @@ def compile_definitions(xml_file='resources/amqp0-9-1.extended.xml', out_file='c
     xml = ElementTree.parse(xml_file)
     out = open(out_file, 'wb')
 
-    out.write('''# coding=UTF-8
+    out.write(u'''# coding=UTF-8
 from __future__ import print_function, absolute_import
 """
 A Python version of the AMQP machine-readable specification.
@@ -65,10 +65,10 @@ logger = logging.getLogger(__name__)
 
 Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved'))
 
-''')
+'''.encode('utf8'))
 
     def line(data, *args, **kwargs):
-        out.write(ffmt(data, *args, sane=True))
+        out.write(ffmt(data, *args, sane=True).encode('utf8'))
 
     # Output core ones
     FRAME_END = None
