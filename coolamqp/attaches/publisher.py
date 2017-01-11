@@ -29,7 +29,7 @@ from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch, FailWatch
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
 
-from coolamqp.objects import Future
+from coolamqp.objects import Future, Exchange
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +149,9 @@ class Publisher(Channeler, Synchronized):
                 continue
 
             self.tagger.deposit(self.tagger.get_key(), FutureConfirmableRejectable(fut))
+
+            assert isinstance(xchg, (six.binary_type, six.text_type))
+
             self._pub(msg, xchg, rk)
 
     def _on_cnpub_delivery(self, payload):
@@ -163,7 +166,7 @@ class Publisher(Channeler, Synchronized):
             self.tagger.nack(payload.delivery_tag, payload.multiple)
 
     @Synchronized.synchronized
-    def publish(self, message, exchange_name=b'', routing_key=b''):
+    def publish(self, message, exchange=b'', routing_key=b''):
         """
         Schedule to have a message published.
 
@@ -178,24 +181,33 @@ class Publisher(Channeler, Synchronized):
             this function returns None. Messages are dropped on the floor if there's no connection.
 
         :param message: Message object to send
-        :param exchange_name: exchange name to use. Default direct exchange by default
+        :param exchange: exchange name to use. Default direct exchange by default. Can also be an Exchange object.
+        :type exchange: bytes, str or Exchange instance
         :param routing_key: routing key to use
         :return: a Future instance, or None
         :raise Publisher.UnusablePublisher: this publisher will never work (eg. MODE_CNPUB on Non-RabbitMQ)
         """
+
+        if isinstance(exchange, Exchange):
+            exchange = exchange.name.encode('utf8')
+        elif isinstance(exchange, six.text_type):
+            exchange = exchange.encode('utf8')
+
+        assert isinstance(exchange, six.binary_type)
+
         # Formulate the request
         if self.mode == Publisher.MODE_NOACK:
             # If we are not connected right now, drop the message on the floor and log it with DEBUG
             if self.state != ST_ONLINE:
                 logger.debug(u'Publish request, but not connected - dropping the message')
             else:
-                self._pub(message, exchange_name, routing_key)
+                self._pub(message, exchange, routing_key)
 
         elif self.mode == Publisher.MODE_CNPUB:
             fut = Future()
 
             #todo can optimize this not to create an object if ST_ONLINE already
-            cnpo = CnpubMessageSendOrder(message, exchange_name, routing_key, fut)
+            cnpo = CnpubMessageSendOrder(message, exchange, routing_key, fut)
             self.messages.append(cnpo)
 
             if self.state == ST_ONLINE:
