@@ -27,6 +27,8 @@ class Cluster(object):
     This has ListenerThread.
 
     Call .start() to connect to AMQP.
+
+    It is not safe to fork() after .start() is called, but it's OK before.
     """
 
     # Events you can be informed about

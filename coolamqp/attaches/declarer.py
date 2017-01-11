@@ -9,7 +9,6 @@ import logging
 from coolamqp.framing.definitions import ChannelOpenOk, ExchangeDeclare, ExchangeDeclareOk, QueueDeclare, \
                                         QueueDeclareOk, ChannelClose
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
-from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch, FailWatch
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
 
 from coolamqp.objects import Future, Exchange, Queue, Callable

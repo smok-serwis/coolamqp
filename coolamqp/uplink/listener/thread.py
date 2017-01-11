@@ -17,12 +17,12 @@ class ListenerThread(threading.Thread):
         threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
         self.terminating = False
-        self.listener = EpollListener()
 
     def terminate(self):
        self.terminating = True
 
     def run(self):
+        self.listener = EpollListener()
         while not self.terminating:
             self.listener.wait(timeout=1)
         self.listener.shutdown()
