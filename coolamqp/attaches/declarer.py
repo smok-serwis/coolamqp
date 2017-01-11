@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class Operation(object):
     """
+    An abstract operation.
+
+    This class possesses the means to carry itself out and report back status.
     Represents the op currently carried out.
 
     This will register it's own callback. Please, call on_connection_dead when connection is broken
@@ -44,25 +47,32 @@ class Operation(object):
         """Attempt to perform this op."""
         obj = self.obj
         if isinstance(obj, Exchange):
-            self.method_and_watch(ExchangeDeclare(self.obj.name.encode('utf8'), obj.type, False, obj.durable,
+            self.declarer.method_and_watch(ExchangeDeclare(self.obj.name.encode('utf8'), obj.type, False, obj.durable,
                                                   obj.auto_delete, False, False, []),
                                   (ExchangeDeclareOk, ChannelClose),
-                                  self._declared)
+                                  self._callback)
         elif isinstance(obj, Queue):
-            self.method_and_watch(QueueDeclare(obj.name, False, obj.durable, obj.exclusive, obj.auto_delete, False, []),
+            self.declarer.method_and_watch(QueueDeclare(obj.name, False, obj.durable, obj.exclusive, obj.auto_delete, False, []),
                                   (QueueDeclareOk, ChannelClose),
-                                  self._declared)
+                                  self._callback)
 
     def _callback(self, payload):
+        assert not self.done
+        self.done = True
         if isinstance(payload, ChannelClose):
             if self.fut is not None:
                 self.fut.set_exception(AMQPError(payload))
                 self.fut = None
+            else:
+                # something that had no Future failed. Is it in declared?
+                if self.obj in self.declarer.declared:
+                    self.declarer.declared.remove(self.obj) #todo access not threadsafe
+                    self.declarer.on_discard(self.obj)
         else:
             if self.fut is not None:
                 self.fut.set_result()
                 self.fut = None
-
+        self.declarer.on_operation_done()
 
 
 class Declarer(Channeler, Synchronized):
@@ -87,43 +97,50 @@ class Declarer(Channeler, Synchronized):
 
         self.on_discard = Callable()    # callable/1, with discarded elements
 
-        self.doing_now = None   # Operation instance that is being progressed right now
-
-    @Synchronized.synchronized
-    def attach(self, connection):
-        Channeler.attach(self, connection)
-        connection.watch(FailWatch(self.on_fail))
-
-    @Synchronized.synchronized
-    def on_fail(self):
-        self.state = ST_OFFLINE
-
-        # fail all operations in queue...
-        while len(self.left_to_declare) > 0:
-            self.left_to_declare.pop().on_connection_dead()
-
-        if self.now_future is not None:
-            # we were processing something...
-            self.now_future.set_exception(ConnectionDead())
-            self.now_future = None
-            self.now_processed = None
-
-
+        self.in_process = None   # Operation instance that is being progressed right now
 
     def on_close(self, payload=None):
-        old_con = self.connection
-        super(Declarer, self).on_close(payload=payload)
 
-        # But, we are super optimists. If we are not cancelled, and connection is ok,
-        # we must reestablish
-        if old_con.state == ST_ONLINE and not self.cancelled:
-            self.attach(old_con)
+        # we are interested in ChannelClose during order execution,
+        # because that means that operation was illegal, and must
+        # be discarded/exceptioned on future
 
         if payload is None:
-            # Oh, it's pretty bad. We will need to redeclare...
-            for obj in self.declared:
-                self.left_to_declare
 
+            if self.in_process is not None:
+                self.in_process.on_connection_dead()
+                self.in_process = None
+
+            # connection down, panic mode engaged.
+            while len(self.left_to_declare) > 0:
+                self.left_to_declare.pop().on_connection_dead()
+
+            # recast current declarations as new operations
+            for dec in self.declared:
+                self.left_to_declare.append(Operation(self, dec))
+
+            super(Declarer, self).on_close()
+            return
+
+        elif isinstance(payload, ChannelClose):
+            # Looks like a soft fail - we may try to survive that
+            old_con = self.connection
+            super(Declarer, self).on_close()
+
+            # But, we are super optimists. If we are not cancelled, and connection is ok,
+            # we must reestablish
+            if old_con.state == ST_ONLINE and not self.cancelled:
+                self.attach(old_con)
+        else:
+            super(Declarer, self).on_close(payload)
+
+    def on_operation_done(self):
+        """
+        Called by operation, when it's complete (whether success or fail).
+        Not called when operation fails due to DC
+        """
+        self.in_process = None
+        self._do_operations()
 
     def declare(self, obj, persistent=False):
         """
@@ -132,7 +149,7 @@ class Declarer(Channeler, Synchronized):
         Future is returned, so that user knows when it happens.
 
         Declaring is not fast, because there is at most one declare at wire, but at least we know WHAT failed.
-        Declaring same thing twice is a no-op.
+
 
         Note that if re-declaring these fails, they will be silently discarded.
         You can subscribe an on_discard(Exchange | Queue) here.
@@ -142,41 +159,36 @@ class Declarer(Channeler, Synchronized):
         :return: a Future instance
         :raise ValueError: tried to declare anonymous queue
         """
-
         if isinstance(obj, Queue):
             if obj.anonymous:
                 raise ValueError('Cannot declare anonymous queue')
 
-        if obj in self.declared:
-            return
-
         fut = Future()
 
         if persistent:
-            self.declared.add(obj)
+            if obj not in self.declared:
+                self.declared.add(obj) #todo access not threadsafe
 
-        op = Operation(self, obj, fut)
-
-        self.left_to_declare.append(op)
-
-        if self.state == ST_ONLINE:
-            self._do_operations()
+        self.left_to_declare.append(Operation(self, obj, fut))
+        self._do_operations()
 
         return fut
 
-
     @Synchronized.synchronized
     def _do_operations(self):
-        """Attempt to do something"""
-        if len(self.left_to_declare) == 0 or self.busy:
-            return
-        else:
-            self.now_processed, self.now_future = self.left_to_declare.popleft()
-        self.busy = True
+        """
+        Attempt to execute something.
 
+        To be called when it's possible that something can be done
+        """
+        if (self.state != ST_ONLINE) or len(self.left_to_declare) == 0 or (self.in_process is not None):
+            return
+
+        self.in_process = self.left_to_declare.popleft()
+        self.in_process.perform()
 
     def on_setup(self, payload):
-
         if isinstance(payload, ChannelOpenOk):
-            self.busy = False
+            assert self.in_process is None
+            self.state = ST_ONLINE
             self._do_operations()

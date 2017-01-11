@@ -65,6 +65,15 @@ class Cluster(object):
         self.attache_group.add(self.pub_na)
         self.attache_group.add(self.decl)
 
+    def declare(self, obj, persistent=False):
+        """
+        Declare a Queue/Exchange
+        :param obj: Queue/Exchange object
+        :param persistent: should it be redefined upon reconnect?
+        :return: Future
+        """
+        return self.decl.declare(obj, persistent=persistent)
+
     def drain(self, timeout):
         """
         Return an Event.

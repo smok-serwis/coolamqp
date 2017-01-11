@@ -126,11 +126,14 @@ class Exchange(object):
 
     direct = None   # the direct exchange
 
-    def __init__(self, name=u'', type='direct', durable=True, auto_delete=False):
+    def __init__(self, name=u'', type=u'direct', durable=True, auto_delete=False):
         self.name = name
         self.type = type
         self.durable = durable
         self.auto_delete = auto_delete
+
+    def __repr__(self):
+        return u'Exchange(%s, %s, %s, %s)' % (repr(self.name), repr(self.type), repr(self.durable), repr(self.auto_delete))
 
     def __hash__(self):
         return self.name.__hash__()

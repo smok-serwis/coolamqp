@@ -38,6 +38,8 @@ logger = logging.getLogger(__name__)
 CnpubMessageSendOrder = collections.namedtuple('CnpubMessageSendOrder', ('message', 'exchange_name',
                                                                          'routing_key', 'future'))
 
+#todo what if publisher in MODE_CNPUB fails mid message? they dont seem to be recovered
+
 
 class Publisher(Channeler, Synchronized):
     """
