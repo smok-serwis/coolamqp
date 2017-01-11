@@ -21,8 +21,11 @@ class ListenerThread(threading.Thread):
     def terminate(self):
        self.terminating = True
 
-    def run(self):
+    def init(self):
+        """Called before start. It is not safe to fork after this"""
         self.listener = EpollListener()
+
+    def run(self):
         while not self.terminating:
             self.listener.wait(timeout=1)
         self.listener.shutdown()

@@ -48,24 +48,8 @@ class Cluster(object):
         if len(nodes) > 1:
             raise NotImplementedError(u'Multiple nodes not supported yet')
 
-        self.listener = ListenerThread()
         self.node, = nodes
 
-        self.attache_group = AttacheGroup()
-
-        self.events = six.moves.queue.Queue()   # for coolamqp.clustering.events.*
-
-        self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
-        self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
-
-        # Spawn a transactional publisher and a noack publisher
-        self.pub_tr = Publisher(Publisher.MODE_CNPUB)
-        self.pub_na = Publisher(Publisher.MODE_NOACK)
-        self.decl = Declarer()
-
-        self.attache_group.add(self.pub_tr)
-        self.attache_group.add(self.pub_na)
-        self.attache_group.add(self.decl)
 
     def declare(self, obj, persistent=False):
         """
@@ -142,9 +126,33 @@ class Cluster(object):
 
     def start(self, wait=True):
         """
-        Connect to broker.
+        Connect to broker. Initialize Cluster.
+
+        Only after this call is Cluster usable.
+        It is not safe to fork after this.
+
         :param wait: block until connection is ready
         """
+        self.listener = ListenerThread()
+
+        self.attache_group = AttacheGroup()
+
+        self.events = six.moves.queue.Queue()   # for coolamqp.clustering.events.*
+
+        self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
+        self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
+
+        # Spawn a transactional publisher and a noack publisher
+        self.pub_tr = Publisher(Publisher.MODE_CNPUB)
+        self.pub_na = Publisher(Publisher.MODE_NOACK)
+        self.decl = Declarer()
+
+        self.attache_group.add(self.pub_tr)
+        self.attache_group.add(self.pub_na)
+        self.attache_group.add(self.decl)
+
+
+        self.listener.init()
         self.listener.start()
         self.snr.connect()
 

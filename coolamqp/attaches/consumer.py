@@ -285,7 +285,7 @@ class Consumer(Channeler):
         elif isinstance(payload, QueueDeclareOk):
             # did we need an anonymous name?
             if self.queue.anonymous:
-                self.queue.name = payload.queue_name.tobytes()
+                self.queue.name = payload.queue.tobytes()
 
             # We need any form of binding.
             if self.queue.exchange is not None:
