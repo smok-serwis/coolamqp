@@ -9,7 +9,7 @@ import warnings
 import time
 from coolamqp.uplink import ListenerThread
 from coolamqp.clustering.single import SingleNodeReconnector
-from coolamqp.attaches import Publisher, AttacheGroup, Consumer
+from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.objects import Future, Exchange
 
 
@@ -59,9 +59,11 @@ class Cluster(object):
         # Spawn a transactional publisher and a noack publisher
         self.pub_tr = Publisher(Publisher.MODE_CNPUB)
         self.pub_na = Publisher(Publisher.MODE_NOACK)
+        self.decl = Declarer()
 
         self.attache_group.add(self.pub_tr)
         self.attache_group.add(self.pub_na)
+        self.attache_group.add(self.decl)
 
     def drain(self, timeout):
         """

@@ -126,6 +126,10 @@ class Channeler(Attache):
             # teardown already done
             return
 
+        if isinstance(payload, ChannelClose):
+            # it would still be good to reply with channel.close-ok
+            self.method(ChannelCloseOk())
+
         if self.state == ST_ONLINE:
             # The channel has just lost operationality!
             self.on_operational(False)

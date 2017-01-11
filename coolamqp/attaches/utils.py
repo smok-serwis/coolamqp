@@ -219,6 +219,9 @@ class Synchronized(object):
     def __init__(self):
         self._monitor_lock = threading.Lock()
 
+    def get_monitor_lock(self):
+        return self._monitor_lock
+
     @staticmethod
     def synchronized(fun):
         @functools.wraps(fun)

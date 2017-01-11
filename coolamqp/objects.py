@@ -136,7 +136,8 @@ class Exchange(object):
         return self.name.__hash__()
 
     def __eq__(self, other):
-        return self.name == other.name
+        return (self.name == other.name) and (type(self) == type(other))
+
 
 Exchange.direct = Exchange()
 
@@ -172,7 +173,7 @@ class Queue(object):
         self.consumer_tag = name if name != '' else uuid.uuid4().hex    # consumer tag to use in AMQP comms
 
     def __eq__(self, other):
-        return self.name == other.name
+        return (self.name == other.name) and (type(self) == type(other))
 
     def __hash__(self):
         return hash(self.name)
