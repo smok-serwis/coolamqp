@@ -90,6 +90,10 @@ class Channeler(Attache):
 
         This will, therefore, get called an even number of times.
 
+        Called by Channeler, when:
+            - Channeler.on_close gets called and state is ST_ONLINE
+                on_close registers ChannelClose, ChannelCloseOk, BasicCancel
+
         :param operational: True if channel has just become operational, False if it has just become useless.
         """
 
@@ -97,9 +101,11 @@ class Channeler(Attache):
         """
         [EXTEND ME] Handler for channeler destruction.
 
-        Called on:
-        - channel exception
-        - connection failing
+        Channeler registers this for:
+            (None - socket dead)
+            (BasicCancel, ChannelCloseOk, ChannelClose)
+
+        This method provides to send a response for ChannelClose
 
         This handles following situations:
         - payload is None: this means that connection has gone down hard, so our Connection object is
@@ -126,6 +132,10 @@ class Channeler(Attache):
             # teardown already done
             return
 
+        if isinstance(payload, ChannelClose):
+            # it would still be good to reply with channel.close-ok
+            self.method(ChannelCloseOk())
+
         if self.state == ST_ONLINE:
             # The channel has just lost operationality!
             self.on_operational(False)
@@ -140,7 +150,7 @@ class Channeler(Attache):
         self.channel_id = None
 
         if isinstance(payload, ChannelClose):
-            logger.debug('Channel closed: %s %s', payload.reply_code, payload.reply_text)
+            logger.debug('Channel closed: %s %s', payload.reply_code, payload.reply_text.tobytes())
 
     def methods(self, payloads):
         """

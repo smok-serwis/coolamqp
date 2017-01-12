@@ -6,6 +6,7 @@ import threading
 import uuid
 import six
 import logging
+import warnings
 import concurrent.futures
 
 from coolamqp.framing.definitions import BasicContentPropertyList as MessageProperties
@@ -130,15 +131,20 @@ class Exchange(object):
         self.name = name
         if isinstance(type, six.text_type):
             type = type.encode('utf8')
+            warnings.warn(u'type should be a binary type')
         self.type = type        # must be bytes
         self.durable = durable
         self.auto_delete = auto_delete
+
+    def __repr__(self):
+        return u'Exchange(%s, %s, %s, %s)' % (repr(self.name), repr(self.type), repr(self.durable), repr(self.auto_delete))
 
     def __hash__(self):
         return self.name.__hash__()
 
     def __eq__(self, other):
-        return self.name == other.name
+        return (self.name == other.name) and (type(self) == type(other))
+
 
 Exchange.direct = Exchange()
 
@@ -174,7 +180,7 @@ class Queue(object):
         self.consumer_tag = name if name != '' else uuid.uuid4().hex    # consumer tag to use in AMQP comms
 
     def __eq__(self, other):
-        return self.name == other.name
+        return (self.name == other.name) and (type(self) == type(other))
 
     def __hash__(self):
         return hash(self.name)

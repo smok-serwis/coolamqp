@@ -15,14 +15,14 @@ CONSUMER_CANCEL_NOTIFY = b'consumer_cancel_notify'
 
 SUPPORTED_EXTENSIONS = [
     PUBLISHER_CONFIRMS,
-    CONSUMER_CANCEL_NOTIFY
+    CONSUMER_CANCEL_NOTIFY      # half assed support - we just .cancel the consumer, see #12
 ]
 
 CLIENT_DATA = [
         # because RabbitMQ is some kind of a fascist and does not allow
         # these fields to be of type short-string
         (b'product', (b'CoolAMQP', 'S')),
-        (b'version', (b'0.81', 'S')),
+        (b'version', (b'0.82', 'S')),
         (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', 'S')),
         (b'information', (b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details', 'S')),
         (b'capabilities', ([(capa, (True, 't')) for capa in SUPPORTED_EXTENSIONS], 'F')),

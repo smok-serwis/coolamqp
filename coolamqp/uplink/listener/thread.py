@@ -17,10 +17,13 @@ class ListenerThread(threading.Thread):
         threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
         self.terminating = False
-        self.listener = EpollListener()
 
     def terminate(self):
        self.terminating = True
+
+    def init(self):
+        """Called before start. It is not safe to fork after this"""
+        self.listener = EpollListener()
 
     def run(self):
         while not self.terminating:

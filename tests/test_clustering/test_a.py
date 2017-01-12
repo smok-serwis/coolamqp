@@ -5,8 +5,8 @@ Test things
 from __future__ import print_function, absolute_import, division
 import six
 import unittest
-import time, logging, threading
-from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage
+import time, logging, threading, monotonic
+from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage, Exchange
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
 
 import time
@@ -30,6 +30,13 @@ class TestA(unittest.TestCase):
         fut.result()
         con.cancel()
 
+    def test_actually_waits(self):
+        a = monotonic.monotonic()
+
+        self.c.drain(5)
+
+        self.assertTrue(monotonic.monotonic() - a >= 4)
+
 
     def test_set_qos_but_later(self):
         con, fut = self.c.consume(Queue(u'hello', exclusive=True))
@@ -44,6 +51,13 @@ class TestA(unittest.TestCase):
         time.sleep(1)
         self.assertEquals(con.qos, (0, 110))
 
+
+    def test_anonymq(self):
+        q = Queue(exchange=Exchange(u'ooo', type=b'fanout', auto_delete=True), auto_delete=True)
+
+        c, f = self.c.consume(q)
+
+        f.result()
 
     def test_send_recv_zerolen(self):
 

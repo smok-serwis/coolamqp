@@ -231,11 +231,11 @@ class Consumer(Channeler):
         :param sth: AMQPMethodFrame WITH basic-deliver, AMQPHeaderFrame or AMQPBodyFrame
         """
         if isinstance(sth, BasicDeliver):
-            self.receiver.on_basic_deliver(sth)
+           self.receiver.on_basic_deliver(sth)
         elif isinstance(sth, AMQPBodyFrame):
-            self.receiver.on_body(sth.data)
+           self.receiver.on_body(sth.data)
         elif isinstance(sth, AMQPHeaderFrame):
-            self.receiver.on_head(sth)
+           self.receiver.on_head(sth)
 
         # No point in listening for more stuff, that's all the watches even listen for
 
@@ -285,7 +285,7 @@ class Consumer(Channeler):
         elif isinstance(payload, QueueDeclareOk):
             # did we need an anonymous name?
             if self.queue.anonymous:
-                self.queue.name = payload.queue_name.tobytes()
+                self.queue.name = payload.queue.tobytes()
 
             # We need any form of binding.
             if self.queue.exchange is not None:

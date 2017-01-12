@@ -6,6 +6,13 @@ class CoolAMQPError(Exception):
     """Base class for CoolAMQP errors"""
 
 
+class ConnectionDead(CoolAMQPError):
+    """
+    Operation could be not completed because some other error
+    than a legit AMQPError occurred, such as exploding kitten
+    """
+
+
 class AMQPError(CoolAMQPError):
     """
     Base class for errors received from AMQP server
