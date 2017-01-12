@@ -23,10 +23,7 @@ class TestExchanges(unittest.TestCase):
 
     def test_declare_exchange(self):
         a = Exchange(u'jolax', type=b'fanout', auto_delete=True)
-        bad = Exchange(u'jolax', type=b'topic', auto_delete=True)
-
         self.c.declare(a).result()
-        self.c.declare(bad).result()    # succeeds nevertheless
 
     def test_fanout(self):
         x = Exchange(u'jola', type='direct', auto_delete=True)
