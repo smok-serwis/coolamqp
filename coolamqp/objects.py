@@ -126,7 +126,7 @@ class Exchange(object):
 
     direct = None   # the direct exchange
 
-    def __init__(self, name=u'', type=u'direct', durable=True, auto_delete=False):
+    def __init__(self, name=u'', type=u'direct', durable=False, auto_delete=False):
         self.name = name
         self.type = type
         self.durable = durable
