@@ -105,7 +105,7 @@ class BaseSocket(object):
         :raises SocketFailed: on socket error
         :return: True if I'm done sending shit for now
         """
-        if self.is_failed: return
+        if self.is_failed: return False
 
         while True:
             if len(self.data_to_send) == 0:

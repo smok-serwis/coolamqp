@@ -15,8 +15,8 @@ if __name__ == '__main__':
     amqp = Cluster([NODE])
     amqp.start(wait=True)
 
-    a = Exchange(u'jola', type='fanout', auto_delete=True, durable=False)
-    bad = Exchange(u'jola', type='direct', auto_delete=True, durable=True)
+    a = Exchange(u'jolax', type='fanout', auto_delete=True)
+    bad = Exchange(u'jolax', type='direct', auto_delete=True)
 
     amqp.declare(a).result()
 

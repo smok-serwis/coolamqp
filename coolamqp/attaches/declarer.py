@@ -147,8 +147,11 @@ class Declarer(Channeler, Synchronized):
 
         Future is returned, so that user knows when it happens.
 
-        Declaring is not fast, because there is at most one declare at wire, but at least we know WHAT failed.
+        Exchange declarations never fail.
+            Of course they do, but you will be told that it succeeded. This is by design,
+            and due to how AMQP works.
 
+        Queue declarations CAN fail.
 
         Note that if re-declaring these fails, they will be silently discarded.
         You can subscribe an on_discard(Exchange | Queue) here.

@@ -5,7 +5,7 @@ Test things
 from __future__ import print_function, absolute_import, division
 import six
 import unittest
-import time, logging, threading
+import time, logging, threading, monotonic
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage, Exchange
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
 
@@ -29,6 +29,13 @@ class TestA(unittest.TestCase):
         con, fut = self.c.consume(Queue(u'hello', exclusive=True))
         fut.result()
         con.cancel()
+
+    def test_actually_waits(self):
+        a = monotonic.monotonic()
+
+        self.c.drain(5)
+
+        self.assertTrue(monotonic.monotonic() - a >= 4)
 
 
     def test_set_qos_but_later(self):
