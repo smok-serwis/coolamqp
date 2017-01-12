@@ -25,7 +25,6 @@ if __name__ == '__main__':
     except AMQPError:
         print(':)')
 
-    while True:
-        time.sleep(30)
+    time.sleep(30)
 
     amqp.shutdown(True)

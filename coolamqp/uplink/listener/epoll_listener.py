@@ -90,7 +90,7 @@ class EpollListener(object):
                     if sock.on_write():
                         # I'm done with sending for now
                         assert len(sock.data_to_send) == 0 and len(sock.priority_queue) == 0
-                        self.epoll.modify(sock.fileno(), RW)
+                        self.epoll.modify(sock.fileno(), RO)
 
             except SocketFailed:
                 self.epoll.unregister(fd)
