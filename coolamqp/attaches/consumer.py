@@ -249,7 +249,7 @@ class Consumer(Channeler):
                 self.connection.method_and_watch(
                     self.channel_id,
                     ExchangeDeclare(self.queue.exchange.name.encode('utf8'),
-                                    self.queue.exchange.type.encode('utf8'),
+                                    self.queue.exchange.type,
                                     False,
                                     self.queue.exchange.durable,
                                     self.queue.exchange.auto_delete,

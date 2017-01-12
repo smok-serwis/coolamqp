@@ -126,9 +126,11 @@ class Exchange(object):
 
     direct = None   # the direct exchange
 
-    def __init__(self, name=u'', type='direct', durable=True, auto_delete=False):
+    def __init__(self, name=u'', type=b'direct', durable=True, auto_delete=False):
         self.name = name
-        self.type = type
+        if isinstance(type, six.text_type):
+            type = type.encode('utf8')
+        self.type = type        # must be bytes
         self.durable = durable
         self.auto_delete = auto_delete
 
