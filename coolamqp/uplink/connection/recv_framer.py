@@ -69,6 +69,8 @@ class ReceivingFramer(object):
             self.chunks[0] = self.chunks[0][up_to:]
 
         self.total_data_len -= len(q)
+        assert len(q) <= up_to, 'extracted %s but %s was requested' % (len(q), up_to)
+        print('Returning %s bytes - %s' % (len(q), repr(q)))
         return q
 
     def _statemachine(self):
@@ -81,6 +83,8 @@ class ReceivingFramer(object):
 
             if self.frame_type not in (FRAME_HEARTBEAT, FRAME_HEADER, FRAME_METHOD, FRAME_BODY):
                 raise ValueError('Invalid frame')
+
+            print('Rolling with', self.frame_type)
 
             return True
 
@@ -107,6 +111,8 @@ class ReceivingFramer(object):
 
             self.frame_channel, self.frame_size = struct.unpack('!HI',hdr)
 
+            print('Regarding', self.frame_channel, 'size', self.frame_size)
+
             return True
 
         # state rule 4
@@ -121,7 +127,7 @@ class ReceivingFramer(object):
                 while payload.tell() < self.frame_size:
                     payload.write(self._extract(self.frame_size - payload.tell()))
 
-                assert payload.tell() <= self.total_data_len
+                assert payload.tell() <= self.frame_size
 
                 payload = memoryview(payload.getvalue())
 
