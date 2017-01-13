@@ -236,8 +236,10 @@ class Connection(object):
                     # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                     alive_watches.append(watch)
 
-            for watch in alive_watches:
-                self.watches[frame.channel].append(watch)
+            if frame.channel in self.watches:
+                # unwatch_all might have gotten called, check that
+                for watch in alive_watches:
+                    self.watches[frame.channel].append(watch)
 
         # ==================== process "any" watches
         alive_watches = []

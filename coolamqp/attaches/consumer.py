@@ -213,26 +213,22 @@ class Consumer(Channeler):
 
                 if self.fail_on_first_time_resource_locked:
                     # still, a RESOURCE_LOCKED on a first declaration ever suggests something is very wrong
-                    if self.future_to_notify:
-                        self.future_to_notify.set_exception(AMQPError(payload))
-                        self.future_to_notify = None
-                        self.cancel()
+                    self.cancelled = True
                 else:
                     # Do not notify the user, and retry at will.
                     # Do not zero the future - we will need to later confirm it, so it doesn't leak.
                     should_retry = True
-            elif rc in HARD_ERRORS:
-                logger.warn('Channel closed due to hard error, %s: %s', payload.reply_code, payload.reply_text)
-                if self.future_to_notify:
-                    self.future_to_notify.set_exception(AMQPError(payload))
-                    self.future_to_notify = None
+
+            if self.future_to_notify:
+                self.future_to_notify.set_exception(AMQPError(payload))
+                self.future_to_notify = None
 
         # We might not want to throw the connection away.
         should_retry = should_retry and (not self.cancelled)
 
         old_con = self.connection
 
-        super(Consumer, self).on_close(payload)     # this None's self.connection
+        super(Consumer, self).on_close(payload)     # this None's self.connection and returns port
         self.fail_on_first_time_resource_locked = False
 
         if self.future_to_notify_on_dead:       # notify it was cancelled
@@ -252,8 +248,7 @@ class Consumer(Channeler):
         """
 
         if self.receiver is None:
-            # spurious message during destruction of consumer?
-            logger.debug('Spurious deliver')
+            # dead, cancelled, whatever
             return
 
         if isinstance(sth, BasicDeliver):

@@ -132,19 +132,26 @@ class Channeler(Attache):
             # teardown already done
             return
 
+        if self.state == ST_ONLINE: # The channel has just lost operationality! Inform others ASAP.
+            self.on_operational(False)
+        self.state = ST_OFFLINE
+
+        if not isinstance(payload, (ChannelClose, ChannelCloseOk)) and (payload is not None):
+            # I do not know how to handle that!
+            return
+
         if isinstance(payload, ChannelClose):
             # it would still be good to reply with channel.close-ok
             self.method(ChannelCloseOk())
 
-        if self.state == ST_ONLINE:
-            # The channel has just lost operationality!
-            self.on_operational(False)
-        self.state = ST_OFFLINE
-
-        if isinstance(payload, (ChannelClose, ChannelCloseOk)):
+        if payload is not None:
             assert self.channel_id is not None
             self.connection.free_channels.append(self.channel_id)
             # it's just dead don't bother with returning port
+            # at this point, this channel might still have some watches,
+            # especially if it was interrupted unexpectedly.
+            # clean up!
+            self.connection.unwatch_all(self.channel_id)
 
         self.connection = None
         self.channel_id = None
