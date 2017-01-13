@@ -130,6 +130,7 @@ class Publisher(Channeler, Synchronized):
         ])
 
         # todo optimize it - if there's only one frame it can with previous send
+        # no frames will be sent if body.length == 0
         for body in bodies:
             self.connection.send([AMQPBodyFrame(self.channel_id, body)])
 
@@ -219,6 +220,12 @@ class Publisher(Channeler, Synchronized):
         else:
             raise Exception(u'Invalid mode')
 
+    def on_operational(self, operational):
+        state = {True: u'up', False: u'down'}[operational]
+        mode = {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[self.mode]
+
+        logger.info('Publisher %s is %s', mode, state)
+
     def on_setup(self, payload):
 
         # Assert that mode is OK
@@ -229,6 +236,8 @@ class Publisher(Channeler, Synchronized):
                 self.state = ST_OFFLINE
                 self.critically_failed = True
                 return
+
+
 
         if isinstance(payload, ChannelOpenOk):
             # Ok, if this has a mode different from MODE_NOACK, we need to additionally set up
@@ -243,6 +252,7 @@ class Publisher(Channeler, Synchronized):
 
         elif self.mode == Publisher.MODE_CNPUB:
             # Because only in this case it makes sense to check for MODE_CNPUB
+
             if isinstance(payload, ConfirmSelectOk):
                 # A-OK! Boot it.
                 self.state = ST_ONLINE
