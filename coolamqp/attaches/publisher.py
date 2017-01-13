@@ -237,7 +237,7 @@ class Publisher(Channeler, Synchronized):
                 self.critically_failed = True
                 return
 
-
+        logger.debug('Publisher on_setup, payload=%s', payload)
 
         if isinstance(payload, ChannelOpenOk):
             # Ok, if this has a mode different from MODE_NOACK, we need to additionally set up
