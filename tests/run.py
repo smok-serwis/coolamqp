@@ -11,20 +11,13 @@ import time
 NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
-if __name__ == '__main__':
-    amqp = Cluster([NODE])
-    amqp.start(wait=True)
+amqp = Cluster([NODE])
+amqp.start(wait=True)
 
-    a = Exchange(u'jolax', type='fanout', auto_delete=True)
-    bad = Exchange(u'jolax', type='direct', auto_delete=True)
 
-    amqp.declare(a).result()
+q = Queue(u'lolwut', auto_delete=True, exclusive=True)
+c,f=amqp.consume(q, no_ack=True)
 
-    try:
-        amqp.declare(bad).result()
-    except AMQPError:
-        print(':)')
+#time.sleep(30)
 
-    time.sleep(30)
-
-    amqp.shutdown(True)
+#amqp.shutdown(True)

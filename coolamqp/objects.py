@@ -209,6 +209,16 @@ class Future(concurrent.futures.Future):
 
         self.callables = []
 
+    def __repr__(self):
+        a = []
+        if self.completed:
+            a.append(u'completed')
+        if self.successfully:
+            a.append(u'successfully')
+        if self.cancelled:
+            a.append(u'cancelled')
+        return u'<CoolAMQP Future %s>' % (u' '.join(a), )
+
     def add_done_callback(self, fn):
         self.callables.append(fn)
 

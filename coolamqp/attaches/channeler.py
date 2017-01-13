@@ -103,7 +103,7 @@ class Channeler(Attache):
 
         Channeler registers this for:
             (None - socket dead)
-            (BasicCancel, ChannelCloseOk, ChannelClose)
+            (BasicCancel, BasicCancelOk, ChannelCloseOk, ChannelClose)
 
         This method provides to send a response for ChannelClose
 
@@ -198,16 +198,25 @@ class Channeler(Attache):
         raise Exception('Abstract method - override me!')
 
 
+    def register_on_close_watch(self):
+        """
+        Register a watch for on_close.
+
+        Since on_close is a one-shot, it will expire upon calling.
+
+        To be called by on_close, when it needs to be notified just one more time.
+        """
+        self.connection.watch_for_method(self.channel_id, (ChannelClose, ChannelCloseOk, BasicCancel, BasicCancelOk),
+                                         self.on_close,
+                                         on_fail=self.on_close)
+
     def on_uplink_established(self):
         """Called by connection. Connection reports being ready to do things."""
         assert self.connection is not None
         assert self.connection.state == ST_ONLINE, repr(self)
         self.state = ST_SYNCING
         self.channel_id = self.connection.free_channels.pop()
-
-        self.connection.watch_for_method(self.channel_id, (ChannelClose, ChannelCloseOk, BasicCancel),
-                                         self.on_close,
-                                         on_fail=self.on_close)
+        self.register_on_close_watch()
 
         self.connection.method_and_watch(
             self.channel_id,

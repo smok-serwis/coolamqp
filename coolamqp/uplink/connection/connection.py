@@ -52,6 +52,7 @@ class Connection(object):
 
         self.recvf = ReceivingFramer(self.on_frame)
 
+        #todo a list doesn't seem like a very strong atomicity guarantee
         self.watches = {}    # channel => list of [Watch instance]
         self.any_watches = []   # list of Watches that should check everything
 
@@ -204,8 +205,12 @@ class Connection(object):
             logger.debug('Received %s', frame.payload.NAME)
 
         # ==================== process per-channel watches
+        #
+        #   Note that new watches may arrive while we process existing watches.
+        #   Therefore, we need to copy watches and zero the list before we proceed
         if frame.channel in self.watches:
             watches = self.watches[frame.channel]       # a list
+            self.watches[frame.channel] = []
 
             alive_watches = []
             while len(watches) > 0:
@@ -222,12 +227,14 @@ class Connection(object):
                     alive_watches.append(watch)
 
             for watch in alive_watches:
-                watches.append(watch)
+                self.watches[frame.channel].append(watch)
 
         # ==================== process "any" watches
         alive_watches = []
-        while len(self.any_watches):
-            watch = self.any_watches.pop()
+        any_watches = self.any_watches
+        self.any_watches = []
+        while len(any_watches):
+            watch = any_watches.pop()
             watch_triggered = watch.is_triggered_by(frame)
             watch_handled |= watch_triggered
 

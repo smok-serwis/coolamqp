@@ -7,7 +7,8 @@ from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
 from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
     BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, ExchangeDeclareOk, \
     QueueBind, QueueBindOk, ChannelClose, BasicCancel, BasicDeliver, \
-    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, HARD_ERRORS
+    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, HARD_ERRORS, \
+    BasicCancel
 from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
 from coolamqp.objects import Future
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
@@ -99,6 +100,8 @@ class Consumer(Channeler):
         self.cancel_on_failure = cancel_on_failure
         self.fucking_memoryviews = fucking_memoryviews
 
+        self.consumer_tag = None
+
     def set_qos(self, prefetch_size, prefetch_count):
         """
         Set new QoS for this consumer.
@@ -124,15 +127,20 @@ class Consumer(Channeler):
 
         if self.future_to_notify_on_dead is not None:
             # we cancelled it earlier
-            warnings.warn(u'Why would you cancel a consumer twice?', RuntimeWarning)
             return self.future_to_notify_on_dead
+        else:
+            self.future_to_notify_on_dead = Future()
 
         self.cancelled = True
-        self.method(ChannelClose(0, b'consumer cancelled', 0, 0))
+        # you'll blow up big next time you try to use this consumer if you can't cancel, but just close
+        if self.consumer_tag is not None:
+            self.method(BasicCancel(self.consumer_tag, False))
+        else:
+            self.method(ChannelClose(0, b'cancelling', 0, 0))
+
         if self.attache_group is not None:
             self.attache_group.on_cancel_customer(self)
 
-        self.future_to_notify_on_dead = Future()
         return self.future_to_notify_on_dead
 
 
@@ -165,9 +173,9 @@ class Consumer(Channeler):
 
         """
 
-        if self.cancel_on_failure:
-            logger.debug('Consumer is cancel_on_failure and failure seen, cancelling')
-            self.cancel()
+        if self.cancel_on_failure and (not self.cancelled):
+            logger.debug('Consumer is cancel_on_failure and failure seen, True->cancelled')
+            self.cancelled = True
 
         if self.state == ST_ONLINE:
             # The channel has just lost operationality!
@@ -179,11 +187,15 @@ class Consumer(Channeler):
         if isinstance(payload, BasicCancel):
             # Consumer Cancel Notification - by RabbitMQ
             # send them back those memoryviews :D
+
+            # on_close is a one_shot watch. We need to re-register it now.
+            self.register_on_close_watch()
             self.methods([BasicCancelOk(payload.consumer_tag), ChannelClose(0, b'Received basic.cancel', 0, 0)])
             return
 
         if isinstance(payload, BasicCancelOk):
             # OK, our cancelling went just fine - proceed with teardown
+            self.register_on_close_watch()
             self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
             return
 
@@ -219,6 +231,7 @@ class Consumer(Channeler):
         self.fail_on_first_time_resource_locked = False
 
         if self.future_to_notify_on_dead:       # notify it was cancelled
+            logger.info('Consumer successfully cancelled')
             self.future_to_notify_on_dead.set_result()
 
 
@@ -322,6 +335,7 @@ class Consumer(Channeler):
             self.connection.watch(mw)
 
             self.state = ST_ONLINE
+            self.consumer_tag = payload.consumer_tag.tobytes()
             self.on_operational(True)
 
             # resend QoS, in case of sth
