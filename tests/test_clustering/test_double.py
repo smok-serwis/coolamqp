@@ -9,7 +9,7 @@ import time, logging, threading
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage
 from coolamqp.clustering import Cluster
 NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
-from coolamqp.exceptions import ResourceLocked
+from coolamqp.exceptions import AMQPError, RESOURCE_LOCKED
 
 class TestDouble(unittest.TestCase):
 
@@ -31,6 +31,11 @@ class TestDouble(unittest.TestCase):
         con, fut = self.c1.consume(q, qos=(None, 20))
         fut.result()
 
-        con2, fut2 = self.c2.consume(q, fail_on_first_time_resource_locked=True)
-
-        self.assertRaises(ResourceLocked, lambda: fut2.result())
+        try:
+            con2, fut2 = self.c2.consume(q, fail_on_first_time_resource_locked=True)
+            fut2.result()
+        except AMQPError as e:
+            self.assertEquals(e.reply_code, RESOURCE_LOCKED)
+            self.assertFalse(e.is_hard_error())
+        else:
+            self.fail('Expected exception')

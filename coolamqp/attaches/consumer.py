@@ -7,11 +7,11 @@ from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
 from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
     BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, ExchangeDeclareOk, \
     QueueBind, QueueBindOk, ChannelClose, BasicCancel, BasicDeliver, \
-    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, HARD_ERROR
+    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, HARD_ERRORS
 from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
 from coolamqp.objects import Future
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
-from coolamqp.exceptions import ResourceLocked, AMQPError
+from coolamqp.exceptions import AMQPError
 
 
 logger = logging.getLogger(__name__)
@@ -197,12 +197,14 @@ class Consumer(Channeler):
                 if self.fail_on_first_time_resource_locked:
                     # still, a RESOURCE_LOCKED on a first declaration ever suggests something is very wrong
                     if self.future_to_notify:
-                        self.future_to_notify.set_exception(ResourceLocked(payload))
+                        self.future_to_notify.set_exception(AMQPError(payload))
                         self.future_to_notify = None
                         self.cancel()
-
-                should_retry = True
-            elif rc in HARD_ERROR:
+                else:
+                    # Do not notify the user, and retry at will.
+                    # Do not zero the future - we will need to later confirm it, so it doesn't leak.
+                    should_retry = True
+            elif rc in HARD_ERRORS:
                 logger.warn('Channel closed due to hard error, %s: %s', payload.reply_code, payload.reply_text)
                 if self.future_to_notify:
                     self.future_to_notify.set_exception(AMQPError(payload))

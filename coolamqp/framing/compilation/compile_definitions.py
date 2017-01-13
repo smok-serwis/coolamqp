@@ -100,7 +100,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             con_classes[constant.kind].append(pythonify_name(constant.name))
 
     for constant_kind, constants in con_classes.items():
-        line('\n%s = [%s]', pythonify_name(constant_kind), u', '.join(constants))
+        line('\n%sS = [%s]', pythonify_name(constant_kind), u', '.join(constants))
 
     # get domains
     domain_to_basic_type = {}

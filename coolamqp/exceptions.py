@@ -1,6 +1,10 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
+from coolamqp.framing.definitions import HARD_ERRORS, SOFT_ERRORS, CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, \
+    SYNTAX_ERROR, COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME, RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, \
+    INTERNAL_ERROR, CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND, RESOURCE_LOCKED, PRECONDITION_FAILED
+
 
 class CoolAMQPError(Exception):
     """Base class for CoolAMQP errors"""
@@ -17,6 +21,11 @@ class AMQPError(CoolAMQPError):
     """
     Base class for errors received from AMQP server
     """
+
+    def is_hard_error(self):
+        """Does this error close the connection?"""
+        return self.reply_code in HARD_ERRORS
+
     def __init__(self, *args):
         """
 
@@ -33,7 +42,3 @@ class AMQPError(CoolAMQPError):
         else:
             assert len(args) == 4
             self.reply_code, self.reply_text, self.class_id, self.method_id = args
-
-
-class ResourceLocked(AMQPError):
-    """Shorthand to catch that stuff easier"""
