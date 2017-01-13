@@ -9,6 +9,9 @@ class Watch(object):
     A watch is placed per-channel, to listen for a particular frame.
     """
 
+    class CancelMe(Exception):
+        """To be raised in a watch if it wants to be cancelled"""
+
     def __init__(self, channel, oneshot):
         """
         :param channel: Channel to listen to.
@@ -60,7 +63,10 @@ class AnyWatch(Watch):
         self.callable = callable
 
     def is_triggered_by(self, frame):
-        self.callable(frame)
+        try:
+            self.callable(frame)
+        except Watch.CancelMe:
+            self.cancel()
         return True
 
 
@@ -91,7 +97,10 @@ class HeaderOrBodyWatch(Watch):
     def is_triggered_by(self, frame):
         if not (isinstance(frame, (AMQPHeaderFrame, AMQPBodyFrame))):
             return False
-        self.callable(frame)
+        try:
+            self.callable(frame)
+        except Watch.CancelMe:
+            self.cancel()
         return True
 
 
@@ -123,6 +132,9 @@ class MethodWatch(Watch):
             return False
 
         if isinstance(frame.payload, self.methods):
-            self.callable(frame.payload)
+            try:
+                self.callable(frame.payload)
+            except Watch.CancelMe:
+                self.cancel()
             return True
         return False

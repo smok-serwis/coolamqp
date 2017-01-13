@@ -11,7 +11,7 @@ from coolamqp.uplink.connection.send_framer import SendingFramer
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.handshake import Handshaker
 from coolamqp.framing.definitions import ConnectionClose, ConnectionCloseOk
-from coolamqp.uplink.connection.watches import MethodWatch
+from coolamqp.uplink.connection.watches import MethodWatch, Watch
 from coolamqp.uplink.connection.states import ST_ONLINE, ST_OFFLINE, ST_CONNECTING
 from coolamqp.objects import Callable
 
@@ -146,10 +146,12 @@ class Connection(object):
 
         for watchlist in watchlists:   # Run all watches - failed
             for watch in watchlist:
-                watch.failed()
+                if not watch.cancelled:
+                    watch.failed()
 
         for watch in self.any_watches:
-            watch.failed()
+            if not watch.cancelled:
+                watch.failed()
 
         self.watches = {}                       # Clear the watch list
         self.any_watches = []
@@ -183,6 +185,9 @@ class Connection(object):
         :param reason: optional human-readable reason for this action
         """
         if frames is not None:
+            # for frame in frames:
+            #     if isinstance(frame, AMQPMethodFrame):
+            #         print('Sending ', frame.payload)
             self.sendf.send(frames, priority=priority)
         else:
             # Listener socket will kill us when time is right
@@ -217,12 +222,17 @@ class Connection(object):
                 watch = watches.pop()
 
                 if watch.cancelled:
+                    # print('watch',watch,'was cancelled')
                     continue
 
                 watch_triggered = watch.is_triggered_by(frame)
                 watch_handled |= watch_triggered
 
-                if (not watch_triggered) or (not watch.oneshot):
+                if watch.cancelled:
+                    # print('watch',watch,'was cancelled')
+                    continue
+
+                if ((not watch_triggered) or (not watch.oneshot)) and (not watch.cancelled):
                     # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                     alive_watches.append(watch)
 
@@ -235,10 +245,20 @@ class Connection(object):
         self.any_watches = []
         while len(any_watches):
             watch = any_watches.pop()
+
+            if watch.cancelled:
+                # print('any watch', watch, 'was cancelled')
+                continue
+
             watch_triggered = watch.is_triggered_by(frame)
             watch_handled |= watch_triggered
 
-            if (not watch_triggered) or (not watch.oneshot):
+            if watch.cancelled:
+                # print('any watch', watch, 'was cancelled')
+                continue
+
+
+            if ((not watch_triggered) or (not watch.oneshot)) and (not watch.cancelled):
                 # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                 alive_watches.append(watch)
 

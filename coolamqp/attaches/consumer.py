@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 import six
 import logging
+import uuid
 import warnings
 from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
 from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
@@ -157,6 +158,8 @@ class Consumer(Channeler):
                 self.future_to_notify = None
 
         else:
+            self.hb_watch.cancel()
+            self.deliver_watch.cancel()
             self.receiver.on_gone()
             self.receiver = None
 
@@ -180,7 +183,9 @@ class Consumer(Channeler):
         if self.state == ST_ONLINE:
             # The channel has just lost operationality!
             self.on_operational(False)
-        self.state = ST_OFFLINE
+            self.state = ST_OFFLINE
+
+            # deliver and head/body watch will clean up after themselves
 
         should_retry = False
 
@@ -245,6 +250,12 @@ class Consumer(Channeler):
         Callback for delivery-related shit
         :param sth: AMQPMethodFrame WITH basic-deliver, AMQPHeaderFrame or AMQPBodyFrame
         """
+
+        if self.receiver is None:
+            # spurious message during destruction of consumer?
+            logger.debug('Spurious deliver')
+            return
+
         if isinstance(sth, BasicDeliver):
            self.receiver.on_basic_deliver(sth)
         elif isinstance(sth, AMQPBodyFrame):
@@ -318,8 +329,11 @@ class Consumer(Channeler):
             # itadakimasu
             if self.qos is not None:
                 self.method(BasicQos(self.qos[0], self.qos[1], False))
+
+            self.consumer_tag = uuid.uuid4().hex.encode('utf8') # str in py2, unicode in py3
+
             self.method_and_watch(
-                BasicConsume(self.queue.name, self.queue.name,
+                BasicConsume(self.queue.name, self.consumer_tag,
                     False, self.no_ack, self.queue.exclusive, False, []),
                 BasicConsumeOk,
                 self.on_setup
@@ -327,16 +341,21 @@ class Consumer(Channeler):
 
         elif isinstance(payload, BasicConsumeOk):
             # AWWW RIGHT~!!! We're good.
+            self.on_operational(True)
+            consumer_tag = self.consumer_tag
+
 
             # Register watches for receiving shit
-            self.connection.watch(HeaderOrBodyWatch(self.channel_id, self.on_delivery))
-            mw = MethodWatch(self.channel_id, BasicDeliver, self.on_delivery)
-            mw.oneshot = False
-            self.connection.watch(mw)
+            # this is multi-shot by default
+            self.hb_watch = HeaderOrBodyWatch(self.channel_id, self.on_delivery)
+            self.connection.watch(self.hb_watch)
+
+            # multi-shot watches need manual cleanup!
+            self.deliver_watch = MethodWatch(self.channel_id, BasicDeliver, self.on_delivery)
+            self.deliver_watch.oneshot = False
+            self.connection.watch(self.deliver_watch)
 
             self.state = ST_ONLINE
-            self.consumer_tag = payload.consumer_tag.tobytes()
-            self.on_operational(True)
 
             # resend QoS, in case of sth
             if self.qos is not None:
