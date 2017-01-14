@@ -11,7 +11,7 @@ from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
     BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, HARD_ERRORS, \
     BasicCancel
 from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
-from coolamqp.objects import Future
+from concurrent.futures import Future
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.exceptions import AMQPError
 
@@ -131,6 +131,7 @@ class Consumer(Channeler):
             return self.future_to_notify_on_dead
         else:
             self.future_to_notify_on_dead = Future()
+            self.future_to_notify_on_dead.set_running_or_notify_cancel()
 
         self.cancelled = True
         # you'll blow up big next time you try to use this consumer if you can't cancel, but just close
@@ -154,7 +155,7 @@ class Consumer(Channeler):
 
             # notify the future
             if self.future_to_notify is not None:
-                self.future_to_notify.set_result()
+                self.future_to_notify.set_result(None)
                 self.future_to_notify = None
 
         else:
@@ -233,7 +234,7 @@ class Consumer(Channeler):
 
         if self.future_to_notify_on_dead:       # notify it was cancelled
             logger.info('Consumer successfully cancelled')
-            self.future_to_notify_on_dead.set_result()
+            self.future_to_notify_on_dead.set_result(None)
 
 
         if should_retry:

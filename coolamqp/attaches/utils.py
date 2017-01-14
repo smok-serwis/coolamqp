@@ -35,7 +35,7 @@ class FutureConfirmableRejectable(ConfirmableRejectable):
         self.future = future
 
     def confirm(self):
-        self.future.set_result()
+        self.future.set_result(None)
 
     def reject(self):
         self.future.set_exception(Exception())

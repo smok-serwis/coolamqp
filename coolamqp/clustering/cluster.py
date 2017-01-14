@@ -10,8 +10,8 @@ import time
 from coolamqp.uplink import ListenerThread
 from coolamqp.clustering.single import SingleNodeReconnector
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
-from coolamqp.objects import Future, Exchange
-
+from coolamqp.objects import Exchange
+from concurrent.futures import Future
 
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, NothingMuch
 
@@ -91,6 +91,7 @@ class Cluster(object):
         :return: a tuple (Consumer instance, and a Future), that tells, when consumer is ready
         """
         fut = Future()
+        fut.set_running_or_notify_cancel()  # it's running right now
         on_message = on_message or (lambda rmsg: self.events.put_nowait(MessageReceived(rmsg)))
         con = Consumer(queue, on_message, future_to_notify=fut, *args, **kwargs)
         self.attache_group.add(con)

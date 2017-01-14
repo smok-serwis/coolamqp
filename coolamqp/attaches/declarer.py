@@ -10,8 +10,8 @@ from coolamqp.framing.definitions import ChannelOpenOk, ExchangeDeclare, Exchang
                                         QueueDeclareOk, ChannelClose
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
-
-from coolamqp.objects import Future, Exchange, Queue, Callable
+from concurrent.futures import Future
+from coolamqp.objects import Exchange, Queue, Callable
 from coolamqp.exceptions import AMQPError, ConnectionDead
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class Operation(object):
                     self.declarer.on_discard(self.obj)
         else:
             if self.fut is not None:
-                self.fut.set_result()
+                self.fut.set_result(None)
                 self.fut = None
         self.declarer.on_operation_done()
 
@@ -166,6 +166,7 @@ class Declarer(Channeler, Synchronized):
                 raise ValueError('Cannot declare anonymous queue')
 
         fut = Future()
+        fut.set_running_or_notify_cancel()
 
         if persistent:
             if obj not in self.declared:

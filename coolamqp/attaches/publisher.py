@@ -29,7 +29,8 @@ from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch, FailWatch
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
 
-from coolamqp.objects import Future, Exchange
+from concurrent.futures import Future
+from coolamqp.objects import Exchange
 
 logger = logging.getLogger(__name__)
 
@@ -146,15 +147,11 @@ class Publisher(Channeler, Synchronized):
         while len(self.messages) > 0:
             msg, xchg, rk, fut = self.messages.popleft()
 
-            if fut.cancelled:
-                # Ok, don't do this.
-                fut.set_cancel()
-                continue
+            if not fut.set_running_or_notify_cancel():
+                continue    # cancelled
 
             self.tagger.deposit(self.tagger.get_key(), FutureConfirmableRejectable(fut))
-
             assert isinstance(xchg, (six.binary_type, six.text_type))
-
             self._pub(msg, xchg, rk)
 
     def _on_cnpub_delivery(self, payload):
