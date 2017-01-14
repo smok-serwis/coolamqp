@@ -2,16 +2,12 @@
 """
 Core objects used in CoolAMQP
 """
-import threading
 import uuid
 import six
 import logging
 import warnings
-import concurrent.futures
 
 from coolamqp.framing.definitions import BasicContentPropertyList as MessageProperties
-
-__all__ = ('Message', 'ReceivedMessage', 'MessageProperties', 'Queue', 'Exchange', 'Future')
 
 logger = logging.getLogger(__name__)
 
