@@ -261,26 +261,6 @@ class NodeDefinition(object):
         else:
             raise ValueError(u'What did you exactly pass?')
 
-    @staticmethod
-    def from_str(connstr, **kwargs):
-        """
-        Return a NodeDefinition from an AMQP connection string.
-
-        It should look like:
-
-
-
-        :param connstr: a unicode
-
-        :param heartbeat: heartbeat to use
-
-        :return: NodeDefinition instance
-        :raise ValueError: invalid string
-        """
-
-        return NodeDefinition(host=host, port=5672, user=user, password=passw, virtual_host=virtual_host,
-                              heartbeat=kwargs.get('heartbeat', None))
-
     def __str__(self):
         return six.text_type(
             b'amqp://%s:%s@%s/%s'.encode('utf8') % (self.host, self.port, self.user, self.virtual_host))
