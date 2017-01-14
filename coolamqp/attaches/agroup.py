@@ -66,7 +66,5 @@ class AttacheGroup(Attache):
         for attache in self.attaches:
             if not attache.cancelled:
                 attache.attach(connection)
-            else:
-                raise Exception(u'I should not have found a cancelled attache here...')
 
 
