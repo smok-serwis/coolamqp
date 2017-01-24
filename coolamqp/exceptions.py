@@ -1,6 +1,7 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
+import six
 from coolamqp.framing.definitions import HARD_ERRORS, SOFT_ERRORS, CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, \
     SYNTAX_ERROR, COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME, RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, \
     INTERNAL_ERROR, CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND, RESOURCE_LOCKED, PRECONDITION_FAILED
@@ -25,6 +26,17 @@ class AMQPError(CoolAMQPError):
     def is_hard_error(self):
         """Does this error close the connection?"""
         return self.reply_code in HARD_ERRORS
+
+    def __str__(self):
+        return u'AMQP error %s: %s' % (self.reply_code, self.reply_text)
+
+    def __repr__(self):
+        return u'AMQPError(%s, %s, %s, %s)' % (
+            repr(self.reply_code),
+            repr(self.reply_text),
+            repr(self.class_id),
+            repr(self.method_id),
+        )
 
     def __init__(self, *args):
         """
