@@ -133,7 +133,16 @@ class Cluster(object):
         It is not safe to fork after this.
 
         :param wait: block until connection is ready
+        :raise RuntimeError: called more than once
         """
+
+        try:
+            self.listener
+        except AttributeError:
+            pass
+        else:
+            raise RuntimeError(u'This was already called!')
+
         self.listener = ListenerThread()
 
         self.attache_group = AttacheGroup()
