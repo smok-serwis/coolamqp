@@ -1,7 +1,7 @@
 # Tutorial
 
 If you want to connect to an AMQP broker, you need:
-* it's address (and port)
+* its address (and port)
 * login and password
 * name of the virtual host
 

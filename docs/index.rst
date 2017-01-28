@@ -6,6 +6,7 @@ Welcome to CoolAMQP's documentation!
    :caption: Contents:
 
    tutorial
+   caveats
 
 
 Indices and tables
