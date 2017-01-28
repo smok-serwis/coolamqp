@@ -50,7 +50,6 @@ class Cluster(object):
 
         self.node, = nodes
 
-
     def declare(self, obj, persistent=False):
         """
         Declare a Queue/Exchange
@@ -175,7 +174,14 @@ class Cluster(object):
         """
         Terminate all connections, release resources - finish the job.
         :param wait: block until this is done
+        :raise RuntimeError: if called without start() being called first
         """
+
+        try:
+            self.listener
+        except AttributeError:
+            raise RuntimeError(u'shutdown without start')
+
         logger.info('Commencing shutdown')
 
         self.listener.terminate()
