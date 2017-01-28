@@ -20,7 +20,6 @@ class TestConnecting(unittest.TestCase):
         self.assertRaises(RuntimeError, lambda: c.start())
         c.shutdown(wait=True)
 
-
     def test_shutdown_without_start(self):
         c = Cluster([NODE])
         self.assertRaises(RuntimeError, lambda: c.shutdown())
