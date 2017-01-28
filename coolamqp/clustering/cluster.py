@@ -122,15 +122,12 @@ class Cluster(object):
         if tx is not None:  # confirm is a drop-in replacement. tx is unfortunately named
             warnings.warn(u'Use confirm kwarg instead', DeprecationWarning)
 
-            if confirm is None:
-                tx = False
-            else:
+            if confirm is not None:
                 raise RuntimeError(u'Using both tx= and confirm= at once does not make sense')
-        elif confirm is None:
-            tx = False
-        else:
+        elif confirm is not None:
             tx = confirm
-
+        else:
+            tx = False
 
         try:
             return (self.pub_tr if tx else self.pub_na).publish(message, exchange, routing_key.encode('utf8'))
