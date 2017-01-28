@@ -41,6 +41,9 @@ if you need every CPU cycle you can get.
 
 ## What's new
 
+* v0.89: 
+   * TBA
+
 * v0.88:
     * **API changes:**
         * Cluster.start will RuntimeError if called more than once
