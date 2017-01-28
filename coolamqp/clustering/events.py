@@ -19,20 +19,12 @@ class Event(object):
     An event emitted by Cluster
     """
 
-class Timestamped(Event):
-    """
-    Notes the time of the event (as result of .monotonic)
-    """
-    def __init__(self):
-        super(Timestamped, self).__init__()
-        self.ts = monotonic.monotonic()
-
 
 class NothingMuch(Event):
     """Nothing happened :D"""
 
 
-class ConnectionLost(Timestamped):
+class ConnectionLost(Event):
     """
     We have lost the connection.
 
@@ -45,7 +37,7 @@ class ConnectionLost(Timestamped):
     """
 
 
-class MessageReceived(ReceivedMessage, Timestamped):
+class MessageReceived(ReceivedMessage, Event):
     """
     Something that works as an ersatz ReceivedMessage, but is an event
     """
@@ -54,4 +46,3 @@ class MessageReceived(ReceivedMessage, Timestamped):
         ReceivedMessage.__init__(self, msg.body, msg.exchange_name, msg.routing_key,
                                  properties=msg.properties, delivery_tag=msg.delivery_tag,
                                  ack=msg.ack, nack=msg.nack)
-        Timestamped.__init__(self)
