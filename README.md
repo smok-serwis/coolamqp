@@ -42,7 +42,7 @@ if you need every CPU cycle you can get.
 ## What's new
 
 * v0.89: 
-   * TBA
+   * Events are no longer timestamped by CoolAMQP, it's your job now
 
 * v0.88:
     * **API changes:**
