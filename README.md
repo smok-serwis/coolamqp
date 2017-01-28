@@ -38,3 +38,11 @@ if you need every CPU cycle you can get.
 **v0.8x** series has unstable API. It probably won't change much
 
 **v0.9x** series will have a stable API.
+
+## What's new
+
+* v0.88:
+    * **API changes:**
+        * Cluster.start will RuntimeError if called more than once
+        * Cluster.shutdown will RuntimeError if called without .start
+    * Warning with content list is shorter
