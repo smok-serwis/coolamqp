@@ -74,6 +74,33 @@ class TestA(unittest.TestCase):
 
         self.assertTrue(P['q'])
 
+    def test_message_with_propos_confirm(self):
+
+        P = {'q': False}
+
+        def ok(e):
+            self.assertIsInstance(e, ReceivedMessage)
+            self.assertEquals(e.body, b'hello')
+            #bcoz u can compare memoryviews to their providers :D
+            self.assertEquals(e.properties.content_type, b'text/plain')
+            self.assertEquals(e.properties.content_encoding, b'utf8')
+            P['q'] = True
+
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True), on_message=ok, no_ack=True)
+        fut.result()
+        self.c.publish(Message(b'hello', properties={
+            'content_type': b'text/plain',
+            'content_encoding': b'utf8'
+        }), routing_key=u'hello', confirm=True).result()
+
+        self.assertRaises(RuntimeError, lambda: self.c.publish(Message(b'hello', properties={
+            'content_type': b'text/plain',
+            'content_encoding': b'utf8'
+        }), routing_key=u'hello', confirm=True, tx=True).result())
+
+        time.sleep(1)
+
+        self.assertTrue(P['q'])
 
     def test_message_with_propos(self):
 

@@ -96,7 +96,7 @@ class Cluster(object):
         self.attache_group.add(con)
         return con, fut
 
-    def publish(self, message, exchange=None, routing_key=u'', tx=False):
+    def publish(self, message, exchange=None, routing_key=u'', tx=None, confirm=None):
         """
         Publish a message.
 
@@ -104,11 +104,12 @@ class Cluster(object):
         :param exchange: exchange to use. Default is the "direct" empty-name exchange.
         :type exchange: unicode/bytes (exchange name) or Exchange object.
         :param routing_key: routing key to use
-        :param tx: Whether to publish it transactionally.
-                   If you choose so, you will receive a Future that can be used
-                   to check it broker took responsibility for this message.
-                   Note that if tx if False, and message cannot be delivered to broker at once,
-                   it will be discarded.
+        :param confirm: Whether to publish it using confirms/transactions.
+                        If you choose so, you will receive a Future that can be used
+                        to check it broker took responsibility for this message.
+                        Note that if tx if False, and message cannot be delivered to broker at once,
+                        it will be discarded.
+        :param tx: deprecated, alias for confirm
         :return: Future or None
         """
         if isinstance(exchange, Exchange):
@@ -117,6 +118,19 @@ class Cluster(object):
             exchange = b''
         else:
             exchange = exchange.encode('utf8')
+
+        if tx is not None:  # confirm is a drop-in replacement. tx is unfortunately named
+            warnings.warn(u'Use confirm kwarg instead', DeprecationWarning)
+
+            if confirm is None:
+                tx = False
+            else:
+                raise RuntimeError(u'Using both tx= and confirm= at once does not make sense')
+        elif confirm is None:
+            tx = False
+        else:
+            tx = confirm
+
 
         try:
             return (self.pub_tr if tx else self.pub_na).publish(message, exchange, routing_key.encode('utf8'))
