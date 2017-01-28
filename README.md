@@ -1,5 +1,6 @@
 CoolAMQP
 ========
+[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/CoolAMQP.svg)](https://badge.fury.io/py/CoolAMQP)
 [![Build Status](https://travis-ci.org/smok-serwis/coolamqp.svg)](https://travis-ci.org/smok-serwis/coolamqp)
 [![Code Climate](https://codeclimate.com/github/smok-serwis/coolamqp/badges/gpa.svg)](https://codeclimate.com/github/smok-serwis/coolamqp)
@@ -9,6 +10,8 @@ CoolAMQP
 [![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
 
 A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
+
+Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
 
 tl;dr - [this](coolamqp/framing/definitions.py) is **machine-generated** compile-time.
 [this](coolamqp/framing/compilation/content_property.py) **generates classes run-time**,
