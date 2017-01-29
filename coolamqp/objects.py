@@ -72,7 +72,8 @@ class Message(object):
             self.properties = properties
 
 
-LAMBDA_NONE = lambda: None
+def LAMBDA_NONE():
+    pass
 
 
 class ReceivedMessage(Message):
@@ -125,7 +126,16 @@ class Exchange(object):
     direct = None  # the direct exchange
 
     def __init__(self, name=u'', type=b'direct', durable=True, auto_delete=False):
+        """
+        :type name: unicode is preferred, binary type will get decoded to unicode with utf8
+        :param type: exchange type. Please pass a binary type.
+        """
+
+        if isinstance(name, six.binary_type):
+            name = name.decode('utf8')
+
         self.name = name
+
         if isinstance(type, six.text_type):
             type = type.encode('utf8')
             warnings.warn(u'type should be a binary type')
@@ -135,7 +145,7 @@ class Exchange(object):
 
     def __repr__(self):
         return u'Exchange(%s, %s, %s, %s)' % (
-        repr(self.name), repr(self.type), repr(self.durable), repr(self.auto_delete))
+            repr(self.name), repr(self.type), repr(self.durable), repr(self.auto_delete))
 
     def __hash__(self):
         return self.name.__hash__()

@@ -62,7 +62,6 @@ if you need every CPU cycle you can get.
        * Consumer being cancelled with a CCN
 
 * v0.88:
-    * **API changes:**
-        * Cluster.start will RuntimeError if called more than once
-        * Cluster.shutdown will RuntimeError if called without .start
+    * Cluster.start will RuntimeError if called more than once
+    * Cluster.shutdown will RuntimeError if called without .start
     * Warning with content list is shorter
