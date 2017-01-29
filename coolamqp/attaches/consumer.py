@@ -7,9 +7,8 @@ import warnings
 from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
 from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
     BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, ExchangeDeclareOk, \
-    QueueBind, QueueBindOk, ChannelClose, BasicCancel, BasicDeliver, \
-    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, HARD_ERRORS, \
-    BasicCancel, BasicQosOk
+    QueueBind, QueueBindOk, ChannelClose, BasicDeliver, BasicCancel, \
+    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, BasicQosOk
 from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
 from concurrent.futures import Future
 from coolamqp.objects import Callable
@@ -64,6 +63,9 @@ class Consumer(Channeler):
                  fucking_memoryviews=False
                  ):
         """
+        Note that if you specify QoS, it is applied before basic.consume is sent. This will prevent
+        the broker from hammering you into oblivion with a mountain of messages.
+
         :param queue: Queue object, being consumed from right now.
             Note that name of anonymous queue might change at any time!
         :param on_message: callable that will process incoming messages

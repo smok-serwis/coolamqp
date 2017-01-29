@@ -25,7 +25,7 @@ setup(name=u'CoolAMQP',
       long_description=u'''Pure Python AMQP client, but with dynamic class generation and memoryviews FOR THE GODSPEED.
 
 Also, handles your reconnects and transactionality THE RIGHT WAY''',
-      requires=['amqp', 'six', 'monotonic'],
+      requires=['six', 'monotonic', 'futures'],
       tests_require=["nose"],
       test_suite='nose.collector',
       classifiers=[
