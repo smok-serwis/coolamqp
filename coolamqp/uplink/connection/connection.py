@@ -117,12 +117,13 @@ class Connection(object):
         sock.settimeout(0)
         sock.send(b'AMQP\x00\x00\x09\x01')
 
-        Handshaker(self, self.node_definition, self.on_connected)
         self.listener_socket = self.listener_thread.register(sock,
                                                             on_read=self.recvf.put,
                                                             on_fail=self.on_fail)
         self.sendf = SendingFramer(self.listener_socket.send)
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk), self.on_connection_close)
+
+        Handshaker(self, self.node_definition, self.on_connected)
 
     def on_fail(self):
         """
@@ -184,14 +185,17 @@ class Connection(object):
         :param frames: list of frames or None to close the link
         :param reason: optional human-readable reason for this action
         """
-        if frames is not None:
-            # for frame in frames:
-            #     if isinstance(frame, AMQPMethodFrame):
-            #         print('Sending ', frame.payload)
-            self.sendf.send(frames, priority=priority)
-        else:
-            # Listener socket will kill us when time is right
-            self.listener_socket.send(None)
+        try:
+            if frames is not None:
+                # for frame in frames:
+                #     if isinstance(frame, AMQPMethodFrame):
+                #         print('Sending ', frame.payload)
+                self.sendf.send(frames, priority=priority)
+            else:
+                # Listener socket will kill us when time is right
+                self.listener_socket.send(None)
+        except AttributeError:  # .sendf or .listener_socket not there yet
+            raise RuntimeError(u'Call start() first')
 
     def on_frame(self, frame):
         """

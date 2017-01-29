@@ -52,6 +52,7 @@ if you need every CPU cycle you can get.
 
 * v0.89: 
    * Events are no longer timestamped by CoolAMQP, it's your job now
+   * You can delete queues
 
 * v0.88:
     * **API changes:**
