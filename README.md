@@ -57,6 +57,9 @@ if you need every CPU cycle you can get.
    * Queue can accept _bytes_ as name
    * Consumer will set _cancelled_ to _True_ if 
    [Consumer Cancel Notification](https://www.rabbitmq.com/consumer-cancel.html) is received
+   * You can register callbacks for:
+       * Consumer being cancelled for any reason
+       * Consumer being cancelled with a CCN
 
 * v0.88:
     * **API changes:**
