@@ -47,7 +47,6 @@ FRAME_HEARTBEAT = 8
 FRAME_HEARTBEAT_BYTE = b'\x08'
 
 FRAME_MIN_SIZE = 4096
-FRAME_MIN_SIZE = 4096
 
 FRAME_END = 206
 FRAME_END_BYTE = b'\xce'
@@ -58,72 +57,55 @@ REPLY_SUCCESS_BYTE = b'\xc8'
                               # reserved for future use - the current protocol design does not use positive
                               # confirmation and reply codes are sent only in case of an error.
 CONTENT_TOO_LARGE = 311
-CONTENT_TOO_LARGE = 311
  # The client attempted to transfer content larger than the server could accept
                          # at the present time. The client may retry at a later time.
-NO_CONSUMERS = 313
 NO_CONSUMERS = 313
  # When the exchange cannot deliver to a consumer when the immediate flag is
                     # set. As a result of pending data on the queue or the absence of any
                     # consumers of the queue.
 CONNECTION_FORCED = 320
-CONNECTION_FORCED = 320
  # An operator intervened to close the connection for some reason. The client
                          # may retry at some later date.
 INVALID_PATH = 402
-INVALID_PATH = 402
  # The client tried to work with an unknown virtual host.
-ACCESS_REFUSED = 403
 ACCESS_REFUSED = 403
  # The client attempted to work with a server entity to which it has no
                       # access due to security settings.
 NOT_FOUND = 404
-NOT_FOUND = 404
  # The client attempted to work with a server entity that does not exist.
-RESOURCE_LOCKED = 405
 RESOURCE_LOCKED = 405
  # The client attempted to work with a server entity to which it has no
                        # access because another client is working with it.
 PRECONDITION_FAILED = 406
-PRECONDITION_FAILED = 406
  # The client requested a method that was not allowed because some precondition
                            # failed.
-FRAME_ERROR = 501
 FRAME_ERROR = 501
  # The sender sent a malformed frame that the recipient could not decode.
                    # This strongly implies a programming error in the sending peer.
 SYNTAX_ERROR = 502
-SYNTAX_ERROR = 502
  # The sender sent a frame that contained illegal values for one or more
                     # fields. This strongly implies a programming error in the sending peer.
-COMMAND_INVALID = 503
 COMMAND_INVALID = 503
  # The client sent an invalid sequence of frames, attempting to perform an
                        # operation that was considered invalid by the server. This usually implies
                        # a programming error in the client.
 CHANNEL_ERROR = 504
-CHANNEL_ERROR = 504
  # The client attempted to work with a channel that had not been correctly
                      # opened. This most likely indicates a fault in the client layer.
-UNEXPECTED_FRAME = 505
 UNEXPECTED_FRAME = 505
  # The peer sent a frame that was not expected, usually in the context of
                         # a content header and body.  This strongly indicates a fault in the peer's
                         # content processing.
 RESOURCE_ERROR = 506
-RESOURCE_ERROR = 506
  # The server could not complete the method because it lacked sufficient
                       # resources. This may be due to the client creating too many of some type
                       # of entity.
 NOT_ALLOWED = 530
-NOT_ALLOWED = 530
  # The client tried to work with some entity in a manner that is prohibited
                    # by the server, due to security settings or by some other criteria.
 NOT_IMPLEMENTED = 540
-NOT_IMPLEMENTED = 540
  # The client tried to use functionality that is not implemented in the
                        # server.
-INTERNAL_ERROR = 541
 INTERNAL_ERROR = 541
  # The server could not complete the method because of an internal error.
                       # The server may require intervention by an operator in order to resume

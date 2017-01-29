@@ -85,7 +85,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             if not z.startswith(u'b'):
                 z = u'b' + z
             g = ffmt('%s_BYTE = %s\n', pythonify_name(constant.name), z)
-        line(g)
+            line(g)
         if constant.docs:
             lines = constant.docs.split('\n')
             line(' # %s\n', lines[0])
