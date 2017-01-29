@@ -2,7 +2,6 @@
 
 Things to look out for
 
-
 ## memoryviews
 
 Since CoolAMQP tries to be fast, it uses memoryviews everywhere. _ReceivedMessage_ properties, and message
@@ -20,3 +19,4 @@ in Cluster.consume).
 Note that YOU, when sending messages, should not use memoryviews. Pass proper byte objects and text objects
 as required.
 
+_AMQPError_'s returned to you via futures will also have memoryviews as _reply_text_!
