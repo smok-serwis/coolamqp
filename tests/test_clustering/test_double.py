@@ -11,6 +11,10 @@ from coolamqp.clustering import Cluster
 NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
 from coolamqp.exceptions import AMQPError, RESOURCE_LOCKED
 
+
+logging.basicConfig(level=logging.DEBUG)
+
+
 class TestDouble(unittest.TestCase):
 
     def setUp(self):
@@ -24,6 +28,17 @@ class TestDouble(unittest.TestCase):
         self.c1.shutdown()
         self.c2.shutdown()
 
+    # def test_ccn(self):
+    #     q1 = Queue(b'yo', auto_delete=True)
+    #
+    #     con1, fut1 = self.c1.consume(q1)
+    #     fut1.result()
+    #
+    #     self.c2.delete_queue(q1) #.result()
+    #
+    #     time.sleep(5)
+    #     self.assertTrue(con1.cancelled)
+    #
     def test_resource_locked(self):
 
         q = Queue(u'yo', exclusive=True, auto_delete=True)

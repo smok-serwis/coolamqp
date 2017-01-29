@@ -24,6 +24,10 @@ class TestA(unittest.TestCase):
     def tearDown(self):
         self.c.shutdown()
 
+    def test_delete_queue(self):
+        # that's how it's written, due to http://www.rabbitmq.com/specification.html#method-status-queue.delete
+        self.c.delete_queue(Queue(u'i-do-not-exist')).result()
+
     def test_consume(self):
         con, fut = self.c.consume(Queue(u'hello', exclusive=True))
         fut.result()

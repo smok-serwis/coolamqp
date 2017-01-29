@@ -161,12 +161,13 @@ class Queue(object):
             upon declaration. If a disconnect happens, and connection to other node is
             reestablished, this name will CHANGE AGAIN, and be reflected in this object.
             This change will be done before CoolAMQP signals reconnection.
+        :type name: byte type or text type
         :param durable: Is the queue durable?
         :param exchange: Exchange for this queue to bind to. None for no binding.
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
         """
-        self.name = name.encode('utf8')  #: public, this is of type bytes ALWAYS
+        self.name = name.encode('utf8') if isinstance(name, six.text_type) else name  #: public, this is of type bytes ALWAYS
         # if name is '', this will be filled in with broker-generated name upon declaration
         self.durable = durable
         self.exchange = exchange

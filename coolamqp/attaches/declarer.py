@@ -7,7 +7,7 @@ import six
 import collections
 import logging
 from coolamqp.framing.definitions import ChannelOpenOk, ExchangeDeclare, ExchangeDeclareOk, QueueDeclare, \
-                                        QueueDeclareOk, ChannelClose
+                                        QueueDeclareOk, ChannelClose, QueueDelete, QueueDeleteOk
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
 from concurrent.futures import Future
@@ -71,6 +71,29 @@ class Operation(object):
             if self.fut is not None:
                 self.fut.set_result(None)
                 self.fut = None
+        self.declarer.on_operation_done()
+
+
+class DeleteQueue(Operation):
+    def __init__(self, declarer, queue, fut):
+        super(DeleteQueue, self).__init__(declarer, queue, fut=fut)
+
+    def perform(self):
+        queue = self.obj
+
+        print('bang')
+        self.declarer.method_and_watch(QueueDelete(queue.name, False, False, False),
+                                       (QueueDeleteOk, ChannelClose),
+                                       self._callback)
+
+    def _callback(self, payload):
+        print('got', payload)
+        assert not self.done
+        self.done = True
+        if isinstance(payload, ChannelClose):
+            self.fut.set_exception(AMQPError(payload))
+        else:   # Queue.DeleteOk
+            self.fut.set_result(None)
         self.declarer.on_operation_done()
 
 
@@ -141,11 +164,32 @@ class Declarer(Channeler, Synchronized):
         self.in_process = None
         self._do_operations()
 
+    def delete_queue(self, queue):
+        """
+        Delete a queue.
+
+        Future is returned, so that user knows when it happens. This may fail.
+        Returned Future is already running, and so cannot be cancelled.
+
+        If the queue is in declared consumer list, it will not be removed.
+
+        :param queue: Queue instance
+        :return: a Future
+        """
+        fut = Future()
+        fut.set_running_or_notify_cancel()
+
+        self.left_to_declare.append(DeleteQueue(self, queue, fut))
+        self._do_operations()
+
+        return fut
+
     def declare(self, obj, persistent=False):
         """
         Schedule to have an object declared.
 
         Future is returned, so that user knows when it happens.
+        Returned Future is already running, and so cannot be cancelled.
 
         Exchange declarations never fail.
             Of course they do, but you will be told that it succeeded. This is by design,

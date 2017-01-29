@@ -42,6 +42,12 @@ if you need every CPU cycle you can get.
 
 **v0.9x** series will have a stable API.
 
+## Current limitations
+
+* channel flow mechanism is not supported (#11)
+* _confirm=True_ is not available if you're not RabbitMQ (#8)
+* no Windows support (#9)
+
 ## What's new
 
 * v0.89: 

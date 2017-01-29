@@ -96,6 +96,15 @@ class Cluster(object):
         self.attache_group.add(con)
         return con, fut
 
+    def delete_queue(self, queue):
+        """
+        Delete a queue.
+
+        :param queue: Queue instance that represents what to delete
+        :return: a Future (will succeed with None or fail with AMQPError)
+        """
+        return self.decl.delete_queue(queue)
+
     def publish(self, message, exchange=None, routing_key=u'', tx=None, confirm=None):
         """
         Publish a message.
@@ -133,7 +142,6 @@ class Cluster(object):
             return (self.pub_tr if tx else self.pub_na).publish(message, exchange, routing_key.encode('utf8'))
         except Publisher.UnusablePublisher:
             raise NotImplementedError(u'Sorry, this functionality is not yet implemented!')
-
 
     def start(self, wait=True):
         """
