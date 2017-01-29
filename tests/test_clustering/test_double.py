@@ -28,17 +28,27 @@ class TestDouble(unittest.TestCase):
         self.c1.shutdown()
         self.c2.shutdown()
 
-    # def test_ccn(self):
-    #     q1 = Queue(b'yo', auto_delete=True)
-    #
-    #     con1, fut1 = self.c1.consume(q1)
-    #     fut1.result()
-    #
-    #     self.c2.delete_queue(q1) #.result()
-    #
-    #     time.sleep(5)
-    #     self.assertTrue(con1.cancelled)
-    #
+    @unittest.skip("Since RabbitMQ does not support queue deletion, you need to do this manually")
+    def test_ccn(self):
+        """
+        Will consumer cancel itself after Consumer Cancel Notification?
+
+        Manual procedure:
+            - start the test
+            - delete the queue using RabbitMQ Management web panel
+              you got 30 seconds to do this
+              see if it fails or not
+        """
+        q1 = Queue(b'yo', auto_delete=True)
+
+        con1, fut1 = self.c1.consume(q1)
+        fut1.result()
+
+#        self.c2.delete_queue(q1) #.result()
+
+        time.sleep(30)
+        self.assertTrue(con1.cancelled)
+
     def test_resource_locked(self):
 
         q = Queue(u'yo', exclusive=True, auto_delete=True)

@@ -197,6 +197,7 @@ class Consumer(Channeler):
             # on_close is a one_shot watch. We need to re-register it now.
             self.register_on_close_watch()
             self.methods([BasicCancelOk(payload.consumer_tag), ChannelClose(0, b'Received basic.cancel', 0, 0)])
+            self.cancelled = True   # wasn't I?
             return
 
         if isinstance(payload, BasicCancelOk):

@@ -185,17 +185,14 @@ class Connection(object):
         :param frames: list of frames or None to close the link
         :param reason: optional human-readable reason for this action
         """
-        try:
-            if frames is not None:
-                # for frame in frames:
-                #     if isinstance(frame, AMQPMethodFrame):
-                #         print('Sending ', frame.payload)
-                self.sendf.send(frames, priority=priority)
-            else:
-                # Listener socket will kill us when time is right
-                self.listener_socket.send(None)
-        except AttributeError:  # .sendf or .listener_socket not there yet
-            raise RuntimeError(u'Call start() first')
+        if frames is not None:
+            # for frame in frames:
+            #     if isinstance(frame, AMQPMethodFrame):
+            #         print('Sending ', frame.payload)
+            self.sendf.send(frames, priority=priority)
+        else:
+            # Listener socket will kill us when time is right
+            self.listener_socket.send(None)
 
     def on_frame(self, frame):
         """

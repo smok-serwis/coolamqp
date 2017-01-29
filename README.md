@@ -52,7 +52,11 @@ if you need every CPU cycle you can get.
 
 * v0.89: 
    * Events are no longer timestamped by CoolAMQP, it's your job now
-   * You can delete queues
+   * You can delete queues (_Cluster.delete_queue_)
+   * Race condition _Connection.start_ fixed
+   * Queue can accept _bytes_ as name
+   * Consumer will set _cancelled_ to _True_ if 
+   [Consumer Cancel Notification](https://www.rabbitmq.com/consumer-cancel.html) is received
 
 * v0.88:
     * **API changes:**
