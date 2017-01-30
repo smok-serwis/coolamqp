@@ -27,7 +27,7 @@ handle AMQP, but you can feel the spirit of AMQP underneath.
 The project is actively maintained and used in a commercial project. Tests can run
 either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.
 
-CoolAMQP won't touch your messages. It's your bag of bytes, and your properties.
+CoolAMQP won't touch your messages. It's your bags o'bytes, and your properties.
 
 Enjoy!
 
