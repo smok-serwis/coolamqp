@@ -50,6 +50,9 @@ if you need every CPU cycle you can get.
 
 ## What's new
 
+* v0.89.1:
+  * **Critical bugfix**: messages larger than a frame got corrupted
+
 * v0.89: 
    * Events are no longer timestamped by CoolAMQP, it's your job now
    * You can delete queues (_Cluster.delete_queue_)
