@@ -4,6 +4,7 @@ Test things
 """
 from __future__ import print_function, absolute_import, division
 import six
+import os
 import unittest
 import time, logging, threading, monotonic
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage, Exchange
@@ -32,6 +33,19 @@ class TestA(unittest.TestCase):
         con, fut = self.c.consume(Queue(u'hello', exclusive=True))
         fut.result()
         con.cancel()
+
+    def test_very_long_messages(self):
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True))
+        fut.result()
+
+        data = six.binary_type(os.urandom(20*1024*1024+1423))
+
+        self.c.publish(Message(data), routing_key=b'hello', confirm=True).result()
+
+#        rmsg = self.c.drain(3)
+#        rmsg.ack()
+
+#        self.assertEquals(rmsg.body, data)
 
     def test_actually_waits(self):
         a = monotonic.monotonic()

@@ -468,6 +468,7 @@ class MessageReceiver(object):
         self.body.append(payload)
         self.data_to_go -= len(payload)
         assert self.data_to_go >= 0
+
         if self.data_to_go == 0:
             ack_expected = not self.consumer.no_ack
 
@@ -496,5 +497,5 @@ class MessageReceiver(object):
 
             self.state = 0
 
-        # at this point it's safe to clear the body
-        self.body = []
+            # at this point it's safe to clear the body
+            self.body = []
