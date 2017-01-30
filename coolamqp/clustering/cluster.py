@@ -142,7 +142,7 @@ class Cluster(object):
             tx = False
 
         try:
-            return (self.pub_tr if tx else self.pub_na).publish(message, exchange, routing_key.encode('utf8'))
+            return (self.pub_tr if tx else self.pub_na).publish(message, exchange, routing_key)
         except Publisher.UnusablePublisher:
             raise NotImplementedError(u'Sorry, this functionality is not yet implemented!')
 
