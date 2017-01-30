@@ -128,6 +128,9 @@ class Cluster(object):
         else:
             exchange = exchange.encode('utf8')
 
+        if isinstance(routing_key, six.text_type):
+            routing_key = routing_key.encode('utf8')
+
         if tx is not None:  # confirm is a drop-in replacement. tx is unfortunately named
             warnings.warn(u'Use confirm kwarg instead', DeprecationWarning)
 
