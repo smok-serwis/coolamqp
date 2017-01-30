@@ -50,6 +50,9 @@ if you need every CPU cycle you can get.
 
 ## What's new
 
+* v0.89.2:
+  * TBA
+
 * v0.89.1:
   * **Critical bugfix**: messages larger than a frame got corrupted
 
