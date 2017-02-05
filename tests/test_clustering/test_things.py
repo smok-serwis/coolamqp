@@ -28,7 +28,7 @@ class TestConnecting(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
             Exchange(u'lol', type=u'wtf')
-            assert len(w) == 1
+            self.assertGreater(len(w), 0)
 
     def test_queues_equal_and_hashable(self):
         q1 = Queue(u'lolwut')
