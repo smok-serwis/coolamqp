@@ -136,7 +136,7 @@ class Exchange(object):
         self.auto_delete = auto_delete
 
         assert isinstance(self.name, six.text_type)
-        assert isinstance(self.type, six.text_type)
+        assert isinstance(self.type, six.binary_type)
 
     def __repr__(self):
         return u'Exchange(%s, %s, %s, %s)' % (
