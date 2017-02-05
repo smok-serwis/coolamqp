@@ -34,12 +34,12 @@ from coolamqp.objects import Exchange
 
 logger = logging.getLogger(__name__)
 
-
 # for holding messages when MODE_CNPUB and link is down
 CnpubMessageSendOrder = collections.namedtuple('CnpubMessageSendOrder', ('message', 'exchange_name',
                                                                          'routing_key', 'future'))
 
-#todo what if publisher in MODE_CNPUB fails mid message? they dont seem to be recovered
+
+# todo what if publisher in MODE_CNPUB fails mid message? they dont seem to be recovered
 
 
 class Publisher(Channeler, Synchronized):
@@ -61,9 +61,10 @@ class Publisher(Channeler, Synchronized):
 
     _pub and on_fail are synchronized so that _pub doesn't see a partially destroyed class.
     """
-    MODE_NOACK = 0      # no-ack publishing
-    MODE_CNPUB = 1      # RabbitMQ publisher confirms extension
-    #todo add fallback using plain AMQP transactions - this will remove UnusablePublisher and stuff
+    MODE_NOACK = 0  # no-ack publishing
+    MODE_CNPUB = 1  # RabbitMQ publisher confirms extension
+
+    # todo add fallback using plain AMQP transactions - this will remove UnusablePublisher and stuff
 
 
     class UnusablePublisher(Exception):
@@ -86,9 +87,9 @@ class Publisher(Channeler, Synchronized):
 
         self.mode = mode
 
-        self.messages = collections.deque() # Messages to publish. From newest to last.
-                                            # tuple of (Message object, exchange name::str, routing_key::str,
-                                            #           Future to confirm or None, flags as tuple|empty tuple
+        self.messages = collections.deque()  # Messages to publish. From newest to last.
+        # tuple of (Message object, exchange name::str, routing_key::str,
+        #           Future to confirm or None, flags as tuple|empty tuple
 
         self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
 
@@ -124,7 +125,6 @@ class Publisher(Channeler, Synchronized):
             bodies.append(body[:max_body_size])
             body = body[max_body_size:]
 
-
         self.connection.send([
             AMQPMethodFrame(self.channel_id, BasicPublish(exchange_name, routing_key, False, False)),
             AMQPHeaderFrame(self.channel_id, Basic.INDEX, 0, len(message.body), message.properties)
@@ -148,7 +148,7 @@ class Publisher(Channeler, Synchronized):
             msg, xchg, rk, fut = self.messages.popleft()
 
             if not fut.set_running_or_notify_cancel():
-                continue    # cancelled
+                continue  # cancelled
 
             self.tagger.deposit(self.tagger.get_key(), FutureConfirmableRejectable(fut))
             assert isinstance(xchg, (six.binary_type, six.text_type))
@@ -206,7 +206,7 @@ class Publisher(Channeler, Synchronized):
         elif self.mode == Publisher.MODE_CNPUB:
             fut = Future()
 
-            #todo can optimize this not to create an object if ST_ONLINE already
+            # todo can optimize this not to create an object if ST_ONLINE already
             cnpo = CnpubMessageSendOrder(message, exchange, routing_key, fut)
             self.messages.append(cnpo)
 

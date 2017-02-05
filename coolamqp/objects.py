@@ -181,7 +181,8 @@ class Queue(object):
 
         self.anonymous = len(self.name) == 0  # if this queue is anonymous, it must be regenerated upon reconnect
 
-        self.consumer_tag = self.name if not self.anonymous else uuid.uuid4().hex.encode('utf8')  # bytes, consumer tag to use in AMQP comms
+        self.consumer_tag = self.name if not self.anonymous else uuid.uuid4().hex.encode(
+            'utf8')  # bytes, consumer tag to use in AMQP comms
 
         assert isinstance(self.name, six.binary_type)
         assert isinstance(self.consumer_tag, six.binary_type)

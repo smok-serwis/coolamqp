@@ -26,11 +26,13 @@ class ConfirmableRejectable(object):
         :return: don't care
         """
 
+
 class FutureConfirmableRejectable(ConfirmableRejectable):
     """
     A ConfirmableRejectable that can result a future (with None),
     or Exception it with a message
     """
+
     def __init__(self, future):
         self.future = future
 
@@ -80,10 +82,10 @@ class AtomicTagger(object):
         self.lock = threading.RLock()
 
         # Protected by lock
-        self.next_tag = 1       # 0 is AMQP-reserved to mean "everything so far"
+        self.next_tag = 1  # 0 is AMQP-reserved to mean "everything so far"
         self.tags = []  # a list of (tag, ConfirmableRejectable)
-                        # they remain to be acked/nacked
-                        # invariant: FOR EACH i, j: (i>j) => (tags[i][0] > tags[j][0])
+        # they remain to be acked/nacked
+        # invariant: FOR EACH i, j: (i>j) => (tags[i][0] > tags[j][0])
 
     def deposit(self, tag, obj):
         """
@@ -107,10 +109,10 @@ class AtomicTagger(object):
             else:
                 # Insert a value at place where it makes sense. Iterate from the end, because
                 # values will usually land there...
-                i = len(self.tags) - 1 # start index
+                i = len(self.tags) - 1  # start index
 
-                while i>0:  # this will terminate at i=0
-                    if self.tags[i][0] > tag: # this means we should insert it here...
+                while i > 0:  # this will terminate at i=0
+                    if self.tags[i][0] > tag:  # this means we should insert it here...
                         break
                     i -= 1  # previousl index
 
@@ -132,10 +134,10 @@ class AtomicTagger(object):
                     # Compute the ranges
                     for stop, opt in enumerate(self.tags):
                         if opt[0] == tag:
-                            stop += 1 # this is exactly this tag. Adjust stop to end one further (Python slicing) and stop
+                            stop += 1  # this is exactly this tag. Adjust stop to end one further (Python slicing) and stop
                             break
                         if opt[0] > tag:
-                            break # We went too far, but it's OK, we don't need to bother with adjusting stop
+                            break  # We went too far, but it's OK, we don't need to bother with adjusting stop
                     else:
                         # List finished without breaking? That would mean the entire range!
                         stop = len(self.tags)
@@ -148,9 +150,8 @@ class AtomicTagger(object):
                     else:
                         return  # not found!
 
-
                 if not multiple:
-                    start = stop-1
+                    start = stop - 1
             else:
                 # Oh, I know the range!
                 stop = len(self.tags)
@@ -230,5 +231,3 @@ class Synchronized(object):
                 return fun(*args, **kwargs)
 
         return monitored
-
-

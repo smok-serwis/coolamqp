@@ -52,20 +52,19 @@ class Connection(object):
 
         self.recvf = ReceivingFramer(self.on_frame)
 
-        #todo a list doesn't seem like a very strong atomicity guarantee
-        self.watches = {}    # channel => list of [Watch instance]
-        self.any_watches = []   # list of Watches that should check everything
+        # todo a list doesn't seem like a very strong atomicity guarantee
+        self.watches = {}  # channel => list of [Watch instance]
+        self.any_watches = []  # list of Watches that should check everything
 
         self.finalize = Callable(oneshots=True)  #: public
 
-
         self.state = ST_CONNECTING
 
-        self.callables_on_connected = []    # list of callable/0
+        self.callables_on_connected = []  # list of callable/0
 
         # Negotiated connection parameters - handshake will fill this in
-        self.free_channels = [] # attaches can use this for shit.
-                    # WARNING: thread safety of this hinges on atomicity of .pop or .append
+        self.free_channels = []  # attaches can use this for shit.
+        # WARNING: thread safety of this hinges on atomicity of .pop or .append
         self.frame_max = None
         self.heartbeat = None
         self.extensions = []
@@ -108,7 +107,7 @@ class Connection(object):
             try:
                 sock.connect((self.node_definition.host, self.node_definition.port))
             except socket.error as e:
-                time.sleep(0.5) # Connection refused? Very bad things?
+                time.sleep(0.5)  # Connection refused? Very bad things?
             else:
                 break
 
@@ -118,8 +117,8 @@ class Connection(object):
         sock.send(b'AMQP\x00\x00\x09\x01')
 
         self.listener_socket = self.listener_thread.register(sock,
-                                                            on_read=self.recvf.put,
-                                                            on_fail=self.on_fail)
+                                                             on_read=self.recvf.put,
+                                                             on_fail=self.on_fail)
         self.sendf = SendingFramer(self.listener_socket.send)
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk), self.on_connection_close)
 
@@ -141,11 +140,11 @@ class Connection(object):
         """
         logger.info('Connection lost')
 
-        self.state = ST_OFFLINE # Update state
+        self.state = ST_OFFLINE  # Update state
 
         watchlists = [self.watches[channel] for channel in self.watches]
 
-        for watchlist in watchlists:   # Run all watches - failed
+        for watchlist in watchlists:  # Run all watches - failed
             for watch in watchlist:
                 if not watch.cancelled:
                     watch.failed()
@@ -154,7 +153,7 @@ class Connection(object):
             if not watch.cancelled:
                 watch.failed()
 
-        self.watches = {}                       # Clear the watch list
+        self.watches = {}  # Clear the watch list
         self.any_watches = []
 
         # call finalizers
@@ -166,11 +165,12 @@ class Connection(object):
 
         Called by ListenerThread.
         """
-        self.on_fail()      # it does not make sense to prolong the agony
+        self.on_fail()  # it does not make sense to prolong the agony
 
         if isinstance(payload, ConnectionClose):
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
-            logger.info(u'Broker closed our connection - code %s reason %s', payload.reply_code, payload.reply_text.tobytes().decode('utf8'))
+            logger.info(u'Broker closed our connection - code %s reason %s', payload.reply_code,
+                        payload.reply_text.tobytes().decode('utf8'))
 
         elif isinstance(payload, ConnectionCloseOk):
             self.send(None)
@@ -205,7 +205,7 @@ class Connection(object):
 
         :param frame: AMQPFrame that was received
         """
-        watch_handled = False   # True if ANY watch handled this
+        watch_handled = False  # True if ANY watch handled this
 
         if isinstance(frame, AMQPMethodFrame):
             logger.debug('Received %s', frame.payload.NAME)
@@ -215,7 +215,7 @@ class Connection(object):
         #   Note that new watches may arrive while we process existing watches.
         #   Therefore, we need to copy watches and zero the list before we proceed
         if frame.channel in self.watches:
-            watches = self.watches[frame.channel]       # a list
+            watches = self.watches[frame.channel]  # a list
             self.watches[frame.channel] = []
 
             alive_watches = []
@@ -260,7 +260,6 @@ class Connection(object):
                 # print('any watch', watch, 'was cancelled')
                 continue
 
-
             if ((not watch_triggered) or (not watch.oneshot)) and (not watch.cancelled):
                 # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                 alive_watches.append(watch)
@@ -280,10 +279,10 @@ class Connection(object):
         ListenerThread's on_fail callback.
         """
         try:
-            #todo why is that necessary? it doesnt pass travis CI if there's no this block
+            # todo why is that necessary? it doesnt pass travis CI if there's no this block
             self.listener_socket.oneshot(delay, callback)
         except AttributeError:
-            pass #print(dir(self))
+            pass  # print(dir(self))
 
     def unwatch_all(self, channel_id):
         """
