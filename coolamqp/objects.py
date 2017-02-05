@@ -135,6 +135,9 @@ class Exchange(object):
         self.durable = durable
         self.auto_delete = auto_delete
 
+        assert isinstance(self.name, six.text_type)
+        assert isinstance(self.type, six.text_type)
+
     def __repr__(self):
         return u'Exchange(%s, %s, %s, %s)' % (
             repr(self.name), repr(self.type), repr(self.durable), repr(self.auto_delete))
@@ -154,7 +157,7 @@ class Queue(object):
     This object represents a Queue that applications consume from or publish to.
     """
 
-    def __init__(self, name=u'', durable=False, exchange=None, exclusive=False, auto_delete=False):
+    def __init__(self, name=b'', durable=False, exchange=None, exclusive=False, auto_delete=False):
         """
         Create a queue definition.
 
@@ -176,9 +179,12 @@ class Queue(object):
         self.auto_delete = auto_delete
         self.exclusive = exclusive
 
-        self.anonymous = name == ''  # if this queue is anonymous, it must be regenerated upon reconnect
+        self.anonymous = len(name) == 0  # if this queue is anonymous, it must be regenerated upon reconnect
 
-        self.consumer_tag = name if len(name) > 0 else uuid.uuid4().hex  # consumer tag to use in AMQP comms
+        self.consumer_tag = name if not self.anonymous else uuid.uuid4().hex.encode('utf8')  # bytes, consumer tag to use in AMQP comms
+
+        assert isinstance(self.name, six.binary_type)
+        assert isinstance(self.consumer_tag, six.binary_type)
 
     def __eq__(self, other):
         return (self.name == other.name) and (type(self) == type(other))
