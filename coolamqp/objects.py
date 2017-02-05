@@ -128,7 +128,7 @@ class Exchange(object):
     def __init__(self, name=u'', type=b'direct', durable=True, auto_delete=False):
         """
         :type name: unicode is preferred, binary type will get decoded to unicode with utf8
-        :param type: exchange type. Please pass a binary type.
+        :param type: exchange type. binary/unicode
         """
 
         if isinstance(name, six.binary_type):
@@ -136,10 +136,7 @@ class Exchange(object):
 
         self.name = name
 
-        if isinstance(type, six.text_type):
-            type = type.encode('utf8')
-            warnings.warn(u'type should be a binary type')
-        self.type = type  # must be bytes
+        self.type = type.encode('utf8') if isinstance(type, six.text_type) else type # must be bytes
         self.durable = durable
         self.auto_delete = auto_delete
 

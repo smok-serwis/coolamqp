@@ -24,12 +24,6 @@ class TestConnecting(unittest.TestCase):
         c = Cluster([NODE])
         self.assertRaises(RuntimeError, lambda: c.shutdown())
 
-    def test_exchange_with_unicode_type_warnings(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            Exchange(u'lol', type=u'wtf')
-            self.assertGreater(len(w), 0)
-
     def test_queues_equal_and_hashable(self):
         q1 = Queue(u'lolwut')
         q2 = Queue(b'lolwut')
