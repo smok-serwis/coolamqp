@@ -21,7 +21,7 @@ This is borderline absurd.
 
 CoolAMQP is not a direct AMQP client - it also handles reconnections, transactional sending,
 and so on, mostly via Futures. This means it has a certain opinion on how to 
-handle AMQP, but you can feel the spirit of AMQP underneath.
+handle AMQP, but you can feel the spirit of AMQP underneath. *API is stable*.
 
 
 The project is actively maintained and used in a commercial project. Tests can run
@@ -38,10 +38,6 @@ _Watch out for memoryviews!_
 Assertions are sprinkled throughout the code. You may wish to run with optimizations enabled
 if you need every CPU cycle you can get.
 
-**v0.8x** series has unstable API. It probably won't change much
-
-**v0.9x** series will have a stable API.
-
 ## Current limitations
 
 * channel flow mechanism is not supported (#11)
@@ -50,8 +46,9 @@ if you need every CPU cycle you can get.
 
 ## What's new
 
-* v0.89.2:
-  * TBA
+* v0.90:
+  * You can pick how your received _message.body_ will look like - bytes, memoryview, or maybe
+    a totally zero-copy list of memoryviews?
 
 * v0.89.1:
   * **Critical bugfix**: messages larger than a frame got corrupted

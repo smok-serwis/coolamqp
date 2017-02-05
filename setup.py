@@ -4,7 +4,7 @@ from setuptools import setup
 
 
 setup(name=u'CoolAMQP',
-      version='0.89.2',
+      version='0.90',
       description=u'Very fast pure-Python AMQP client',
       author=u'DMS Serwis s.c.',
       author_email=u'piotrm@smok.co',
@@ -38,8 +38,7 @@ Also, handles your reconnects and transactionality THE RIGHT WAY''',
             'Programming Language :: Python :: Implementation :: PyPy',
 #            'Operating System :: OS Independent',      epoll :'(
             'Operating System :: POSIX :: Linux',
-#            'Development Status :: 5 - Production/Stable',
-            'Development Status :: 4 - Beta',
+            'Development Status :: 5 - Production/Stable',
             'License :: OSI Approved :: MIT License',
             'Topic :: Software Development :: Libraries',
             'Intended Audience :: Developers',
