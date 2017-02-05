@@ -529,13 +529,17 @@ class MessageReceiver(object):
             # Does body need preprocessing?
             body = self.body
             if self.recv_mode == BodyReceiveMode.BYTES:
-                # since b''.join() with list comprehension and .tobytes() would create
-                # an extra copy of string
-                bio = io.BytesIO()
-                for mv in body:
-                    bio.write(mv)
+                if len(self.body) == 1:
+                    # common case :)
+                    body = self.body[0].tobytes()
+                else:
+                    # since b''.join() with list comprehension and .tobytes() would create
+                    # an extra copy of string
+                    bio = io.BytesIO()
+                    for mv in body:
+                        bio.write(mv)
 
-                body = bio.getvalue()
+                    body = bio.getvalue()
             # if MEMORYVIEW, then it's already ok
 
             rm = ReceivedMessage(
