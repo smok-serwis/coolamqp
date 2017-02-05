@@ -31,7 +31,7 @@ CoolAMQP won't touch your messages. It's your bags o'bytes, and your properties.
 
 Enjoy!
 
-_Watch out for memoryviews!_
+_Watch out for memoryviews!_ They're here to stay.
 
 
 ## Notes
@@ -47,8 +47,9 @@ if you need every CPU cycle you can get.
 ## What's new
 
 * v0.90:
-  * You can pick how your received _message.body_ will look like - bytes, memoryview, or maybe
-    a totally zero-copy list of memoryviews?
+  * first release with a *stable API*
+  * You can pick how your received _message.body_ will look like - bytes, 
+  a zero-copy-for-short-messages memoryview, or maybe a totally zero-copy list of memoryviews?
 
 * v0.89.1:
   * **Critical bugfix**: messages larger than a frame got corrupted
