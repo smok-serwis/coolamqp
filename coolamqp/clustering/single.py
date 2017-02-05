@@ -22,7 +22,7 @@ class SingleNodeReconnector(object):
 
         self.terminating = False
 
-        self.on_fail = Callable()       #: public
+        self.on_fail = Callable()  #: public
 
         self.on_fail.add(self._on_fail)
 

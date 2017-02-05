@@ -1,5 +1,6 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
+
 """
 Provides reactors that can authenticate an AQMP session
 """
@@ -9,24 +10,24 @@ from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
 
-
 PUBLISHER_CONFIRMS = b'publisher_confirms'
 CONSUMER_CANCEL_NOTIFY = b'consumer_cancel_notify'
 
 SUPPORTED_EXTENSIONS = [
     PUBLISHER_CONFIRMS,
-    CONSUMER_CANCEL_NOTIFY      # half assed support - we just .cancel the consumer, see #12
+    CONSUMER_CANCEL_NOTIFY  # half assed support - we just .cancel the consumer, see #12
 ]
 
 CLIENT_DATA = [
-        # because RabbitMQ is some kind of a fascist and does not allow
-        # these fields to be of type short-string
-        (b'product', (b'CoolAMQP', 'S')),
-        (b'version', (b'0.91', 'S')),
-        (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', 'S')),
-        (b'information', (b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details', 'S')),
-        (b'capabilities', ([(capa, (True, 't')) for capa in SUPPORTED_EXTENSIONS], 'F')),
-      ]
+    # because RabbitMQ is some kind of a fascist and does not allow
+    # these fields to be of type short-string
+    (b'product', (b'CoolAMQP', 'S')),
+    (b'version', (b'0.91', 'S')),
+    (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', 'S')),
+    (
+    b'information', (b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details', 'S')),
+    (b'capabilities', ([(capa, (True, 't')) for capa in SUPPORTED_EXTENSIONS], 'F')),
+]
 
 WATCHDOG_TIMEOUT = 10
 
@@ -94,7 +95,7 @@ class Handshaker(object):
     def on_connection_tune(self, payload):
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
-        for channel in six.moves.xrange(1, (65535 if payload.channel_max == 0 else payload.channel_max)+1):
+        for channel in six.moves.xrange(1, (65535 if payload.channel_max == 0 else payload.channel_max) + 1):
             self.connection.free_channels.append(channel)
 
         self.connection.watch_for_method(0, ConnectionOpenOk, self.on_connection_open_ok)

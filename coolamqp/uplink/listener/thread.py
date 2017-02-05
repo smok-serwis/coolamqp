@@ -19,7 +19,7 @@ class ListenerThread(threading.Thread):
         self.terminating = False
 
     def terminate(self):
-       self.terminating = True
+        self.terminating = True
 
     def init(self):
         """Called before start. It is not safe to fork after this"""

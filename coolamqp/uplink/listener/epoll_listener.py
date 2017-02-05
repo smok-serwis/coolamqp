@@ -10,9 +10,7 @@ import heapq
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
 
-
 logger = logging.getLogger(__name__)
-
 
 RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
 RW = RO | select.EPOLLOUT
@@ -22,6 +20,7 @@ class EpollSocket(BaseSocket):
     """
     EpollListener substitutes your BaseSockets with this
     """
+
     def __init__(self, sock, on_read, on_fail, listener):
         BaseSocket.__init__(self, sock, on_read=on_read, on_fail=on_fail)
         self.listener = listener
@@ -136,7 +135,7 @@ class EpollListener(object):
                                               ))
 
     def register(self, sock, on_read=lambda data: None,
-                             on_fail=lambda: None):
+                 on_fail=lambda: None):
         """
         Add a socket to be listened for by the loop.
 
@@ -151,4 +150,3 @@ class EpollListener(object):
 
         self.epoll.register(sock, RW)
         return sock
-

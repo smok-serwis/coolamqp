@@ -71,7 +71,7 @@ class AMQPHeaderFrame(AMQPFrame):
 
     def write_to(self, buf):
         buf.write(struct.pack('!BHLHHQ', FRAME_HEADER, self.channel,
-                              12+self.properties.get_size(), self.class_id, 0, self.body_size))
+                              12 + self.properties.get_size(), self.class_id, 0, self.body_size))
         self.properties.write_to(buf)
         buf.write(FRAME_END_BYTE)
 

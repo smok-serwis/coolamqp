@@ -14,5 +14,4 @@ immediately be able to do so. With epoll, you can.
 """
 from __future__ import absolute_import, division, print_function
 
-
 from coolamqp.uplink.listener.thread import ListenerThread

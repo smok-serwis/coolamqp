@@ -7,27 +7,25 @@ import struct
 
 logger = logging.getLogger(__name__)
 
-
 AMQP_HELLO_HEADER = b'AMQP\x00\x00\x09\x01'
 
-
 # name => (length|None, struct ID|None, reserved-field-value : for struct if structable, bytes else, length of default)
-BASIC_TYPES = {u'bit': (None, None, "0", None),          # special case
+BASIC_TYPES = {u'bit': (None, None, "0", None),  # special case
                u'octet': (1, 'B', "b'\\x00'", 1),
                u'short': (2, 'H', "b'\\x00\\x00'", 2),
                u'long': (4, 'I', "b'\\x00\\x00\\x00\\x00'", 4),
                u'longlong': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
                u'timestamp': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
-               u'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),          # special case
-               u'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),        # special case
-               u'shortstr': (None, None, "b'\\x00'", 1),                        # special case
+               u'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),  # special case
+               u'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),  # special case
+               u'shortstr': (None, None, "b'\\x00'", 1),  # special case
                }
 
 DYNAMIC_BASIC_TYPES = (u'table', u'longstr', u'shortstr')
 
 
-class AMQPFrame(object):        # base class for framing
-    FRAME_TYPE = None   # override me!
+class AMQPFrame(object):  # base class for framing
+    FRAME_TYPE = None  # override me!
 
     def __init__(self, channel):
         self.channel = channel
@@ -92,7 +90,7 @@ class AMQPContentPropertyList(object):
     """
     PROPERTIES = []
 
-    #todo they are immutable, so they could just serialize themselves...
+    # todo they are immutable, so they could just serialize themselves...
 
     @staticmethod
     def zero_property_flags(property_flags):
@@ -147,7 +145,7 @@ class AMQPMethodPayload(AMQPPayload):
         if self.IS_CONTENT_STATIC:
             buf.write(self.STATIC_CONTENT)
         else:
-            buf.write(struct.pack('!I', self.get_size()+2))
+            buf.write(struct.pack('!I', self.get_size() + 2))
             buf.write(self.BINARY_HEADER)
             self.write_arguments(buf)
             buf.write(FRAME_END_BYTE)
@@ -159,7 +157,7 @@ class AMQPMethodPayload(AMQPPayload):
         :return: int, size of argument section
         """
         if self.IS_CONTENT_STATIC:
-            return len(self.STATIC_CONTENT)-4-4-1  # minus length, class, method, frame_end
+            return len(self.STATIC_CONTENT) - 4 - 4 - 1  # minus length, class, method, frame_end
 
         raise NotImplementedError()
 

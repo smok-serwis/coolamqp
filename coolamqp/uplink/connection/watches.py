@@ -58,6 +58,7 @@ class AnyWatch(Watch):
     Eg. RabbitMQ will happily disconnect you if you don't, but it can get lax with heartbeats
     as it wants.
     """
+
     def __init__(self, callable):
         super(AnyWatch, self).__init__(None, False)
         self.callable = callable
@@ -74,6 +75,7 @@ class FailWatch(Watch):
     """
     A special kind of watch that fires when connection has died
     """
+
     def __init__(self, callable):
         super(FailWatch, self).__init__(None, True)
         self.callable = callable
@@ -90,6 +92,7 @@ class HeaderOrBodyWatch(Watch):
     """
     A multi-shot watch listening for AMQP header or body frames
     """
+
     def __init__(self, channel, callable):
         Watch.__init__(self, channel, False)
         self.callable = callable
@@ -108,6 +111,7 @@ class MethodWatch(Watch):
     """
     One-shot watch listening for methods.
     """
+
     def __init__(self, channel, method_or_methods, callable, on_end=None):
         """
         :param method_or_methods: class, or list of AMQPMethodPayload classes

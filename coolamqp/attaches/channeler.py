@@ -15,8 +15,7 @@ import logging
 
 ST_OFFLINE = 0  # Consumer is *not* consuming, no setup attempts are being made
 ST_SYNCING = 1  # A process targeted at consuming has been started
-ST_ONLINE = 2   # Consumer is declared all right
-
+ST_ONLINE = 2  # Consumer is declared all right
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +24,9 @@ class Attache(object):
     """
     Something that can be attached to connection.
     """
+
     def __init__(self):
-        self.cancelled = False      #: public, if this is True, it won't be attached to next connection
+        self.cancelled = False  #: public, if this is True, it won't be attached to next connection
         self.state = ST_OFFLINE
         self.connection = None
 
@@ -68,7 +68,7 @@ class Channeler(Attache):
         [EXTEND ME!]
         """
         super(Channeler, self).__init__()
-        self.channel_id = None      # channel obtained from Connection
+        self.channel_id = None  # channel obtained from Connection
 
     def attach(self, connection):
         """
@@ -132,7 +132,7 @@ class Channeler(Attache):
             # teardown already done
             return
 
-        if self.state == ST_ONLINE: # The channel has just lost operationality! Inform others ASAP.
+        if self.state == ST_ONLINE:  # The channel has just lost operationality! Inform others ASAP.
             self.on_operational(False)
         self.state = ST_OFFLINE
 
@@ -204,7 +204,6 @@ class Channeler(Attache):
         """
         raise Exception('Abstract method - override me!')
 
-
     def register_on_close_watch(self):
         """
         Register a watch for on_close.
@@ -231,4 +230,3 @@ class Channeler(Attache):
             ChannelOpenOk,
             self.on_setup
         )
-

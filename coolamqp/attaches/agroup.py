@@ -11,7 +11,6 @@ import weakref
 
 logger = logging.getLogger(__name__)
 
-
 from coolamqp.attaches.channeler import Attache, ST_OFFLINE
 from coolamqp.attaches.consumer import Consumer
 
@@ -66,5 +65,3 @@ class AttacheGroup(Attache):
         for attache in self.attaches:
             if not attache.cancelled:
                 attache.attach(connection)
-
-

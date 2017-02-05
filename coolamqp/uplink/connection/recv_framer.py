@@ -36,15 +36,16 @@ class ReceivingFramer(object):
                                                                             frame_type <- None
                                                                             frame_size < None)
     """
+
     def __init__(self, on_frame=lambda frame: None):
-        self.chunks = collections.deque()   # all received data
+        self.chunks = collections.deque()  # all received data
         self.total_data_len = 0
 
         self.frame_type = None
         self.frame_channel = None
         self.frame_size = None
 
-        self.bytes_needed = None    # bytes needed for a new frame
+        self.bytes_needed = None  # bytes needed for a new frame
         self.on_frame = on_frame
 
     def put(self, data):
@@ -60,10 +61,10 @@ class ReceivingFramer(object):
         while self._statemachine():
             pass
 
-    def _extract(self, up_to): # return up to up_to bytes from current chunk, switch if necessary
+    def _extract(self, up_to):  # return up to up_to bytes from current chunk, switch if necessary
         assert self.total_data_len >= up_to, 'Tried to extract %s but %s remaining' % (up_to, self.total_data_len)
         if up_to >= len(self.chunks[0]):
-            q =  self.chunks.popleft()
+            q = self.chunks.popleft()
         else:
             q = self.chunks[0][:up_to]
             self.chunks[0] = self.chunks[0][up_to:]
@@ -86,10 +87,10 @@ class ReceivingFramer(object):
             return True
 
         # state rule 2
-        elif (self.frame_type == FRAME_HEARTBEAT) and (self.total_data_len >= AMQPHeartbeatFrame.LENGTH-1):
+        elif (self.frame_type == FRAME_HEARTBEAT) and (self.total_data_len >= AMQPHeartbeatFrame.LENGTH - 1):
             data = b''
-            while len(data) < AMQPHeartbeatFrame.LENGTH-1:
-                data = data + self._extract(AMQPHeartbeatFrame.LENGTH-1 - len(data)).tobytes()
+            while len(data) < AMQPHeartbeatFrame.LENGTH - 1:
+                data = data + self._extract(AMQPHeartbeatFrame.LENGTH - 1 - len(data)).tobytes()
 
             if data != AMQPHeartbeatFrame.DATA[1:]:
                 # Invalid heartbeat frame!
@@ -101,17 +102,18 @@ class ReceivingFramer(object):
             return True
 
         # state rule 3
-        elif (self.frame_type != FRAME_HEARTBEAT) and (self.frame_type is not None) and (self.frame_size is None) and (self.total_data_len > 6):
+        elif (self.frame_type != FRAME_HEARTBEAT) and (self.frame_type is not None) and (self.frame_size is None) and (
+            self.total_data_len > 6):
             hdr = b''
             while len(hdr) < 6:
                 hdr = hdr + self._extract(6 - len(hdr)).tobytes()
 
-            self.frame_channel, self.frame_size = struct.unpack('!HI',hdr)
+            self.frame_channel, self.frame_size = struct.unpack('!HI', hdr)
 
             return True
 
         # state rule 4
-        elif (self.frame_size is not None) and (self.total_data_len >= (self.frame_size+1)):
+        elif (self.frame_size is not None) and (self.total_data_len >= (self.frame_size + 1)):
 
             if len(self.chunks[0]) >= self.frame_size:
                 # We can subslice it - it's very fast

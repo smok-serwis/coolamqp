@@ -16,9 +16,7 @@ from coolamqp.objects import Callable
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.exceptions import AMQPError
 
-
 logger = logging.getLogger(__name__)
-
 
 EMPTY_MEMORYVIEW = memoryview(b'')  # for empty messages
 
@@ -27,17 +25,18 @@ class BodyReceiveMode(object):
     # ZC - zero copy
     # C - copy (copies every byte once)
 
-    BYTES = 0    # message.body will be a single bytes object
-                 # this will gather frames as memoryviews, and b''.join() them upon receiving last frame
-                 # this is C
+    BYTES = 0  # message.body will be a single bytes object
+    # this will gather frames as memoryviews, and b''.join() them upon receiving last frame
+    # this is C
 
-    MEMORYVIEW = 1   # message.body will be returned as a memoryview object
-                     # this is ZC for small messages, and C for multi-frame ones
-                     # think less than 800B, since 2048 is the buffer for socket recv, and an AMQP
-                     # frame (or many frames!) have to fit there
+    MEMORYVIEW = 1  # message.body will be returned as a memoryview object
+    # this is ZC for small messages, and C for multi-frame ones
+    # think less than 800B, since 2048 is the buffer for socket recv, and an AMQP
+    # frame (or many frames!) have to fit there
 
-    LIST_OF_MEMORYVIEW = 2   # message.body will be returned as list of memoryview objects
-                             # these constitute received pieces. this is always ZC
+    LIST_OF_MEMORYVIEW = 2  # message.body will be returned as list of memoryview objects
+    # these constitute received pieces. this is always ZC
+
 
 class Consumer(Channeler):
     """
@@ -73,8 +72,6 @@ class Consumer(Channeler):
         con.on_broker_cancel.add(im_cancelled_by_broker)
 
     """
-
-
 
     def __init__(self, queue, on_message, no_ack=True, qos=None, cancel_on_failure=False,
                  future_to_notify=None,
@@ -121,17 +118,17 @@ class Consumer(Channeler):
         self.cancelled = False  # did the client want to STOP using this consumer?
         self.receiver = None  # MessageReceiver instance
 
-        self.attache_group = None   # attache group this belongs to.
-                                    # if this is not None, then it has an attribute
-                                    # on_cancel_customer(Consumer instance)
+        self.attache_group = None  # attache group this belongs to.
+        # if this is not None, then it has an attribute
+        # on_cancel_customer(Consumer instance)
         if qos is not None:
             if qos[0] is None:
-                qos = 0, qos[1] # prefetch_size=0=undefined
+                qos = 0, qos[1]  # prefetch_size=0=undefined
         self.qos = qos
-        self.qos_update_sent = False    # QoS was not sent to server
+        self.qos_update_sent = False  # QoS was not sent to server
 
         self.future_to_notify = future_to_notify
-        self.future_to_notify_on_dead = None        # .cancel
+        self.future_to_notify_on_dead = None  # .cancel
 
         self.fail_on_first_time_resource_locked = fail_on_first_time_resource_locked
         self.cancel_on_failure = cancel_on_failure
@@ -139,8 +136,8 @@ class Consumer(Channeler):
 
         self.consumer_tag = None
 
-        self.on_cancel = Callable(oneshots=True)    #: public, called on cancel for any reason
-        self.on_broker_cancel = Callable(oneshots=True)    #: public, called on Customer Cancel Notification (RabbitMQ)
+        self.on_cancel = Callable(oneshots=True)  #: public, called on cancel for any reason
+        self.on_broker_cancel = Callable(oneshots=True)  #: public, called on Customer Cancel Notification (RabbitMQ)
 
     def set_qos(self, prefetch_size, prefetch_count):
         """
@@ -181,7 +178,6 @@ class Consumer(Channeler):
             self.attache_group.on_cancel_customer(self)
 
         return self.future_to_notify_on_dead
-
 
     def on_operational(self, operational):
         super(Consumer, self).on_operational(operational)
@@ -235,7 +231,7 @@ class Consumer(Channeler):
             # on_close is a one_shot watch. We need to re-register it now.
             self.register_on_close_watch()
             self.methods([BasicCancelOk(payload.consumer_tag), ChannelClose(0, b'Received basic.cancel', 0, 0)])
-            self.cancelled = True   # wasn't I?
+            self.cancelled = True  # wasn't I?
             self.on_cancel()
             self.on_broker_cancel()
             return
@@ -271,13 +267,12 @@ class Consumer(Channeler):
 
         old_con = self.connection
 
-        super(Consumer, self).on_close(payload)     # this None's self.connection and returns port
+        super(Consumer, self).on_close(payload)  # this None's self.connection and returns port
         self.fail_on_first_time_resource_locked = False
 
-        if self.future_to_notify_on_dead:       # notify it was cancelled
+        if self.future_to_notify_on_dead:  # notify it was cancelled
             logger.info('Consumer successfully cancelled')
             self.future_to_notify_on_dead.set_result(None)
-
 
         if should_retry:
             if old_con.state == ST_ONLINE:
@@ -295,13 +290,13 @@ class Consumer(Channeler):
             return
 
         if isinstance(sth, BasicDeliver):
-           self.receiver.on_basic_deliver(sth)
+            self.receiver.on_basic_deliver(sth)
         elif isinstance(sth, AMQPBodyFrame):
-           self.receiver.on_body(sth.data)
+            self.receiver.on_body(sth.data)
         elif isinstance(sth, AMQPHeaderFrame):
-           self.receiver.on_head(sth)
+            self.receiver.on_head(sth)
 
-        # No point in listening for more stuff, that's all the watches even listen for
+            # No point in listening for more stuff, that's all the watches even listen for
 
     def on_setup(self, payload):
         """Called with different kinds of frames - during setup"""
@@ -371,15 +366,15 @@ class Consumer(Channeler):
                     self.on_setup
                 )
             else:
-                self.on_setup(BasicQosOk()) # pretend QoS went ok
+                self.on_setup(BasicQosOk())  # pretend QoS went ok
         elif isinstance(payload, BasicQosOk):
-                self.consumer_tag = uuid.uuid4().hex.encode('utf8')  # str in py2, unicode in py3
-                self.method_and_watch(
-                    BasicConsume(self.queue.name, self.consumer_tag,
-                                 False, self.no_ack, self.queue.exclusive, False, []),
-                    BasicConsumeOk,
-                    self.on_setup
-                )
+            self.consumer_tag = uuid.uuid4().hex.encode('utf8')  # str in py2, unicode in py3
+            self.method_and_watch(
+                BasicConsume(self.queue.name, self.consumer_tag,
+                             False, self.no_ack, self.queue.exclusive, False, []),
+                BasicConsumeOk,
+                self.on_setup
+            )
         elif isinstance(payload, BasicConsumeOk):
             # AWWW RIGHT~!!! We're good.
             self.on_operational(True)
@@ -414,24 +409,25 @@ class MessageReceiver(object):
     and may opt to kill the connection on bad framing with
     self.consumer.connection.send(None)
     """
+
     def __init__(self, consumer):
         self.consumer = consumer
         self.state = 0  # 0 - waiting for Basic-Deliver
-                        # 1 - waiting for Header
-                        # 2 - waiting for Body [all]
-                        # 3 - gone!
+        # 1 - waiting for Header
+        # 2 - waiting for Body [all]
+        # 3 - gone!
 
-        self.bdeliver = None    # payload of Basic-Deliver
-        self.header = None      # AMQPHeaderFrame
+        self.bdeliver = None  # payload of Basic-Deliver
+        self.header = None  # AMQPHeaderFrame
         if consumer.body_receive_mode == BodyReceiveMode.MEMORYVIEW:
-            self.body = None    # None is an important sign - first piece of message
+            self.body = None  # None is an important sign - first piece of message
         else:
-            self.body = []          # list of payloads
+            self.body = []  # list of payloads
         self.data_to_go = None  # set on receiving header, how much bytes we need yet
-        self.message_size = None   # in bytes, of currently received message
-        self.offset = 0     # used only in MEMORYVIEW mode - pointer to self.body (which would be a buffer)
+        self.message_size = None  # in bytes, of currently received message
+        self.offset = 0  # used only in MEMORYVIEW mode - pointer to self.body (which would be a buffer)
 
-        self.acks_pending = set()   # list of things to ack/reject
+        self.acks_pending = set()  # list of things to ack/reject
 
         self.recv_mode = consumer.body_receive_mode
         # if BYTES, pieces (as mvs) are received into .body and b''.join()ed at the end
@@ -463,7 +459,7 @@ class MessageReceiver(object):
                 return  # Gone!
 
             if self.consumer.cancelled:
-                return # cancelled!
+                return  # cancelled!
 
             if delivery_tag not in self.acks_pending:
                 return  # already confirmed/rejected
@@ -475,7 +471,6 @@ class MessageReceiver(object):
 
         return callable
 
-
     def on_head(self, frame):
         assert self.state == 1
         self.header = frame
@@ -484,7 +479,7 @@ class MessageReceiver(object):
 
         if self.header.body_size == 0:
             # An empty message is no common guest. It won't have a BODY field though...
-            self.on_body(EMPTY_MEMORYVIEW)           # trigger it manually
+            self.on_body(EMPTY_MEMORYVIEW)  # trigger it manually
 
     def on_basic_deliver(self, payload):
         assert self.state == 0
@@ -504,14 +499,14 @@ class MessageReceiver(object):
                 self.offset += len(payload)
             else:
                 # new one
-                if self.data_to_go == 0: # special case - single frame message
+                if self.data_to_go == 0:  # special case - single frame message
                     self.body = payload
                 else:
                     self.body = memoryview(bytearray(self.message_size))
                     self.body[0:len(payload)] = payload
                     self.offset = len(payload)
 
-        else:   # BYTES and LIST_OF_MEMORYVIEW
+        else:  # BYTES and LIST_OF_MEMORYVIEW
             self.body.append(payload)
 
         assert self.data_to_go >= 0

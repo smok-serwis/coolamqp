@@ -7,7 +7,7 @@ import six
 import collections
 import logging
 from coolamqp.framing.definitions import ChannelOpenOk, ExchangeDeclare, ExchangeDeclareOk, QueueDeclare, \
-                                        QueueDeclareOk, ChannelClose, QueueDelete, QueueDeleteOk
+    QueueDeclareOk, ChannelClose, QueueDelete, QueueDeleteOk
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
 from concurrent.futures import Future
@@ -15,7 +15,6 @@ from coolamqp.objects import Exchange, Queue, Callable
 from coolamqp.exceptions import AMQPError, ConnectionDead
 
 logger = logging.getLogger(__name__)
-
 
 
 class Operation(object):
@@ -28,13 +27,14 @@ class Operation(object):
     This will register it's own callback. Please, call on_connection_dead when connection is broken
     to fail futures with ConnectionDead, since this object does not watch for Fails
     """
+
     def __init__(self, declarer, obj, fut=None):
         self.done = False
         self.fut = fut
         self.declarer = declarer
         self.obj = obj
 
-        self.on_done = Callable()   # callable/0
+        self.on_done = Callable()  # callable/0
 
     def on_connection_dead(self):
         """To be called by declarer when our link fails"""
@@ -47,13 +47,14 @@ class Operation(object):
         obj = self.obj
         if isinstance(obj, Exchange):
             self.declarer.method_and_watch(ExchangeDeclare(self.obj.name.encode('utf8'), obj.type, False, obj.durable,
-                                                  obj.auto_delete, False, False, []),
-                                  (ExchangeDeclareOk, ChannelClose),
-                                  self._callback)
+                                                           obj.auto_delete, False, False, []),
+                                           (ExchangeDeclareOk, ChannelClose),
+                                           self._callback)
         elif isinstance(obj, Queue):
-            self.declarer.method_and_watch(QueueDeclare(obj.name, False, obj.durable, obj.exclusive, obj.auto_delete, False, []),
-                                  (QueueDeclareOk, ChannelClose),
-                                  self._callback)
+            self.declarer.method_and_watch(
+                QueueDeclare(obj.name, False, obj.durable, obj.exclusive, obj.auto_delete, False, []),
+                (QueueDeclareOk, ChannelClose),
+                self._callback)
 
     def _callback(self, payload):
         assert not self.done
@@ -65,7 +66,7 @@ class Operation(object):
             else:
                 # something that had no Future failed. Is it in declared?
                 if self.obj in self.declarer.declared:
-                    self.declarer.declared.remove(self.obj) #todo access not threadsafe
+                    self.declarer.declared.remove(self.obj)  # todo access not threadsafe
                     self.declarer.on_discard(self.obj)
         else:
             if self.fut is not None:
@@ -92,7 +93,7 @@ class DeleteQueue(Operation):
         self.done = True
         if isinstance(payload, ChannelClose):
             self.fut.set_exception(AMQPError(payload))
-        else:   # Queue.DeleteOk
+        else:  # Queue.DeleteOk
             self.fut.set_result(None)
         self.declarer.on_operation_done()
 
@@ -103,6 +104,7 @@ class Declarer(Channeler, Synchronized):
 
     This also maintains a list of declared queues/exchanges, and redeclares them on each reconnect.
     """
+
     def __init__(self):
         """
         Create a new declarer.
@@ -110,16 +112,16 @@ class Declarer(Channeler, Synchronized):
         Channeler.__init__(self)
         Synchronized.__init__(self)
 
-        self.declared = set()   # since Queues and Exchanges are hashable...
-                                # anonymous queues aren't, but we reject those
-                                # persistent
+        self.declared = set()  # since Queues and Exchanges are hashable...
+        # anonymous queues aren't, but we reject those
+        # persistent
 
         self.left_to_declare = collections.deque()  # since last disconnect. persistent+transient
-                                                    # deque of Operation objects
+        # deque of Operation objects
 
-        self.on_discard = Callable()    # callable/1, with discarded elements
+        self.on_discard = Callable()  # callable/1, with discarded elements
 
-        self.in_process = None   # Operation instance that is being progressed right now
+        self.in_process = None  # Operation instance that is being progressed right now
 
     def on_close(self, payload=None):
 
@@ -214,7 +216,7 @@ class Declarer(Channeler, Synchronized):
 
         if persistent:
             if obj not in self.declared:
-                self.declared.add(obj) #todo access not threadsafe
+                self.declared.add(obj)  # todo access not threadsafe
 
         self.left_to_declare.append(Operation(self, obj, fut))
         self._do_operations()

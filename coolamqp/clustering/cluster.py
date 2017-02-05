@@ -32,9 +32,8 @@ class Cluster(object):
     """
 
     # Events you can be informed about
-    ST_LINK_LOST = 0            # Link has been lost
-    ST_LINK_REGAINED = 1        # Link has been regained
-
+    ST_LINK_LOST = 0  # Link has been lost
+    ST_LINK_REGAINED = 1  # Link has been regained
 
     def __init__(self, nodes):
         """
@@ -168,7 +167,7 @@ class Cluster(object):
 
         self.attache_group = AttacheGroup()
 
-        self.events = six.moves.queue.Queue()   # for coolamqp.clustering.events.*
+        self.events = six.moves.queue.Queue()  # for coolamqp.clustering.events.*
 
         self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
@@ -182,12 +181,11 @@ class Cluster(object):
         self.attache_group.add(self.pub_na)
         self.attache_group.add(self.decl)
 
-
         self.listener.init()
         self.listener.start()
         self.snr.connect()
 
-        #todo not really elegant
+        # todo not really elegant
         if wait:
             while not self.snr.is_connected():
                 time.sleep(0.1)

@@ -19,8 +19,8 @@ class BaseSocket(object):
     """
 
     def __init__(self, sock, on_read=lambda data: None,
-                             on_time=lambda: None,
-                             on_fail=lambda: None):
+                 on_time=lambda: None,
+                 on_fail=lambda: None):
         """
 
         :param sock: socketobject
@@ -36,7 +36,7 @@ class BaseSocket(object):
         assert sock is not None
         self.sock = sock
         self.data_to_send = collections.deque()
-        self.priority_queue = collections.deque()   # when a piece of data is finished, this queue is checked first
+        self.priority_queue = collections.deque()  # when a piece of data is finished, this queue is checked first
         self.my_on_read = on_read
         self._on_fail = on_fail
         self.on_time = on_time
@@ -117,7 +117,7 @@ class BaseSocket(object):
             assert len(self.data_to_send) > 0
 
             if self.data_to_send[0] is None:
-                raise SocketFailed() # We should terminate the connection!
+                raise SocketFailed()  # We should terminate the connection!
 
             try:
                 sent = self.sock.send(self.data_to_send[0])
@@ -130,7 +130,7 @@ class BaseSocket(object):
                 return False
             else:
                 # Looks like everything has been sent
-                self.data_to_send.popleft()     # mark as sent
+                self.data_to_send.popleft()  # mark as sent
 
                 if len(self.priority_queue) > 0:
                     # We can send a priority pack

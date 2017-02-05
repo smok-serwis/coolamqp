@@ -1,5 +1,6 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
+
 """Generate serializers/unserializers/length getters for given property_flags"""
 import six
 import struct
@@ -7,7 +8,6 @@ import logging
 from coolamqp.framing.compilation.textcode_fields import get_counter, get_from_buffer, get_serializer
 from coolamqp.framing.base import AMQPContentPropertyList
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
-
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     x = repr(six.binary_type(zpf))
     if not x.startswith('b'):
-        x = 'b'+x
+        x = 'b' + x
 
     present_fields = [field for field, present in zip(fields, zpf_bits) if present]
 
@@ -66,7 +66,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
     if len(present_fields) == 0:
         slots = u''
     else:
-        slots = (u', '.join((u"u'%s'" % format_field_name(field.name) for field in present_fields)))+u', '
+        slots = (u', '.join((u"u'%s'" % format_field_name(field.name) for field in present_fields))) + u', '
 
     mod.append(u'''
     __slots__ = (%s)
@@ -75,7 +75,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(u'''
     # A value for property flags that is used, assuming all bit fields are FALSE (0)
     ZERO_PROPERTY_FLAGS = %s
-''' % (x, ))
+''' % (x,))
 
     if len(present_fields) > 0:
         mod.append(u'''
@@ -99,18 +99,17 @@ def _compile_particular_content_property_list_class(zpf, fields):
     # from_buffer
     # note that non-bit values
     mod.append(u'    @classmethod\n')
-    mod.append(u'    def from_buffer(cls, buf, start_offset):\n        offset = start_offset + %s\n' % (zpf_length, ))
+    mod.append(u'    def from_buffer(cls, buf, start_offset):\n        offset = start_offset + %s\n' % (zpf_length,))
     mod.append(get_from_buffer(
         present_fields
         , prefix='', indent_level=2))
     mod.append(u'        return cls(%s)\n' %
                u', '.join(format_field_name(field.name) for field in present_fields))
 
-
     # get_size
     mod.append(u'\n    def get_size(self):\n')
-    mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[:-1])    # skip eol
-    mod.append(u' + %s\n' % (zpf_length, ))   # account for pf length
+    mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[:-1])  # skip eol
+    mod.append(u' + %s\n' % (zpf_length,))  # account for pf length
 
     return u''.join(mod)
 
@@ -118,6 +117,5 @@ def _compile_particular_content_property_list_class(zpf, fields):
 def compile_particular_content_property_list_class(zpf, fields):
     q = _compile_particular_content_property_list_class(zpf, fields)
     loc = {}
-    exec(q, globals(), loc)
+    exec (q, globals(), loc)
     return loc['ParticularContentTypeList']
-

@@ -26,13 +26,13 @@ class SendingFramer(object):
                                                                             frame_type <- None
                                                                             frame_size < None)
     """
+
     def __init__(self, on_send=lambda data: None):
         """
         :param on_send: a callable(data, priority=False) that can be called with some data to send
             data will always be entire AMQP frames!
         """
         self.on_send = on_send
-
 
     def send(self, frames, priority=False):
         """

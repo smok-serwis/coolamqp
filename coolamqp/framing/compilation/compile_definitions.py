@@ -450,7 +450,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         for cls in get_classes(xml):
             for method in cls.methods:
                 dct[((cls.index, method.index))] = '%s%s' % (
-                name_class(cls.name), format_method_class_name(method.name))
+                    name_class(cls.name), format_method_class_name(method.name))
 
     line('\nIDENT_TO_METHOD = {\n')
     for k, v in dct.items():
