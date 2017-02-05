@@ -130,13 +130,8 @@ class Exchange(object):
         :type name: unicode is preferred, binary type will get decoded to unicode with utf8
         :param type: exchange type. binary/unicode
         """
-
-        if isinstance(name, six.binary_type):
-            name = name.decode('utf8')
-
-        self.name = name
-
-        self.type = type.encode('utf8') if isinstance(type, six.text_type) else type # must be bytes
+        self.name = name.decode('utf8') if isinstance(name, six.binary_type) else name  # must be unicode
+        self.type = type.encode('utf8') if isinstance(type, six.text_type) else type  # must be bytes
         self.durable = durable
         self.auto_delete = auto_delete
 
@@ -174,7 +169,7 @@ class Queue(object):
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
         """
-        self.name = name.encode('utf8') if isinstance(name, six.text_type) else name  #: public, this is of type bytes ALWAYS
+        self.name = name.encode('utf8') if isinstance(name, six.text_type) else name  #: public, must be bytes
         # if name is '', this will be filled in with broker-generated name upon declaration
         self.durable = durable
         self.exchange = exchange
@@ -183,7 +178,7 @@ class Queue(object):
 
         self.anonymous = name == ''  # if this queue is anonymous, it must be regenerated upon reconnect
 
-        self.consumer_tag = name if name != '' else uuid.uuid4().hex  # consumer tag to use in AMQP comms
+        self.consumer_tag = name if len(name) > 0 else uuid.uuid4().hex  # consumer tag to use in AMQP comms
 
     def __eq__(self, other):
         return (self.name == other.name) and (type(self) == type(other))
@@ -243,12 +238,7 @@ class NodeDefinition(object):
         elif len(args) == 4:
             self.host, self.user, self.password, self.virtual_host = args
         elif len(args) == 1 and isinstance(args[0], (six.text_type, six.binary_type)):
-
-            if isinstance(args[0], six.binary_type):
-                connstr = args[0].decode('utf8')
-            else:
-                connstr = args[0]
-
+            connstr = args[0].decode('utf8') if isinstance(args[0], six.binary_type) else args[0]
             # AMQP connstring
             if not connstr.startswith(u'amqp://'):
                 raise ValueError(u'should begin with amqp://')
