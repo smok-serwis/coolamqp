@@ -16,7 +16,7 @@ amqp.start(wait=True)
 
 
 q = Queue(u'lolwut', auto_delete=True, exclusive=True)
-c,f=amqp.consume(q, no_ack=True)
+c,f=amqp.consume(q, no_ack=True, body_receive_mode=1)
 
 #time.sleep(30)
 

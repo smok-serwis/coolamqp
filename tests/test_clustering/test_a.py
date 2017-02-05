@@ -145,6 +145,7 @@ class TestA(unittest.TestCase):
 
 
     def test_send_recv_nonzerolen(self):
+        """with callback function"""
 
         P = {'q': False}
 
@@ -161,23 +162,50 @@ class TestA(unittest.TestCase):
 
         self.assertTrue(P['q'])
 
-    def test_send_recv_nonzerolen_fuckingmemoryviews(self):
+    def test_send_recv_nonzerolen_memoryview(self):
+        """single and multi frame"""
+        from coolamqp.attaches import BodyReceiveMode
 
-        P = {'q': False}
-
-        def ok(e):
-            self.assertIsInstance(e, ReceivedMessage)
-            self.assertIsInstance(e.body[0], memoryview)
-            P['q'] = True
-
-        con, fut = self.c.consume(Queue(u'hello', exclusive=True), on_message=ok, no_ack=True, fucking_memoryviews=True)
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True), no_ack=True,
+                                  body_receive_mode=BodyReceiveMode.MEMORYVIEW)
         fut.result()
-        self.c.publish(Message(b'hello'), routing_key=u'hello', tx=True).result()
 
-        time.sleep(1)
+        data = b'hello'
+        self.c.publish(Message(data), routing_key=u'hello', confirm=True)
+        m = self.c.drain(2)
+        self.assertIsInstance(m, MessageReceived)
+        self.assertIsInstance(m.body, memoryview)
+        self.assertEquals(m.body, data)
 
-        self.assertTrue(P['q'])
+        data = six.binary_type(os.urandom(512 * 1024))
+        self.c.publish(Message(data), routing_key=u'hello', confirm=True)
+        m = self.c.drain(9)
+        self.assertIsInstance(m, MessageReceived)
+        self.assertIsInstance(m.body, memoryview)
+        print(len(m.body))
+        self.assertEquals(m.body.tobytes(), data)
 
+    def test_send_recv_nonzerolen_listofmemoryview(self):
+        """single and multi frame"""
+        from coolamqp.attaches import BodyReceiveMode
+
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True), no_ack=True,
+                                  body_receive_mode=BodyReceiveMode.LIST_OF_MEMORYVIEW)
+        fut.result()
+
+        data = b'hello'
+        self.c.publish(Message(data), routing_key=u'hello', confirm=True)
+        m = self.c.drain(1)
+        self.assertIsInstance(m, MessageReceived)
+        self.assertIsInstance(m.body[0], memoryview)
+        self.assertEquals(m.body[0], data)
+
+        data = six.binary_type(os.urandom(512 * 1024))
+        self.c.publish(Message(data), routing_key=u'hello', confirm=True)
+        m = self.c.drain(5)
+        self.assertIsInstance(m, MessageReceived)
+        self.assertTrue(all([isinstance(x, memoryview) for x in m.body]))
+        self.assertEquals(b''.join(x.tobytes() for x in m.body), data)
 
     def test_consumer_cancel(self):
         con, fut = self.c.consume(Queue(u'hello', exclusive=True, auto_delete=True))

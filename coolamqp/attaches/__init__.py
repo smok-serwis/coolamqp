@@ -12,7 +12,7 @@ Multiple attaches can be "abstracted" as single one via AttacheGroup (which is a
 EVERYTHING HERE IS CALLED BY LISTENER THREAD UNLESS STATED OTHERWISE.
 """
 
-from coolamqp.attaches.consumer import Consumer
+from coolamqp.attaches.consumer import Consumer, BodyReceiveMode
 from coolamqp.attaches.publisher import Publisher
 from coolamqp.attaches.agroup import AttacheGroup
 from coolamqp.attaches.declarer import Declarer
