@@ -145,7 +145,11 @@ class Publisher(Channeler, Synchronized):
         assert self.mode == Publisher.MODE_CNPUB
 
         while len(self.messages) > 0:
-            msg, xchg, rk, fut = self.messages.popleft()
+            try:
+                msg, xchg, rk, fut = self.messages.popleft()
+            except IndexError:
+                #todo see docs/casefile-0001
+                break
 
             if not fut.set_running_or_notify_cancel():
                 continue  # cancelled
