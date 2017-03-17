@@ -28,6 +28,9 @@ Also, handles your reconnects and transactionality THE RIGHT WAY, though somewha
       install_requires=['six', 'monotonic', 'futures'],
       tests_require=["nose", 'coverage', 'codeclimate-test-reporter'],
       test_suite='nose.collector',
+      platforms=[
+        'posix'
+      ],
       classifiers=[
             'Programming Language :: Python',
             'Programming Language :: Python :: 2.7',
