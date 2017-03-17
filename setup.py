@@ -9,7 +9,7 @@ setup(name=u'CoolAMQP',
       author=u'DMS Serwis s.c.',
       author_email=u'piotrm@smok.co',
       url=u'https://github.com/smok-serwis/coolamqp',
-      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.91.zip',
+      download_url='https://github.com/smok-serwis/coolamqp/archive/v0.90.zip',
       keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
       packages=[
           'coolamqp',
@@ -26,7 +26,7 @@ setup(name=u'CoolAMQP',
 
 Also, handles your reconnects and transactionality THE RIGHT WAY''',
       requires=['six', 'monotonic', 'futures'],
-      tests_require=["nose"],
+      tests_require=["nose", 'coverage', 'codeclimate-test-reporter'],
       test_suite='nose.collector',
       classifiers=[
             'Programming Language :: Python',
