@@ -24,8 +24,8 @@ setup(name=u'CoolAMQP',
       license=u'MIT License',
       long_description=u'''Pure Python AMQP client, but with dynamic class generation and memoryviews FOR THE GODSPEED.
 
-Also, handles your reconnects and transactionality THE RIGHT WAY''',
-      requires=['six', 'monotonic', 'futures'],
+Also, handles your reconnects and transactionality THE RIGHT WAY, though somewhat opinionated''',
+      install_requires=['six', 'monotonic', 'futures'],
       tests_require=["nose", 'coverage', 'codeclimate-test-reporter'],
       test_suite='nose.collector',
       classifiers=[
