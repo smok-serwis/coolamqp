@@ -34,7 +34,7 @@ Enjoy!
 _Watch out for memoryviews!_ They're here to stay.
 
 [Short'n'sweet contributing guide](CONTRIBUTING.md)
-[Change log](CHANGELOG)
+[Change log](CHANGELOG.md)
 
 
 ## Notes
