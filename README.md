@@ -33,6 +33,9 @@ Enjoy!
 
 _Watch out for memoryviews!_ They're here to stay.
 
+[Short'n'sweet contributing guide](CONTRIBUTING.md)
+[Change log](CHANGELOG)
+
 
 ## Notes
 Assertions are sprinkled throughout the code. You may wish to run with optimizations enabled
@@ -43,29 +46,3 @@ if you need every CPU cycle you can get.
 * channel flow mechanism is not supported (#11)
 * _confirm=True_ is not available if you're not RabbitMQ (#8)
 * no Windows support (#9)
-
-## What's new
-
-* v0.90:
-  * first release with a *stable API*
-  * You can pick how your received _message.body_ will look like - bytes, 
-  a zero-copy-for-short-messages memoryview, or maybe a totally zero-copy list of memoryviews?
-
-* v0.89.1:
-  * **Critical bugfix**: messages larger than a frame got corrupted
-
-* v0.89: 
-   * Events are no longer timestamped by CoolAMQP, it's your job now
-   * You can delete queues (_Cluster.delete_queue_)
-   * Race condition _Connection.start_ fixed
-   * Queue can accept _bytes_ as name
-   * Consumer will set _cancelled_ to _True_ if 
-   [Consumer Cancel Notification](https://www.rabbitmq.com/consumer-cancel.html) is received
-   * You can register callbacks for:
-       * Consumer being cancelled for any reason
-       * Consumer being cancelled with a CCN
-
-* v0.88:
-    * Cluster.start will RuntimeError if called more than once
-    * Cluster.shutdown will RuntimeError if called without .start
-    * Warning with content list is shorter
