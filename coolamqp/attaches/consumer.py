@@ -92,10 +92,7 @@ class Consumer(Channeler):
         :param cancel_on_failure: Consumer will cancel itself when link goes down
         :type cancel_on_failure: bool
         :param future_to_notify: Future to succeed when this consumer goes online for the first time.
-                                 This future can also raise with:
-                                        AMQPError - a HARD_ERROR (see AMQP spec) was encountered
-                                        ResourceLocked - this was the first declaration, and
-                                            fail_on_first_time_resource_locked was set
+                                 This future can also raise with AMQPError if it fails to.
         :param fail_on_first_time_resource_locked: When consumer is declared for the first time,
                                                    and RESOURCE_LOCKED is encountered, it will fail the
                                                    future with ResourceLocked, and consumer will cancel itself.
