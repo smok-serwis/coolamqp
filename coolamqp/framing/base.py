@@ -135,21 +135,6 @@ class AMQPMethodPayload(AMQPPayload):
     REPLY_WITH = []
     FIELDS = []
 
-    def write_to(self, buf):
-        """
-        Write own content to target buffer - starting from LENGTH, ending on FRAME_END
-        :param buf: target buffer
-        """
-        from coolamqp.framing.definitions import FRAME_END_BYTE
-
-        if self.IS_CONTENT_STATIC:
-            buf.write(self.STATIC_CONTENT)
-        else:
-            buf.write(struct.pack('!I', self.get_size() + 2))
-            buf.write(self.BINARY_HEADER)
-            self.write_arguments(buf)
-            buf.write(FRAME_END_BYTE)
-
     def get_size(self):
         """
         Calculate the size of this frame.
