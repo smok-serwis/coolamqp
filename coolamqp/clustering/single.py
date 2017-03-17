@@ -43,7 +43,7 @@ class SingleNodeReconnector(object):
             return
 
         self.connection = None
-        self.connect()
+        self.call_next_io_event(self.connect)
 
     def shutdown(self):
         """Close this connection"""

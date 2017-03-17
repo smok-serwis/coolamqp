@@ -18,6 +18,7 @@ class Callable(object):
     """
     Add a bunch of callables to one list, and just invoke'm.
     INTERNAL USE ONLY
+    #todo not thread safe
     """
 
     def __init__(self, oneshots=False):

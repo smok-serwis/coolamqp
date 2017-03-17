@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 import threading
 
 from coolamqp.uplink.listener.epoll_listener import EpollListener
+from coolamqp.objects import Callable
 
 
 class ListenerThread(threading.Thread):
@@ -17,6 +18,18 @@ class ListenerThread(threading.Thread):
         threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
         self.terminating = False
+        self._call_next_io_event = Callable(oneshots=True)
+
+    def call_next_io_event(self, callable):
+        """
+        Call callable after current I/O event is fully processed
+
+        sometimes many callables are called in response to single
+        I/O (eg. teardown, startup). This guarantees a call after
+        all these are done.
+        :param callable: callable/0
+        """
+        self._call_next_io_event()
 
     def terminate(self):
         self.terminating = True
@@ -28,6 +41,7 @@ class ListenerThread(threading.Thread):
     def run(self):
         while not self.terminating:
             self.listener.wait(timeout=1)
+
         self.listener.shutdown()
 
     def register(self, sock, on_read=lambda data: None, on_fail=lambda: None):
