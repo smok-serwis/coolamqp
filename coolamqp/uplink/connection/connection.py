@@ -277,9 +277,11 @@ class Connection(object):
         Shall the connection die in the meantime, watchdog will not
         be called, and everything will process according to
         ListenerThread's on_fail callback.
+
+        This is necessary to implement timeout detection when setting up the connection
+        and heartbeat is not yet configured.
         """
         try:
-            # todo why is that necessary? it doesnt pass travis CI if there's no this block
             self.listener_socket.oneshot(delay, callback)
         except AttributeError:
             pass  # print(dir(self))
