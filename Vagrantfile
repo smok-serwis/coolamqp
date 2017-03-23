@@ -6,7 +6,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "debian/contrib-jessie64"
 
   # Rabbit MQ management
-  config.vm.network "forwarded_port", guest: 15672, host: 15672
+  config.vm.network "forwarded_port", guest: 15672, host: 15672, auto_correct: true
 
   # HTTP for viewing coverage reports
   config.vm.network "forwarded_port", guest: 80, host: 8765
