@@ -1,5 +1,8 @@
 ## Change log
 
+* v0.91rc:
+  * removed annoying warning
+
 * v0.90:
   * first release with a *stable API*
   * You can pick how your received _message.body_ will look like - bytes,
