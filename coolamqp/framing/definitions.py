@@ -2360,26 +2360,6 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         zpf = six.binary_type(zpf)
 
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
-            warnings.warn(u"You could go faster. Go see the comments here")
-
-#        If you know in advance what properties you will be using, use typized constructors like
-#
-#          runs once
-#            my_type = BasicContentPropertyList.typize('content_type', 'content_encoding')
-#
-#           runs many times
-#            props = my_type('text/plain', 'utf8')
-#
-#       instead of
-#
-#           # runs many times
-#           props = BasicContentPropertyList(content_type='text/plain', content_encoding='utf8')
-#
-#       This way you will be faster.
-#
-#       If you do not know in advance what properties you will be using, it is correct to use
-#       this constructor.
-
             return BasicContentPropertyList.PARTICULAR_CLASSES[zpf](**kwargs)
         else:
             logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))

@@ -214,9 +214,6 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
             line(u'        ])\n        zpf = six.binary_type(zpf)\n')
             line(u'''
-        if zpf in %s.PARTICULAR_CLASSES:
-            warnings.warn(u"You could go faster. Go see the comments here")
-
 #        If you know in advance what properties you will be using, use typized constructors like
 #
 #          runs once
