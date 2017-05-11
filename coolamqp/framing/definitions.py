@@ -23,7 +23,7 @@ binary string? It's a memoryview all right.
 Only thing that isn't are field names in tables.
 """
 
-import struct, collections, warnings, logging, six
+import struct, collections, logging, six
 
 from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
@@ -2359,6 +2359,23 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         ])
         zpf = six.binary_type(zpf)
 
+#        If you know in advance what properties you will be using, use typized constructors like
+#
+#          runs once
+#            my_type = BasicContentPropertyList.typize('content_type', 'content_encoding')
+#
+#           runs many times
+#            props = my_type('text/plain', 'utf8')
+#
+#       instead of
+#
+#           # runs many times
+#           props = BasicContentPropertyList(content_type='text/plain', content_encoding='utf8')
+#
+#       This way you will be faster.
+#
+#       If you do not know in advance what properties you will be using, it is correct to use
+#       this constructor.
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[zpf](**kwargs)
         else:
