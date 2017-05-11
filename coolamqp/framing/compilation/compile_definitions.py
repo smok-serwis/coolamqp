@@ -6,7 +6,6 @@ import struct
 from xml.etree import ElementTree
 
 import six
-from coolamqp.framing.base import BASIC_TYPES
 
 from coolamqp.framing.compilation.utilities import get_constants, get_classes, get_domains, \
     name_class, format_method_class_name, format_field_name, ffmt, to_docstring, pythonify_name, to_code_binary, \
