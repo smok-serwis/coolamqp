@@ -1,7 +1,7 @@
 ## Change log
 
-* v0.91rc:
-  * removed annoying warning
+* v0.91:
+  * removed annoying warnings
 
 * v0.90:
   * first release with a *stable API*
