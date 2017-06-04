@@ -92,6 +92,15 @@ class AMQPContentPropertyList(object):
 
     # todo they are immutable, so they could just serialize themselves...
 
+    def get(self, property_name, default=None):
+        """
+        Return a particular property, or default if not defined
+        :param property_name: property name, unicode
+        :param default: default value
+        :return: memoryview or bytes
+        """
+        return getattr(self, property_name, default=default)
+
     @staticmethod
     def zero_property_flags(property_flags):
         """
