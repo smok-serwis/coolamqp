@@ -99,7 +99,7 @@ class AMQPContentPropertyList(object):
         :param default: default value
         :return: memoryview or bytes
         """
-        return getattr(property_name, default=default)
+        return getattr(self, property_name, default)
 
     @staticmethod
     def zero_property_flags(property_flags):
