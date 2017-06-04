@@ -5,9 +5,7 @@ It sounds like a melody
 from __future__ import print_function, absolute_import, division
 import six
 import unittest
-
-
-from coolamqp.objects import NodeDefinition
+from coolamqp.objects import NodeDefinition, Message
 
 
 class TestObjects(unittest.TestCase):
@@ -23,3 +21,10 @@ class TestObjects(unittest.TestCase):
         n1 = NodeDefinition(u'amqp://ala:ma@kota/')
 
         self.assertEquals(n1.virtual_host, u'/')
+
+    def test_get_message_properties(self):
+        empty_p_msg = Message(b'')
+        ce_p_msg = Message(b'', content_encoding=b'wtf')
+
+        self.assertIsNone(empty_p_msg.properties.get('content_encoding'))
+        self.assertEquals(ce_p_msg.properties.get('content_encoding', b'wtf'))
