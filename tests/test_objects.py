@@ -26,5 +26,5 @@ class TestObjects(unittest.TestCase):
         empty_p_msg = MessageProperties()
         ce_p_msg = MessageProperties(content_encoding=b'wtf')
 
-        self.assertIsNone(empty_p_msg.get('content_encoding'))
-        self.assertEquals(ce_p_msg.get('content_encoding', b'wtf'))
+        self.assertIsNone(empty_p_msg.get('content_encoding'), None)
+        self.assertEquals(ce_p_msg.get('content_encoding', b'wtf'), b'wtf')
