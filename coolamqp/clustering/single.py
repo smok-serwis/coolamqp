@@ -25,7 +25,7 @@ class SingleNodeReconnector(object):
             node_def = [node_def]
         self.nodes = itertools.cycle(node_def)
 
-        self.node_def = self.nodes.next()
+        self.node_def = six.next(self.nodes)
         self.attache_group = attache_group
         self.connection = None
 
@@ -42,7 +42,7 @@ class SingleNodeReconnector(object):
         assert self.connection is None
 
         # Initiate connecting - this order is very important!
-        self.node_def = self.nodes.next()
+        self.node_def = six.next(self.nodes)
         self.connection = Connection(self.node_def, self.listener_thread)
         self.attache_group.attach(self.connection)
         self.connection.start()
