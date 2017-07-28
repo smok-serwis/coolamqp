@@ -14,6 +14,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestConnecting(unittest.TestCase):
 
+    def test_reconnect(self):
+        c = Cluster([NodeDefinition('8.8.8.8', 'invalid', 'invalid', heartbeat=10),
+                     NODE])
+        con, fut = self.c.consume(Queue(u'hello', exclusive=True))
+        fut.result()
+        con.cancel()
+
     def test_start_called_multiple_times(self):
         c = Cluster([NODE])
         c.start(wait=True)
