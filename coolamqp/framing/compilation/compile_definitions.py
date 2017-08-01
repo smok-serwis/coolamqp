@@ -55,7 +55,7 @@ binary string? It's a memoryview all right.
 Only thing that isn't are field names in tables.
 """
 
-import struct, collections, warnings, logging, six
+import struct, collections, logging, six
 
 from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
@@ -230,7 +230,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 #
 #       If you do not know in advance what properties you will be using, it is correct to use
 #       this constructor.
-
+        if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return %s.PARTICULAR_CLASSES[zpf](**kwargs)
         else:
             logger.debug('Property field (%s:%d) not seen yet, compiling', repr(zpf))
