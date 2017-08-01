@@ -44,10 +44,7 @@ class Cluster(object):
         if isinstance(nodes, NodeDefinition):
             nodes = [nodes]
 
-        if len(nodes) > 1:
-            raise NotImplementedError(u'Multiple nodes not supported yet')
-
-        self.node, = nodes
+        self.node = nodes
 
     def declare(self, obj, persistent=False):
         """
