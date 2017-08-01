@@ -87,8 +87,10 @@ class Consumer(Channeler):
         :param on_message: callable that will process incoming messages
         :type on_message: callable(ReceivedMessage instance)
         :param no_ack: Will this consumer require acknowledges from messages?
-        :param qos: a tuple of (prefetch size, prefetch window) for this consumer
-        :type qos: tuple(int, int) or tuple(None, int)
+        :param qos: a tuple of (prefetch size, prefetch window) for this consumer, or an int (prefetch window only)
+            If an int is passed, prefetch size will be set to 0 (which means undefined), and this int
+            will be used for prefetch window
+        :type qos: tuple(int, int) or tuple(None, int) or int
         :param cancel_on_failure: Consumer will cancel itself when link goes down
         :type cancel_on_failure: bool
         :param future_to_notify: Future to succeed when this consumer goes online for the first time.
@@ -119,7 +121,9 @@ class Consumer(Channeler):
         # if this is not None, then it has an attribute
         # on_cancel_customer(Consumer instance)
         if qos is not None:
-            if qos[0] is None:
+            if isinstance(qos, int):
+                qos = 0, qos
+            elif qos[0] is None:
                 qos = 0, qos[1]  # prefetch_size=0=undefined
         self.qos = qos
         self.qos_update_sent = False  # QoS was not sent to server
