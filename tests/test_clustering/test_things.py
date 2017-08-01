@@ -17,7 +17,8 @@ class TestConnecting(unittest.TestCase):
     def test_reconnect(self):
         c = Cluster([NodeDefinition('8.8.8.8', 'invalid', 'invalid', heartbeat=10),
                      NODE])
-        con, fut = self.c.consume(Queue(u'hello', exclusive=True))
+        c.start(wait=True)
+        con, fut = c.consume(Queue(u'hello', exclusive=True))
         fut.result()
         con.cancel()
 
