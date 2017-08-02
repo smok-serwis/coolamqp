@@ -14,6 +14,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestConnecting(unittest.TestCase):
 
+    def test_connecting_nowhere(self):
+        c = Cluster([NodeDefinition('124.0.0.1', 'guest', 'guest', heartbeat=20)])
+        self.assertRaises(IOError, lambda: c.start(wait=True))
+
     def test_start_called_multiple_times(self):
         c = Cluster([NODE])
         c.start(wait=True)

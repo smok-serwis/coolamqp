@@ -5,6 +5,7 @@ import collections
 import time
 import socket
 import six
+import monotonic
 
 from coolamqp.uplink.connection.recv_framer import ReceivingFramer
 from coolamqp.uplink.connection.send_framer import SendingFramer
@@ -93,21 +94,27 @@ class Connection(object):
         while len(self.callables_on_connected) > 0:
             self.callables_on_connected.pop()()
 
-    def start(self):
+    def start(self, maximum_wait_for=float('inf')):
         """
         Start processing events for this connect. Create the socket,
         transmit 'AMQP\x00\x00\x09\x01' and roll.
 
         Warning: This will block for as long as the TCP connection setup takes.
-        """
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        :param maximum_wait_for: maximum time to wait for TCP uplink establishment.
+        :raises IOError: when unable to establish TCP uplink within maximum_wait_for seconds
+        """
+        started_connecting_on = monotonic.monotonic()
 
         while True:
             try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((self.node_definition.host, self.node_definition.port))
             except socket.error as e:
                 time.sleep(0.5)  # Connection refused? Very bad things?
+
+                if (monotonic.monotonic() - started_connecting_on) > maximum_wait_for:
+                    raise IOError('unable to connect')
             else:
                 break
 
@@ -186,9 +193,6 @@ class Connection(object):
         :param reason: optional human-readable reason for this action
         """
         if frames is not None:
-            # for frame in frames:
-            #     if isinstance(frame, AMQPMethodFrame):
-            #         print('Sending ', frame.payload)
             self.sendf.send(frames, priority=priority)
         else:
             # Listener socket will kill us when time is right

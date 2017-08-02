@@ -154,6 +154,7 @@ class Cluster(object):
 
         :param wait: block until connection is ready
         :raise RuntimeError: called more than once
+        :raise IOError: unable to establish initial link
         """
 
         try:

@@ -35,7 +35,7 @@ class SingleNodeReconnector(object):
         # Initiate connecting - this order is very important!
         self.connection = Connection(self.node_def, self.listener_thread)
         self.attache_group.attach(self.connection)
-        self.connection.start()
+        self.connection.start(maximum_wait_for=30.0)
         self.connection.finalize.add(self.on_fail)
 
     def _on_fail(self):
@@ -43,7 +43,7 @@ class SingleNodeReconnector(object):
             return
 
         self.connection = None
-        self.listener_thread.call_next_io_event(self.connect)
+        # self.listener_thread.call_next_io_event(self.connect)
 
     def shutdown(self):
         """Close this connection"""

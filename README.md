@@ -21,11 +21,6 @@ and there are memoryviews **_everywhere_**.
 
 This is borderline absurd.
 
-CoolAMQP is not a direct AMQP client - it also handles reconnections, transactional sending,
-and so on, mostly via Futures. This means it has a certain opinion on how to 
-handle AMQP, but you can feel the spirit of AMQP underneath. *API is stable*.
-
-
 The project is actively maintained and used in a commercial project. Tests can run
 either on Vagrant (Vagrantfile attached) or Travis CI, and run against RabbitMQ.
 
