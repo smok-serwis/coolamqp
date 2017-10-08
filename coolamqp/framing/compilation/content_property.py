@@ -124,9 +124,11 @@ class ParticularContentTypeList(AMQPContentPropertyList):
 
     return u''.join(mod)
 
+import struct
 
 def compile_particular_content_property_list_class(zpf, fields):
     q = _compile_particular_content_property_list_class(zpf, fields)
-    loc = {}
+    import struct
+    loc = {'struct': struct}
     exec (q, globals(), loc)
     return loc['ParticularContentTypeList']

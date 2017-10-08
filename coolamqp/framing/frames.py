@@ -5,7 +5,6 @@ Concrete frame definitions
 from __future__ import absolute_import, division, print_function
 
 import struct
-
 import six
 
 from coolamqp.framing.base import AMQPFrame
