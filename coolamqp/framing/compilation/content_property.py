@@ -41,10 +41,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
     zpf_bits = [zpf_bit or field.type == 'bit' for zpf_bit, field in
                 zip(zpf_bits, fields)]
 
-    mod = [u'''
-from coolamqp.framing.base import AMQPContentPropertyList
-import struct
-class ParticularContentTypeList(AMQPContentPropertyList):
+    mod = [u'''class ParticularContentTypeList(AMQPContentPropertyList):
     """
     For fields:
 ''']
@@ -124,11 +121,11 @@ class ParticularContentTypeList(AMQPContentPropertyList):
 
     return u''.join(mod)
 
-import struct
 
 def compile_particular_content_property_list_class(zpf, fields):
     q = _compile_particular_content_property_list_class(zpf, fields)
     import struct
-    loc = {'struct': struct}
+    from coolamqp.framing.base import AMQPContentPropertyList
+    loc = {'struct': struct, 'AMQPContentPropertyList': AMQPContentPropertyList}
     exec (q, globals(), loc)
     return loc['ParticularContentTypeList']
