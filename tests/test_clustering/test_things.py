@@ -14,6 +14,14 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestConnecting(unittest.TestCase):
 
+    def test_on_fail(self):
+        q = {}
+        c = Cluster([NodeDefinition('127.0.0.1', 'xguest', 'xguest', heartbeat=20)], on_fail=lambda: q.update(failed=True))
+        c.start()
+        time.sleep(5)
+        c.shutdown()
+        self.assertTrue(q['failed'])
+
     def test_start_called_multiple_times(self):
         c = Cluster([NODE])
         c.start(wait=True)
