@@ -287,7 +287,8 @@ class Consumer(Channeler):
     def on_delivery(self, sth):
         """
         Callback for delivery-related shit
-        :param sth: AMQPMethodFrame WITH basic-deliver, AMQPHeaderFrame or AMQPBodyFrame
+        :param sth: AMQPMethodFrame WITH basic-deliver, AMQPHeaderFrame or
+            AMQPBodyFrame
         """
 
         if self.receiver is None:
@@ -301,7 +302,8 @@ class Consumer(Channeler):
         elif isinstance(sth, AMQPHeaderFrame):
             self.receiver.on_head(sth)
 
-            # No point in listening for more stuff, that's all the watches even listen for
+            # No point in listening for more stuff, that's all the watches
+            # even listen for
 
     def on_setup(self, payload):
         """Called with different kinds of frames - during setup"""
@@ -390,7 +392,8 @@ class Consumer(Channeler):
 
             # Register watches for receiving shit
             # this is multi-shot by default
-            self.hb_watch = HeaderOrBodyWatch(self.channel_id, self.on_delivery)
+            self.hb_watch = HeaderOrBodyWatch(self.channel_id,
+                                              self.on_delivery)
             self.connection.watch(self.hb_watch)
 
             # multi-shot watches need manual cleanup!
@@ -438,21 +441,28 @@ class MessageReceiver(object):
         self.bdeliver = None  # payload of Basic-Deliver
         self.header = None  # AMQPHeaderFrame
         if consumer.body_receive_mode == BodyReceiveMode.MEMORYVIEW:
-            self.body = None  # None is an important sign - first piece of message
+            self.body = None  # None is an important sign - first piece of
+                              # message
         else:
             self.body = []  # list of payloads
-        self.data_to_go = None  # set on receiving header, how much bytes we need yet
+        self.data_to_go = None  # set on receiving header, how much bytes we
+                                # need yet
         self.message_size = None  # in bytes, of currently received message
-        self.offset = 0  # used only in MEMORYVIEW mode - pointer to self.body (which would be a buffer)
+        self.offset = 0  # used only in MEMORYVIEW mode - pointer to self.body
+                         #  (which would be a buffer)
 
         self.acks_pending = set()  # list of things to ack/reject
 
         self.recv_mode = consumer.body_receive_mode
-        # if BYTES, pieces (as mvs) are received into .body and b''.join()ed at the end
+        # if BYTES, pieces (as mvs) are received into .body and b''.join()ed
+        #     at the end
         # if MEMORYVIEW:
-        #                   upon first piece, if it's a single-frame message, it's returned at once
-        #                   if multiframe, self.body is made into a buffer and further are received into it
-        # if LIST_OF_MEMORYVIEW, pieces (as mvs) are stored into .body, and that's returned
+        #                   upon first piece, if it's a single-frame message,
+        #                        it's returned at once
+        #                   if multiframe, self.body is made into a buffer
+        #                        and further are received into it
+        # if LIST_OF_MEMORYVIEW, pieces (as mvs) are stored into .body, and
+        #     that's returned
 
     def on_gone(self):
         """Called by Consumer to inform upon discarding this receiver"""
@@ -462,7 +472,8 @@ class MessageReceiver(object):
         """
         This crafts a constructor for confirming messages.
 
-        This should return a callable/0, whose calling will ACK or REJECT the message.
+        This should return a callable/0, whose calling will ACK or REJECT the
+        message.
         Calling it multiple times should have no ill effect.
 
         If this receiver is long gone,
@@ -496,7 +507,8 @@ class MessageReceiver(object):
         self.state = 2
 
         if self.header.body_size == 0:
-            # An empty message is no common guest. It won't have a BODY field though...
+            # An empty message is no common guest. It won't have a BODY field
+            #  though...
             self.on_body(EMPTY_MEMORYVIEW)  # trigger it manually
 
     def on_basic_deliver(self, payload):
@@ -546,7 +558,8 @@ class MessageReceiver(object):
                     # common case :)
                     body = self.body[0].tobytes()
                 else:
-                    # since b''.join() with list comprehension and .tobytes() would create
+                    # since b''.join() with list comprehension and .tobytes()
+                    #  would create
                     # an extra copy of string
                     bio = io.BytesIO()
                     for mv in body:
