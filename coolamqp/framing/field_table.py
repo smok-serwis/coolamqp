@@ -12,7 +12,6 @@ A table is of form ( (name1::bytes, fv1), (name2::bytes, fv2), ...)
 
 NOTE: it's not buffers, it's memoryview all along
 """
-from __future__ import absolute_import, division, print_function
 
 import struct
 
@@ -22,9 +21,11 @@ import six
 def _tobuf(buf, pattern, *vals):
     return buf.write(struct.pack(pattern, *vals))
 
+
 def _tobufv(buf, value, pattern, *vals):
     _tobuf(buf, pattern, *vals)
     buf.write(value)
+
 
 def enframe_decimal(buf, v):  # convert decimal to bytes
     dps = 0
