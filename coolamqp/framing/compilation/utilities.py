@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, print_function
 
 import math
-from satella.coding import typednamedtuple
 
 import six
 
@@ -10,21 +9,8 @@ from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 
 # docs may be None
 
-
-
-
-__name = ('name', 'name', str)
-
-
-class optgetter(object):
-    def __init__(self, callable):
-        self.callable = callable
-
-    def __call__(self, elem):
-        return self.callable(elem)
-
-
-_Required = type('_Required')
+class _Required(object):
+    pass
 
 class _Field(object):
 
@@ -87,7 +73,6 @@ def get_docs(elem, label=False):
 
 _name = _SimpleField('name', unicode)
 _docs = _ComputedField('docs', lambda elem: get_docs(elem))
-_docsl = _ComputedField('docs', lambda elem: get_docs(elem, label=True))
 
 class BaseObject(object):
 
@@ -137,7 +122,7 @@ class Class(BaseObject):
     FIELDS = [
         _name,
         _ValueField('index', int),
-        _docsl,
+        _ComputedField('docs', lambda elem: get_docs(elem, label=True)),
         _ComputedField('methods', lambda elem: sorted(
             [Method(me) for me in elem.getchildren() if me.tag == 'method'],
             key=lambda m: (m.name.strip('-')[0], -len(m.response)))),
