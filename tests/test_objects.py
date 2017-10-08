@@ -10,7 +10,6 @@ from coolamqp.objects import NodeDefinition, MessageProperties
 
 class TestObjects(unittest.TestCase):
     def test_node_definition_from_amqp(self):
-
         n1 = NodeDefinition(u'amqp://ala:ma@kota/psa')
 
         self.assertEquals(n1.user, u'ala')

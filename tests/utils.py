@@ -6,7 +6,8 @@ import socket
 import collections
 import monotonic
 
-from coolamqp import Cluster, ClusterNode, ConnectionUp, ConnectionDown, ConnectionUp, ConsumerCancelled
+from coolamqp import Cluster, ClusterNode, ConnectionUp, ConnectionDown, \
+    ConnectionUp, ConsumerCancelled
 from coolamqp.backends.base import AMQPBackend, ConnectionFailedError
 
 
@@ -21,7 +22,7 @@ class CoolAMQPTestCase(unittest.TestCase):
     Base class for all CoolAMQP tests. Creates na AMQP connection, provides methods
     for easy interfacing, and other utils.
     """
-    INIT_AMQP = True      # override on child classes
+    INIT_AMQP = True  # override on child classes
 
     def setUp(self):
         if self.INIT_AMQP:
@@ -50,7 +51,7 @@ class CoolAMQPTestCase(unittest.TestCase):
             if type(q) in types:
                 types.remove(type(q))
         if len(types) > 0:
-            self.fail('Not found %s' % (''.join(map(str, types)), ))
+            self.fail('Not found %s' % (''.join(map(str, types)),))
 
     def drainTo(self, type_, timeout, forbidden=[ConsumerCancelled]):
         """
@@ -72,7 +73,7 @@ class CoolAMQPTestCase(unittest.TestCase):
             q = self.amqp.drain(1)
             if isinstance(q, type_):
                 return q
-        self.fail('Did not find %s' % (type_, ))
+        self.fail('Did not find %s' % (type_,))
 
     def takes_less_than(self, max_time):
         """
@@ -87,14 +88,14 @@ class CoolAMQPTestCase(unittest.TestCase):
         return TakesLessThanCM(self, max_time)
 
     # ======failures
-    def single_fail_amqp(self):    # insert single failure
+    def single_fail_amqp(self):  # insert single failure
         sock = self.amqp.thread.backend.channel.connection.transport.sock
         self.amqp.thread.backend.channel.connection.transport.sock = FailbowlSocket()
         self.amqp.thread.backend.channel.connection = None  # 'connection already closed' or sth like that
 
         sock.close()
 
-    def fail_amqp(self):    # BROKER DEAD: SWITCH ON
+    def fail_amqp(self):  # BROKER DEAD: SWITCH ON
 
         self.old_backend = self.amqp.backend
         self.amqp.backend = FailbowlBackend
@@ -104,15 +105,15 @@ class CoolAMQPTestCase(unittest.TestCase):
         del self.old_backend
 
     def restart_rmq(self):  # simulate a broker restart
-       self.fail_amqp()
-       self.single_fail_amqp()
-       time.sleep(3)
-       self.unfail_amqp()
+        self.fail_amqp()
+        self.single_fail_amqp()
+        time.sleep(3)
+        self.unfail_amqp()
 
-       self.drainTo([ConnectionDown, ConnectionUp], [5, 20])
+        self.drainTo([ConnectionDown, ConnectionUp], [5, 20])
 
     def new_amqp_connection(self, consume_connectionup=True):
-       return AMQPConnectionCM(self, consume_connectionup=consume_connectionup)
+        return AMQPConnectionCM(self, consume_connectionup=consume_connectionup)
 
 
 class TakesLessThanCM(object):
@@ -122,7 +123,7 @@ class TakesLessThanCM(object):
 
     def __enter__(self, testCase, max_time):
         self.started_at = time.time()
-        return lambda: time.time() - self.started_at > self.max_time    # is_late
+        return lambda: time.time() - self.started_at > self.max_time  # is_late
 
     def __exit__(self, tp, v, tb):
         self.test.assertLess(time.time() - self.started_at, self.max_time)
@@ -138,6 +139,7 @@ class AMQPConnectionCM(object):
             amqp2.consume(...)
 
     """
+
     def __init__(self, testCase, consume_connectionup):
         self.test = testCase
         self.consume_connectionup = consume_connectionup
@@ -162,7 +164,7 @@ class FailbowlBackend(AMQPBackend):
 class FailbowlSocket(object):
     def __getattr__(self, item):
         def failbowl(*args, **kwargs):
-            time.sleep(1)   # hang and fail
+            time.sleep(1)  # hang and fail
             raise socket.error
 
         def sleeper(*args, **kwargs):
@@ -172,4 +174,3 @@ class FailbowlSocket(object):
             return sleeper
         else:
             return failbowl
-

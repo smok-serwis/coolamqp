@@ -12,7 +12,8 @@ from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.handshake import Handshaker
 from coolamqp.framing.definitions import ConnectionClose, ConnectionCloseOk
 from coolamqp.uplink.connection.watches import MethodWatch, Watch
-from coolamqp.uplink.connection.states import ST_ONLINE, ST_OFFLINE, ST_CONNECTING
+from coolamqp.uplink.connection.states import ST_ONLINE, ST_OFFLINE, \
+    ST_CONNECTING
 from coolamqp.objects import Callable
 
 logger = logging.getLogger(__name__)
@@ -105,7 +106,8 @@ class Connection(object):
 
         while True:
             try:
-                sock.connect((self.node_definition.host, self.node_definition.port))
+                sock.connect(
+                    (self.node_definition.host, self.node_definition.port))
             except socket.error as e:
                 time.sleep(0.5)  # Connection refused? Very bad things?
             else:
@@ -120,7 +122,8 @@ class Connection(object):
                                                              on_read=self.recvf.put,
                                                              on_fail=self.on_fail)
         self.sendf = SendingFramer(self.listener_socket.send)
-        self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk), self.on_connection_close)
+        self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk),
+                              self.on_connection_close)
 
         Handshaker(self, self.node_definition, self.on_connected)
 
@@ -169,7 +172,8 @@ class Connection(object):
 
         if isinstance(payload, ConnectionClose):
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
-            logger.info(u'Broker closed our connection - code %s reason %s', payload.reply_code,
+            logger.info(u'Broker closed our connection - code %s reason %s',
+                        payload.reply_code,
                         payload.reply_text.tobytes().decode('utf8'))
 
         elif isinstance(payload, ConnectionCloseOk):
@@ -233,7 +237,8 @@ class Connection(object):
                     # print('watch',watch,'was cancelled')
                     continue
 
-                if ((not watch_triggered) or (not watch.oneshot)) and (not watch.cancelled):
+                if ((not watch_triggered) or (not watch.oneshot)) and (
+                not watch.cancelled):
                     # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                     alive_watches.append(watch)
 
@@ -260,7 +265,8 @@ class Connection(object):
                 # print('any watch', watch, 'was cancelled')
                 continue
 
-            if ((not watch_triggered) or (not watch.oneshot)) and (not watch.cancelled):
+            if ((not watch_triggered) or (not watch.oneshot)) and (
+            not watch.cancelled):
                 # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                 alive_watches.append(watch)
 
@@ -315,7 +321,8 @@ class Connection(object):
         self.watch(mw)
         return mw
 
-    def method_and_watch(self, channel_id, method_payload, method_or_methods, callback):
+    def method_and_watch(self, channel_id, method_payload, method_or_methods,
+                         callback):
         """
         A syntactic sugar for
 

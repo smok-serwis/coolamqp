@@ -13,4 +13,3 @@ class TestExcs(unittest.TestCase):
         self.assertTrue(u'100' in str(e))
         self.assertTrue(u'wtf' in str(e))
         self.assertTrue(repr(e).startswith(u'AMQPError'))
-

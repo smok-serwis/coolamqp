@@ -13,7 +13,8 @@ from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.objects import Exchange
 from concurrent.futures import Future
 
-from coolamqp.clustering.events import ConnectionLost, MessageReceived, NothingMuch
+from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
+    NothingMuch
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ class Cluster(object):
             def decorated():
                 if not self.listener.terminating:
                     on_fail()
+
             self.on_fail = decorated
         else:
             self.on_fail = None
@@ -101,7 +103,8 @@ class Cluster(object):
         """
         fut = Future()
         fut.set_running_or_notify_cancel()  # it's running right now
-        on_message = on_message or (lambda rmsg: self.events.put_nowait(MessageReceived(rmsg)))
+        on_message = on_message or (
+            lambda rmsg: self.events.put_nowait(MessageReceived(rmsg)))
         con = Consumer(queue, on_message, future_to_notify=fut, *args, **kwargs)
         self.attache_group.add(con)
         return con, fut
@@ -115,7 +118,8 @@ class Cluster(object):
         """
         return self.decl.delete_queue(queue)
 
-    def publish(self, message, exchange=None, routing_key=u'', tx=None, confirm=None):
+    def publish(self, message, exchange=None, routing_key=u'', tx=None,
+                confirm=None):
         """
         Publish a message.
 
@@ -145,16 +149,20 @@ class Cluster(object):
             warnings.warn(u'Use confirm kwarg instead', DeprecationWarning)
 
             if confirm is not None:
-                raise RuntimeError(u'Using both tx= and confirm= at once does not make sense')
+                raise RuntimeError(
+                    u'Using both tx= and confirm= at once does not make sense')
         elif confirm is not None:
             tx = confirm
         else:
             tx = False
 
         try:
-            return (self.pub_tr if tx else self.pub_na).publish(message, exchange, routing_key)
+            return (self.pub_tr if tx else self.pub_na).publish(message,
+                                                                exchange,
+                                                                routing_key)
         except Publisher.UnusablePublisher:
-            raise NotImplementedError(u'Sorry, this functionality is not yet implemented!')
+            raise NotImplementedError(
+                u'Sorry, this functionality is not yet implemented!')
 
     def start(self, wait=True):
         """
@@ -180,7 +188,8 @@ class Cluster(object):
 
         self.events = six.moves.queue.Queue()  # for coolamqp.clustering.events.*
 
-        self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
+        self.snr = SingleNodeReconnector(self.node, self.attache_group,
+                                         self.listener)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)

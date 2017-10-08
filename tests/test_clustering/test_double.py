@@ -6,17 +6,17 @@ from __future__ import print_function, absolute_import, division
 import six
 import unittest
 import time, logging, threading
-from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, ReceivedMessage
+from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
+    ReceivedMessage
 from coolamqp.clustering import Cluster
+
 NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
 from coolamqp.exceptions import AMQPError, RESOURCE_LOCKED
-
 
 logging.basicConfig(level=logging.DEBUG)
 
 
 class TestDouble(unittest.TestCase):
-
     def setUp(self):
         self.c1 = Cluster([NODE])
         self.c1.start()
@@ -28,7 +28,8 @@ class TestDouble(unittest.TestCase):
         self.c1.shutdown()
         self.c2.shutdown()
 
-    @unittest.skip("Since RabbitMQ does not support queue deletion, you need to do this manually")
+    @unittest.skip(
+        "Since RabbitMQ does not support queue deletion, you need to do this manually")
     def test_ccn(self):
         """
         Will consumer cancel itself after Consumer Cancel Notification?
@@ -44,7 +45,7 @@ class TestDouble(unittest.TestCase):
         con1, fut1 = self.c1.consume(q1)
         fut1.result()
 
-#        self.c2.delete_queue(q1) #.result()
+        #        self.c2.delete_queue(q1) #.result()
 
         time.sleep(30)
         self.assertTrue(con1.cancelled)
@@ -57,7 +58,8 @@ class TestDouble(unittest.TestCase):
         fut.result()
 
         try:
-            con2, fut2 = self.c2.consume(q, fail_on_first_time_resource_locked=True)
+            con2, fut2 = self.c2.consume(q,
+                                         fail_on_first_time_resource_locked=True)
             fut2.result()
         except AMQPError as e:
             self.assertEquals(e.reply_code, RESOURCE_LOCKED)

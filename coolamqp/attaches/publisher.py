@@ -12,9 +12,9 @@ from __future__ import absolute_import, division, print_function
 
 import collections
 import logging
-import warnings
-
+import struct
 import six
+import warnings
 
 from coolamqp.framing.definitions import ChannelOpenOk, BasicPublish, Basic, \
     BasicAck

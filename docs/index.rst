@@ -2,11 +2,11 @@ Welcome to CoolAMQP's documentation!
 ====================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+:maxdepth: 2
+       :caption: Contents:
 
-   tutorial
-   caveats
+       tutorial
+       caveats
 
 
 Indices and tables
