@@ -2,7 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
-from collections import namedtuple
+from satella.coding import typednamedtuple
 
 import six
 
@@ -10,33 +10,171 @@ from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 
 # docs may be None
 
-Constant = namedtuple('Constant', (
-    'name', 'value', 'kind',
-    'docs'))  # kind is AMQP constant class # value is int
-Field = namedtuple('Field', (
-    'name', 'type', 'label', 'docs', 'reserved',
-    'basic_type'))  # reserved is bool
-# synchronous is bool, constant is bool
-# repponse is a list of method.name
-Class_ = namedtuple('Class_', (
-    'name', 'index', 'docs', 'methods', 'properties'))  # label is int
-Domain = namedtuple('Domain',
-                    ('name', 'type', 'elementary'))  # elementary is bool
 
 
-class Method(object):
-    def __init__(self, name, synchronous, index, label, docs, fields, response,
-                 sent_by_client, sent_by_server):
-        self.name = name
-        self.synchronous = synchronous
-        self.index = index
-        self.fields = fields
-        self.response = response
-        self.label = label
-        self.docs = docs
-        self.sent_by_client = sent_by_client
-        self.sent_by_server = sent_by_server
-        self.constant = all(f.reserved for f in self.fields)
+
+__name = ('name', 'name', str)
+
+
+class optgetter(object):
+    def __init__(self, callable):
+        self.callable = callable
+
+    def __call__(self, elem):
+        return self.callable(elem)
+
+
+_Required = type('_Required')
+
+class _Field(object):
+
+    def set(self, obj, elem):
+        obj.__dict__[self.field_name] = self.find(elem)
+
+    def __init__(self, field_name):
+        self.field_name = field_name
+
+    def find(self, elem):
+        raise NotImplementedError('abstract')
+
+
+class _ComputedField(_Field):
+    def __init__(self, field_name, find_fun):
+        super(_ComputedField, self).__init__(field_name)
+        self.find = find_fun
+
+
+class _ValueField(_Field):
+    def __init__(self, xml_names, field_name, field_type=lambda x: x,
+                 default=_Required):
+        self.xml_names = (xml_names,) if isinstance(xml_names,
+                                                    six.text_type) else xml_names
+        self.field_name = field_name
+        self.field_type = field_type
+        self.default = default
+
+    def find(self, elem):
+        return self.field_type(self._find(elem))
+
+    def _find(self, elem):
+        for xmln in self.xml_names:
+            if xmln in elem.attrib:
+                return elem.attrib[xmln]
+        else:
+            if self.default is _Required:
+                raise TypeError('Expected field')
+            else:
+                return self.default
+
+
+class _SimpleField(_ValueField):
+    def __init__(self, name, field_type=None, default=_Required):
+        super(_SimpleField, self).__init__(name, name, field_type, default=default)
+
+
+def get_docs(elem, label=False):
+    """Parse an XML element. Return documentation"""
+    for kid in elem.getchildren():
+
+        if kid.tag == 'rule':
+            return get_docs(kid)
+
+        s = kid.text.strip().split('\n')
+        return u'\n'.join([u.strip() for u in s if len(u.strip()) > 0])
+
+    if label:
+        return elem.attrib.get('label', None)
+
+_name = _SimpleField('name', unicode)
+_docs = _ComputedField('docs', lambda elem: get_docs(elem))
+_docsl = _ComputedField('docs', lambda elem: get_docs(elem, label=True))
+
+class BaseObject(object):
+
+    FIELDS = []
+    # tuples of (xml name, field name, type, (optional) default value)
+
+    def __init__(self, *args):
+
+        if len(args) == 1:
+            elem, = args
+
+            self.docs = get_docs(elem)
+
+            for ft in (_Field(*args) for args in self.FIELDS):
+                ft.set(self, elem)
+        else:
+            for fname, value in zip(['name'] + [k[1] for k in self.FIELDS] + ['docs']):
+                self.__dict__[fname] = value
+
+    @classmethod
+    def findall(cls, xml):
+        return [cls(p) for p in xml.findall(cls.NAME)]
+
+
+class Constant(BaseObject):
+    NAME = 'constant'
+    FIELDS = [
+        _name,
+        _SimpleField('value', int),
+        _ValueField('class', 'kind', default=''),
+        _docs,
+    ]
+
+class Field(BaseObject):
+    NAME = 'field'
+    FIELDS = [
+        _name,
+        _ValueField(('domain', 'type'), 'type', str),
+        _SimpleField('label', None),
+        _SimpleField('reserved', lambda x: bool(int(x)), default=0),
+        _ComputedField('basic_type', lambda elem: elem.attrib['type'] == elem.attrib['name']),
+        _docs
+    ]
+
+class Class(BaseObject):
+    NAME = 'class'
+    FIELDS = [
+        _name,
+        _ValueField('index', int),
+        _docsl,
+        _ComputedField('methods', lambda elem: sorted(
+            [Method(me) for me in elem.getchildren() if me.tag == 'method'],
+            key=lambda m: (m.name.strip('-')[0], -len(m.response)))),
+        _ComputedField('properties', lambda elem: [Field(e) for e in elem.getchildren() if
+                   e.tag == 'field'])
+    ]
+
+
+class Domain(BaseObject):
+    NAME = 'domain'
+    FIELDS = [
+        _name,
+        _SimpleField('type'),
+        _ComputedField('elementary', lambda a: a.attrib['type'] == a.attrib['name'])
+    ]
+
+
+def _get_tagchild(elem, tag):
+    return [e for e in elem.getchildren() if e.tag == tag]
+
+class Method(BaseObject):
+
+    FIELDS = [
+        _name,
+        _SimpleField('synchronous', _boolint, default=False),
+        _SimpleField('index', int),
+        _SimpleField('label', default=None),
+        _docs,
+        _ComputedField('fields', lambda elem: [Field(fie) for fie in _get_tagchild(elem, 'field')]),
+        _ComputedField('response', lambda elem: [e.attrib['name'] for e in elem.findall('response')]),
+        _ComputedField('sent_by_client', lambda elem:  any(e.attrib.get('name', '') == 'server' for e in
+                           _get_tagchild(elem, 'chassis'))),
+        _ComputedField('sent_by_server', lambda elem: any(e.attrib.get('name', '') == 'client' for e in
+                           _get_tagchild(elem, 'chassis'))),
+        _ComputedField('constant', lambda elem: all(Field(fie).reserved for fie in _get_tagchild(elem, 'field'))),
+    ]
+
 
     def get_static_body(self):  # only arguments part
         body = []
@@ -85,89 +223,8 @@ def get_size(fields):  # assume all fields have static length
     return size
 
 
-def get_docs(elem):
-    """Parse an XML element. Return documentation"""
-    for kid in elem.getchildren():
-
-        if kid.tag == 'rule':
-            return get_docs(kid)
-
-        s = kid.text.strip().split('\n')
-        return u'\n'.join([u.strip() for u in s if len(u.strip()) > 0])
-
-    return None
-
-
-def for_domain(elem):
-    """Parse XML document. Return domains"""
-    a = elem.attrib
-    return Domain(six.text_type(a['name']), a['type'], a['type'] == a['name'])
-
-
-def for_field(elem):  # for <field> in <method>
-    """Parse method. Return fields"""
-    a = elem.attrib
-    return Field(six.text_type(a['name']),
-                 a['domain'] if 'domain' in a else a['type'],
-                 a.get('label', None),
-                 get_docs(elem),
-                 a.get('reserved', '0') == '1',
-                 None)
 
 _boolint = lambda x: bool(int(x))
-
-def for_method(elem):  # for <method>
-    """Parse class, return methods"""
-    a = elem.attrib
-    return Method(six.text_type(a['name']),
-                  _boolint(a.get('synchronous', '0')), int(a['index']),
-                  a.get('label', None),
-                  get_docs(elem),
-                  [for_field(fie) for fie in elem.getchildren() if
-                   fie.tag == 'field'],
-                  [e.attrib['name'] for e in elem.findall('response')],
-                  # if chassis=server that means server has to accept it
-                  any([e.attrib.get('name', '') == 'server' for e in
-                       elem.getchildren() if e.tag == 'chassis']),
-                  any([e.attrib.get('name', '') == 'client' for e in
-                       elem.getchildren() if e.tag == 'chassis'])
-                  )
-
-
-def for_class(elem):  # for <class>
-    """Parse XML, return classes"""
-    a = elem.attrib
-    methods = sorted(
-        [for_method(me) for me in elem.getchildren() if me.tag == 'method'],
-        key=lambda m: (m.name.strip('-')[0], -len(m.response)))
-    return Class_(six.text_type(a['name']), int(a['index']),
-                  get_docs(elem) or a['label'], methods,
-                  [for_field(e) for e in elem.getchildren() if
-                   e.tag == 'field'])
-
-
-def for_constant(elem):  # for <constant>
-    """Parse XML, return constants"""
-    a = elem.attrib
-    return Constant(a['name'], int(a['value']), a.get('class', ''),
-                    get_docs(elem))
-
-
-def _findall_apply(xml, what, fun):
-    return map(fun, xml.findall(what))
-
-
-def get_constants(xml):
-    return _findall_apply(xml, 'constant', for_constant)
-
-
-def get_classes(xml):
-    return _findall_apply(xml, 'class', for_class)
-
-
-def get_domains(xml):
-    return _findall_apply(xml, 'domain', for_domain)
-
 
 def as_unicode(callable):
     def roll(*args, **kwargs):

@@ -7,8 +7,8 @@ from xml.etree import ElementTree
 
 import six
 
-from coolamqp.framing.compilation.utilities import get_constants, get_classes, \
-    get_domains, \
+from coolamqp.framing.compilation.utilities import Constant, Class, \
+    Domain, \
     name_class, format_method_class_name, format_field_name, ffmt, to_docstring, \
     pythonify_name, to_code_binary, \
     frepr, get_size
@@ -77,7 +77,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     FRAME_END = None
     con_classes = collections.defaultdict(list)
     line('# Core constants\n')
-    for constant in get_constants(xml):
+    for constant in Constant.findall(xml):
         if pythonify_name(constant.name) == 'FRAME_END':
             FRAME_END = constant.value
         g = ffmt('%s = %s\n', pythonify_name(constant.name), constant.value)
@@ -108,7 +108,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     # get domains
     domain_to_basic_type = {}
     line('\n\n\nDOMAIN_TO_BASIC_TYPE = {\n')
-    for domain in get_domains(xml):
+    for domain in Domain.findall(xml):
         line(u'    %s: %s,\n', frepr(domain.name),
              frepr(None if domain.elementary else domain.type))
         domain_to_basic_type[domain.name] = domain.type
@@ -122,7 +122,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     methods_that_are_replies_for = {}  # eg. ConnectionOk: [ConnectionOpenOk]
 
     # Output classes
-    for cls in get_classes(xml):
+    for cls in Class.findall(xml):
 
         cls = cls._replace(
             properties=[p._replace(basic_type=domain_to_basic_type[p.type]) for
