@@ -34,7 +34,7 @@ UNICO = u"u'%s'"
 SPACER = u'''
     """
 '''
-
+GET_SIZE_HEADER = u'\n    def get_size(self):\n'
 
 def _compile_particular_content_property_list_class(zpf, fields):
     """
@@ -129,7 +129,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(u'        return cls(%s)\n' % (FFN, ))
 
     # get_size
-    mod.append(u'\n    def get_size(self):\n')
+    mod.append(GET_SIZE_HEADER)
     mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[
                :-1])  # skip eol
     mod.append(u' + %s\n' % (zpf_length,))  # account for pf length

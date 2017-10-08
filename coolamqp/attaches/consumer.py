@@ -40,6 +40,7 @@ class BodyReceiveMode(object):
     # these constitute received pieces. this is always ZC
 
 
+
 class Consumer(Channeler):
     """
     This object represents a consumer in the system.
@@ -123,12 +124,7 @@ class Consumer(Channeler):
         self.attache_group = None  # attache group this belongs to.
         # if this is not None, then it has an attribute
         # on_cancel_customer(Consumer instance)
-        if qos is not None:
-            if isinstance(qos, int):
-                qos = 0, qos
-            elif qos[0] is None:
-                qos = 0, qos[1]  # prefetch_size=0=undefined
-        self.qos = qos
+        self.qos = _qosify(qos)
         self.qos_update_sent = False  # QoS was not sent to server
 
         self.future_to_notify = future_to_notify
@@ -408,6 +404,15 @@ class Consumer(Channeler):
             # resend QoS, in case of sth
             if self.qos is not None:
                 self.set_qos(self.qos[0], self.qos[1])
+
+
+def _qosify(qos):
+    if qos is not None:
+        if isinstance(qos, int):
+            qos = 0, qos
+        elif qos[0] is None:
+            qos = 0, qos[1]  # prefetch_size=0=undefined
+    return qos
 
 
 class MessageReceiver(object):
