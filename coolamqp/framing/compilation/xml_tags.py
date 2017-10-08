@@ -103,14 +103,17 @@ class Method(BaseObject):
         return not any(field.basic_type in DYNAMIC_BASIC_TYPES for field in self.fields)
 
 
+_cls_method_sortkey = lambda m: (m.name.strip('-')[0], -len(m.response))
+_cls_method_postexec = lambda q: sorted(q, key=_cls_method_sortkey)
+
 class Class(BaseObject):
     NAME = 'class'
     FIELDS = [
         _name,
         _SimpleField('index', int),
         _docs_with_label,
-        _ChildField('methods', 'method', Method, postexec=lambda q: sorted(q,
-            key=lambda m: (m.name.strip('-')[0], -len(m.response)))),
+        _ChildField('methods', 'method', Method, postexec= \
+            _cls_method_postexec),
         _ChildField('properties', 'field', Field)
     ]
 
