@@ -100,10 +100,8 @@ class Method(BaseObject):
         return b''.join(body)
 
     def is_static(self, domain_to_type=None):  # is size constant?
-        for field in self.fields:
-            if field.basic_type in DYNAMIC_BASIC_TYPES:
-                return False
-        return True
+        return not any(field.basic_type in DYNAMIC_BASIC_TYPES for field in self.fields)
+
 
 class Class(BaseObject):
     NAME = 'class'
