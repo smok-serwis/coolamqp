@@ -5,7 +5,7 @@ import logging
 
 
 class _Required(object):
-    pass
+    """Only a placeholder to tell apart None default values from required fields"""
 
 def nop(x):
     return x
@@ -16,6 +16,7 @@ __all__ = [
 ]
 
 class _Field(object):
+    """Base field object"""
 
     def set(self, obj, elem):
         obj.__dict__[self.field_name] = self.find(elem)
@@ -28,12 +29,20 @@ class _Field(object):
 
 
 class _ComputedField(_Field):
+    """
+    There's no corresponding XML attribute name - value must
+    be computed from element
+    """
     def __init__(self, field_name, find_fun):
         super(_ComputedField, self).__init__(field_name)
         self.find = find_fun
 
 
 class _ValueField(_Field):
+    """
+    Can hide under a pick of different XML attribute names.
+    Has a type, can have a default value.
+    """
     def __init__(self, xml_names, field_name, field_type=nop,
                  default=_Required):
         if not isinstance(xml_names, tuple):
