@@ -83,7 +83,7 @@ class _ChildField(_ComputedField):
     """
     def __init__(self, name, xml_tag, fun, postexec=nop):
         super(_ChildField, self).__init__(name, lambda elem: \
-            postexec([fun, _get_tagchild(elem, xml_tag)]))
+            postexec([fun(c) for c in _get_tagchild(elem, xml_tag)]))
 
 def get_docs(elem, label):
     """Parse an XML element. Return documentation"""
