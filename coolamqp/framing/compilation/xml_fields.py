@@ -60,7 +60,7 @@ class _ValueField(_Field):
         xmln = [xmln for xmln in self.xml_names if xmln in elem.attrib]
 
         if xmln:
-            return elem.attri[xmln[0]]
+            return elem.attrib[xmln[0]]
         else:
             if self.default is _Required:
                 raise TypeError('Did not find field %s in elem tag %s, looked for names %s' % (self.field_name, elem.tag, self.xml_names))
