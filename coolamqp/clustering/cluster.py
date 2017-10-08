@@ -39,7 +39,8 @@ class Cluster(object):
         """
         :param nodes: list of nodes, or a single node. For now, only one is supported.
         :type nodes: NodeDefinition instance or a list of NodeDefinition instances
-        :param on_fail: callable/0 to call when connection fails. This is a one-shot
+        :param on_fail: callable/0 to call when connection fails in an
+            unclean way. This is a one-shot
         :type on_fail: callable/0
         """
         from coolamqp.objects import NodeDefinition
@@ -175,7 +176,12 @@ class Cluster(object):
         self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
-            self.snr.on_fail.add(self.on_fail)
+
+            def nice():
+                if not self.snr.terminating:
+                    self.on_fail()
+
+            self.snr.on_fail.add(nice)
 
         # Spawn a transactional publisher and a noack publisher
         self.pub_tr = Publisher(Publisher.MODE_CNPUB)

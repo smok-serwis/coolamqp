@@ -2,7 +2,7 @@
 
 * 0.92:
 
- * TBA
+ * Added `on_fail` event handler - fired upon connection loss
 
 * v0.91:
   * removed annoying warnings
