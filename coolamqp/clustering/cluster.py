@@ -52,7 +52,7 @@ class Cluster(object):
 
         self.node, = nodes
 
-        if self.on_fail is not None:
+        if on_fail is not None:
             def decorated():
                 if not self.listener.terminating:
                     on_fail()
