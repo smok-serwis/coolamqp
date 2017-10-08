@@ -56,17 +56,6 @@ class Field(BaseObject):
         _docs
     ]
 
-class Class(BaseObject):
-    NAME = 'class'
-    FIELDS = [
-        _name,
-        _SimpleField('index', int),
-        _docs_with_label,
-        _ChildField('methods', 'method', Method, postexec=lambda q: sorted(q,
-            key=lambda m: (m.name.strip('-')[0], -len(m.response)))),
-        _ChildField('properties', 'field', Field)
-    ]
-
 
 class Domain(BaseObject):
     NAME = 'domain'
@@ -115,3 +104,15 @@ class Method(BaseObject):
             if field.basic_type in DYNAMIC_BASIC_TYPES:
                 return False
         return True
+
+class Class(BaseObject):
+    NAME = 'class'
+    FIELDS = [
+        _name,
+        _SimpleField('index', int),
+        _docs_with_label,
+        _ChildField('methods', 'method', Method, postexec=lambda q: sorted(q,
+            key=lambda m: (m.name.strip('-')[0], -len(m.response)))),
+        _ChildField('properties', 'field', Field)
+    ]
+
