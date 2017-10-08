@@ -62,9 +62,9 @@ class Class(BaseObject):
         _name,
         _SimpleField('index', int),
         _docs_with_label,
-        _ComputedField('methods', lambda elem: sorted(map(Method, _get_tagchild(elem, 'method')),
+        _ChildField('methods', 'method', Method, postexec=lambda q: sorted(q,
             key=lambda m: (m.name.strip('-')[0], -len(m.response)))),
-        _ComputedField('properties', lambda elem: map(Field, _get_tagchild(elem, 'field')))
+        _ChildField('properties', 'field', Field)
     ]
 
 
@@ -77,8 +77,7 @@ class Domain(BaseObject):
     ]
 
 
-def _get_tagchild(elem, tag):
-    return [e for e in elem.getchildren() if e.tag == tag]
+
 
 class Method(BaseObject):
     NAME = 'method'
@@ -88,13 +87,11 @@ class Method(BaseObject):
         _SimpleField('index', int),
         _SimpleField('label', default=None),
         _docs,
-        _ComputedField('fields', lambda elem: [Field(fie) for fie in _get_tagchild(elem, 'field')]),
-        _ComputedField('response', lambda elem: [e.attrib['name'] for e in elem.findall('response')]),
-        _ComputedField('sent_by_client', lambda elem:  any(e.attrib.get('name', '') == 'server' for e in
-                           _get_tagchild(elem, 'chassis'))),
-        _ComputedField('sent_by_server', lambda elem: any(e.attrib.get('name', '') == 'client' for e in
-                           _get_tagchild(elem, 'chassis'))),
-        _ComputedField('constant', lambda elem: all(Field(fie).reserved for fie in _get_tagchild(elem, 'field'))),
+        _ChildField('fields', 'field', Field),
+        _ChildField('response', 'response', lambda e: e.attrib['name']),
+        _ChildField('sent_by_client', 'chassis', lambda e: e.attrib.get('name', '') == 'client', postexec=any),
+        _ChildField('sent_by_server', 'chassis', lambda e: e.attrib.get('name', '') == 'server', postexec=any),
+        _ChildField('constant', 'field', lambda e: Field(e).reserved, postexec=all)
     ]
 
 
