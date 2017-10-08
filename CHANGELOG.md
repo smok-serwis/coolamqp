@@ -1,5 +1,7 @@
 ## Change log
 
+ * Large refactor of XML schema compiler
+ 
 * 0.92:
 
  * Added `on_fail` event handler - fired upon connection loss

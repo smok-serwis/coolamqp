@@ -78,7 +78,7 @@ def get_docs(elem, label=False):
     if label:
         return elem.attrib.get('label', None)
 
-_name = _SimpleField('name', unicode)
+_name = _SimpleField('name', six.text_type)
 _docs = _ComputedField('docs', lambda elem: get_docs(elem))
 
 
