@@ -8,9 +8,9 @@ import struct
 import six
 
 from coolamqp.framing.base import AMQPFrame
-from coolamqp.framing.definitions import FRAME_METHOD, FRAME_HEARTBEAT, FRAME_BODY, FRAME_HEADER, FRAME_END, \
-    IDENT_TO_METHOD, CLASS_ID_TO_CONTENT_PROPERTY_LIST, FRAME_METHOD_BYTE, FRAME_BODY_BYTE, FRAME_HEADER_BYTE, \
-    FRAME_END_BYTE
+from coolamqp.framing.definitions import FRAME_METHOD, FRAME_HEARTBEAT, \
+    FRAME_BODY, FRAME_HEADER, FRAME_END, \
+    IDENT_TO_METHOD, CLASS_ID_TO_CONTENT_PROPERTY_LIST, FRAME_END_BYTE
 
 
 class AMQPMethodFrame(AMQPFrame):
@@ -71,15 +71,18 @@ class AMQPHeaderFrame(AMQPFrame):
 
     def write_to(self, buf):
         buf.write(struct.pack('!BHLHHQ', FRAME_HEADER, self.channel,
-                              12 + self.properties.get_size(), self.class_id, 0, self.body_size))
+                              12 + self.properties.get_size(), self.class_id, 0,
+                              self.body_size))
         self.properties.write_to(buf)
         buf.write(FRAME_END_BYTE)
 
     @staticmethod
     def unserialize(channel, payload_as_buffer):
         # payload starts with class ID
-        class_id, weight, body_size = struct.unpack_from('!HHQ', payload_as_buffer, 0)
-        properties = CLASS_ID_TO_CONTENT_PROPERTY_LIST[class_id].from_buffer(payload_as_buffer, 12)
+        class_id, weight, body_size = struct.unpack_from('!HHQ',
+                                                         payload_as_buffer, 0)
+        properties = CLASS_ID_TO_CONTENT_PROPERTY_LIST[class_id].from_buffer(
+            payload_as_buffer, 12)
         return AMQPHeaderFrame(channel, class_id, weight, body_size, properties)
 
     def get_size(self):

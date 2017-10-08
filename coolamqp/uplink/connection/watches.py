@@ -1,7 +1,8 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeartbeatFrame, AMQPHeaderFrame, AMQPBodyFrame
+from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeaderFrame, \
+    AMQPBodyFrame
 
 
 class Watch(object):

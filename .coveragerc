@@ -1,4 +1,7 @@
 [run]
 branch=1
 include=coolamqp/*
-omit=tests/*
+omit=
+  tests/*
+  coolamqp/framing/definitions.py
+

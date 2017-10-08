@@ -3,11 +3,9 @@ from __future__ import absolute_import, division, print_function
 
 """Generate serializers/unserializers/length getters for given property_flags"""
 import six
-import struct
 import logging
-from coolamqp.framing.compilation.textcode_fields import get_counter, get_from_buffer, get_serializer
-from coolamqp.framing.base import AMQPContentPropertyList
-from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
+from coolamqp.framing.compilation.textcode_fields import get_counter, \
+    get_from_buffer, get_serializer
 
 logger = logging.getLogger(__name__)
 
@@ -40,15 +38,20 @@ def _compile_particular_content_property_list_class(zpf, fields):
     zpf_length = len(zpf)
 
     # 1 here does not mean that field is present. All bit fields are present, but 0 in a ZPF. Fix this.
-    zpf_bits = [zpf_bit or field.type == 'bit' for zpf_bit, field in zip(zpf_bits, fields)]
+    zpf_bits = [zpf_bit or field.type == 'bit' for zpf_bit, field in
+                zip(zpf_bits, fields)]
 
-    mod = [u'''class ParticularContentTypeList(AMQPContentPropertyList):
+    mod = [u'''import struct
+from coolamqp.framing.base import AMQPContentPropertyList
+
+class ParticularContentTypeList(AMQPContentPropertyList):
     """
     For fields:
 ''']
 
     for field in fields:
-        mod.append(u'    * %s::%s' % (format_field_name(field.name), field.type))
+        mod.append(
+            u'    * %s::%s' % (format_field_name(field.name), field.type))
         if field.reserved:
             mod.append(u' (reserved)')
         mod.append(u'\n')
@@ -57,7 +60,8 @@ def _compile_particular_content_property_list_class(zpf, fields):
     if not x.startswith('b'):
         x = 'b' + x
 
-    present_fields = [field for field, present in zip(fields, zpf_bits) if present]
+    present_fields = [field for field, present in zip(fields, zpf_bits) if
+                      present]
 
     mod.append(u'''
     """
@@ -66,7 +70,9 @@ def _compile_particular_content_property_list_class(zpf, fields):
     if len(present_fields) == 0:
         slots = u''
     else:
-        slots = (u', '.join((u"u'%s'" % format_field_name(field.name) for field in present_fields))) + u', '
+        slots = (u', '.join(
+            (u"u'%s'" % format_field_name(field.name) for field in
+             present_fields))) + u', '
 
     mod.append(u'''
     __slots__ = (%s)
@@ -83,7 +89,8 @@ def _compile_particular_content_property_list_class(zpf, fields):
 ''' % (u', '.join(format_field_name(field.name) for field in present_fields)))
 
     for field in present_fields:
-        mod.append(u'        self.%s = %s\n'.replace(u'%s', format_field_name(field.name)))
+        mod.append(u'        self.%s = %s\n'.replace(u'%s', format_field_name(
+            field.name)))
 
     # Let's do write_to
     mod.append(u'\n    def write_to(self, buf):\n')
@@ -99,23 +106,32 @@ def _compile_particular_content_property_list_class(zpf, fields):
     # from_buffer
     # note that non-bit values
     mod.append(u'    @classmethod\n')
-    mod.append(u'    def from_buffer(cls, buf, start_offset):\n        offset = start_offset + %s\n' % (zpf_length,))
+    mod.append(
+        u'    def from_buffer(cls, buf, start_offset):\n        offset = start_offset + %s\n' % (
+        zpf_length,))
     mod.append(get_from_buffer(
         present_fields
         , prefix='', indent_level=2))
     mod.append(u'        return cls(%s)\n' %
-               u', '.join(format_field_name(field.name) for field in present_fields))
+               u', '.join(
+                   format_field_name(field.name) for field in present_fields))
 
     # get_size
     mod.append(u'\n    def get_size(self):\n')
-    mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[:-1])  # skip eol
+    mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[
+               :-1])  # skip eol
     mod.append(u' + %s\n' % (zpf_length,))  # account for pf length
 
     return u''.join(mod)
 
 
 def compile_particular_content_property_list_class(zpf, fields):
+    import struct
+    from coolamqp.framing.base import AMQPContentPropertyList
+
     q = _compile_particular_content_property_list_class(zpf, fields)
-    loc = {}
-    exec (q, globals(), loc)
+    loc = dict(globals(), **{
+        'struct': struct,
+        'AMQPContentPropertyList': AMQPContentPropertyList})
+    exec (q, loc)
     return loc['ParticularContentTypeList']

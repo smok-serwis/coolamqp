@@ -1,5 +1,6 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
+
 import monotonic
 
 from coolamqp.framing.frames import AMQPHeartbeatFrame
@@ -42,7 +43,8 @@ class Heartbeater(object):
         """Timer says we should send a heartbeat"""
         self.connection.send([AMQPHeartbeatFrame()], priority=True)
 
-        if (monotonic.monotonic() - self.last_heartbeat_on) > 2 * self.heartbeat_interval:
+        if (
+            monotonic.monotonic() - self.last_heartbeat_on) > 2 * self.heartbeat_interval:
             # closing because of heartbeat
             self.connection.send(None)
 

@@ -1,9 +1,9 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import, division
-import six
+
+import functools
 import logging
 import threading
-import functools
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +112,8 @@ class AtomicTagger(object):
                 i = len(self.tags) - 1  # start index
 
                 while i > 0:  # this will terminate at i=0
-                    if self.tags[i][0] > tag:  # this means we should insert it here...
+                    if self.tags[i][
+                        0] > tag:  # this means we should insert it here...
                         break
                     i -= 1  # previousl index
 

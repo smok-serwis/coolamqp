@@ -16,10 +16,11 @@ a module that has following ok:
 
 """
 from __future__ import absolute_import, division, print_function
+
 import math
 
-from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
-from coolamqp.framing.compilation.utilities import format_field_name, get_size
+from coolamqp.framing.base import BASIC_TYPES
+from coolamqp.framing.compilation.utilities import format_field_name
 
 
 def get_counter(fields, prefix=u'', indent_level=2):
@@ -64,7 +65,8 @@ def get_counter(fields, prefix=u'', indent_level=2):
     if bits > 0:  # sync bits
         accumulator += int(math.ceil(bits / 8))
 
-    return (u'    ' * indent_level) + u'return ' + (u' + '.join([str(accumulator)] + parts)) + u'\n'
+    return (u'    ' * indent_level) + u'return ' + (
+    u' + '.join([str(accumulator)] + parts)) + u'\n'
 
 
 def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
@@ -115,7 +117,8 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
             return
         fffnames = [a for a, b in to_struct if a != u'_']  # skip reserved
         ffffmts = [b for a, b in to_struct]
-        emit("%s, = struct.unpack_from('!%s', buf, offset)", u', '.join(fffnames), u''.join(ffffmts))
+        emit("%s, = struct.unpack_from('!%s', buf, offset)",
+             u', '.join(fffnames), u''.join(ffffmts))
         emit("offset += %s", ln['ln'])
         ln['ln'] = 0
         del to_struct[:]
@@ -137,7 +140,8 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
             assert len(bits) == 0
 
             if field.reserved:
-                to_struct.append((u'_', '%sx' % (BASIC_TYPES[field.basic_type][0],)))
+                to_struct.append(
+                    (u'_', '%sx' % (BASIC_TYPES[field.basic_type][0],)))
             else:
                 to_struct.append((fieldname, BASIC_TYPES[field.basic_type][1]))
 
@@ -203,12 +207,14 @@ def get_serializer(fields, prefix='', indent_level=2):
         else:
             for bit_name, modif in zip(bits, range(8)):
                 if bit_name != 'False':
-                    p.append('(' + bit_name + ' << %s)' % (modif,))  # yes you can << bools
+                    p.append('(' + bit_name + ' << %s)' % (
+                    modif,))  # yes you can << bools
             format_args.append(u' | '.join(p))
         del bits[:]
 
     def emit_single_struct_pack():
-        emit("buf.write(struct.pack('!%s', %s))", u''.join(formats), u', '.join(format_args))
+        emit("buf.write(struct.pack('!%s', %s))", u''.join(formats),
+             u', '.join(format_args))
         del formats[:]
         del format_args[:]
 

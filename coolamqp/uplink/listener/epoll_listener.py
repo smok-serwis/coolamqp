@@ -1,12 +1,14 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import six
-import logging
-import select
-import monotonic
-import socket
+
 import collections
 import heapq
+import logging
+import select
+import socket
+
+import monotonic
+import six
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
 
@@ -88,7 +90,8 @@ class EpollListener(object):
 
                     sock.on_write()
                     # I'm done with sending for now
-                    if len(sock.data_to_send) == 0 and len(sock.priority_queue) == 0:
+                    if len(sock.data_to_send) == 0 and len(
+                            sock.priority_queue) == 0:
                         self.epoll.modify(sock.fileno(), RO)
 
             except SocketFailed:

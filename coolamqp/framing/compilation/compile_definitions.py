@@ -6,10 +6,11 @@ import struct
 from xml.etree import ElementTree
 
 import six
-from coolamqp.framing.base import BASIC_TYPES
 
-from coolamqp.framing.compilation.utilities import get_constants, get_classes, get_domains, \
-    name_class, format_method_class_name, format_field_name, ffmt, to_docstring, pythonify_name, to_code_binary, \
+from coolamqp.framing.compilation.utilities import get_constants, get_classes, \
+    get_domains, \
+    name_class, format_method_class_name, format_field_name, ffmt, to_docstring, \
+    pythonify_name, to_code_binary, \
     frepr, get_size
 
 TYPE_TRANSLATOR = {
@@ -25,7 +26,8 @@ TYPE_TRANSLATOR = {
 }
 
 
-def compile_definitions(xml_file='resources/amqp0-9-1.extended.xml', out_file='coolamqp/framing/definitions.py'):
+def compile_definitions(xml_file='resources/amqp0-9-1.extended.xml',
+                        out_file='coolamqp/framing/definitions.py'):
     """parse resources/amqp-0-9-1.xml into """
 
     xml = ElementTree.parse(xml_file)
@@ -56,7 +58,7 @@ binary string? It's a memoryview all right.
 Only thing that isn't are field names in tables.
 """
 
-import struct, collections, warnings, logging, six
+import struct, collections, logging, six
 
 from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
@@ -100,13 +102,15 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             con_classes[constant.kind].append(pythonify_name(constant.name))
 
     for constant_kind, constants in con_classes.items():
-        line('\n%sS = [%s]', pythonify_name(constant_kind), u', '.join(constants))
+        line('\n%sS = [%s]', pythonify_name(constant_kind),
+             u', '.join(constants))
 
     # get domains
     domain_to_basic_type = {}
     line('\n\n\nDOMAIN_TO_BASIC_TYPE = {\n')
     for domain in get_domains(xml):
-        line(u'    %s: %s,\n', frepr(domain.name), frepr(None if domain.elementary else domain.type))
+        line(u'    %s: %s,\n', frepr(domain.name),
+             frepr(None if domain.elementary else domain.type))
         domain_to_basic_type[domain.name] = domain.type
 
     line('}\n')
@@ -120,7 +124,9 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     # Output classes
     for cls in get_classes(xml):
 
-        cls = cls._replace(properties=[p._replace(basic_type=domain_to_basic_type[p.type]) for p in cls.properties])
+        cls = cls._replace(
+            properties=[p._replace(basic_type=domain_to_basic_type[p.type]) for
+                        p in cls.properties])
 
         line('''\nclass %s(AMQPClass):
     """
@@ -130,10 +136,12 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     INDEX = %s
 
 ''',
-             name_class(cls.name), to_docstring(None, cls.docs), frepr(cls.name), cls.index)
+             name_class(cls.name), to_docstring(None, cls.docs),
+             frepr(cls.name), cls.index)
 
         if len(cls.properties) > 0:
-            class_id_to_contentpropertylist[cls.index] = name_class(cls.name) + 'ContentPropertyList'
+            class_id_to_contentpropertylist[cls.index] = name_class(
+                cls.name) + 'ContentPropertyList'
 
             line('''\nclass %sContentPropertyList(AMQPContentPropertyList):
     """
@@ -142,15 +150,19 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     FIELDS = [
 ''',
 
-                 name_class(cls.name), to_docstring(None, cls.docs), frepr(cls.name), cls.index, name_class(cls.name))
+                 name_class(cls.name), to_docstring(None, cls.docs),
+                 frepr(cls.name), cls.index, name_class(cls.name))
 
-            is_static = all(property.basic_type not in ('table', 'longstr', 'shortstr') for property in cls.properties)
+            is_static = all(
+                property.basic_type not in ('table', 'longstr', 'shortstr') for
+                property in cls.properties)
 
             for property in cls.properties:
                 if property.basic_type == 'bit':
                     raise ValueError('bit properties are not supported!'
                                      )
-                line('        Field(%s, %s, %s, %s),\n', frepr(property.name), frepr(property.type),
+                line('        Field(%s, %s, %s, %s),\n', frepr(property.name),
+                     frepr(property.type),
                      frepr(property.basic_type), repr(property.reserved))
             line('''    ]
     # A dictionary from a zero property list to a class typized with
@@ -160,7 +172,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                  name_class(cls.name))
 
             if any(prop.basic_type == 'bit' for prop in cls.properties):
-                raise NotImplementedError('I should emit a custom zero_property_list staticmethod :(')
+                raise NotImplementedError(
+                    'I should emit a custom zero_property_list staticmethod :(')
             line(u'''    def __new__(self, **kwargs):
         """
         Return a property list.
@@ -169,8 +182,10 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
             my_props = [prop for prop in cls.properties if (not prop.reserved)]
             for property in my_props:
-                line('        :param %s: %s\n', format_field_name(property.name), property.label)
-                line('        :type %s: %s (AMQP as %s)\n', format_field_name(property.name),
+                line('        :param %s: %s\n',
+                     format_field_name(property.name), property.label)
+                line('        :type %s: %s (AMQP as %s)\n',
+                     format_field_name(property.name),
                      TYPE_TRANSLATOR[property.basic_type], property.basic_type)
             line('        """\n')
             zpf_len = int(math.ceil(len(cls.properties) // 15))
@@ -188,14 +203,16 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                     if field.reserved or field.basic_type == 'bit':
                         pass  # zero anyway
                     else:
-                        byte_chunk.append(u"(('%s' in kwargs) << %s)" % (format_field_name(field.name), piece_index))
+                        byte_chunk.append(u"(('%s' in kwargs) << %s)" % (
+                        format_field_name(field.name), piece_index))
                     piece_index -= 1
                 else:
                     if first_byte:
                         if field.reserved or field.basic_type == 'bit':
                             pass  # zero anyway
                         else:
-                            byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
+                            byte_chunk.append(u"int('%s' in kwargs)" % (
+                            format_field_name(field.name),))
                     else:
                         # this is the "do we need moar flags" section
                         byte_chunk.append(u"kwargs['%s']" % (
@@ -210,7 +227,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 fields_remaining -= 1
 
             if len(byte_chunk) > 0:
-                line(u'            %s\n', u' | '.join(byte_chunk))  # We did not finish
+                line(u'            %s\n',
+                     u' | '.join(byte_chunk))  # We did not finish
 
             line(u'        ])\n        zpf = six.binary_type(zpf)\n')
             line(u'''
@@ -231,14 +249,15 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 #
 #       If you do not know in advance what properties you will be using, it is correct to use
 #       this constructor.
-
+        if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return %s.PARTICULAR_CLASSES[zpf](**kwargs)
         else:
             logger.debug('Property field (%s:%d) not seen yet, compiling', repr(zpf))
             c = compile_particular_content_property_list_class(zpf, %s.FIELDS)
             %s.PARTICULAR_CLASSES[zpf] = c
             return c(**kwargs)
-'''.replace('%s', name_class(cls.name) + 'ContentPropertyList').replace('%d', '%s'))
+'''.replace('%s', name_class(cls.name) + 'ContentPropertyList').replace('%d',
+                                                                        '%s'))
 
             line(u'''
     @staticmethod
@@ -257,14 +276,16 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                     if field.reserved or field.basic_type == 'bit':
                         pass  # zero
                     else:
-                        byte_chunk.append(u"(('%s' in fields) << %s)" % (format_field_name(field.name), piece_index))
+                        byte_chunk.append(u"(('%s' in fields) << %s)" % (
+                        format_field_name(field.name), piece_index))
                     piece_index -= 1
                 else:
                     if first_byte:
                         if field.reserved or field.basic_type == 'bit':
                             pass  # zero
                         else:
-                            byte_chunk.append(u"int('%s' in kwargs)" % (format_field_name(field.name),))
+                            byte_chunk.append(u"int('%s' in kwargs)" % (
+                            format_field_name(field.name),))
                     else:
                         # this is the "do we need moar flags" section
                         byte_chunk.append(u"kwargs['%s']" % (
@@ -279,7 +300,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 fields_remaining -= 1
 
             if len(byte_chunk) > 0:
-                line(u'        %s\n', u' | '.join(byte_chunk))  # We did not finish
+                line(u'        %s\n',
+                     u' | '.join(byte_chunk))  # We did not finish
 
             line(u'''        ])
         zpf = six.binary_type(zpf)
@@ -290,7 +312,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             c = compile_particular_content_property_list_class(zpf, %s.FIELDS)
             %s.PARTICULAR_CLASSES[zpf] = c
             return c
-'''.replace("%s", name_class(cls.name) + 'ContentPropertyList').replace('%d', '%s'))
+'''.replace("%s", name_class(cls.name) + 'ContentPropertyList').replace('%d',
+                                                                        '%s'))
 
             line(u'''
     @staticmethod
@@ -316,27 +339,35 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             %s.PARTICULAR_CLASSES[zpf] = c
             return c.from_buffer(buf, offset)
 
-'''.replace('%s', name_class(cls.name) + 'ContentPropertyList').replace("%d", "%s"))
+'''.replace('%s', name_class(cls.name) + 'ContentPropertyList').replace("%d",
+                                                                        "%s"))
 
         # ============================================ Do methods for this class
         for method in cls.methods:
-            full_class_name = u'%s%s' % (name_class(cls.name), format_method_class_name(method.name))
+            full_class_name = u'%s%s' % (
+            name_class(cls.name), format_method_class_name(method.name))
 
             # annotate types
-            method.fields = [field._replace(basic_type=domain_to_basic_type[field.type]) for field in method.fields]
+            method.fields = [
+                field._replace(basic_type=domain_to_basic_type[field.type]) for
+                field in method.fields]
 
-            non_reserved_fields = [field for field in method.fields if not field.reserved]
+            non_reserved_fields = [field for field in method.fields if
+                                   not field.reserved]
 
             is_static = method.is_static()
             if is_static:
                 static_size = get_size(method.fields)
 
-            is_content_static = len([f for f in method.fields if not f.reserved]) == 0
+            is_content_static = len(
+                [f for f in method.fields if not f.reserved]) == 0
 
             if len(non_reserved_fields) == 0:
                 slots = u''
             else:
-                slots = (u', '.join(map(lambda f: frepr(format_field_name(f.name)), non_reserved_fields))) + u', '
+                slots = (u', '.join(
+                    map(lambda f: frepr(format_field_name(f.name)),
+                        non_reserved_fields))) + u', '
 
             line('''\nclass %s(AMQPMethodPayload):
     """
@@ -367,19 +398,24 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                  repr(is_content_static)
                  )
 
-            _namify = lambda x: name_class(cls.name) + format_method_class_name(x)
+            _namify = lambda x: name_class(cls.name) + format_method_class_name(
+                x)
 
             methods_that_are_replies_for[full_class_name] = []
             for response in method.response:
-                methods_that_are_reply_reasons_for[_namify(response)] = full_class_name
-                methods_that_are_replies_for[full_class_name].append(_namify(response))
+                methods_that_are_reply_reasons_for[
+                    _namify(response)] = full_class_name
+                methods_that_are_replies_for[full_class_name].append(
+                    _namify(response))
 
             if is_content_static:
                 line('''    STATIC_CONTENT = %s  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 ''',
-                     to_code_binary(struct.pack('!LHH', static_size + 4, cls.index, method.index) + \
-                                    method.get_static_body() + \
-                                    struct.pack('!B', FRAME_END)))
+                     to_code_binary(
+                         struct.pack('!LHH', static_size + 4, cls.index,
+                                     method.index) + \
+                         method.get_static_body() + \
+                         struct.pack('!B', FRAME_END)))
 
             # fields
             if len(method.fields) > 0:
@@ -387,7 +423,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 line('    FIELDS = [ \n')
 
                 for field in method.fields:
-                    line('        Field(%s, %s, %s, reserved=%s),\n', frepr(field.name), frepr(field.type),
+                    line('        Field(%s, %s, %s, reserved=%s),\n',
+                         frepr(field.name), frepr(field.type),
                          frepr(field.basic_type), repr(field.reserved))
 
                 line('    ]\n')
@@ -397,7 +434,9 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         """
         Create frame %s
 ''',
-                 u', '.join(['self'] + [format_field_name(field.name) for field in non_reserved_fields]),
+                 u', '.join(
+                     ['self'] + [format_field_name(field.name) for field in
+                                 non_reserved_fields]),
                  cls.name + '.' + method.name,
                  )
 
@@ -406,23 +445,28 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
             for field in non_reserved_fields:
                 if (field.label is not None) or (field.docs is not None):
-                    line('        :param %s: %s\n', format_field_name(field.name),
-                         to_docstring(field.label, field.docs, prefix=12, blank=False))
+                    line('        :param %s: %s\n',
+                         format_field_name(field.name),
+                         to_docstring(field.label, field.docs, prefix=12,
+                                      blank=False))
 
-                line('        :type %s: %s (%s in AMQP)\n', format_field_name(field.name),
+                line('        :type %s: %s (%s in AMQP)\n',
+                     format_field_name(field.name),
                      TYPE_TRANSLATOR[field.basic_type], field.type)
 
             line('        """\n')
 
             for field in non_reserved_fields:
-                line('        self.%s = %s\n', format_field_name(field.name), format_field_name(field.name))
+                line('        self.%s = %s\n', format_field_name(field.name),
+                     format_field_name(field.name))
 
             if len(non_reserved_fields) == 0:
                 line('\n')
 
             # end
             if not is_content_static:
-                from coolamqp.framing.compilation.textcode_fields import get_serializer, get_counter, get_from_buffer
+                from coolamqp.framing.compilation.textcode_fields import \
+                    get_serializer, get_counter, get_from_buffer
                 line('\n    def write_arguments(self, buf):\n')
                 line(get_serializer(method.fields, 'self.', 2))
 
@@ -434,11 +478,14 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         offset = start_offset
 ''')
 
-            line(get_from_buffer(method.fields, '', 2, remark=(method.name == 'deliver')))
+            line(get_from_buffer(method.fields, '', 2,
+                                 remark=(method.name == 'deliver')))
 
             line("        return %s(%s)",
                  full_class_name,
-                 u', '.join(format_field_name(field.name) for field in method.fields if not field.reserved))
+                 u', '.join(
+                     format_field_name(field.name) for field in method.fields if
+                     not field.reserved))
 
             line('\n\n')
 

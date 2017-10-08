@@ -3,16 +3,19 @@
 queue.declare, exchange.declare and that shit
 """
 from __future__ import print_function, absolute_import, division
-import six
+
 import collections
 import logging
-from coolamqp.framing.definitions import ChannelOpenOk, ExchangeDeclare, ExchangeDeclareOk, QueueDeclare, \
-    QueueDeclareOk, ChannelClose, QueueDelete, QueueDeleteOk
-from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
-from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
+
 from concurrent.futures import Future
-from coolamqp.objects import Exchange, Queue, Callable
+
+from coolamqp.attaches.channeler import Channeler, ST_ONLINE
+from coolamqp.attaches.utils import Synchronized
 from coolamqp.exceptions import AMQPError, ConnectionDead
+from coolamqp.framing.definitions import ChannelOpenOk, ExchangeDeclare, \
+    ExchangeDeclareOk, QueueDeclare, \
+    QueueDeclareOk, ChannelClose, QueueDelete, QueueDeleteOk
+from coolamqp.objects import Exchange, Queue, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +49,16 @@ class Operation(object):
         """Attempt to perform this op."""
         obj = self.obj
         if isinstance(obj, Exchange):
-            self.declarer.method_and_watch(ExchangeDeclare(self.obj.name.encode('utf8'), obj.type, False, obj.durable,
-                                                           obj.auto_delete, False, False, []),
-                                           (ExchangeDeclareOk, ChannelClose),
-                                           self._callback)
+            self.declarer.method_and_watch(
+                ExchangeDeclare(self.obj.name.encode('utf8'), obj.type, False,
+                                obj.durable,
+                                obj.auto_delete, False, False, []),
+                (ExchangeDeclareOk, ChannelClose),
+                self._callback)
         elif isinstance(obj, Queue):
             self.declarer.method_and_watch(
-                QueueDeclare(obj.name, False, obj.durable, obj.exclusive, obj.auto_delete, False, []),
+                QueueDeclare(obj.name, False, obj.durable, obj.exclusive,
+                             obj.auto_delete, False, []),
                 (QueueDeclareOk, ChannelClose),
                 self._callback)
 
@@ -66,7 +72,8 @@ class Operation(object):
             else:
                 # something that had no Future failed. Is it in declared?
                 if self.obj in self.declarer.declared:
-                    self.declarer.declared.remove(self.obj)  # todo access not threadsafe
+                    self.declarer.declared.remove(
+                        self.obj)  # todo access not threadsafe
                     self.declarer.on_discard(self.obj)
         else:
             if self.fut is not None:
@@ -83,9 +90,10 @@ class DeleteQueue(Operation):
         queue = self.obj
 
         print('bang')
-        self.declarer.method_and_watch(QueueDelete(queue.name, False, False, False),
-                                       (QueueDeleteOk, ChannelClose),
-                                       self._callback)
+        self.declarer.method_and_watch(
+            QueueDelete(queue.name, False, False, False),
+            (QueueDeleteOk, ChannelClose),
+            self._callback)
 
     def _callback(self, payload):
         print('got', payload)
@@ -230,7 +238,8 @@ class Declarer(Channeler, Synchronized):
 
         To be called when it's possible that something can be done
         """
-        if (self.state != ST_ONLINE) or len(self.left_to_declare) == 0 or (self.in_process is not None):
+        if (self.state != ST_ONLINE) or len(self.left_to_declare) == 0 or (
+            self.in_process is not None):
             return
 
         self.in_process = self.left_to_declare.popleft()
