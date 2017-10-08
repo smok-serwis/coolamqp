@@ -1,10 +1,7 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-import six
-from coolamqp.framing.definitions import HARD_ERRORS, SOFT_ERRORS, CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, \
-    SYNTAX_ERROR, COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME, RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, \
-    INTERNAL_ERROR, CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND, RESOURCE_LOCKED, PRECONDITION_FAILED
+from coolamqp.framing.definitions import HARD_ERRORS
 
 
 class CoolAMQPError(Exception):

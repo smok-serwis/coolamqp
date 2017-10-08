@@ -2,8 +2,6 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
-import six
-import struct
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +12,14 @@ BASIC_TYPES = {u'bit': (None, None, "0", None),  # special case
                u'octet': (1, 'B', "b'\\x00'", 1),
                u'short': (2, 'H', "b'\\x00\\x00'", 2),
                u'long': (4, 'I', "b'\\x00\\x00\\x00\\x00'", 4),
-               u'longlong': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
-               u'timestamp': (8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
-               u'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),  # special case
-               u'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),  # special case
+               u'longlong': (
+               8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
+               u'timestamp': (
+               8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
+               u'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),
+               # special case
+               u'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),
+               # special case
                u'shortstr': (None, None, "b'\\x00'", 1),  # special case
                }
 
@@ -37,7 +39,8 @@ class AMQPFrame(object):  # base class for framing
         This writes type and channel ID.
         """
         # DO NOT UNCOMMENT buf.write(struct.pack('!BH', self.FRAME_TYPE, self.channel))
-        raise NotImplementedError('Please write the frame type and channel in child classes, its faster that way ')
+        raise NotImplementedError(
+            'Please write the frame type and channel in child classes, its faster that way ')
 
     @staticmethod
     def unserialize(channel, payload_as_buffer):
@@ -151,7 +154,8 @@ class AMQPMethodPayload(AMQPPayload):
         :return: int, size of argument section
         """
         if self.IS_CONTENT_STATIC:
-            return len(self.STATIC_CONTENT) - 4 - 4 - 1  # minus length, class, method, frame_end
+            return len(
+                self.STATIC_CONTENT) - 4 - 4 - 1  # minus length, class, method, frame_end
 
         raise NotImplementedError()
 

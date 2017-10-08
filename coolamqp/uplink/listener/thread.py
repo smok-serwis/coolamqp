@@ -3,8 +3,8 @@ from __future__ import absolute_import, division, print_function
 
 import threading
 
-from coolamqp.uplink.listener.epoll_listener import EpollListener
 from coolamqp.objects import Callable
+from coolamqp.uplink.listener.epoll_listener import EpollListener
 
 
 class ListenerThread(threading.Thread):

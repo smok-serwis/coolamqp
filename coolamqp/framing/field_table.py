@@ -12,7 +12,9 @@ A table is of form ( (name1::bytes, fv1), (name2::bytes, fv2), ...)
 NOTE: it's not buffers, it's memoryview all along
 """
 from __future__ import absolute_import, division, print_function
+
 import struct
+
 import six
 
 
@@ -67,10 +69,15 @@ FIELD_TYPES = {
     'f': (4, '!f'),
     'd': (8, '!d'),
     'D': (5, None, enframe_decimal, deframe_decimal),  # decimal-value
-    's': (None, None, enframe_shortstr, deframe_shortstr, lambda val: len(val) + 1),  # shortstr
-    'S': (None, None, enframe_longstr, deframe_longstr, lambda val: len(val) + 4),  # longstr
+    's': (
+    None, None, enframe_shortstr, deframe_shortstr, lambda val: len(val) + 1),
+# shortstr
+    'S': (
+    None, None, enframe_longstr, deframe_longstr, lambda val: len(val) + 4),
+# longstr
     'T': (8, '!Q'),
-    'V': (0, None, lambda buf, v: None, lambda buf, ofs: None, 0),  # rendered as None
+    'V': (0, None, lambda buf, v: None, lambda buf, ofs: None, 0),
+# rendered as None
 }
 
 
@@ -120,8 +127,9 @@ def deframe_array(buf, offset):
         values.append((v, t))
 
     if offset != start_offset + 4 + ln:
-        raise ValueError('Array longer than expected, took %s, expected %s bytes',
-                         (offset - (start_offset + ln + 4), ln + 4))
+        raise ValueError(
+            'Array longer than expected, took %s, expected %s bytes',
+            (offset - (start_offset + ln + 4), ln + 4))
 
     return values, ln + 4
 
@@ -164,8 +172,9 @@ def deframe_table(buf, start_offset):  # -> (table, bytes_consumed)
         fields.append((field_name.tobytes(), fv))
 
     if offset > (start_offset + table_length + 4):
-        raise ValueError('Table turned out longer than expected! Found %s bytes expected %s',
-                         (offset - start_offset, table_length))
+        raise ValueError(
+            'Table turned out longer than expected! Found %s bytes expected %s',
+            (offset - start_offset, table_length))
 
     return fields, table_length + 4
 

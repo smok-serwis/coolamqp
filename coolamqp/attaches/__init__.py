@@ -1,5 +1,6 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
+
 """
 Attaches are components that attach to an coolamqp.uplink.Connection and perform some duties
 These duties almost always require allocating a channel. A base class - Channeler - is provided to faciliate that.

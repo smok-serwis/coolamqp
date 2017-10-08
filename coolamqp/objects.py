@@ -2,12 +2,13 @@
 """
 Core objects used in CoolAMQP
 """
-import uuid
-import six
 import logging
-import warnings
+import uuid
 
-from coolamqp.framing.definitions import BasicContentPropertyList as MessageProperties
+import six
+
+from coolamqp.framing.definitions import \
+    BasicContentPropertyList as MessageProperties
 
 logger = logging.getLogger(__name__)
 
@@ -126,13 +127,16 @@ class Exchange(object):
 
     direct = None  # the direct exchange
 
-    def __init__(self, name=u'', type=b'direct', durable=True, auto_delete=False):
+    def __init__(self, name=u'', type=b'direct', durable=True,
+                 auto_delete=False):
         """
         :type name: unicode is preferred, binary type will get decoded to unicode with utf8
         :param type: exchange type. binary/unicode
         """
-        self.name = name.decode('utf8') if isinstance(name, six.binary_type) else name  # must be unicode
-        self.type = type.encode('utf8') if isinstance(type, six.text_type) else type  # must be bytes
+        self.name = name.decode('utf8') if isinstance(name,
+                                                      six.binary_type) else name  # must be unicode
+        self.type = type.encode('utf8') if isinstance(type,
+                                                      six.text_type) else type  # must be bytes
         self.durable = durable
         self.auto_delete = auto_delete
 
@@ -141,7 +145,8 @@ class Exchange(object):
 
     def __repr__(self):
         return u'Exchange(%s, %s, %s, %s)' % (
-            repr(self.name), repr(self.type), repr(self.durable), repr(self.auto_delete))
+            repr(self.name), repr(self.type), repr(self.durable),
+            repr(self.auto_delete))
 
     def __hash__(self):
         return self.name.__hash__()
@@ -158,7 +163,8 @@ class Queue(object):
     This object represents a Queue that applications consume from or publish to.
     """
 
-    def __init__(self, name=b'', durable=False, exchange=None, exclusive=False, auto_delete=False):
+    def __init__(self, name=b'', durable=False, exchange=None, exclusive=False,
+                 auto_delete=False):
         """
         Create a queue definition.
 
@@ -173,14 +179,16 @@ class Queue(object):
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
         """
-        self.name = name.encode('utf8') if isinstance(name, six.text_type) else name  #: public, must be bytes
+        self.name = name.encode('utf8') if isinstance(name,
+                                                      six.text_type) else name  #: public, must be bytes
         # if name is '', this will be filled in with broker-generated name upon declaration
         self.durable = durable
         self.exchange = exchange
         self.auto_delete = auto_delete
         self.exclusive = exclusive
 
-        self.anonymous = len(self.name) == 0  # if this queue is anonymous, it must be regenerated upon reconnect
+        self.anonymous = len(
+            self.name) == 0  # if this queue is anonymous, it must be regenerated upon reconnect
 
         self.consumer_tag = self.name if not self.anonymous else uuid.uuid4().hex.encode(
             'utf8')  # bytes, consumer tag to use in AMQP comms
@@ -245,8 +253,11 @@ class NodeDefinition(object):
             self.virtual_host = '/'
         elif len(args) == 4:
             self.host, self.user, self.password, self.virtual_host = args
-        elif len(args) == 1 and isinstance(args[0], (six.text_type, six.binary_type)):
-            connstr = args[0].decode('utf8') if isinstance(args[0], six.binary_type) else args[0]
+        elif len(args) == 1 and isinstance(args[0],
+                                           (six.text_type, six.binary_type)):
+            connstr = args[0].decode('utf8') if isinstance(args[0],
+                                                           six.binary_type) else \
+            args[0]
             # AMQP connstring
             if not connstr.startswith(u'amqp://'):
                 raise ValueError(u'should begin with amqp://')
@@ -269,4 +280,5 @@ class NodeDefinition(object):
 
     def __str__(self):
         return six.text_type(
-            b'amqp://%s:%s@%s/%s'.encode('utf8') % (self.host, self.port, self.user, self.virtual_host))
+            b'amqp://%s:%s@%s/%s'.encode('utf8') % (
+            self.host, self.port, self.user, self.virtual_host))

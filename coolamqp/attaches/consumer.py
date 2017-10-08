@@ -1,20 +1,22 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import six
+
 import io
 import logging
 import uuid
-import warnings
-from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
-from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
-    BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, ExchangeDeclareOk, \
-    QueueBind, QueueBindOk, ChannelClose, BasicDeliver, BasicCancel, \
-    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, BasicQosOk
-from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
+
 from concurrent.futures import Future
-from coolamqp.objects import Callable
+
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.exceptions import AMQPError
+from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
+    BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, \
+    ExchangeDeclareOk, \
+    QueueBind, QueueBindOk, ChannelClose, BasicDeliver, BasicCancel, \
+    BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, BasicQosOk
+from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
+from coolamqp.objects import Callable
+from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +75,8 @@ class Consumer(Channeler):
 
     """
 
-    def __init__(self, queue, on_message, no_ack=True, qos=None, cancel_on_failure=False,
+    def __init__(self, queue, on_message, no_ack=True, qos=None,
+                 cancel_on_failure=False,
                  future_to_notify=None,
                  fail_on_first_time_resource_locked=False,
                  body_receive_mode=BodyReceiveMode.BYTES
@@ -137,8 +140,10 @@ class Consumer(Channeler):
 
         self.consumer_tag = None
 
-        self.on_cancel = Callable(oneshots=True)  #: public, called on cancel for any reason
-        self.on_broker_cancel = Callable(oneshots=True)  #: public, called on Customer Cancel Notification (RabbitMQ)
+        self.on_cancel = Callable(
+            oneshots=True)  #: public, called on cancel for any reason
+        self.on_broker_cancel = Callable(
+            oneshots=True)  #: public, called on Customer Cancel Notification (RabbitMQ)
 
     def set_qos(self, prefetch_size, prefetch_count):
         """
@@ -212,7 +217,8 @@ class Consumer(Channeler):
         """
 
         if self.cancel_on_failure and (not self.cancelled):
-            logger.debug('Consumer is cancel_on_failure and failure seen, True->cancelled')
+            logger.debug(
+                'Consumer is cancel_on_failure and failure seen, True->cancelled')
             self.cancelled = True
             self.on_cancel()
 
@@ -231,7 +237,8 @@ class Consumer(Channeler):
 
             # on_close is a one_shot watch. We need to re-register it now.
             self.register_on_close_watch()
-            self.methods([BasicCancelOk(payload.consumer_tag), ChannelClose(0, b'Received basic.cancel', 0, 0)])
+            self.methods([BasicCancelOk(payload.consumer_tag),
+                          ChannelClose(0, b'Received basic.cancel', 0, 0)])
             self.cancelled = True  # wasn't I?
             self.on_cancel()
             self.on_broker_cancel()
@@ -268,7 +275,8 @@ class Consumer(Channeler):
 
         old_con = self.connection
 
-        super(Consumer, self).on_close(payload)  # this None's self.connection and returns port
+        super(Consumer, self).on_close(
+            payload)  # this None's self.connection and returns port
         self.fail_on_first_time_resource_locked = False
 
         if self.future_to_notify_on_dead:  # notify it was cancelled
@@ -351,7 +359,8 @@ class Consumer(Channeler):
             if self.queue.exchange is not None:
                 self.method_and_watch(
                     QueueBind(
-                        self.queue.name, self.queue.exchange.name.encode('utf8'),
+                        self.queue.name,
+                        self.queue.exchange.name.encode('utf8'),
                         b'', False, []),
                     QueueBindOk,
                     self.on_setup
@@ -369,10 +378,12 @@ class Consumer(Channeler):
             else:
                 self.on_setup(BasicQosOk())  # pretend QoS went ok
         elif isinstance(payload, BasicQosOk):
-            self.consumer_tag = uuid.uuid4().hex.encode('utf8')  # str in py2, unicode in py3
+            self.consumer_tag = uuid.uuid4().hex.encode(
+                'utf8')  # str in py2, unicode in py3
             self.method_and_watch(
                 BasicConsume(self.queue.name, self.consumer_tag,
-                             False, self.no_ack, self.queue.exclusive, False, []),
+                             False, self.no_ack, self.queue.exclusive, False,
+                             []),
                 BasicConsumeOk,
                 self.on_setup
             )
@@ -387,7 +398,8 @@ class Consumer(Channeler):
             self.connection.watch(self.hb_watch)
 
             # multi-shot watches need manual cleanup!
-            self.deliver_watch = MethodWatch(self.channel_id, BasicDeliver, self.on_delivery)
+            self.deliver_watch = MethodWatch(self.channel_id, BasicDeliver,
+                                             self.on_delivery)
             self.deliver_watch.oneshot = False
             self.connection.watch(self.deliver_watch)
 
@@ -544,8 +556,10 @@ class MessageReceiver(object):
                 self.bdeliver.routing_key,
                 self.header.properties,
                 self.bdeliver.delivery_tag,
-                None if self.consumer.no_ack else self.confirm(self.bdeliver.delivery_tag, True),
-                None if self.consumer.no_ack else self.confirm(self.bdeliver.delivery_tag, False),
+                None if self.consumer.no_ack else self.confirm(
+                    self.bdeliver.delivery_tag, True),
+                None if self.consumer.no_ack else self.confirm(
+                    self.bdeliver.delivery_tag, False),
             )
 
             self.consumer.on_message(rm)
