@@ -176,12 +176,10 @@ class Cluster(object):
         self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
-
-            def nice():
-                if not self.snr.terminating:
-                    self.on_fail()
-
-            self.snr.on_fail.add(nice)
+            self.snr.on_fail.add(
+                (lambda snr, of: lambda: of() if not snr.terminating else None)(
+                    self.snr, self.on_fail)
+            )
 
         # Spawn a transactional publisher and a noack publisher
         self.pub_tr = Publisher(Publisher.MODE_CNPUB)
