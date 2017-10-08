@@ -11,7 +11,7 @@ cache:
     - $HOME/.cache
 script:
  - python compile_definitions.py
- - python setup.py nosetests
+ - python setup.py nosetests --with-coverage
 install:
  - pip install -r requirements.txt
 after_success:
