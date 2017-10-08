@@ -70,7 +70,7 @@ def get_docs(elem, label):
     for kid in elem.getchildren():
 
         if kid.tag == 'rule':
-            return get_docs(kid)
+            return get_docs(kid, False)
 
         s = kid.text.strip().split('\n')
         return u'\n'.join([u.strip() for u in s if len(u.strip()) > 0])
