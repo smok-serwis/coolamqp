@@ -60,7 +60,9 @@ class _ValueField(_Field):
             else:
                 return self.default
 
+
 class _SimpleField(_ValueField):
+    """XML attribute is the same as name, has a type and can be default"""
     def __init__(self, name, field_type=nop, default=_Required):
         super(_SimpleField, self).__init__(name, name, field_type, default)
 
