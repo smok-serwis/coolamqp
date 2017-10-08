@@ -51,7 +51,7 @@ class Field(BaseObject):
         _name,
         _ValueField(('domain', 'type'), 'type', str),
         _SimpleField('label', default=None),
-        _SimpleField('reserved', lambda x: bool(int(x)), default=0),
+        _SimpleField('reserved', _boolint, default=0),
         _ComputedField('basic_type', lambda elem: elem.attrib.get('type', '') == elem.attrib.get('name', '')),
         _docs
     ]
