@@ -27,6 +27,9 @@ def _tobufv(buf, value, pattern, *vals):
     buf.write(value)
 
 
+def _frombuf(pattern, buf, offset):
+    return struct.unpack_from(pattern, buf, offset)
+
 def enframe_decimal(buf, v):  # convert decimal to bytes
     dps = 0
     for k in six.moves.xrange(20):
@@ -38,12 +41,12 @@ def enframe_decimal(buf, v):  # convert decimal to bytes
 
 
 def deframe_decimal(buf, offset):
-    scale, val = struct.unpack_from('!BI', buf, offset)
+    scale, val = _frombuf('!BI', buf, offset)
     return val / (10 ** scale), 5
 
 
 def deframe_shortstr(buf, offset):  # -> value, bytes_eaten
-    ln, = struct.unpack_from('!B', buf, offset)
+    ln, = _frombuf('!B', buf, offset)
     return buf[offset + 1:offset + 1 + ln], 1 + ln
 
 
@@ -52,7 +55,7 @@ def enframe_shortstr(buf, value):
 
 
 def deframe_longstr(buf, offset):  # -> value, bytes_eaten
-    ln, = struct.unpack_from('!I', buf, offset)
+    ln, = _frombuf('!I', buf, offset)
     return buf[offset + 4:offset + 4 + ln], 4 + ln
 
 
@@ -131,7 +134,7 @@ def deframe_field_value(buf, offset):  # -> (value, type), bytes_consumed
 
 def deframe_array(buf, offset):
     start_offset = offset
-    ln, = struct.unpack_from('!I', buf, offset)
+    ln, = _frombuf('!I', buf, offset)
     offset += 4
 
     values = []
