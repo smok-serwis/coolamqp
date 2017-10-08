@@ -28,7 +28,7 @@ class AMQPError(CoolAMQPError):
         return u'AMQP error %s: %s' % (self.reply_code, self.reply_text)
 
     def __repr__(self):
-        return u'AMQPError(%s, %s, %s, %s)' % map(repr, (
+        return u'AMQPError(%s, %s, %s, %s)' % (repr(a) for a in (
             self.reply_code,
             self.reply_text,
             self.class_id,
