@@ -7,7 +7,7 @@ python:
  - "pypy"
 cache: pip
 before_script:
-  - pip install codeclimate-test-reporter
+ - pip install codeclimate-test-reporter
 script:
  - python compile_definitions.py
  - python setup.py nosetests
