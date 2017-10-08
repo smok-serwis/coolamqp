@@ -25,8 +25,7 @@ class TestConnecting(unittest.TestCase):
     def test_on_clean(self):
         q = {'failed': False}
         c = Cluster([NODE], on_fail=lambda: q.update(failed=True))
-        c.start()
-        time.sleep(5)
+        c.start(wait=True)
         c.shutdown()
         time.sleep(5)
         self.assertFalse(q['failed'])

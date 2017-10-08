@@ -178,7 +178,7 @@ class Cluster(object):
         if self.on_fail is not None:
             self.snr.on_fail.add(
                 (lambda snr, of: lambda: of() if not snr.terminating else None)(
-                    self.snr, self.on_fail)
+                    self.listener, self.on_fail)
             )
 
         # Spawn a transactional publisher and a noack publisher
