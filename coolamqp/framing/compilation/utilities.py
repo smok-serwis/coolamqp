@@ -12,6 +12,9 @@ from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 class _Required(object):
     pass
 
+def nop(x):
+    return x
+
 class _Field(object):
 
     def set(self, obj, elem):
@@ -23,6 +26,8 @@ class _Field(object):
     def find(self, elem):
         raise NotImplementedError('abstract')
 
+_boolint = lambda x: bool(int(x))
+
 
 class _ComputedField(_Field):
     def __init__(self, field_name, find_fun):
@@ -31,10 +36,11 @@ class _ComputedField(_Field):
 
 
 class _ValueField(_Field):
-    def __init__(self, xml_names, field_name, field_type=lambda x: x,
+    def __init__(self, xml_names, field_name, field_type=nop,
                  default=_Required):
-        self.xml_names = (xml_names,) if isinstance(xml_names,
-                                                    six.text_type) else xml_names
+        if not isinstance(xml_names, tuple):
+            xml_names = (xml_names, )
+        self.xml_names = xml_names
         self.field_name = field_name
         self.field_type = field_type
         self.default = default
@@ -43,19 +49,21 @@ class _ValueField(_Field):
         return self.field_type(self._find(elem))
 
     def _find(self, elem):
-        for xmln in self.xml_names:
+        xmln = [xmln for xmln in self.xml_names if xmln in elem.attrib]
+
+        if xmln:
+            xmln = xmln[0]
             if xmln in elem.attrib:
                 return elem.attrib[xmln]
         else:
             if self.default is _Required:
-                raise TypeError('Expected field')
+                raise TypeError('Did not find field %s in elem tag %s, looked for names %s' % (self.field_name, elem.tag, self.xml_names))
             else:
                 return self.default
 
-
 class _SimpleField(_ValueField):
-    def __init__(self, name, field_type=None, default=_Required):
-        super(_SimpleField, self).__init__(name, name, field_type, default=default)
+    def __init__(self, name, field_type=nop, default=_Required):
+        super(_SimpleField, self).__init__(name, name, field_type, default)
 
 
 def get_docs(elem, label=False):
@@ -79,18 +87,9 @@ class BaseObject(object):
     FIELDS = []
     # tuples of (xml name, field name, type, (optional) default value)
 
-    def __init__(self, *args):
-
-        if len(args) == 1:
-            elem, = args
-
-            self.docs = get_docs(elem)
-
-            for ft in (_Field(*args) for args in self.FIELDS):
-                ft.set(self, elem)
-        else:
-            for fname, value in zip(['name'] + [k[1] for k in self.FIELDS] + ['docs']):
-                self.__dict__[fname] = value
+    def __init__(self, elem):
+        for ft in self.FIELDS:
+            ft.set(self, elem)
 
     @classmethod
     def findall(cls, xml):
@@ -144,7 +143,7 @@ def _get_tagchild(elem, tag):
     return [e for e in elem.getchildren() if e.tag == tag]
 
 class Method(BaseObject):
-
+    NAME = 'method'
     FIELDS = [
         _name,
         _SimpleField('synchronous', _boolint, default=False),
@@ -208,8 +207,6 @@ def get_size(fields):  # assume all fields have static length
     return size
 
 
-
-_boolint = lambda x: bool(int(x))
 
 def as_unicode(callable):
     def roll(*args, **kwargs):
