@@ -10,6 +10,32 @@ from coolamqp.framing.compilation.textcode_fields import get_counter, \
 logger = logging.getLogger(__name__)
 
 
+INIT_I = u'\n    def __init__(self, %s):\n'
+SLOTS_I = u'\n    __slots__ = (%s)\n'
+FROM_BUFFER_1 = u'    def from_buffer(cls, buf, start_offset):\n        ' \
+                u'offset = start_offset + %s\n'
+ASSIGN_A = u'        self.%s = %s\n'
+STARTER = u'''import struct
+from coolamqp.framing.base import AMQPContentPropertyList
+
+class ParticularContentTypeList(AMQPContentPropertyList):
+    """
+    For fields:
+'''
+ZPF_S = u'''
+    # A value for property flags that is used, assuming all bit fields are FALSE (0)
+    ZERO_PROPERTY_FLAGS = %s
+'''
+NB = u"raise NotImplementedError('I don't support bits in properties')"
+INTER_X = u'    * %s::%s'
+BUF_WRITE_A = u'\n    def write_to(self, buf):\n        buf.write('
+RESERVED = u' (reserved)'
+UNICO = u"u'%s'"
+SPACER = u'''
+    """
+'''
+
+
 def _compile_particular_content_property_list_class(zpf, fields):
     """
     Compile a particular content property list.
@@ -21,7 +47,6 @@ def _compile_particular_content_property_list_class(zpf, fields):
     from coolamqp.framing.compilation.utilities import format_field_name
 
     if any(field.basic_type == 'bit' for field in fields):
-        NB = u"raise NotImplementedError('I don't support bits in properties')"
         return NB
 
     # Convert ZPF to a list of [if_exists::bool]
@@ -44,19 +69,13 @@ def _compile_particular_content_property_list_class(zpf, fields):
     zpf_bits = [zpf_bit or field.type == 'bit' for zpf_bit, field in
                 zip(zpf_bits, fields)]
 
-    mod = [u'''import struct
-from coolamqp.framing.base import AMQPContentPropertyList
-
-class ParticularContentTypeList(AMQPContentPropertyList):
-    """
-    For fields:
-''']
+    mod = [STARTER]
 
     for field in fields:
         mod.append(
-            u'    * %s::%s' % (format_field_name(field.name), field.type))
+            INTER_X % (format_field_name(field.name), field.type))
         if field.reserved:
-            mod.append(u' (reserved)')
+            mod.append(RESERVED)
         mod.append(u'\n')
 
     x = repr(six.binary_type(zpf))
@@ -66,40 +85,30 @@ class ParticularContentTypeList(AMQPContentPropertyList):
     present_fields = [field for field, present in zip(fields, zpf_bits) if
                       present]
 
-    mod.append(u'''
-    """
-''')
+    mod.append(SPACER)
 
     if len(present_fields) == 0:
         slots = u''
     else:
         slots = (u', '.join(
-            (u"u'%s'" % format_field_name(field.name) for field in
+            (UNICO % format_field_name(field.name) for field in
              present_fields))) + u', '
 
-    mod.append(u'''
-    __slots__ = (%s)
-''' % slots)
+    mod.append(SLOTS_I % slots)
 
-    mod.append(u'''
-    # A value for property flags that is used, assuming all bit fields are FALSE (0)
-    ZERO_PROPERTY_FLAGS = %s
-''' % (x,))
+    mod.append(ZPF_S % (x,))
 
     FFN = u', '.join(format_field_name(field.name) for field in present_fields)
 
     if len(present_fields) > 0:
-        mod.append(u'''
-    def __init__(self, %s):
-''' % (FFN, ))
+        mod.append(INIT_I % (FFN, ))
 
     for field in present_fields:
-        mod.append(u'        self.%s = %s\n'.replace(u'%s', format_field_name(
+        mod.append(ASSIGN_A.replace(u'%s', format_field_name(
             field.name)))
 
     # Let's do write_to
-    mod.append(u'\n    def write_to(self, buf):\n')
-    mod.append(u'        buf.write(')
+    mod.append(BUF_WRITE_A)
     repred_zpf = repr(zpf)
     if not repred_zpf.startswith(u'b'):
         repred_zpf = u'b' + repred_zpf
@@ -112,7 +121,7 @@ class ParticularContentTypeList(AMQPContentPropertyList):
     # note that non-bit values
     mod.append(u'    @classmethod\n')
     mod.append(
-        u'    def from_buffer(cls, buf, start_offset):\n        offset = start_offset + %s\n' % (
+        FROM_BUFFER_1 % (
         zpf_length,))
     mod.append(get_from_buffer(
         present_fields
