@@ -11,7 +11,7 @@ before_script:
 script:
  - python compile_definitions.py
  - python setup.py nosetests
- nstall:
+install:
  - pip install -r requirements.txt
 after_success:
  - codeclimate-test-reporter
