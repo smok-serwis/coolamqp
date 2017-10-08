@@ -1,15 +1,15 @@
 CoolAMQP
 ========
-[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=latest)
-[![PyPI version](https://badge.fury.io/py/CoolAMQP.svg)](https://badge.fury.io/py/CoolAMQP)
 [![Build Status](https://travis-ci.org/smok-serwis/coolamqp.svg)](https://travis-ci.org/smok-serwis/coolamqp)
-[![Code Climate](https://codeclimate.com/github/smok-serwis/coolamqp/badges/gpa.svg)](https://codeclimate.com/github/smok-serwis/coolamqp)
 [![Test Coverage](https://codeclimate.com/github/smok-serwis/coolamqp/badges/coverage.svg)](https://codeclimate.com/github/smok-serwis/coolamqp/coverage)
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
+[![Code Climate](https://codeclimate.com/github/smok-serwis/coolamqp/badges/gpa.svg)](https://codeclimate.com/github/smok-serwis/coolamqp)
+[![Issue Count](https://codeclimate.com/github/smok-serwis/coolamqp/badges/issue_count.svg)](https://codeclimate.com/github/smok-serwis/coolamqp)
+[![PyPI version](https://badge.fury.io/py/CoolAMQP.svg)](https://badge.fury.io/py/CoolAMQP)
 [![PyPI](https://img.shields.io/pypi/pyversions/CoolAMQP.svg)]()
 [![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
-[![Issue Count](https://codeclimate.com/github/smok-serwis/coolamqp/badges/issue_count.svg)](https://codeclimate.com/github/smok-serwis/coolamqp)
 [![PyPI](https://img.shields.io/pypi/wheel/CoolAMQP.svg)]()
+[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=latest)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
 
