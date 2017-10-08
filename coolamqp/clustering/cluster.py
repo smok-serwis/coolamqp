@@ -58,7 +58,7 @@ class Cluster(object):
                     on_fail()
             self.on_fail = decorated
         else:
-            self.on_fail = on_fail
+            self.on_fail = None
 
     def declare(self, obj, persistent=False):
         """
