@@ -5,8 +5,6 @@ python:
  - "3.4"
  - "3.5"
  - "pypy"
-before_script:
- - pip install codeclimate-test-reporter
 script:
  - python compile_definitions.py
  - python setup.py nosetests
