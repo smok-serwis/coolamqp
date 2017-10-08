@@ -1,4 +1,5 @@
 # coding=UTF-8
+from __future__ import print_function, division, absolute_import
 """
 That funny type, field-table...
 
@@ -18,12 +19,16 @@ import struct
 import six
 
 
+def _tobuf(buf, pattern, *vals):
+    return buf.write(struct.pack(pattern, *vals))
+
+
 def enframe_decimal(buf, v):  # convert decimal to bytes
     dps = 0
     for k in six.moves.xrange(20):
         k = v * (10 ** dps)
         if abs(k - int(k)) < 0.00001:  # epsilon
-            return buf.write(struct.pack('!BI', dps, k))
+            return _tobuf(buf, '!BI', dps, k)
 
     raise ValueError('Could not convert %s to decimal', v)
 
@@ -39,7 +44,7 @@ def deframe_shortstr(buf, offset):  # -> value, bytes_eaten
 
 
 def enframe_shortstr(buf, value):
-    buf.write(struct.pack('!B', len(value)))
+    _tobuf(buf, '!B', len(value))
     buf.write(value)
 
 
@@ -49,13 +54,14 @@ def deframe_longstr(buf, offset):  # -> value, bytes_eaten
 
 
 def enframe_longstr(buf, value):
-    buf.write(struct.pack('!I', len(value)))
+    _tobuf(buf, '!I', len(value))
     buf.write(value)
 
 
 FIELD_TYPES = {
     # length, struct, (option)to_bytes (callable(buffer, value)),
-    #                 (option)from_bytes (callable(buffer, offset) -> value, bytes_consumed),
+    #                 (option)from_bytes (callable(buffer, offset) ->
+    #                                           value, bytes_consumed),
     #                 (option)get_len (callable(value) -> length in bytes)
     't': (1, '!?'),  # boolean
     'b': (1, '!b'),
@@ -82,6 +88,11 @@ FIELD_TYPES = {
     # rendered as None
 }
 
+if six.PY3:
+    chrpy3 = chr
+else:
+    chrpy3 = lambda x: x
+
 
 def enframe_field_value(buf, fv):
     value, type = fv
@@ -90,16 +101,14 @@ def enframe_field_value(buf, fv):
     opt = FIELD_TYPES[type]
 
     if opt[1] is not None:
-        buf.write(struct.pack(opt[1], value))
+        _tobuf(buf, opt[1], value)
     else:
         opt[2](buf, value)
 
 
 def deframe_field_value(buf, offset):  # -> (value, type), bytes_consumed
     start_offset = offset
-    field_type = buf[offset]
-    if six.PY3:
-        field_type = chr(field_type)
+    field_type = chrpy3(buf[offset])
     offset += 1
 
     if field_type not in FIELD_TYPES.keys():
@@ -138,7 +147,7 @@ def deframe_array(buf, offset):
 
 
 def enframe_array(buf, array):
-    buf.write(struct.pack('!I', frame_array_size(array) - 4))
+    _tobuf(buf, '!I', frame_array_size(array) - 4)
     for fv in array:
         enframe_field_value(buf, fv)
 
@@ -150,10 +159,10 @@ def enframe_table(buf, table):
     :param table:
     :return:
     """
-    buf.write(struct.pack('!I', frame_table_size(table) - 4))
+    _tobuf(buf, '!I', frame_table_size(table) - 4)
 
     for name, fv in table:
-        buf.write(struct.pack('!B', len(name)))
+        _tobuf(buf, '!B', len(name))
         buf.write(name)
         enframe_field_value(buf, fv)
 
@@ -195,8 +204,9 @@ def frame_array_size(array):
 
 
 def frame_table_size(table):
-    """:return: length of table representation, in bytes, INCLUDING length header"""
-
+    """
+    :return: length of table representation, in bytes, INCLUDING length
+     header"""
     return 4 + sum(1 + len(k) + frame_field_value_size(fv) for k, fv in table)
 
 
