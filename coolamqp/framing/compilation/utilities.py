@@ -36,8 +36,7 @@ class Method(object):
         self.docs = docs
         self.sent_by_client = sent_by_client
         self.sent_by_server = sent_by_server
-
-        self.constant = len([f for f in self.fields if not f.reserved]) == 0
+        self.constant = all(f.reserved for f in self.fields)
 
     def get_static_body(self):  # only arguments part
         body = []
@@ -115,12 +114,13 @@ def for_field(elem):  # for <field> in <method>
                  a.get('reserved', '0') == '1',
                  None)
 
+_boolint = lambda x: bool(int(x))
 
 def for_method(elem):  # for <method>
     """Parse class, return methods"""
     a = elem.attrib
     return Method(six.text_type(a['name']),
-                  bool(int(a.get('synchronous', '0'))), int(a['index']),
+                  _boolint(a.get('synchronous', '0')), int(a['index']),
                   a.get('label', None),
                   get_docs(elem),
                   [for_field(fie) for fie in elem.getchildren() if
@@ -153,16 +153,20 @@ def for_constant(elem):  # for <constant>
                     get_docs(elem))
 
 
+def _findall_apply(xml, what, fun):
+    return map(fun, xml.findall(what))
+
+
 def get_constants(xml):
-    return [for_constant(e) for e in xml.findall('constant')]
+    return _findall_apply(xml, 'constant', for_constant)
 
 
 def get_classes(xml):
-    return [for_class(e) for e in xml.findall('class')]
+    return _findall_apply(xml, 'class', for_class)
 
 
 def get_domains(xml):
-    return [for_domain(e) for e in xml.findall('domain')]
+    return _findall_apply(xml, 'domain', for_domain)
 
 
 def as_unicode(callable):
