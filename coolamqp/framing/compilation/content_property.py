@@ -121,11 +121,11 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     return u''.join(mod)
 
-
 def compile_particular_content_property_list_class(zpf, fields):
-    q = _compile_particular_content_property_list_class(zpf, fields)
     import struct
     from coolamqp.framing.base import AMQPContentPropertyList
+    q = _compile_particular_content_property_list_class(zpf, fields)
+
     loc = {'struct': struct, 'AMQPContentPropertyList': AMQPContentPropertyList}
     exec (q, globals(), loc)
     return loc['ParticularContentTypeList']
