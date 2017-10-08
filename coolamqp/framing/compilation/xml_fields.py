@@ -10,6 +10,9 @@ class _Required(object):
 def nop(x):
     return x
 
+def _get_tagchild(elem, tag):
+    return [e for e in elem.getchildren() if e.tag == tag]
+
 __all__ = [
     '_name', '_docs', '_ComputedField', '_ValueField', '_SimpleField',
     '_docs_with_label', '_get_tagchild', '_ChildField'
@@ -73,8 +76,8 @@ class _SimpleField(_ValueField):
     def __init__(self, name, field_type=nop, default=_Required):
         super(_SimpleField, self).__init__(name, name, field_type, default)
 
-def _get_tagchild(elem, tag):
-    return [e for e in elem.getchildren() if e.tag == tag]
+
+
 
 
 class _ChildField(_ComputedField):
@@ -84,6 +87,7 @@ class _ChildField(_ComputedField):
     def __init__(self, name, xml_tag, fun, postexec=nop):
         super(_ChildField, self).__init__(name, lambda elem: \
             postexec([fun(c) for c in _get_tagchild(elem, xml_tag)]))
+
 
 def get_docs(elem, label):
     """Parse an XML element. Return documentation"""

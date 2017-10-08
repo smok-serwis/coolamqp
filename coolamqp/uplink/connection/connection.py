@@ -19,6 +19,34 @@ from coolamqp.objects import Callable
 logger = logging.getLogger(__name__)
 
 
+def alert_watches(watches, trigger):
+    """
+    Notify all watches in this collection.
+
+    Return a list of alive watches.
+    :param watches: list of Watch
+    :return: tuple of (list of Watch, bool - was any watch fired?)
+    """
+    watch_handled = False
+    alive_watches = []
+    while len(watches) > 0:
+        watch = watches.pop()
+
+        if watch.cancelled:
+            continue
+
+        watch_triggered = watch.is_triggered_by(trigger)
+        watch_handled |= watch_triggered
+
+        if watch.cancelled:
+            continue
+
+        if not any((watch_triggered, watch.oneshot, watch.cancelled)):
+            # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
+            alive_watches.append(watch)
+    return alive_watches, watch_handled
+
+
 class Connection(object):
     """
     An object that manages a connection in a comprehensive way.
@@ -222,25 +250,8 @@ class Connection(object):
             watches = self.watches[frame.channel]  # a list
             self.watches[frame.channel] = []
 
-            alive_watches = []
-            while len(watches) > 0:
-                watch = watches.pop()
-
-                if watch.cancelled:
-                    # print('watch',watch,'was cancelled')
-                    continue
-
-                watch_triggered = watch.is_triggered_by(frame)
-                watch_handled |= watch_triggered
-
-                if watch.cancelled:
-                    # print('watch',watch,'was cancelled')
-                    continue
-
-                if ((not watch_triggered) or (not watch.oneshot)) and (
-                        not watch.cancelled):
-                    # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
-                    alive_watches.append(watch)
+            alive_watches, f = alert_watches(watches, frame)
+            watch_handled |= f
 
             if frame.channel in self.watches:
                 # unwatch_all might have gotten called, check that
@@ -248,27 +259,11 @@ class Connection(object):
                     self.watches[frame.channel].append(watch)
 
         # ==================== process "any" watches
-        alive_watches = []
         any_watches = self.any_watches
         self.any_watches = []
-        while len(any_watches):
-            watch = any_watches.pop()
+        alive_watches, f = alert_watches(any_watches, frame)
 
-            if watch.cancelled:
-                # print('any watch', watch, 'was cancelled')
-                continue
-
-            watch_triggered = watch.is_triggered_by(frame)
-            watch_handled |= watch_triggered
-
-            if watch.cancelled:
-                # print('any watch', watch, 'was cancelled')
-                continue
-
-            if ((not watch_triggered) or (not watch.oneshot)) and (
-                    not watch.cancelled):
-                # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
-                alive_watches.append(watch)
+        watch_handled |= f
 
         for watch in alive_watches:
             self.any_watches.append(watch)

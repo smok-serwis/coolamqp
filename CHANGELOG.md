@@ -1,3 +1,7 @@
+* v0.94:
+
+ * ...
+
 * v0.93:
 
  * Large refactor of XML schema compiler
