@@ -234,8 +234,8 @@ class Publisher(Channeler, Synchronized):
     def on_operational(self, operational):
         state = {True: u'up', False: u'down'}[operational]
         mode = \
-        {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[
-            self.mode]
+            {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[
+                self.mode]
 
         logger.info('Publisher %s is %s', mode, state)
 

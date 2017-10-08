@@ -129,7 +129,7 @@ class Consumer(Channeler):
 
         # private
         self.cancelled = False  # did the client want to STOP using this
-                                # consumer?
+        # consumer?
         self.receiver = None  # MessageReceiver instance
 
         self.attache_group = None  # attache group this belongs to.

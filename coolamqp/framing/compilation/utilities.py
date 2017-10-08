@@ -9,6 +9,7 @@ from coolamqp.framing.base import BASIC_TYPES
 
 from .xml_tags import *
 
+
 # docs may be None
 
 
@@ -37,7 +38,6 @@ def get_size(fields):  # assume all fields have static length
         size += int(math.ceil(bits / 8))
 
     return size
-
 
 
 def as_unicode(callable):

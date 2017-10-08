@@ -1,5 +1,6 @@
 # coding=UTF-8
 from __future__ import print_function, division, absolute_import
+
 """
 That funny type, field-table...
 
@@ -66,6 +67,7 @@ def enframe_longstr(buf, value):
 
 def _c2none(buf, v):
     return None
+
 
 FIELD_TYPES = {
     # length, struct, (option)to_bytes (callable(buffer, value)),

@@ -13,14 +13,15 @@ logger = logging.getLogger(__name__)
 def _boolint(x):
     return bool(int(x))
 
+
 __all__ = [
     'Domain', 'Method', 'Class', 'Field', 'Constant'
 ]
 
 
 class BaseObject(object):
-
     FIELDS = []
+
     # tuples of (xml name, field name, type, (optional) default value)
 
     def __init__(self, elem):
@@ -36,6 +37,7 @@ class BaseObject(object):
         c.__dict__.update(**kwargs)
         return c
 
+
 class Constant(BaseObject):
     NAME = 'constant'
     FIELDS = [
@@ -45,6 +47,7 @@ class Constant(BaseObject):
         _docs,
     ]
 
+
 class Field(BaseObject):
     NAME = 'field'
     FIELDS = [
@@ -52,7 +55,9 @@ class Field(BaseObject):
         _ValueField(('domain', 'type'), 'type', str),
         _SimpleField('label', default=None),
         _SimpleField('reserved', _boolint, default=0),
-        _ComputedField('basic_type', lambda elem: elem.attrib.get('type', '') == elem.attrib.get('name', '')),
+        _ComputedField('basic_type', lambda elem: elem.attrib.get('type',
+                                                                  '') == elem.attrib.get(
+            'name', '')),
         _docs
     ]
 
@@ -62,10 +67,9 @@ class Domain(BaseObject):
     FIELDS = [
         _name,
         _SimpleField('type'),
-        _ComputedField('elementary', lambda a: a.attrib['type'] == a.attrib['name'])
+        _ComputedField('elementary',
+                       lambda a: a.attrib['type'] == a.attrib['name'])
     ]
-
-
 
 
 class Method(BaseObject):
@@ -78,11 +82,15 @@ class Method(BaseObject):
         _docs,
         _ChildField('fields', 'field', Field),
         _ChildField('response', 'response', lambda e: e.attrib['name']),
-        _ChildField('sent_by_client', 'chassis', lambda e: e.attrib.get('name', '') == 'client', postexec=any),
-        _ChildField('sent_by_server', 'chassis', lambda e: e.attrib.get('name', '') == 'server', postexec=any),
-        _ChildField('constant', 'field', lambda e: Field(e).reserved, postexec=all)
+        _ChildField('sent_by_client', 'chassis',
+                    lambda e: e.attrib.get('name', '') == 'client',
+                    postexec=any),
+        _ChildField('sent_by_server', 'chassis',
+                    lambda e: e.attrib.get('name', '') == 'server',
+                    postexec=any),
+        _ChildField('constant', 'field', lambda e: Field(e).reserved,
+                    postexec=all)
     ]
-
 
     def get_static_body(self):  # only arguments part
         body = []
@@ -100,11 +108,13 @@ class Method(BaseObject):
         return b''.join(body)
 
     def is_static(self, domain_to_type=None):  # is size constant?
-        return not any(field.basic_type in DYNAMIC_BASIC_TYPES for field in self.fields)
+        return not any(
+            field.basic_type in DYNAMIC_BASIC_TYPES for field in self.fields)
 
 
 _cls_method_sortkey = lambda m: (m.name.strip('-')[0], -len(m.response))
 _cls_method_postexec = lambda q: sorted(q, key=_cls_method_sortkey)
+
 
 class Class(BaseObject):
     NAME = 'class'
@@ -116,4 +126,3 @@ class Class(BaseObject):
             _cls_method_postexec),
         _ChildField('properties', 'field', Field)
     ]
-
