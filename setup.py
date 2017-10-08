@@ -10,10 +10,7 @@ setup(keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availabilit
 Also, handles your reconnects and transactionality THE RIGHT WAY, though somewhat opinionated''',
       install_requires=['six', 'monotonic', 'futures'],
       tests_require=["nose", 'coverage'],
-      test_suite='nose.collector',
-      platforms=[
-        'posix'
-      ]
+      test_suite='nose.collector'
      )
 
 
