@@ -1,6 +1,5 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import
-
 """
 A Python version of the AMQP machine-readable specification.
 
@@ -26,17 +25,13 @@ Only thing that isn't are field names in tables.
 
 import struct, collections, logging, six
 
-from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, \
-    AMQPContentPropertyList
-from coolamqp.framing.field_table import enframe_table, deframe_table, \
-    frame_table_size
-from coolamqp.framing.compilation.content_property import \
-    compile_particular_content_property_list_class
+from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
+from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
+from coolamqp.framing.compilation.content_property import compile_particular_content_property_list_class
 
 logger = logging.getLogger(__name__)
 
-Field = collections.namedtuple('Field',
-                               ('name', 'type', 'basic_type', 'reserved'))
+Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved'))
 
 # Core constants
 FRAME_METHOD = 1
@@ -58,69 +53,86 @@ FRAME_END_BYTE = b'\xce'
 
 REPLY_SUCCESS = 200
 REPLY_SUCCESS_BYTE = b'\xc8'
-# Indicates that the method completed successfully. This reply code is
-# reserved for future use - the current protocol design does not use positive
-# confirmation and reply codes are sent only in case of an error.
+ # Indicates that the method completed successfully. This reply code is
+                              # reserved for future use - the current protocol design does not use
+                              # positive
+                              # confirmation and reply codes are sent only in case of an error.
 CONTENT_TOO_LARGE = 311
-# The client attempted to transfer content larger than the server could accept
-# at the present time. The client may retry at a later time.
+ # The client attempted to transfer content larger than the server
+                         # could accept
+                         # at the present time. The client may retry at a later time.
 NO_CONSUMERS = 313
-# When the exchange cannot deliver to a consumer when the immediate flag is
-# set. As a result of pending data on the queue or the absence of any
-# consumers of the queue.
+ # When the exchange cannot deliver to a consumer when the immediate
+                    # flag is
+                    # set. As a result of pending data on the queue or the absence of any
+                    # consumers of the queue.
 CONNECTION_FORCED = 320
-# An operator intervened to close the connection for some reason. The client
-# may retry at some later date.
+ # An operator intervened to close the connection for some reason. The
+                         # client
+                         # may retry at some later date.
 INVALID_PATH = 402
-# The client tried to work with an unknown virtual host.
+ # The client tried to work with an unknown virtual host.
 ACCESS_REFUSED = 403
-# The client attempted to work with a server entity to which it has no
-# access due to security settings.
+ # The client attempted to work with a server entity to which it has no
+                      # access due to security settings.
 NOT_FOUND = 404
-# The client attempted to work with a server entity that does not exist.
+ # The client attempted to work with a server entity that does not
+                 # exist.
 RESOURCE_LOCKED = 405
-# The client attempted to work with a server entity to which it has no
-# access because another client is working with it.
+ # The client attempted to work with a server entity to which it has no
+                       # access because another client is working with it.
 PRECONDITION_FAILED = 406
-# The client requested a method that was not allowed because some precondition
-# failed.
+ # The client requested a method that was not allowed because some
+                           # precondition
+                           # failed.
 FRAME_ERROR = 501
-# The sender sent a malformed frame that the recipient could not decode.
-# This strongly implies a programming error in the sending peer.
+ # The sender sent a malformed frame that the recipient could not
+                   # decode.
+                   # This strongly implies a programming error in the sending peer.
 SYNTAX_ERROR = 502
-# The sender sent a frame that contained illegal values for one or more
-# fields. This strongly implies a programming error in the sending peer.
+ # The sender sent a frame that contained illegal values for one or
+                    # more
+                    # fields. This strongly implies a programming error in the sending
+                    # peer.
 COMMAND_INVALID = 503
-# The client sent an invalid sequence of frames, attempting to perform an
-# operation that was considered invalid by the server. This usually implies
-# a programming error in the client.
+ # The client sent an invalid sequence of frames, attempting to perform
+                       # an
+                       # operation that was considered invalid by the server. This usually
+                       # implies
+                       # a programming error in the client.
 CHANNEL_ERROR = 504
-# The client attempted to work with a channel that had not been correctly
-# opened. This most likely indicates a fault in the client layer.
+ # The client attempted to work with a channel that had not been
+                     # correctly
+                     # opened. This most likely indicates a fault in the client layer.
 UNEXPECTED_FRAME = 505
-# The peer sent a frame that was not expected, usually in the context of
-# a content header and body.  This strongly indicates a fault in the peer's
-# content processing.
+ # The peer sent a frame that was not expected, usually in the context
+                        # of
+                        # a content header and body. This strongly indicates a fault in the
+                        # peer's
+                        # content processing.
 RESOURCE_ERROR = 506
-# The server could not complete the method because it lacked sufficient
-# resources. This may be due to the client creating too many of some type
-# of entity.
+ # The server could not complete the method because it lacked
+                      # sufficient
+                      # resources. This may be due to the client creating too many of some
+                      # type
+                      # of entity.
 NOT_ALLOWED = 530
-# The client tried to work with some entity in a manner that is prohibited
-# by the server, due to security settings or by some other criteria.
+ # The client tried to work with some entity in a manner that is
+                   # prohibited
+                   # by the server, due to security settings or by some other criteria.
 NOT_IMPLEMENTED = 540
-# The client tried to use functionality that is not implemented in the
-# server.
+ # The client tried to use functionality that is not implemented in the
+                       # server.
 INTERNAL_ERROR = 541
-# The server could not complete the method because of an internal error.
-# The server may require intervention by an operator in order to resume
-# normal operations.
+ # The server could not complete the method because of an internal
+                      # error.
+                      # The server may require intervention by an operator in order to
+                      # resume
+                      # normal operations.
 
-HARD_ERRORS = [CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, SYNTAX_ERROR,
-               COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME,
-               RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, INTERNAL_ERROR]
-SOFT_ERRORS = [CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND,
-               RESOURCE_LOCKED, PRECONDITION_FAILED]
+HARD_ERRORS = [CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, SYNTAX_ERROR, COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME, RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, INTERNAL_ERROR]
+SOFT_ERRORS = [CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND, RESOURCE_LOCKED, PRECONDITION_FAILED]
+
 
 DOMAIN_TO_BASIC_TYPE = {
     u'class-id': u'short',
@@ -149,11 +161,11 @@ DOMAIN_TO_BASIC_TYPE = {
     u'table': None,
 }
 
-
 class Connection(AMQPClass):
     """
-    The connection class provides methods for a client to establish a network connection to
+    The connection class provides methods for a client to establish a
     
+    network connection to
     a server, and for both peers to operate the connection thereafter.
     """
     NAME = u'connection'
@@ -166,20 +178,20 @@ class ConnectionBlocked(AMQPMethodPayload):
     
     and does not accept new publishes.
     """
-    __slots__ = (u'reason',)
+    __slots__ = (u'reason', )
 
     NAME = u'connection.blocked'
 
-    INDEX = (10, 60)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x3C'  # CLASS ID + METHOD ID
+    INDEX = (10, 60)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x3C'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reason', u'shortstr', u'shortstr', reserved=False),
     ]
 
@@ -194,7 +206,7 @@ class ConnectionBlocked(AMQPMethodPayload):
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', len(self.reason)))
         buf.write(self.reason)
-
+        
     def get_size(self):
         return 1 + len(self.reason)
 
@@ -203,7 +215,7 @@ class ConnectionBlocked(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        reason = buf[offset:offset + s_len]
+        reason = buf[offset:offset+s_len]
         offset += s_len
         return ConnectionBlocked(reason)
 
@@ -212,25 +224,29 @@ class ConnectionClose(AMQPMethodPayload):
     """
     Request a connection close
     
-    This method indicates that the sender wants to close the connection. This may be
-    due to internal conditions (e.g. a forced shut-down) or due to an error handling
-    a specific method, i.e. an exception. When a close is due to an exception, the
-    sender provides the class and method id of the method which caused the exception.
+    This method indicates that the sender wants to close the
+    connection. This may be
+    due to internal conditions (e.g. a forced shut-down) or due to
+    an error handling
+    a specific method, i.e. an exception. When a close is due to an
+    exception, the
+    sender provides the class and method id of the method which
+    caused the exception.
     """
-    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id',)
+    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id', )
 
     NAME = u'connection.close'
 
-    INDEX = (10, 50)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x32'  # CLASS ID + METHOD ID
+    INDEX = (10, 50)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reply-code', u'reply-code', u'short', reserved=False),
         Field(u'reply-text', u'reply-text', u'shortstr', reserved=False),
         Field(u'class-id', u'class-id', u'short', reserved=False),
@@ -244,11 +260,13 @@ class ConnectionClose(AMQPMethodPayload):
         :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
         :type reply_text: binary type (max length 255) (reply-text in AMQP)
         :param class_id: Failing method class
-            When the close is provoked by a method exception, this is the class of the
+            When the close is provoked by a method exception, this is
+            the class of the
             method.
         :type class_id: int, 16 bit unsigned (class-id in AMQP)
         :param method_id: Failing method id
-            When the close is provoked by a method exception, this is the ID of the method.
+            When the close is provoked by a method exception, this is
+            the ID of the method.
         :type method_id: int, 16 bit unsigned (method-id in AMQP)
         """
         self.reply_code = reply_code
@@ -260,7 +278,7 @@ class ConnectionClose(AMQPMethodPayload):
         buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
         buf.write(self.reply_text)
         buf.write(struct.pack('!HH', self.class_id, self.method_id))
-
+        
     def get_size(self):
         return 7 + len(self.reply_text)
 
@@ -269,7 +287,7 @@ class ConnectionClose(AMQPMethodPayload):
         offset = start_offset
         reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
         offset += 3
-        reply_text = buf[offset:offset + s_len]
+        reply_text = buf[offset:offset+s_len]
         offset += s_len
         class_id, method_id, = struct.unpack_from('!HH', buf, offset)
         offset += 4
@@ -280,19 +298,21 @@ class ConnectionCloseOk(AMQPMethodPayload):
     """
     Confirm a connection close
     
-    This method confirms a Connection.Close method and tells the recipient that it is
-    safe to release resources for the connection and close the socket.
+    This method confirms a Connection.Close method and tells the
+    recipient that it is
+    safe to release resources for the connection and close the
+    socket.
     """
     __slots__ = ()
 
     NAME = u'connection.close-ok'
 
-    INDEX = (10, 51)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x33'  # CLASS ID + METHOD ID
+    INDEX = (10, 51)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x33'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -300,6 +320,7 @@ class ConnectionCloseOk(AMQPMethodPayload):
         """
         Create frame connection.close-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -311,25 +332,29 @@ class ConnectionOpen(AMQPMethodPayload):
     """
     Open connection to virtual host
     
-    This method opens a connection to a virtual host, which is a collection of
-    resources, and acts to separate multiple application domains within a server.
-    The server may apply arbitrary limits per virtual host, such as the number
-    of each type of entity that may be used, per connection and/or in total.
+    This method opens a connection to a virtual host, which is a
+    collection of
+    resources, and acts to separate multiple application domains
+    within a server.
+    The server may apply arbitrary limits per virtual host, such as
+    the number
+    of each type of entity that may be used, per connection and/or
+    in total.
     """
-    __slots__ = (u'virtual_host',)
+    __slots__ = (u'virtual_host', )
 
     NAME = u'connection.open'
 
-    INDEX = (10, 40)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x28'  # CLASS ID + METHOD ID
+    INDEX = (10, 40)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'virtual-host', u'path', u'shortstr', reserved=False),
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
         Field(u'reserved-2', u'bit', u'bit', reserved=True),
@@ -350,7 +375,7 @@ class ConnectionOpen(AMQPMethodPayload):
         buf.write(self.virtual_host)
         buf.write(b'\x00')
         buf.write(struct.pack('!B', 0))
-
+        
     def get_size(self):
         return 3 + len(self.virtual_host)
 
@@ -359,11 +384,11 @@ class ConnectionOpen(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        virtual_host = buf[offset:offset + s_len]
+        virtual_host = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        offset += s_len  # reserved field!
+        offset += s_len # reserved field!
         offset += 1
         return ConnectionOpen(virtual_host)
 
@@ -372,23 +397,24 @@ class ConnectionOpenOk(AMQPMethodPayload):
     """
     Signal that connection is ready
     
-    This method signals to the client that the connection is ready for use.
+    This method signals to the client that the connection is ready
+    for use.
     """
     __slots__ = ()
 
     NAME = u'connection.open-ok'
 
-    INDEX = (10, 41)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x29'  # CLASS ID + METHOD ID
+    INDEX = (10, 41)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x29\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
 
@@ -397,12 +423,13 @@ class ConnectionOpenOk(AMQPMethodPayload):
         Create frame connection.open-ok
         """
 
+
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        offset += s_len  # reserved field!
+        offset += s_len # reserved field!
         return ConnectionOpenOk()
 
 
@@ -410,60 +437,67 @@ class ConnectionStart(AMQPMethodPayload):
     """
     Start connection negotiation
     
-    This method starts the connection negotiation process by telling the client the
-    protocol version that the server proposes, along with a list of security mechanisms
+    This method starts the connection negotiation process by telling
+    the client the
+    protocol version that the server proposes, along with a list of
+    security mechanisms
     which the client can use for authentication.
     """
-    __slots__ = (
-    u'version_major', u'version_minor', u'server_properties', u'mechanisms',
-    u'locales',)
+    __slots__ = (u'version_major', u'version_minor', u'server_properties', u'mechanisms', u'locales', )
 
     NAME = u'connection.start'
 
-    INDEX = (10, 10)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x0A'  # CLASS ID + METHOD ID
+    INDEX = (10, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'version-major', u'octet', u'octet', reserved=False),
         Field(u'version-minor', u'octet', u'octet', reserved=False),
-        Field(u'server-properties', u'peer-properties', u'table',
-              reserved=False),
+        Field(u'server-properties', u'peer-properties', u'table', reserved=False),
         Field(u'mechanisms', u'longstr', u'longstr', reserved=False),
         Field(u'locales', u'longstr', u'longstr', reserved=False),
     ]
 
-    def __init__(self, version_major, version_minor, server_properties,
-                 mechanisms, locales):
+    def __init__(self, version_major, version_minor, server_properties, mechanisms, locales):
         """
         Create frame connection.start
 
         :param version_major: Protocol major version
-            The major version number can take any value from 0 to 99 as defined in the
+            The major version number can take any value from 0 to 99 as
+            defined in the
             AMQP specification.
         :type version_major: int, 8 bit unsigned (octet in AMQP)
         :param version_minor: Protocol minor version
-            The minor version number can take any value from 0 to 99 as defined in the
+            The minor version number can take any value from 0 to 99 as
+            defined in the
             AMQP specification.
         :type version_minor: int, 8 bit unsigned (octet in AMQP)
         :param server_properties: Server properties
-            The properties SHOULD contain at least these fields: "host", specifying the
-            server host name or address, "product", giving the name of the server product,
-            "version", giving the name of the server version, "platform", giving the name
-            of the operating system, "copyright", if appropriate, and "information", giving
+            The properties SHOULD contain at least these fields:
+            "host", specifying the
+            server host name or address, "product", giving the name
+            of the server product,
+            "version", giving the name of the server version,
+            "platform", giving the name
+            of the operating system, "copyright", if appropriate,
+            and "information", giving
             other general information.
         :type server_properties: table. See coolamqp.uplink.framing.field_table (peer-properties in AMQP)
         :param mechanisms: Available security mechanisms
-            A list of the security mechanisms that the server supports, delimited by spaces.
+            A list of the security mechanisms that the server supports,
+            delimited by spaces.
         :type mechanisms: binary type (longstr in AMQP)
         :param locales: Available message locales
-            A list of the message locales that the server supports, delimited by spaces. The
-            locale defines the language in which the server will send reply texts.
+            A list of the message locales that the server supports,
+            delimited by spaces. The
+            locale defines the language in which the server will send
+            reply texts.
         :type locales: binary type (longstr in AMQP)
         """
         self.version_major = version_major
@@ -479,10 +513,9 @@ class ConnectionStart(AMQPMethodPayload):
         buf.write(self.mechanisms)
         buf.write(struct.pack('!I', len(self.locales)))
         buf.write(self.locales)
-
+        
     def get_size(self):
-        return 10 + frame_table_size(self.server_properties) + len(
-            self.mechanisms) + len(self.locales)
+        return 10 + frame_table_size(self.server_properties) + len(self.mechanisms) + len(self.locales)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -493,38 +526,39 @@ class ConnectionStart(AMQPMethodPayload):
         offset += delta
         s_len, = struct.unpack_from('!L', buf, offset)
         offset += 4
-        mechanisms = buf[offset:offset + s_len]
+        mechanisms = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!L', buf, offset)
         offset += 4
-        locales = buf[offset:offset + s_len]
+        locales = buf[offset:offset+s_len]
         offset += s_len
-        return ConnectionStart(version_major, version_minor, server_properties,
-                               mechanisms, locales)
+        return ConnectionStart(version_major, version_minor, server_properties, mechanisms, locales)
 
 
 class ConnectionSecure(AMQPMethodPayload):
     """
     Security mechanism challenge
     
-    The SASL protocol works by exchanging challenges and responses until both peers have
-    received sufficient information to authenticate each other. This method challenges
+    The SASL protocol works by exchanging challenges and responses
+    until both peers have
+    received sufficient information to authenticate each other. This
+    method challenges
     the client to provide more information.
     """
-    __slots__ = (u'challenge',)
+    __slots__ = (u'challenge', )
 
     NAME = u'connection.secure'
 
-    INDEX = (10, 20)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x14'  # CLASS ID + METHOD ID
+    INDEX = (10, 20)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'challenge', u'longstr', u'longstr', reserved=False),
     ]
 
@@ -533,7 +567,8 @@ class ConnectionSecure(AMQPMethodPayload):
         Create frame connection.secure
 
         :param challenge: Security challenge data
-            Challenge information, a block of opaque binary data passed to the security
+            Challenge information, a block of opaque binary data passed
+            to the security
             mechanism.
         :type challenge: binary type (longstr in AMQP)
         """
@@ -542,7 +577,7 @@ class ConnectionSecure(AMQPMethodPayload):
     def write_arguments(self, buf):
         buf.write(struct.pack('!I', len(self.challenge)))
         buf.write(self.challenge)
-
+        
     def get_size(self):
         return 4 + len(self.challenge)
 
@@ -551,7 +586,7 @@ class ConnectionSecure(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!L', buf, offset)
         offset += 4
-        challenge = buf[offset:offset + s_len]
+        challenge = buf[offset:offset+s_len]
         offset += s_len
         return ConnectionSecure(challenge)
 
@@ -562,22 +597,21 @@ class ConnectionStartOk(AMQPMethodPayload):
     
     This method selects a SASL security mechanism.
     """
-    __slots__ = (u'client_properties', u'mechanism', u'response', u'locale',)
+    __slots__ = (u'client_properties', u'mechanism', u'response', u'locale', )
 
     NAME = u'connection.start-ok'
 
-    INDEX = (10, 11)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x0B'  # CLASS ID + METHOD ID
+    INDEX = (10, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
-        Field(u'client-properties', u'peer-properties', u'table',
-              reserved=False),
+    FIELDS = [ 
+        Field(u'client-properties', u'peer-properties', u'table', reserved=False),
         Field(u'mechanism', u'shortstr', u'shortstr', reserved=False),
         Field(u'response', u'longstr', u'longstr', reserved=False),
         Field(u'locale', u'shortstr', u'shortstr', reserved=False),
@@ -588,21 +622,27 @@ class ConnectionStartOk(AMQPMethodPayload):
         Create frame connection.start-ok
 
         :param client_properties: Client properties
-            The properties SHOULD contain at least these fields: "product", giving the name
-            of the client product, "version", giving the name of the client version, "platform",
-            giving the name of the operating system, "copyright", if appropriate, and
+            The properties SHOULD contain at least these fields:
+            "product", giving the name
+            of the client product, "version", giving the name of the
+            client version, "platform",
+            giving the name of the operating system, "copyright", if
+            appropriate, and
             "information", giving other general information.
         :type client_properties: table. See coolamqp.uplink.framing.field_table (peer-properties in AMQP)
         :param mechanism: Selected security mechanism
-            A single security mechanisms selected by the client, which must be one of those
+            A single security mechanisms selected by the client, which
+            must be one of those
             specified by the server.
         :type mechanism: binary type (max length 255) (shortstr in AMQP)
         :param response: Security response data
-            A block of opaque data passed to the security mechanism. The contents of this
+            A block of opaque data passed to the security mechanism. The
+            contents of this
             data are defined by the SASL security mechanism.
         :type response: binary type (longstr in AMQP)
         :param locale: Selected message locale
-            A single message locale selected by the client, which must be one of those
+            A single message locale selected by the client, which must
+            be one of those
             specified by the server.
         :type locale: binary type (max length 255) (shortstr in AMQP)
         """
@@ -619,10 +659,9 @@ class ConnectionStartOk(AMQPMethodPayload):
         buf.write(self.response)
         buf.write(struct.pack('!B', len(self.locale)))
         buf.write(self.locale)
-
+        
     def get_size(self):
-        return 6 + frame_table_size(self.client_properties) + len(
-            self.mechanism) + len(self.response) + len(self.locale)
+        return 6 + frame_table_size(self.client_properties) + len(self.mechanism) + len(self.response) + len(self.locale)
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -631,41 +670,41 @@ class ConnectionStartOk(AMQPMethodPayload):
         offset += delta
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        mechanism = buf[offset:offset + s_len]
+        mechanism = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!L', buf, offset)
         offset += 4
-        response = buf[offset:offset + s_len]
+        response = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        locale = buf[offset:offset + s_len]
+        locale = buf[offset:offset+s_len]
         offset += s_len
-        return ConnectionStartOk(client_properties, mechanism, response,
-                                 locale)
+        return ConnectionStartOk(client_properties, mechanism, response, locale)
 
 
 class ConnectionSecureOk(AMQPMethodPayload):
     """
     Security mechanism response
     
-    This method attempts to authenticate, passing a block of SASL data for the security
+    This method attempts to authenticate, passing a block of SASL
+    data for the security
     mechanism at the server side.
     """
-    __slots__ = (u'response',)
+    __slots__ = (u'response', )
 
     NAME = u'connection.secure-ok'
 
-    INDEX = (10, 21)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x15'  # CLASS ID + METHOD ID
+    INDEX = (10, 21)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'response', u'longstr', u'longstr', reserved=False),
     ]
 
@@ -674,7 +713,8 @@ class ConnectionSecureOk(AMQPMethodPayload):
         Create frame connection.secure-ok
 
         :param response: Security response data
-            A block of opaque data passed to the security mechanism. The contents of this
+            A block of opaque data passed to the security mechanism. The
+            contents of this
             data are defined by the SASL security mechanism.
         :type response: binary type (longstr in AMQP)
         """
@@ -683,7 +723,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
     def write_arguments(self, buf):
         buf.write(struct.pack('!I', len(self.response)))
         buf.write(self.response)
-
+        
     def get_size(self):
         return 4 + len(self.response)
 
@@ -692,7 +732,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!L', buf, offset)
         offset += 4
-        response = buf[offset:offset + s_len]
+        response = buf[offset:offset+s_len]
         offset += s_len
         return ConnectionSecureOk(response)
 
@@ -701,23 +741,24 @@ class ConnectionTune(AMQPMethodPayload):
     """
     Propose connection tuning parameters
     
-    This method proposes a set of connection configuration values to the client. The
+    This method proposes a set of connection configuration values to
+    the client. The
     client can accept and/or adjust these.
     """
-    __slots__ = (u'channel_max', u'frame_max', u'heartbeat',)
+    __slots__ = (u'channel_max', u'frame_max', u'heartbeat', )
 
     NAME = u'connection.tune'
 
-    INDEX = (10, 30)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x1E'  # CLASS ID + METHOD ID
+    INDEX = (10, 30)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'channel-max', u'short', u'short', reserved=False),
         Field(u'frame-max', u'long', u'long', reserved=False),
         Field(u'heartbeat', u'short', u'short', reserved=False),
@@ -728,17 +769,23 @@ class ConnectionTune(AMQPMethodPayload):
         Create frame connection.tune
 
         :param channel_max: Proposed maximum channels
-            Specifies highest channel number that the server permits.  Usable channel numbers
-            are in the range 1..channel-max.  Zero indicates no specified limit.
+            Specifies highest channel number that the server permits.
+            Usable channel numbers
+            are in the range 1..channel-max. Zero indicates no specified
+            limit.
         :type channel_max: int, 16 bit unsigned (short in AMQP)
         :param frame_max: Proposed maximum frame size
-            The largest frame size that the server proposes for the connection, including
-            frame header and end-byte.  The client can negotiate a lower value. Zero means
-            that the server does not impose any specific limit but may reject very large
+            The largest frame size that the server proposes for the
+            connection, including
+            frame header and end-byte. The client can negotiate a lower
+            value. Zero means
+            that the server does not impose any specific limit but may
+            reject very large
             frames if it cannot allocate resources for them.
         :type frame_max: int, 32 bit unsigned (long in AMQP)
         :param heartbeat: Desired heartbeat delay
-            The delay, in seconds, of the connection heartbeat that the server wants.
+            The delay, in seconds, of the connection heartbeat that the
+            server wants.
             Zero means the server does not want a heartbeat.
         :type heartbeat: int, 16 bit unsigned (short in AMQP)
         """
@@ -747,17 +794,15 @@ class ConnectionTune(AMQPMethodPayload):
         self.heartbeat = heartbeat
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HIH', self.channel_max, self.frame_max,
-                              self.heartbeat))
-
+        buf.write(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
+        
     def get_size(self):
         return 8
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        channel_max, frame_max, heartbeat, = struct.unpack_from('!HIH', buf,
-                                                                offset)
+        channel_max, frame_max, heartbeat, = struct.unpack_from('!HIH', buf, offset)
         offset += 8
         return ConnectionTune(channel_max, frame_max, heartbeat)
 
@@ -766,23 +811,25 @@ class ConnectionTuneOk(AMQPMethodPayload):
     """
     Negotiate connection tuning parameters
     
-    This method sends the client's connection tuning parameters to the server.
-    Certain fields are negotiated, others provide capability information.
+    This method sends the client's connection tuning parameters to
+    the server.
+    Certain fields are negotiated, others provide capability
+    information.
     """
-    __slots__ = (u'channel_max', u'frame_max', u'heartbeat',)
+    __slots__ = (u'channel_max', u'frame_max', u'heartbeat', )
 
     NAME = u'connection.tune-ok'
 
-    INDEX = (10, 31)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x1F'  # CLASS ID + METHOD ID
+    INDEX = (10, 31)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'channel-max', u'short', u'short', reserved=False),
         Field(u'frame-max', u'long', u'long', reserved=False),
         Field(u'heartbeat', u'short', u'short', reserved=False),
@@ -793,17 +840,23 @@ class ConnectionTuneOk(AMQPMethodPayload):
         Create frame connection.tune-ok
 
         :param channel_max: Negotiated maximum channels
-            The maximum total number of channels that the client will use per connection.
+            The maximum total number of channels that the client will
+            use per connection.
         :type channel_max: int, 16 bit unsigned (short in AMQP)
         :param frame_max: Negotiated maximum frame size
-            The largest frame size that the client and server will use for the connection.
-            Zero means that the client does not impose any specific limit but may reject
-            very large frames if it cannot allocate resources for them. Note that the
-            frame-max limit applies principally to content frames, where large contents can
+            The largest frame size that the client and server will use
+            for the connection.
+            Zero means that the client does not impose any specific
+            limit but may reject
+            very large frames if it cannot allocate resources for them.
+            Note that the
+            frame-max limit applies principally to content frames, where
+            large contents can
             be broken into frames of arbitrary size.
         :type frame_max: int, 32 bit unsigned (long in AMQP)
         :param heartbeat: Desired heartbeat delay
-            The delay, in seconds, of the connection heartbeat that the client wants. Zero
+            The delay, in seconds, of the connection heartbeat that the
+            client wants. Zero
             means the client does not want a heartbeat.
         :type heartbeat: int, 16 bit unsigned (short in AMQP)
         """
@@ -812,17 +865,15 @@ class ConnectionTuneOk(AMQPMethodPayload):
         self.heartbeat = heartbeat
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!HIH', self.channel_max, self.frame_max,
-                              self.heartbeat))
-
+        buf.write(struct.pack('!HIH', self.channel_max, self.frame_max, self.heartbeat))
+        
     def get_size(self):
         return 8
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        channel_max, frame_max, heartbeat, = struct.unpack_from('!HIH', buf,
-                                                                offset)
+        channel_max, frame_max, heartbeat, = struct.unpack_from('!HIH', buf, offset)
         offset += 8
         return ConnectionTuneOk(channel_max, frame_max, heartbeat)
 
@@ -837,12 +888,12 @@ class ConnectionUnblocked(AMQPMethodPayload):
 
     NAME = u'connection.unblocked'
 
-    INDEX = (10, 61)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x0A\x00\x3D'  # CLASS ID + METHOD ID
+    INDEX = (10, 61)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x3D'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x3D\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -850,6 +901,7 @@ class ConnectionUnblocked(AMQPMethodPayload):
         """
         Create frame connection.unblocked
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -859,8 +911,9 @@ class ConnectionUnblocked(AMQPMethodPayload):
 
 class Channel(AMQPClass):
     """
-    The channel class provides methods for a client to establish a channel to a
+    The channel class provides methods for a client to establish a
     
+    channel to a
     server and for both peers to operate the channel thereafter.
     """
     NAME = u'channel'
@@ -871,25 +924,29 @@ class ChannelClose(AMQPMethodPayload):
     """
     Request a channel close
     
-    This method indicates that the sender wants to close the channel. This may be due to
-    internal conditions (e.g. a forced shut-down) or due to an error handling a specific
-    method, i.e. an exception. When a close is due to an exception, the sender provides
-    the class and method id of the method which caused the exception.
+    This method indicates that the sender wants to close the
+    channel. This may be due to
+    internal conditions (e.g. a forced shut-down) or due to an error
+    handling a specific
+    method, i.e. an exception. When a close is due to an exception,
+    the sender provides
+    the class and method id of the method which caused the
+    exception.
     """
-    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id',)
+    __slots__ = (u'reply_code', u'reply_text', u'class_id', u'method_id', )
 
     NAME = u'channel.close'
 
-    INDEX = (20, 40)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x14\x00\x28'  # CLASS ID + METHOD ID
+    INDEX = (20, 40)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x14\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reply-code', u'reply-code', u'short', reserved=False),
         Field(u'reply-text', u'reply-text', u'shortstr', reserved=False),
         Field(u'class-id', u'class-id', u'short', reserved=False),
@@ -903,11 +960,13 @@ class ChannelClose(AMQPMethodPayload):
         :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
         :type reply_text: binary type (max length 255) (reply-text in AMQP)
         :param class_id: Failing method class
-            When the close is provoked by a method exception, this is the class of the
+            When the close is provoked by a method exception, this is
+            the class of the
             method.
         :type class_id: int, 16 bit unsigned (class-id in AMQP)
         :param method_id: Failing method id
-            When the close is provoked by a method exception, this is the ID of the method.
+            When the close is provoked by a method exception, this is
+            the ID of the method.
         :type method_id: int, 16 bit unsigned (method-id in AMQP)
         """
         self.reply_code = reply_code
@@ -919,7 +978,7 @@ class ChannelClose(AMQPMethodPayload):
         buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
         buf.write(self.reply_text)
         buf.write(struct.pack('!HH', self.class_id, self.method_id))
-
+        
     def get_size(self):
         return 7 + len(self.reply_text)
 
@@ -928,7 +987,7 @@ class ChannelClose(AMQPMethodPayload):
         offset = start_offset
         reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
         offset += 3
-        reply_text = buf[offset:offset + s_len]
+        reply_text = buf[offset:offset+s_len]
         offset += s_len
         class_id, method_id, = struct.unpack_from('!HH', buf, offset)
         offset += 4
@@ -939,19 +998,20 @@ class ChannelCloseOk(AMQPMethodPayload):
     """
     Confirm a channel close
     
-    This method confirms a Channel.Close method and tells the recipient that it is safe
+    This method confirms a Channel.Close method and tells the
+    recipient that it is safe
     to release resources for the channel.
     """
     __slots__ = ()
 
     NAME = u'channel.close-ok'
 
-    INDEX = (20, 41)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x14\x00\x29'  # CLASS ID + METHOD ID
+    INDEX = (20, 41)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x14\x00\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x14\x00\x29\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -959,6 +1019,7 @@ class ChannelCloseOk(AMQPMethodPayload):
         """
         Create frame channel.close-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -970,26 +1031,30 @@ class ChannelFlow(AMQPMethodPayload):
     """
     Enable/disable flow from peer
     
-    This method asks the peer to pause or restart the flow of content data sent by
-    a consumer. This is a simple flow-control mechanism that a peer can use to avoid
-    overflowing its queues or otherwise finding itself receiving more messages than
-    it can process. Note that this method is not intended for window control. It does
+    This method asks the peer to pause or restart the flow of
+    content data sent by
+    a consumer. This is a simple flow-control mechanism that a peer
+    can use to avoid
+    overflowing its queues or otherwise finding itself receiving
+    more messages than
+    it can process. Note that this method is not intended for window
+    control. It does
     not affect contents returned by Basic.Get-Ok methods.
     """
-    __slots__ = (u'active',)
+    __slots__ = (u'active', )
 
     NAME = u'channel.flow'
 
-    INDEX = (20, 20)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x14\x00\x14'  # CLASS ID + METHOD ID
+    INDEX = (20, 20)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x14\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'active', u'bit', u'bit', reserved=False),
     ]
 
@@ -998,7 +1063,8 @@ class ChannelFlow(AMQPMethodPayload):
         Create frame channel.flow
 
         :param active: Start/stop content frames
-            If 1, the peer starts sending content frames. If 0, the peer stops sending
+            If 1, the peer starts sending content frames. If 0, the peer
+            stops sending
             content frames.
         :type active: bool (bit in AMQP)
         """
@@ -1006,7 +1072,7 @@ class ChannelFlow(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', (self.active << 0)))
-
+        
     def get_size(self):
         return 1
 
@@ -1024,22 +1090,23 @@ class ChannelFlowOk(AMQPMethodPayload):
     """
     Confirm a flow method
     
-    Confirms to the peer that a flow command was received and processed.
+    Confirms to the peer that a flow command was received and
+    processed.
     """
-    __slots__ = (u'active',)
+    __slots__ = (u'active', )
 
     NAME = u'channel.flow-ok'
 
-    INDEX = (20, 21)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x14\x00\x15'  # CLASS ID + METHOD ID
+    INDEX = (20, 21)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x14\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'active', u'bit', u'bit', reserved=False),
     ]
 
@@ -1048,15 +1115,17 @@ class ChannelFlowOk(AMQPMethodPayload):
         Create frame channel.flow-ok
 
         :param active: Current flow setting
-            Confirms the setting of the processed flow method: 1 means the peer will start
-            sending or continue to send content frames; 0 means it will not.
+            Confirms the setting of the processed flow method: 1 means
+            the peer will start
+            sending or continue to send content frames; 0 means it will
+            not.
         :type active: bool (bit in AMQP)
         """
         self.active = active
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', (self.active << 0)))
-
+        
     def get_size(self):
         return 1
 
@@ -1080,17 +1149,17 @@ class ChannelOpen(AMQPMethodPayload):
 
     NAME = u'channel.open'
 
-    INDEX = (20, 10)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x14\x00\x0A'  # CLASS ID + METHOD ID
+    INDEX = (20, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x14\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x05\x00\x14\x00\x0A\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
 
@@ -1099,12 +1168,13 @@ class ChannelOpen(AMQPMethodPayload):
         Create frame channel.open
         """
 
+
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        offset += s_len  # reserved field!
+        offset += s_len # reserved field!
         return ChannelOpen()
 
 
@@ -1112,23 +1182,24 @@ class ChannelOpenOk(AMQPMethodPayload):
     """
     Signal that the channel is ready
     
-    This method signals to the client that the channel is ready for use.
+    This method signals to the client that the channel is ready for
+    use.
     """
     __slots__ = ()
 
     NAME = u'channel.open-ok'
 
-    INDEX = (20, 11)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x14\x00\x0B'  # CLASS ID + METHOD ID
+    INDEX = (20, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x14\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x05\x00\x14\x00\x0B\x00\x00\x00\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'longstr', u'longstr', reserved=True),
     ]
 
@@ -1137,19 +1208,21 @@ class ChannelOpenOk(AMQPMethodPayload):
         Create frame channel.open-ok
         """
 
+
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!L', buf, offset)
         offset += 4
-        offset += s_len  # reserved field!
+        offset += s_len # reserved field!
         return ChannelOpenOk()
 
 
 class Exchange(AMQPClass):
     """
-    Exchanges match and distribute messages across queues. exchanges can be configured in
+    Exchanges match and distribute messages across queues. exchanges can
     
+    be configured in
     the server or declared at runtime.
     """
     NAME = u'exchange'
@@ -1162,21 +1235,20 @@ class ExchangeBind(AMQPMethodPayload):
     
     This method binds an exchange to an exchange.
     """
-    __slots__ = (
-    u'destination', u'source', u'routing_key', u'no_wait', u'arguments',)
+    __slots__ = (u'destination', u'source', u'routing_key', u'no_wait', u'arguments', )
 
     NAME = u'exchange.bind'
 
-    INDEX = (40, 30)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x1E'  # CLASS ID + METHOD ID
+    INDEX = (40, 30)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'destination', u'exchange-name', u'shortstr', reserved=False),
         Field(u'source', u'exchange-name', u'shortstr', reserved=False),
@@ -1223,25 +1295,24 @@ class ExchangeBind(AMQPMethodPayload):
         buf.write(self.routing_key)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
         enframe_table(buf, self.arguments)
-
+        
     def get_size(self):
-        return 6 + len(self.destination) + len(self.source) + len(
-            self.routing_key) + frame_table_size(self.arguments)
+        return 6 + len(self.destination) + len(self.source) + len(self.routing_key) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        destination = buf[offset:offset + s_len]
+        destination = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        source = buf[offset:offset + s_len]
+        source = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -1249,8 +1320,7 @@ class ExchangeBind(AMQPMethodPayload):
         offset += 1
         arguments, delta = deframe_table(buf, offset)
         offset += delta
-        return ExchangeBind(destination, source, routing_key, no_wait,
-                            arguments)
+        return ExchangeBind(destination, source, routing_key, no_wait, arguments)
 
 
 class ExchangeBindOk(AMQPMethodPayload):
@@ -1263,12 +1333,12 @@ class ExchangeBindOk(AMQPMethodPayload):
 
     NAME = u'exchange.bind-ok'
 
-    INDEX = (40, 31)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x1F'  # CLASS ID + METHOD ID
+    INDEX = (40, 31)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -1276,6 +1346,7 @@ class ExchangeBindOk(AMQPMethodPayload):
         """
         Create frame exchange.bind-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1287,25 +1358,24 @@ class ExchangeDeclare(AMQPMethodPayload):
     """
     Verify exchange exists, create if needed
     
-    This method creates an exchange if it does not already exist, and if the exchange
+    This method creates an exchange if it does not already exist,
+    and if the exchange
     exists, verifies that it is of the correct and expected class.
     """
-    __slots__ = (
-    u'exchange', u'type_', u'passive', u'durable', u'auto_delete', u'internal',
-    u'no_wait', u'arguments',)
+    __slots__ = (u'exchange', u'type_', u'passive', u'durable', u'auto_delete', u'internal', u'no_wait', u'arguments', )
 
     NAME = u'exchange.declare'
 
-    INDEX = (40, 10)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x0A'  # CLASS ID + METHOD ID
+    INDEX = (40, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
         Field(u'type', u'shortstr', u'shortstr', reserved=False),
@@ -1317,32 +1387,44 @@ class ExchangeDeclare(AMQPMethodPayload):
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
-    def __init__(self, exchange, type_, passive, durable, auto_delete,
-                 internal, no_wait, arguments):
+    def __init__(self, exchange, type_, passive, durable, auto_delete, internal, no_wait, arguments):
         """
         Create frame exchange.declare
 
-        :param exchange: Exchange names starting with "amq." are reserved for pre-declared and
-            standardised exchanges. The client MAY declare an exchange starting with
-            "amq." if the passive option is set, or the exchange already exists.
+        :param exchange: Exchange names starting with "amq." are reserved for
+            pre-declared and
+            standardised exchanges. The client MAY declare an
+            exchange starting with
+            "amq." if the passive option is set, or the exchange
+            already exists.
         :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param type_: Exchange type
-            Each exchange belongs to one of a set of exchange types implemented by the
-            server. The exchange types define the functionality of the exchange - i.e. how
-            messages are routed through it. It is not valid or meaningful to attempt to
+            Each exchange belongs to one of a set of exchange types
+            implemented by the
+            server. The exchange types define the functionality of the
+            exchange - i.e. how
+            messages are routed through it. It is not valid or
+            meaningful to attempt to
             change the type of an existing exchange.
         :type type_: binary type (max length 255) (shortstr in AMQP)
         :param passive: Do not create exchange
-            If set, the server will reply with Declare-Ok if the exchange already
-            exists with the same name, and raise an error if not.  The client can
-            use this to check whether an exchange exists without modifying the
-            server state. When set, all other method fields except name and no-wait
-            are ignored.  A declare with both passive and no-wait has no effect.
+            If set, the server will reply with Declare-Ok if the
+            exchange already
+            exists with the same name, and raise an error if not. The
+            client can
+            use this to check whether an exchange exists without
+            modifying the
+            server state. When set, all other method fields except name
+            and no-wait
+            are ignored. A declare with both passive and no-wait has no
+            effect.
             Arguments are compared for semantic equivalence.
         :type passive: bool (bit in AMQP)
         :param durable: Request a durable exchange
-            If set when creating a new exchange, the exchange will be marked as durable.
-            Durable exchanges remain active when a server restarts. Non-durable exchanges
+            If set when creating a new exchange, the exchange will be
+            marked as durable.
+            Durable exchanges remain active when a server restarts.
+            Non-durable exchanges
             (transient exchanges) are purged if/when a server restarts.
         :type durable: bool (bit in AMQP)
         :param auto_delete: Auto-delete when unused
@@ -1357,7 +1439,8 @@ class ExchangeDeclare(AMQPMethodPayload):
         :type internal: bool (bit in AMQP)
         :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for declaration
-            A set of arguments for the declaration. The syntax and semantics of these
+            A set of arguments for the declaration. The syntax and
+            semantics of these
             arguments depends on the server implementation.
         :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
         """
@@ -1376,26 +1459,22 @@ class ExchangeDeclare(AMQPMethodPayload):
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.type_)))
         buf.write(self.type_)
-        buf.write(struct.pack('!B',
-                              (self.passive << 0) | (self.durable << 1) | (
-                              self.auto_delete << 2) | (self.internal << 3) | (
-                              self.no_wait << 4)))
+        buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.auto_delete << 2) | (self.internal << 3) | (self.no_wait << 4)))
         enframe_table(buf, self.arguments)
-
+        
     def get_size(self):
-        return 5 + len(self.exchange) + len(self.type_) + frame_table_size(
-            self.arguments)
+        return 5 + len(self.exchange) + len(self.type_) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        type_ = buf[offset:offset + s_len]
+        type_ = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -1407,31 +1486,31 @@ class ExchangeDeclare(AMQPMethodPayload):
         offset += 1
         arguments, delta = deframe_table(buf, offset)
         offset += delta
-        return ExchangeDeclare(exchange, type_, passive, durable, auto_delete,
-                               internal, no_wait, arguments)
+        return ExchangeDeclare(exchange, type_, passive, durable, auto_delete, internal, no_wait, arguments)
 
 
 class ExchangeDelete(AMQPMethodPayload):
     """
     Delete an exchange
     
-    This method deletes an exchange. When an exchange is deleted all queue bindings on
+    This method deletes an exchange. When an exchange is deleted all
+    queue bindings on
     the exchange are cancelled.
     """
-    __slots__ = (u'exchange', u'if_unused', u'no_wait',)
+    __slots__ = (u'exchange', u'if_unused', u'no_wait', )
 
     NAME = u'exchange.delete'
 
-    INDEX = (40, 20)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x14'  # CLASS ID + METHOD ID
+    INDEX = (40, 20)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
         Field(u'if-unused', u'bit', u'bit', reserved=False),
@@ -1442,11 +1521,14 @@ class ExchangeDelete(AMQPMethodPayload):
         """
         Create frame exchange.delete
 
-        :param exchange: The client must not attempt to delete an exchange that does not exist.
+        :param exchange: The client must not attempt to delete an exchange that
+            does not exist.
         :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param if_unused: Delete only if unused
-            If set, the server will only delete the exchange if it has no queue bindings. If
-            the exchange has queue bindings the server does not delete it but raises a
+            If set, the server will only delete the exchange if it has
+            no queue bindings. If
+            the exchange has queue bindings the server does not delete
+            it but raises a
             channel exception instead.
         :type if_unused: bool (bit in AMQP)
         :type no_wait: bool (no-wait in AMQP)
@@ -1459,9 +1541,8 @@ class ExchangeDelete(AMQPMethodPayload):
         buf.write(b'\x00\x00')
         buf.write(struct.pack('!B', len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(
-            struct.pack('!B', (self.if_unused << 0) | (self.no_wait << 1)))
-
+        buf.write(struct.pack('!B', (self.if_unused << 0) | (self.no_wait << 1)))
+        
     def get_size(self):
         return 4 + len(self.exchange)
 
@@ -1470,7 +1551,7 @@ class ExchangeDelete(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -1484,19 +1565,20 @@ class ExchangeDeclareOk(AMQPMethodPayload):
     """
     Confirm exchange declaration
     
-    This method confirms a Declare method and confirms the name of the exchange,
+    This method confirms a Declare method and confirms the name of
+    the exchange,
     essential for automatically-named exchanges.
     """
     __slots__ = ()
 
     NAME = u'exchange.declare-ok'
 
-    INDEX = (40, 11)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x0B'  # CLASS ID + METHOD ID
+    INDEX = (40, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -1504,6 +1586,7 @@ class ExchangeDeclareOk(AMQPMethodPayload):
         """
         Create frame exchange.declare-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1521,12 +1604,12 @@ class ExchangeDeleteOk(AMQPMethodPayload):
 
     NAME = u'exchange.delete-ok'
 
-    INDEX = (40, 21)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x15'  # CLASS ID + METHOD ID
+    INDEX = (40, 21)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -1534,6 +1617,7 @@ class ExchangeDeleteOk(AMQPMethodPayload):
         """
         Create frame exchange.delete-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1547,21 +1631,20 @@ class ExchangeUnbind(AMQPMethodPayload):
     
     This method unbinds an exchange from an exchange.
     """
-    __slots__ = (
-    u'destination', u'source', u'routing_key', u'no_wait', u'arguments',)
+    __slots__ = (u'destination', u'source', u'routing_key', u'no_wait', u'arguments', )
 
     NAME = u'exchange.unbind'
 
-    INDEX = (40, 40)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x28'  # CLASS ID + METHOD ID
+    INDEX = (40, 40)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'destination', u'exchange-name', u'shortstr', reserved=False),
         Field(u'source', u'exchange-name', u'shortstr', reserved=False),
@@ -1602,25 +1685,24 @@ class ExchangeUnbind(AMQPMethodPayload):
         buf.write(self.routing_key)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
         enframe_table(buf, self.arguments)
-
+        
     def get_size(self):
-        return 6 + len(self.destination) + len(self.source) + len(
-            self.routing_key) + frame_table_size(self.arguments)
+        return 6 + len(self.destination) + len(self.source) + len(self.routing_key) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        destination = buf[offset:offset + s_len]
+        destination = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        source = buf[offset:offset + s_len]
+        source = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -1628,8 +1710,7 @@ class ExchangeUnbind(AMQPMethodPayload):
         offset += 1
         arguments, delta = deframe_table(buf, offset)
         offset += delta
-        return ExchangeUnbind(destination, source, routing_key, no_wait,
-                              arguments)
+        return ExchangeUnbind(destination, source, routing_key, no_wait, arguments)
 
 
 class ExchangeUnbindOk(AMQPMethodPayload):
@@ -1642,12 +1723,12 @@ class ExchangeUnbindOk(AMQPMethodPayload):
 
     NAME = u'exchange.unbind-ok'
 
-    INDEX = (40, 51)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x28\x00\x33'  # CLASS ID + METHOD ID
+    INDEX = (40, 51)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x28\x00\x33'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -1655,6 +1736,7 @@ class ExchangeUnbindOk(AMQPMethodPayload):
         """
         Create frame exchange.unbind-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1664,9 +1746,11 @@ class ExchangeUnbindOk(AMQPMethodPayload):
 
 class Queue(AMQPClass):
     """
-    Queues store and forward messages. queues can be configured in the server or created at
+    Queues store and forward messages. queues can be configured in the
     
-    runtime. Queues must be attached to at least one exchange in order to receive messages
+    server or created at
+    runtime. Queues must be attached to at least one exchange in order
+    to receive messages
     from publishers.
     """
     NAME = u'queue'
@@ -1677,26 +1761,28 @@ class QueueBind(AMQPMethodPayload):
     """
     Bind queue to an exchange
     
-    This method binds a queue to an exchange. Until a queue is bound it will not
-    receive any messages. In a classic messaging model, store-and-forward queues
-    are bound to a direct exchange and subscription queues are bound to a topic
+    This method binds a queue to an exchange. Until a queue is bound
+    it will not
+    receive any messages. In a classic messaging model,
+    store-and-forward queues
+    are bound to a direct exchange and subscription queues are bound
+    to a topic
     exchange.
     """
-    __slots__ = (
-    u'queue', u'exchange', u'routing_key', u'no_wait', u'arguments',)
+    __slots__ = (u'queue', u'exchange', u'routing_key', u'no_wait', u'arguments', )
 
     NAME = u'queue.bind'
 
-    INDEX = (50, 20)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x14'  # CLASS ID + METHOD ID
+    INDEX = (50, 20)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
@@ -1712,21 +1798,30 @@ class QueueBind(AMQPMethodPayload):
         :param queue: Specifies the name of the queue to bind.
         :type queue: binary type (max length 255) (queue-name in AMQP)
         :param exchange: Name of the exchange to bind to
-            A client MUST NOT be allowed to bind a queue to a non-existent exchange.
+            A client MUST NOT be allowed to bind a queue to a
+            non-existent exchange.
         :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
-            Specifies the routing key for the binding. The routing key is used for routing
-            messages depending on the exchange configuration. Not all exchanges use a
-            routing key - refer to the specific exchange documentation.  If the queue name
-            is empty, the server uses the last queue declared on the channel.  If the
-            routing key is also empty, the server uses this queue name for the routing
-            key as well.  If the queue name is provided but the routing key is empty, the
-            server does the binding with that empty routing key.  The meaning of empty
+            Specifies the routing key for the binding. The routing key
+            is used for routing
+            messages depending on the exchange configuration. Not all
+            exchanges use a
+            routing key - refer to the specific exchange documentation.
+            If the queue name
+            is empty, the server uses the last queue declared on the
+            channel. If the
+            routing key is also empty, the server uses this queue name
+            for the routing
+            key as well. If the queue name is provided but the routing
+            key is empty, the
+            server does the binding with that empty routing key. The
+            meaning of empty
             routing keys depends on the exchange implementation.
         :type routing_key: binary type (max length 255) (shortstr in AMQP)
         :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for binding
-            A set of arguments for the binding. The syntax and semantics of these arguments
+            A set of arguments for the binding. The syntax and semantics
+            of these arguments
             depends on the exchange class.
         :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
         """
@@ -1746,25 +1841,24 @@ class QueueBind(AMQPMethodPayload):
         buf.write(self.routing_key)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
         enframe_table(buf, self.arguments)
-
+        
     def get_size(self):
-        return 6 + len(self.queue) + len(self.exchange) + len(
-            self.routing_key) + frame_table_size(self.arguments)
+        return 6 + len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -1785,12 +1879,12 @@ class QueueBindOk(AMQPMethodPayload):
 
     NAME = u'queue.bind-ok'
 
-    INDEX = (50, 21)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x15'  # CLASS ID + METHOD ID
+    INDEX = (50, 21)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x32\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -1798,6 +1892,7 @@ class QueueBindOk(AMQPMethodPayload):
         """
         Create frame queue.bind-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -1809,26 +1904,26 @@ class QueueDeclare(AMQPMethodPayload):
     """
     Declare queue, create if needed
     
-    This method creates or checks a queue. When creating a new queue the client can
-    specify various properties that control the durability of the queue and its
+    This method creates or checks a queue. When creating a new queue
+    the client can
+    specify various properties that control the durability of the
+    queue and its
     contents, and the level of sharing for the queue.
     """
-    __slots__ = (
-    u'queue', u'passive', u'durable', u'exclusive', u'auto_delete', u'no_wait',
-    u'arguments',)
+    __slots__ = (u'queue', u'passive', u'durable', u'exclusive', u'auto_delete', u'no_wait', u'arguments', )
 
     NAME = u'queue.declare'
 
-    INDEX = (50, 10)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x0A'  # CLASS ID + METHOD ID
+    INDEX = (50, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'passive', u'bit', u'bit', reserved=False),
@@ -1839,44 +1934,61 @@ class QueueDeclare(AMQPMethodPayload):
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
-    def __init__(self, queue, passive, durable, exclusive, auto_delete,
-                 no_wait, arguments):
+    def __init__(self, queue, passive, durable, exclusive, auto_delete, no_wait, arguments):
         """
         Create frame queue.declare
 
-        :param queue: The queue name may be empty, in which case the server must create a new
-            queue with a unique generated name and return this to the client in the
+        :param queue: The queue name may be empty, in which case the server
+            MUST create a new
+            queue with a unique generated name and return this to
+            the client in the
             Declare-Ok method.
         :type queue: binary type (max length 255) (queue-name in AMQP)
         :param passive: Do not create queue
-            If set, the server will reply with Declare-Ok if the queue already
-            exists with the same name, and raise an error if not.  The client can
-            use this to check whether a queue exists without modifying the
-            server state.  When set, all other method fields except name and no-wait
-            are ignored.  A declare with both passive and no-wait has no effect.
+            If set, the server will reply with Declare-Ok if the queue
+            already
+            exists with the same name, and raise an error if not. The
+            client can
+            use this to check whether a queue exists without modifying
+            the
+            server state. When set, all other method fields except name
+            and no-wait
+            are ignored. A declare with both passive and no-wait has no
+            effect.
             Arguments are compared for semantic equivalence.
         :type passive: bool (bit in AMQP)
         :param durable: Request a durable queue
-            If set when creating a new queue, the queue will be marked as durable. Durable
-            queues remain active when a server restarts. Non-durable queues (transient
-            queues) are purged if/when a server restarts. Note that durable queues do not
-            necessarily hold persistent messages, although it does not make sense to send
+            If set when creating a new queue, the queue will be marked
+            as durable. Durable
+            queues remain active when a server restarts. Non-durable
+            queues (transient
+            queues) are purged if/when a server restarts. Note that
+            durable queues do not
+            necessarily hold persistent messages, although it does not
+            make sense to send
             persistent messages to a transient queue.
         :type durable: bool (bit in AMQP)
         :param exclusive: Request an exclusive queue
-            Exclusive queues may only be accessed by the current connection, and are
-            deleted when that connection closes.  Passive declaration of an exclusive
+            Exclusive queues may only be accessed by the current
+            connection, and are
+            deleted when that connection closes. Passive declaration of
+            an exclusive
             queue by other connections are not allowed.
         :type exclusive: bool (bit in AMQP)
         :param auto_delete: Auto-delete queue when unused
-            If set, the queue is deleted when all consumers have finished using it.  The last
-            consumer can be cancelled either explicitly or because its channel is closed. If
-            there was no consumer ever on the queue, it won't be deleted.  Applications can
-            explicitly delete auto-delete queues using the Delete method as normal.
+            If set, the queue is deleted when all consumers have
+            finished using it. The last
+            consumer can be cancelled either explicitly or because its
+            channel is closed. If
+            there was no consumer ever on the queue, it won't be
+            deleted. Applications can
+            explicitly delete auto-delete queues using the Delete method
+            as normal.
         :type auto_delete: bool (bit in AMQP)
         :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for declaration
-            A set of arguments for the declaration. The syntax and semantics of these
+            A set of arguments for the declaration. The syntax and
+            semantics of these
             arguments depends on the server implementation.
         :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
         """
@@ -1892,12 +2004,9 @@ class QueueDeclare(AMQPMethodPayload):
         buf.write(b'\x00\x00')
         buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!B',
-                              (self.passive << 0) | (self.durable << 1) | (
-                              self.exclusive << 2) | (
-                              self.auto_delete << 3) | (self.no_wait << 4)))
+        buf.write(struct.pack('!B', (self.passive << 0) | (self.durable << 1) | (self.exclusive << 2) | (self.auto_delete << 3) | (self.no_wait << 4)))
         enframe_table(buf, self.arguments)
-
+        
     def get_size(self):
         return 4 + len(self.queue) + frame_table_size(self.arguments)
 
@@ -1906,7 +2015,7 @@ class QueueDeclare(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -1918,32 +2027,33 @@ class QueueDeclare(AMQPMethodPayload):
         offset += 1
         arguments, delta = deframe_table(buf, offset)
         offset += delta
-        return QueueDeclare(queue, passive, durable, exclusive, auto_delete,
-                            no_wait, arguments)
+        return QueueDeclare(queue, passive, durable, exclusive, auto_delete, no_wait, arguments)
 
 
 class QueueDelete(AMQPMethodPayload):
     """
     Delete a queue
     
-    This method deletes a queue. When a queue is deleted any pending messages are sent
-    to a dead-letter queue if this is defined in the server configuration, and all
+    This method deletes a queue. When a queue is deleted any pending
+    messages are sent
+    to a dead-letter queue if this is defined in the server
+    configuration, and all
     consumers on the queue are cancelled.
     """
-    __slots__ = (u'queue', u'if_unused', u'if_empty', u'no_wait',)
+    __slots__ = (u'queue', u'if_unused', u'if_empty', u'no_wait', )
 
     NAME = u'queue.delete'
 
-    INDEX = (50, 40)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x28'  # CLASS ID + METHOD ID
+    INDEX = (50, 40)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'if-unused', u'bit', u'bit', reserved=False),
@@ -1958,12 +2068,15 @@ class QueueDelete(AMQPMethodPayload):
         :param queue: Specifies the name of the queue to delete.
         :type queue: binary type (max length 255) (queue-name in AMQP)
         :param if_unused: Delete only if unused
-            If set, the server will only delete the queue if it has no consumers. If the
-            queue has consumers the server does does not delete it but raises a channel
+            If set, the server will only delete the queue if it has no
+            consumers. If the
+            queue has consumers the server does does not delete it but
+            raises a channel
             exception instead.
         :type if_unused: bool (bit in AMQP)
         :param if_empty: Delete only if empty
-            If set, the server will only delete the queue if it has no messages.
+            If set, the server will only delete the queue if it has no
+            messages.
         :type if_empty: bool (bit in AMQP)
         :type no_wait: bool (no-wait in AMQP)
         """
@@ -1976,10 +2089,8 @@ class QueueDelete(AMQPMethodPayload):
         buf.write(b'\x00\x00')
         buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!B',
-                              (self.if_unused << 0) | (self.if_empty << 1) | (
-                              self.no_wait << 2)))
-
+        buf.write(struct.pack('!B', (self.if_unused << 0) | (self.if_empty << 1) | (self.no_wait << 2)))
+        
     def get_size(self):
         return 4 + len(self.queue)
 
@@ -1988,7 +2099,7 @@ class QueueDelete(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -2003,23 +2114,24 @@ class QueueDeclareOk(AMQPMethodPayload):
     """
     Confirms a queue definition
     
-    This method confirms a Declare method and confirms the name of the queue, essential
+    This method confirms a Declare method and confirms the name of
+    the queue, essential
     for automatically-named queues.
     """
-    __slots__ = (u'queue', u'message_count', u'consumer_count',)
+    __slots__ = (u'queue', u'message_count', u'consumer_count', )
 
     NAME = u'queue.declare-ok'
 
-    INDEX = (50, 11)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x0B'  # CLASS ID + METHOD ID
+    INDEX = (50, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'message-count', u'message-count', u'long', reserved=False),
         Field(u'consumer-count', u'long', u'long', reserved=False),
@@ -2029,13 +2141,16 @@ class QueueDeclareOk(AMQPMethodPayload):
         """
         Create frame queue.declare-ok
 
-        :param queue: Reports the name of the queue. if the server generated a queue name, this field
+        :param queue: Reports the name of the queue. if the server generated a
+            queue name, this field
             contains that name.
         :type queue: binary type (max length 255) (queue-name in AMQP)
         :type message_count: int, 32 bit unsigned (message-count in AMQP)
         :param consumer_count: Number of consumers
-            Reports the number of active consumers for the queue. Note that consumers can
-            suspend activity (Channel.Flow) in which case they do not appear in this count.
+            Reports the number of active consumers for the queue. Note
+            that consumers can
+            suspend activity (Channel.Flow) in which case they do not
+            appear in this count.
         :type consumer_count: int, 32 bit unsigned (long in AMQP)
         """
         self.queue = queue
@@ -2046,7 +2161,7 @@ class QueueDeclareOk(AMQPMethodPayload):
         buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!II', self.message_count, self.consumer_count))
-
+        
     def get_size(self):
         return 9 + len(self.queue)
 
@@ -2055,7 +2170,7 @@ class QueueDeclareOk(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         message_count, consumer_count, = struct.unpack_from('!II', buf, offset)
         offset += 8
@@ -2068,20 +2183,20 @@ class QueueDeleteOk(AMQPMethodPayload):
     
     This method confirms the deletion of a queue.
     """
-    __slots__ = (u'message_count',)
+    __slots__ = (u'message_count', )
 
     NAME = u'queue.delete-ok'
 
-    INDEX = (50, 41)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x29'  # CLASS ID + METHOD ID
+    INDEX = (50, 41)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x29'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
 
@@ -2096,7 +2211,7 @@ class QueueDeleteOk(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!I', self.message_count))
-
+        
     def get_size(self):
         return 4
 
@@ -2112,23 +2227,24 @@ class QueuePurge(AMQPMethodPayload):
     """
     Purge a queue
     
-    This method removes all messages from a queue which are not awaiting
+    This method removes all messages from a queue which are not
+    awaiting
     acknowledgment.
     """
-    __slots__ = (u'queue', u'no_wait',)
+    __slots__ = (u'queue', u'no_wait', )
 
     NAME = u'queue.purge'
 
-    INDEX = (50, 30)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x1E'  # CLASS ID + METHOD ID
+    INDEX = (50, 30)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
@@ -2150,7 +2266,7 @@ class QueuePurge(AMQPMethodPayload):
         buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
-
+        
     def get_size(self):
         return 4 + len(self.queue)
 
@@ -2159,7 +2275,7 @@ class QueuePurge(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -2174,20 +2290,20 @@ class QueuePurgeOk(AMQPMethodPayload):
     
     This method confirms the purge of a queue.
     """
-    __slots__ = (u'message_count',)
+    __slots__ = (u'message_count', )
 
     NAME = u'queue.purge-ok'
 
-    INDEX = (50, 31)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x1F'  # CLASS ID + METHOD ID
+    INDEX = (50, 31)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
 
@@ -2202,7 +2318,7 @@ class QueuePurgeOk(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!I', self.message_count))
-
+        
     def get_size(self):
         return 4
 
@@ -2220,20 +2336,20 @@ class QueueUnbind(AMQPMethodPayload):
     
     This method unbinds a queue from an exchange.
     """
-    __slots__ = (u'queue', u'exchange', u'routing_key', u'arguments',)
+    __slots__ = (u'queue', u'exchange', u'routing_key', u'arguments', )
 
     NAME = u'queue.unbind'
 
-    INDEX = (50, 50)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x32'  # CLASS ID + METHOD ID
+    INDEX = (50, 50)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
@@ -2270,25 +2386,24 @@ class QueueUnbind(AMQPMethodPayload):
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
         enframe_table(buf, self.arguments)
-
+        
     def get_size(self):
-        return 5 + len(self.queue) + len(self.exchange) + len(
-            self.routing_key) + frame_table_size(self.arguments)
+        return 5 + len(self.queue) + len(self.exchange) + len(self.routing_key) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
         arguments, delta = deframe_table(buf, offset)
         offset += delta
@@ -2305,12 +2420,12 @@ class QueueUnbindOk(AMQPMethodPayload):
 
     NAME = u'queue.unbind-ok'
 
-    INDEX = (50, 51)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x32\x00\x33'  # CLASS ID + METHOD ID
+    INDEX = (50, 51)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x32\x00\x33'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x32\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -2318,6 +2433,7 @@ class QueueUnbindOk(AMQPMethodPayload):
         """
         Create frame queue.unbind-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -2327,7 +2443,9 @@ class QueueUnbindOk(AMQPMethodPayload):
 
 class Basic(AMQPClass):
     """
-    The basic class provides methods that support an industry-standard messaging model.
+    The basic class provides methods that support an industry-standard
+    
+    messaging model.
     """
     NAME = u'basic'
     INDEX = 60
@@ -2335,7 +2453,9 @@ class Basic(AMQPClass):
 
 class BasicContentPropertyList(AMQPContentPropertyList):
     """
-    The basic class provides methods that support an industry-standard messaging model.
+    The basic class provides methods that support an industry-standard
+    
+    messaging model.
     """
     FIELDS = [
         Field(u'content-type', u'shortstr', u'shortstr', False),
@@ -2390,72 +2510,48 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         :type reserved: binary type (max length 255) (AMQP as shortstr)
         """
         zpf = bytearray([
-            (('content_type' in kwargs) << 7) | (
-            ('content_encoding' in kwargs) << 6) | (
-            ('headers' in kwargs) << 5) | (
-            ('delivery_mode' in kwargs) << 4) | (
-            ('priority' in kwargs) << 3) | (
-            ('correlation_id' in kwargs) << 2) | (
-            ('reply_to' in kwargs) << 1) | int('expiration' in kwargs),
-            (('message_id' in kwargs) << 7) | (
-            ('timestamp' in kwargs) << 6) | (('type_' in kwargs) << 5) | (
-            ('user_id' in kwargs) << 4) | (('app_id' in kwargs) << 3) | (
-            ('reserved' in kwargs) << 2)
+            (('content_type' in kwargs) << 7) | (('content_encoding' in kwargs) << 6) | (('headers' in kwargs) << 5) | (('delivery_mode' in kwargs) << 4) | (('priority' in kwargs) << 3) | (('correlation_id' in kwargs) << 2) | (('reply_to' in kwargs) << 1) | int('expiration' in kwargs),
+            (('message_id' in kwargs) << 7) | (('timestamp' in kwargs) << 6) | (('type_' in kwargs) << 5) | (('user_id' in kwargs) << 4) | (('app_id' in kwargs) << 3) | (('reserved' in kwargs) << 2)
         ])
         zpf = six.binary_type(zpf)
 
-        #        If you know in advance what properties you will be using, use typized constructors like
-        #
-        #          runs once
-        #            my_type = BasicContentPropertyList.typize('content_type', 'content_encoding')
-        #
-        #           runs many times
-        #            props = my_type('text/plain', 'utf8')
-        #
-        #       instead of
-        #
-        #           # runs many times
-        #           props = BasicContentPropertyList(content_type='text/plain', content_encoding='utf8')
-        #
-        #       This way you will be faster.
-        #
-        #       If you do not know in advance what properties you will be using, it is correct to use
-        #       this constructor.
+#        If you know in advance what properties you will be using, use typized constructors like
+#
+#          runs once
+#            my_type = BasicContentPropertyList.typize('content_type', 'content_encoding')
+#
+#           runs many times
+#            props = my_type('text/plain', 'utf8')
+#
+#       instead of
+#
+#           # runs many times
+#           props = BasicContentPropertyList(content_type='text/plain', content_encoding='utf8')
+#
+#       This way you will be faster.
+#
+#       If you do not know in advance what properties you will be using, it is correct to use
+#       this constructor.
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[zpf](**kwargs)
         else:
-            logger.debug(
-                'Property field (BasicContentPropertyList:%s) not seen yet, compiling',
-                repr(zpf))
-            c = compile_particular_content_property_list_class(zpf,
-                                                               BasicContentPropertyList.FIELDS)
+            logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
             BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
             return c(**kwargs)
 
     @staticmethod
     def typize(*fields):
         zpf = bytearray([
-            (('content_type' in fields) << 7) | (
-            ('content_encoding' in fields) << 6) | (
-            ('headers' in fields) << 5) | (
-            ('delivery_mode' in fields) << 4) | (
-            ('priority' in fields) << 3) | (
-            ('correlation_id' in fields) << 2) | (
-            ('reply_to' in fields) << 1) | int('expiration' in kwargs),
-            (('message_id' in fields) << 7) | (
-            ('timestamp' in fields) << 6) | (('type_' in fields) << 5) | (
-            ('user_id' in fields) << 4) | (('app_id' in fields) << 3) | (
-            ('reserved' in fields) << 2)
+        (('content_type' in fields) << 7) | (('content_encoding' in fields) << 6) | (('headers' in fields) << 5) | (('delivery_mode' in fields) << 4) | (('priority' in fields) << 3) | (('correlation_id' in fields) << 2) | (('reply_to' in fields) << 1) | int('expiration' in kwargs),
+        (('message_id' in fields) << 7) | (('timestamp' in fields) << 6) | (('type_' in fields) << 5) | (('user_id' in fields) << 4) | (('app_id' in fields) << 3) | (('reserved' in fields) << 2)
         ])
         zpf = six.binary_type(zpf)
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[zpf]
         else:
-            logger.debug(
-                'Property field (BasicContentPropertyList:%s) not seen yet, compiling',
-                repr(zpf))
-            c = compile_particular_content_property_list_class(zpf,
-                                                               BasicContentPropertyList.FIELDS)
+            logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
             BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
             return c
 
@@ -2473,17 +2569,12 @@ class BasicContentPropertyList(AMQPContentPropertyList):
         else:
             while buf[offset + pfl - 1] & 1:
                 pfl += 2
-        zpf = BasicContentPropertyList.zero_property_flags(
-            buf[offset:offset + pfl]).tobytes()
+        zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset+pfl]).tobytes()
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
-            return BasicContentPropertyList.PARTICULAR_CLASSES[
-                zpf].from_buffer(buf, offset)
+            return BasicContentPropertyList.PARTICULAR_CLASSES[zpf].from_buffer(buf, offset)
         else:
-            logger.debug(
-                'Property field (BasicContentPropertyList:%s) not seen yet, compiling',
-                repr(zpf))
-            c = compile_particular_content_property_list_class(zpf,
-                                                               BasicContentPropertyList.FIELDS)
+            logger.debug('Property field (BasicContentPropertyList:%s) not seen yet, compiling', repr(zpf))
+            c = compile_particular_content_property_list_class(zpf, BasicContentPropertyList.FIELDS)
             BasicContentPropertyList.PARTICULAR_CLASSES[zpf] = c
             return c.from_buffer(buf, offset)
 
@@ -2500,20 +2591,20 @@ class BasicAck(AMQPMethodPayload):
     The acknowledgement can be for a single message or a set of
     messages up to and including a specific message.
     """
-    __slots__ = (u'delivery_tag', u'multiple',)
+    __slots__ = (u'delivery_tag', u'multiple', )
 
     NAME = u'basic.ack'
 
-    INDEX = (60, 80)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x50'  # CLASS ID + METHOD ID
+    INDEX = (60, 80)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x50'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
         Field(u'multiple', u'bit', u'bit', reserved=False),
     ]
@@ -2537,7 +2628,7 @@ class BasicAck(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!QB', self.delivery_tag, (self.multiple << 0)))
-
+        
     def get_size(self):
         return 9
 
@@ -2555,26 +2646,26 @@ class BasicConsume(AMQPMethodPayload):
     """
     Start a queue consumer
     
-    This method asks the server to start a "consumer", which is a transient request for
-    messages from a specific queue. Consumers last as long as the channel they were
+    This method asks the server to start a "consumer", which is a
+    transient request for
+    messages from a specific queue. Consumers last as long as the
+    channel they were
     declared on, or until the client cancels them.
     """
-    __slots__ = (
-    u'queue', u'consumer_tag', u'no_local', u'no_ack', u'exclusive',
-    u'no_wait', u'arguments',)
+    __slots__ = (u'queue', u'consumer_tag', u'no_local', u'no_ack', u'exclusive', u'no_wait', u'arguments', )
 
     NAME = u'basic.consume'
 
-    INDEX = (60, 20)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x14'  # CLASS ID + METHOD ID
+    INDEX = (60, 20)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
@@ -2585,26 +2676,29 @@ class BasicConsume(AMQPMethodPayload):
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
 
-    def __init__(self, queue, consumer_tag, no_local, no_ack, exclusive,
-                 no_wait, arguments):
+    def __init__(self, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments):
         """
         Create frame basic.consume
 
         :param queue: Specifies the name of the queue to consume from.
         :type queue: binary type (max length 255) (queue-name in AMQP)
-        :param consumer_tag: Specifies the identifier for the consumer. the consumer tag is local to a
-            channel, so two clients can use the same consumer tags. If this field is
+        :param consumer_tag: Specifies the identifier for the consumer. the consumer tag
+            is local to a
+            channel, so two clients can use the same consumer tags. If
+            this field is
             empty the server will generate a unique tag.
         :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
         :type no_local: bool (no-local in AMQP)
         :type no_ack: bool (no-ack in AMQP)
         :param exclusive: Request exclusive access
-            Request exclusive consumer access, meaning only this consumer can access the
+            Request exclusive consumer access, meaning only this
+            consumer can access the
             queue.
         :type exclusive: bool (bit in AMQP)
         :type no_wait: bool (no-wait in AMQP)
         :param arguments: Arguments for declaration
-            A set of arguments for the consume. The syntax and semantics of these
+            A set of arguments for the consume. The syntax and semantics
+            of these
             arguments depends on the server implementation.
         :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
         """
@@ -2622,25 +2716,22 @@ class BasicConsume(AMQPMethodPayload):
         buf.write(self.queue)
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
-        buf.write(struct.pack('!B',
-                              (self.no_local << 0) | (self.no_ack << 1) | (
-                              self.exclusive << 2) | (self.no_wait << 3)))
+        buf.write(struct.pack('!B', (self.no_local << 0) | (self.no_ack << 1) | (self.exclusive << 2) | (self.no_wait << 3)))
         enframe_table(buf, self.arguments)
-
+        
     def get_size(self):
-        return 5 + len(self.queue) + len(self.consumer_tag) + frame_table_size(
-            self.arguments)
+        return 5 + len(self.queue) + len(self.consumer_tag) + frame_table_size(self.arguments)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        consumer_tag = buf[offset:offset + s_len]
+        consumer_tag = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -2651,18 +2742,21 @@ class BasicConsume(AMQPMethodPayload):
         offset += 1
         arguments, delta = deframe_table(buf, offset)
         offset += delta
-        return BasicConsume(queue, consumer_tag, no_local, no_ack, exclusive,
-                            no_wait, arguments)
+        return BasicConsume(queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments)
 
 
 class BasicCancel(AMQPMethodPayload):
     """
     End a queue consumer
     
-    This method cancels a consumer. This does not affect already delivered
-    messages, but it does mean the server will not send any more messages for
-    that consumer. The client may receive an arbitrary number of messages in
-    between sending the cancel method and receiving the cancel-ok reply.
+    This method cancels a consumer. This does not affect already
+    delivered
+    messages, but it does mean the server will not send any more
+    messages for
+    that consumer. The client may receive an arbitrary number of
+    messages in
+    between sending the cancel method and receiving the cancel-ok
+    reply.
     It may also be sent from the server to the client in the event
     of the consumer being unexpectedly cancelled (i.e. cancelled
     for any reason other than the server receiving the
@@ -2674,20 +2768,20 @@ class BasicCancel(AMQPMethodPayload):
     capable of accepting the method, through some means of
     capability negotiation.
     """
-    __slots__ = (u'consumer_tag', u'no_wait',)
+    __slots__ = (u'consumer_tag', u'no_wait', )
 
     NAME = u'basic.cancel'
 
-    INDEX = (60, 30)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x1E'  # CLASS ID + METHOD ID
+    INDEX = (60, 30)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
@@ -2706,7 +2800,7 @@ class BasicCancel(AMQPMethodPayload):
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
         buf.write(struct.pack('!B', (self.no_wait << 0)))
-
+        
     def get_size(self):
         return 2 + len(self.consumer_tag)
 
@@ -2715,7 +2809,7 @@ class BasicCancel(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        consumer_tag = buf[offset:offset + s_len]
+        consumer_tag = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -2728,23 +2822,24 @@ class BasicConsumeOk(AMQPMethodPayload):
     """
     Confirm a new consumer
     
-    The server provides the client with a consumer tag, which is used by the client
+    The server provides the client with a consumer tag, which is
+    used by the client
     for methods called on the consumer at a later stage.
     """
-    __slots__ = (u'consumer_tag',)
+    __slots__ = (u'consumer_tag', )
 
     NAME = u'basic.consume-ok'
 
-    INDEX = (60, 21)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x15'  # CLASS ID + METHOD ID
+    INDEX = (60, 21)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
     ]
 
@@ -2752,7 +2847,8 @@ class BasicConsumeOk(AMQPMethodPayload):
         """
         Create frame basic.consume-ok
 
-        :param consumer_tag: Holds the consumer tag specified by the client or provided by the server.
+        :param consumer_tag: Holds the consumer tag specified by the client or provided
+            by the server.
         :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
         """
         self.consumer_tag = consumer_tag
@@ -2760,7 +2856,7 @@ class BasicConsumeOk(AMQPMethodPayload):
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
-
+        
     def get_size(self):
         return 1 + len(self.consumer_tag)
 
@@ -2769,7 +2865,7 @@ class BasicConsumeOk(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        consumer_tag = buf[offset:offset + s_len]
+        consumer_tag = buf[offset:offset+s_len]
         offset += s_len
         return BasicConsumeOk(consumer_tag)
 
@@ -2780,20 +2876,20 @@ class BasicCancelOk(AMQPMethodPayload):
     
     This method confirms that the cancellation was completed.
     """
-    __slots__ = (u'consumer_tag',)
+    __slots__ = (u'consumer_tag', )
 
     NAME = u'basic.cancel-ok'
 
-    INDEX = (60, 31)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x1F'  # CLASS ID + METHOD ID
+    INDEX = (60, 31)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
     ]
 
@@ -2808,7 +2904,7 @@ class BasicCancelOk(AMQPMethodPayload):
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
-
+        
     def get_size(self):
         return 1 + len(self.consumer_tag)
 
@@ -2817,7 +2913,7 @@ class BasicCancelOk(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        consumer_tag = buf[offset:offset + s_len]
+        consumer_tag = buf[offset:offset+s_len]
         offset += s_len
         return BasicCancelOk(consumer_tag)
 
@@ -2826,26 +2922,28 @@ class BasicDeliver(AMQPMethodPayload):
     """
     Notify the client of a consumer message
     
-    This method delivers a message to the client, via a consumer. In the asynchronous
-    message delivery model, the client starts a consumer using the Consume method, then
-    the server responds with Deliver methods as and when messages arrive for that
+    This method delivers a message to the client, via a consumer. In
+    the asynchronous
+    message delivery model, the client starts a consumer using the
+    Consume method, then
+    the server responds with Deliver methods as and when messages
+    arrive for that
     consumer.
     """
-    __slots__ = (u'consumer_tag', u'delivery_tag', u'redelivered', u'exchange',
-                 u'routing_key',)
+    __slots__ = (u'consumer_tag', u'delivery_tag', u'redelivered', u'exchange', u'routing_key', )
 
     NAME = u'basic.deliver'
 
-    INDEX = (60, 60)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x3C'  # CLASS ID + METHOD ID
+    INDEX = (60, 60)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x3C'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
         Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
         Field(u'redelivered', u'redelivered', u'bit', reserved=False),
@@ -2853,19 +2951,20 @@ class BasicDeliver(AMQPMethodPayload):
         Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
     ]
 
-    def __init__(self, consumer_tag, delivery_tag, redelivered, exchange,
-                 routing_key):
+    def __init__(self, consumer_tag, delivery_tag, redelivered, exchange, routing_key):
         """
         Create frame basic.deliver
 
         :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
         :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
         :type redelivered: bool (redelivered in AMQP)
-        :param exchange: Specifies the name of the exchange that the message was originally published to.
+        :param exchange: Specifies the name of the exchange that the message was
+            originally published to.
             May be empty, indicating the default exchange.
         :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
-            Specifies the routing key name specified when the message was published.
+            Specifies the routing key name specified when the message
+            was published.
         :type routing_key: binary type (max length 255) (shortstr in AMQP)
         """
         self.consumer_tag = consumer_tag
@@ -2877,23 +2976,20 @@ class BasicDeliver(AMQPMethodPayload):
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', len(self.consumer_tag)))
         buf.write(self.consumer_tag)
-        buf.write(
-            struct.pack('!QBB', self.delivery_tag, (self.redelivered << 0),
-                        len(self.exchange)))
+        buf.write(struct.pack('!QBB', self.delivery_tag, (self.redelivered << 0), len(self.exchange)))
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
-
+        
     def get_size(self):
-        return 12 + len(self.consumer_tag) + len(self.exchange) + len(
-            self.routing_key)
+        return 12 + len(self.consumer_tag) + len(self.exchange) + len(self.routing_key)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        consumer_tag = buf[offset:offset + s_len]
+        consumer_tag = buf[offset:offset+s_len]
         offset += s_len
         delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
         offset += 8
@@ -2901,38 +2997,39 @@ class BasicDeliver(AMQPMethodPayload):
         offset += 1
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
-        return BasicDeliver(consumer_tag, delivery_tag, redelivered, exchange,
-                            routing_key)
+        return BasicDeliver(consumer_tag, delivery_tag, redelivered, exchange, routing_key)
 
 
 class BasicGet(AMQPMethodPayload):
     """
     Direct access to a queue
     
-    This method provides a direct access to the messages in a queue using a synchronous
-    dialogue that is designed for specific types of application where synchronous
+    This method provides a direct access to the messages in a queue
+    using a synchronous
+    dialogue that is designed for specific types of application
+    where synchronous
     functionality is more important than performance.
     """
-    __slots__ = (u'queue', u'no_ack',)
+    __slots__ = (u'queue', u'no_ack', )
 
     NAME = u'basic.get'
 
-    INDEX = (60, 70)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x46'  # CLASS ID + METHOD ID
+    INDEX = (60, 70)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x46'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'no-ack', u'no-ack', u'bit', reserved=False),
@@ -2954,7 +3051,7 @@ class BasicGet(AMQPMethodPayload):
         buf.write(struct.pack('!B', len(self.queue)))
         buf.write(self.queue)
         buf.write(struct.pack('!B', (self.no_ack << 0)))
-
+        
     def get_size(self):
         return 4 + len(self.queue)
 
@@ -2963,7 +3060,7 @@ class BasicGet(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        queue = buf[offset:offset + s_len]
+        queue = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -2976,25 +3073,26 @@ class BasicGetOk(AMQPMethodPayload):
     """
     Provide client with a message
     
-    This method delivers a message to the client following a get method. A message
-    delivered by 'get-ok' must be acknowledged unless the no-ack option was set in the
+    This method delivers a message to the client following a get
+    method. A message
+    delivered by 'get-ok' must be acknowledged unless the no-ack
+    option was set in the
     get method.
     """
-    __slots__ = (u'delivery_tag', u'redelivered', u'exchange', u'routing_key',
-                 u'message_count',)
+    __slots__ = (u'delivery_tag', u'redelivered', u'exchange', u'routing_key', u'message_count', )
 
     NAME = u'basic.get-ok'
 
-    INDEX = (60, 71)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x47'  # CLASS ID + METHOD ID
+    INDEX = (60, 71)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x47'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
         Field(u'redelivered', u'redelivered', u'bit', reserved=False),
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
@@ -3002,18 +3100,19 @@ class BasicGetOk(AMQPMethodPayload):
         Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
 
-    def __init__(self, delivery_tag, redelivered, exchange, routing_key,
-                 message_count):
+    def __init__(self, delivery_tag, redelivered, exchange, routing_key, message_count):
         """
         Create frame basic.get-ok
 
         :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
         :type redelivered: bool (redelivered in AMQP)
-        :param exchange: Specifies the name of the exchange that the message was originally published to.
+        :param exchange: Specifies the name of the exchange that the message was
+            originally published to.
             If empty, the message was published to the default exchange.
         :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
-            Specifies the routing key name specified when the message was published.
+            Specifies the routing key name specified when the message
+            was published.
         :type routing_key: binary type (max length 255) (shortstr in AMQP)
         :type message_count: int, 32 bit unsigned (message-count in AMQP)
         """
@@ -3024,14 +3123,12 @@ class BasicGetOk(AMQPMethodPayload):
         self.message_count = message_count
 
     def write_arguments(self, buf):
-        buf.write(
-            struct.pack('!QBB', self.delivery_tag, (self.redelivered << 0),
-                        len(self.exchange)))
+        buf.write(struct.pack('!QBB', self.delivery_tag, (self.redelivered << 0), len(self.exchange)))
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
         buf.write(struct.pack('!I', self.message_count))
-
+        
     def get_size(self):
         return 15 + len(self.exchange) + len(self.routing_key)
 
@@ -3044,40 +3141,40 @@ class BasicGetOk(AMQPMethodPayload):
         offset += 1
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
         message_count, = struct.unpack_from('!I', buf, offset)
         offset += 4
-        return BasicGetOk(delivery_tag, redelivered, exchange, routing_key,
-                          message_count)
+        return BasicGetOk(delivery_tag, redelivered, exchange, routing_key, message_count)
 
 
 class BasicGetEmpty(AMQPMethodPayload):
     """
     Indicate no messages available
     
-    This method tells the client that the queue has no messages available for the
+    This method tells the client that the queue has no messages
+    available for the
     client.
     """
     __slots__ = ()
 
     NAME = u'basic.get-empty'
 
-    INDEX = (60, 72)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x48'  # CLASS ID + METHOD ID
+    INDEX = (60, 72)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x48'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x0D\x00\x3C\x00\x48\x00\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
 
@@ -3086,12 +3183,13 @@ class BasicGetEmpty(AMQPMethodPayload):
         Create frame basic.get-empty
         """
 
+
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        offset += s_len  # reserved field!
+        offset += s_len # reserved field!
         return BasicGetEmpty()
 
 
@@ -3099,27 +3197,31 @@ class BasicNack(AMQPMethodPayload):
     """
     Reject one or more incoming messages
     
-    This method allows a client to reject one or more incoming messages. It can be
-    used to interrupt and cancel large incoming messages, or return untreatable
+    This method allows a client to reject one or more incoming
+    messages. It can be
+    used to interrupt and cancel large incoming messages, or return
+    untreatable
     messages to their original queue.
-    This method is also used by the server to inform publishers on channels in
-    confirm mode of unhandled messages.  If a publisher receives this method, it
+    This method is also used by the server to inform publishers on
+    channels in
+    confirm mode of unhandled messages. If a publisher receives this
+    method, it
     probably needs to republish the offending messages.
     """
-    __slots__ = (u'delivery_tag', u'multiple', u'requeue',)
+    __slots__ = (u'delivery_tag', u'multiple', u'requeue', )
 
     NAME = u'basic.nack'
 
-    INDEX = (60, 120)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x78'  # CLASS ID + METHOD ID
+    INDEX = (60, 120)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x78'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
         Field(u'multiple', u'bit', u'bit', reserved=False),
         Field(u'requeue', u'bit', u'bit', reserved=False),
@@ -3139,8 +3241,10 @@ class BasicNack(AMQPMethodPayload):
             all outstanding messages.
         :type multiple: bool (bit in AMQP)
         :param requeue: Requeue the message
-            If requeue is true, the server will attempt to requeue the message.  If requeue
-            is false or the requeue  attempt fails the messages are discarded or dead-lettered.
+            If requeue is true, the server will attempt to requeue the
+            message. If requeue
+            is false or the requeue attempt fails the messages are
+            discarded or dead-lettered.
             Clients receiving the Nack methods should ignore this flag.
         :type requeue: bool (bit in AMQP)
         """
@@ -3149,9 +3253,8 @@ class BasicNack(AMQPMethodPayload):
         self.requeue = requeue
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!QB', self.delivery_tag,
-                              (self.multiple << 0) | (self.requeue << 1)))
-
+        buf.write(struct.pack('!QB', self.delivery_tag, (self.multiple << 0) | (self.requeue << 1)))
+        
     def get_size(self):
         return 9
 
@@ -3170,24 +3273,26 @@ class BasicPublish(AMQPMethodPayload):
     """
     Publish a message
     
-    This method publishes a message to a specific exchange. The message will be routed
-    to queues as defined by the exchange configuration and distributed to any active
+    This method publishes a message to a specific exchange. The
+    message will be routed
+    to queues as defined by the exchange configuration and
+    distributed to any active
     consumers when the transaction, if any, is committed.
     """
-    __slots__ = (u'exchange', u'routing_key', u'mandatory', u'immediate',)
+    __slots__ = (u'exchange', u'routing_key', u'mandatory', u'immediate', )
 
     NAME = u'basic.publish'
 
-    INDEX = (60, 40)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x28'  # CLASS ID + METHOD ID
+    INDEX = (60, 40)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x28'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reserved-1', u'short', u'short', reserved=True),
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
         Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
@@ -3199,24 +3304,35 @@ class BasicPublish(AMQPMethodPayload):
         """
         Create frame basic.publish
 
-        :param exchange: Specifies the name of the exchange to publish to. the exchange name can be
-            empty, meaning the default exchange. If the exchange name is specified, and that
-            exchange does not exist, the server will raise a channel exception.
+        :param exchange: Specifies the name of the exchange to publish to. the
+            exchange name can be
+            empty, meaning the default exchange. If the exchange name is
+            specified, and that
+            exchange does not exist, the server will raise a channel
+            exception.
         :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
-            Specifies the routing key for the message. The routing key is used for routing
+            Specifies the routing key for the message. The routing key
+            is used for routing
             messages depending on the exchange configuration.
         :type routing_key: binary type (max length 255) (shortstr in AMQP)
         :param mandatory: Indicate mandatory routing
-            This flag tells the server how to react if the message cannot be routed to a
-            queue. If this flag is set, the server will return an unroutable message with a
-            Return method. If this flag is zero, the server silently drops the message.
+            This flag tells the server how to react if the message
+            cannot be routed to a
+            queue. If this flag is set, the server will return an
+            unroutable message with a
+            Return method. If this flag is zero, the server silently
+            drops the message.
         :type mandatory: bool (bit in AMQP)
         :param immediate: Request immediate delivery
-            This flag tells the server how to react if the message cannot be routed to a
-            queue consumer immediately. If this flag is set, the server will return an
-            undeliverable message with a Return method. If this flag is zero, the server
-            will queue the message, but with no guarantee that it will ever be consumed.
+            This flag tells the server how to react if the message
+            cannot be routed to a
+            queue consumer immediately. If this flag is set, the server
+            will return an
+            undeliverable message with a Return method. If this flag is
+            zero, the server
+            will queue the message, but with no guarantee that it will
+            ever be consumed.
         :type immediate: bool (bit in AMQP)
         """
         self.exchange = exchange
@@ -3230,9 +3346,8 @@ class BasicPublish(AMQPMethodPayload):
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
-        buf.write(
-            struct.pack('!B', (self.mandatory << 0) | (self.immediate << 1)))
-
+        buf.write(struct.pack('!B', (self.mandatory << 0) | (self.immediate << 1)))
+        
     def get_size(self):
         return 5 + len(self.exchange) + len(self.routing_key)
 
@@ -3241,11 +3356,11 @@ class BasicPublish(AMQPMethodPayload):
         offset = start_offset
         s_len, = struct.unpack_from('!2xB', buf, offset)
         offset += 3
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
         _bit, = struct.unpack_from('!B', buf, offset)
         offset += 0
@@ -3259,26 +3374,30 @@ class BasicQos(AMQPMethodPayload):
     """
     Specify quality of service
     
-    This method requests a specific quality of service. The QoS can be specified for the
-    current channel or for all channels on the connection. The particular properties and
-    semantics of a qos method always depend on the content class semantics. Though the
-    qos method could in principle apply to both peers, it is currently meaningful only
+    This method requests a specific quality of service. The QoS can
+    be specified for the
+    current channel or for all channels on the connection. The
+    particular properties and
+    semantics of a qos method always depend on the content class
+    semantics. Though the
+    qos method could in principle apply to both peers, it is
+    currently meaningful only
     for the server.
     """
-    __slots__ = (u'prefetch_size', u'prefetch_count', u'global_',)
+    __slots__ = (u'prefetch_size', u'prefetch_count', u'global_', )
 
     NAME = u'basic.qos'
 
-    INDEX = (60, 10)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x0A'  # CLASS ID + METHOD ID
+    INDEX = (60, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'prefetch-size', u'long', u'long', reserved=False),
         Field(u'prefetch-count', u'short', u'short', reserved=False),
         Field(u'global', u'bit', u'bit', reserved=False),
@@ -3289,20 +3408,32 @@ class BasicQos(AMQPMethodPayload):
         Create frame basic.qos
 
         :param prefetch_size: Prefetch window in octets
-            The client can request that messages be sent in advance so that when the client
-            finishes processing a message, the following message is already held locally,
-            rather than needing to be sent down the channel. Prefetching gives a performance
-            improvement. This field specifies the prefetch window size in octets. The server
-            will send a message in advance if it is equal to or smaller in size than the
-            available prefetch size (and also falls into other prefetch limits). May be set
-            to zero, meaning "no specific limit", although other prefetch limits may still
-            apply. The prefetch-size is ignored if the no-ack option is set.
+            The client can request that messages be sent in advance so
+            that when the client
+            finishes processing a message, the following message is
+            already held locally,
+            rather than needing to be sent down the channel. Prefetching
+            gives a performance
+            improvement. This field specifies the prefetch window size
+            in octets. The server
+            will send a message in advance if it is equal to or smaller
+            in size than the
+            available prefetch size (and also falls into other prefetch
+            limits). May be set
+            to zero, meaning "no specific limit", although other
+            prefetch limits may still
+            apply. The prefetch-size is ignored if the no-ack option is
+            set.
         :type prefetch_size: int, 32 bit unsigned (long in AMQP)
         :param prefetch_count: Prefetch window in messages
-            Specifies a prefetch window in terms of whole messages. This field may be used
-            in combination with the prefetch-size field; a message will only be sent in
-            advance if both prefetch windows (and those at the channel and connection level)
-            allow it. The prefetch-count is ignored if the no-ack option is set.
+            Specifies a prefetch window in terms of whole messages. This
+            field may be used
+            in combination with the prefetch-size field; a message will
+            only be sent in
+            advance if both prefetch windows (and those at the channel
+            and connection level)
+            allow it. The prefetch-count is ignored if the no-ack option
+            is set.
         :type prefetch_count: int, 16 bit unsigned (short in AMQP)
         :param global_: Apply to entire connection
             RabbitMQ has reinterpreted this field. The original
@@ -3320,17 +3451,15 @@ class BasicQos(AMQPMethodPayload):
         self.global_ = global_
 
     def write_arguments(self, buf):
-        buf.write(struct.pack('!IHB', self.prefetch_size, self.prefetch_count,
-                              (self.global_ << 0)))
-
+        buf.write(struct.pack('!IHB', self.prefetch_size, self.prefetch_count, (self.global_ << 0)))
+        
     def get_size(self):
         return 7
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
-        prefetch_size, prefetch_count, _bit, = struct.unpack_from('!IHB', buf,
-                                                                  offset)
+        prefetch_size, prefetch_count, _bit, = struct.unpack_from('!IHB', buf, offset)
         offset += 6
         global_ = bool(_bit >> 0)
         offset += 1
@@ -3341,20 +3470,22 @@ class BasicQosOk(AMQPMethodPayload):
     """
     Confirm the requested qos
     
-    This method tells the client that the requested QoS levels could be handled by the
-    server. The requested QoS applies to all active consumers until a new QoS is
+    This method tells the client that the requested QoS levels could
+    be handled by the
+    server. The requested QoS applies to all active consumers until
+    a new QoS is
     defined.
     """
     __slots__ = ()
 
     NAME = u'basic.qos-ok'
 
-    INDEX = (60, 11)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x0B'  # CLASS ID + METHOD ID
+    INDEX = (60, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x3C\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3362,6 +3493,7 @@ class BasicQosOk(AMQPMethodPayload):
         """
         Create frame basic.qos-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3373,25 +3505,28 @@ class BasicReturn(AMQPMethodPayload):
     """
     Return a failed message
     
-    This method returns an undeliverable message that was published with the "immediate"
-    flag set, or an unroutable message published with the "mandatory" flag set. The
-    reply code and text provide information about the reason that the message was
+    This method returns an undeliverable message that was published
+    with the "immediate"
+    flag set, or an unroutable message published with the
+    "mandatory" flag set. The
+    reply code and text provide information about the reason that
+    the message was
     undeliverable.
     """
-    __slots__ = (u'reply_code', u'reply_text', u'exchange', u'routing_key',)
+    __slots__ = (u'reply_code', u'reply_text', u'exchange', u'routing_key', )
 
     NAME = u'basic.return'
 
-    INDEX = (60, 50)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x32'  # CLASS ID + METHOD ID
+    INDEX = (60, 50)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x32'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'reply-code', u'reply-code', u'short', reserved=False),
         Field(u'reply-text', u'reply-text', u'shortstr', reserved=False),
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
@@ -3404,11 +3539,13 @@ class BasicReturn(AMQPMethodPayload):
 
         :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
         :type reply_text: binary type (max length 255) (reply-text in AMQP)
-        :param exchange: Specifies the name of the exchange that the message was originally published
-            to.  May be empty, meaning the default exchange.
+        :param exchange: Specifies the name of the exchange that the message was
+            originally published
+            to. May be empty, meaning the default exchange.
         :type exchange: binary type (max length 255) (exchange-name in AMQP)
         :param routing_key: Message routing key
-            Specifies the routing key name specified when the message was published.
+            Specifies the routing key name specified when the message
+            was published.
         :type routing_key: binary type (max length 255) (shortstr in AMQP)
         """
         self.reply_code = reply_code
@@ -3423,25 +3560,24 @@ class BasicReturn(AMQPMethodPayload):
         buf.write(self.exchange)
         buf.write(struct.pack('!B', len(self.routing_key)))
         buf.write(self.routing_key)
-
+        
     def get_size(self):
-        return 5 + len(self.reply_text) + len(self.exchange) + len(
-            self.routing_key)
+        return 5 + len(self.reply_text) + len(self.exchange) + len(self.routing_key)
 
     @staticmethod
     def from_buffer(buf, start_offset):
         offset = start_offset
         reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
         offset += 3
-        reply_text = buf[offset:offset + s_len]
+        reply_text = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        exchange = buf[offset:offset + s_len]
+        exchange = buf[offset:offset+s_len]
         offset += s_len
         s_len, = struct.unpack_from('!B', buf, offset)
         offset += 1
-        routing_key = buf[offset:offset + s_len]
+        routing_key = buf[offset:offset+s_len]
         offset += s_len
         return BasicReturn(reply_code, reply_text, exchange, routing_key)
 
@@ -3450,24 +3586,26 @@ class BasicReject(AMQPMethodPayload):
     """
     Reject an incoming message
     
-    This method allows a client to reject a message. It can be used to interrupt and
-    cancel large incoming messages, or return untreatable messages to their original
+    This method allows a client to reject a message. It can be used
+    to interrupt and
+    cancel large incoming messages, or return untreatable messages
+    to their original
     queue.
     """
-    __slots__ = (u'delivery_tag', u'requeue',)
+    __slots__ = (u'delivery_tag', u'requeue', )
 
     NAME = u'basic.reject'
 
-    INDEX = (60, 90)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x5A'  # CLASS ID + METHOD ID
+    INDEX = (60, 90)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x5A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
         Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
@@ -3478,8 +3616,10 @@ class BasicReject(AMQPMethodPayload):
 
         :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
         :param requeue: Requeue the message
-            If requeue is true, the server will attempt to requeue the message.  If requeue
-            is false or the requeue  attempt fails the messages are discarded or dead-lettered.
+            If requeue is true, the server will attempt to requeue the
+            message. If requeue
+            is false or the requeue attempt fails the messages are
+            discarded or dead-lettered.
         :type requeue: bool (bit in AMQP)
         """
         self.delivery_tag = delivery_tag
@@ -3487,7 +3627,7 @@ class BasicReject(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!QB', self.delivery_tag, (self.requeue << 0)))
-
+        
     def get_size(self):
         return 9
 
@@ -3505,24 +3645,26 @@ class BasicRecoverAsync(AMQPMethodPayload):
     """
     Redeliver unacknowledged messages
     
-    This method asks the server to redeliver all unacknowledged messages on a
-    specified channel. Zero or more messages may be redelivered.  This method
+    This method asks the server to redeliver all unacknowledged
+    messages on a
+    specified channel. Zero or more messages may be redelivered.
+    This method
     is deprecated in favour of the synchronous Recover/Recover-Ok.
     """
-    __slots__ = (u'requeue',)
+    __slots__ = (u'requeue', )
 
     NAME = u'basic.recover-async'
 
-    INDEX = (60, 100)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x64'  # CLASS ID + METHOD ID
+    INDEX = (60, 100)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x64'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
 
@@ -3531,8 +3673,10 @@ class BasicRecoverAsync(AMQPMethodPayload):
         Create frame basic.recover-async
 
         :param requeue: Requeue the message
-            If this field is zero, the message will be redelivered to the original
-            recipient. If this bit is 1, the server will attempt to requeue the message,
+            If this field is zero, the message will be redelivered to
+            the original
+            recipient. If this bit is 1, the server will attempt to
+            requeue the message,
             potentially then delivering it to an alternative subscriber.
         :type requeue: bool (bit in AMQP)
         """
@@ -3540,7 +3684,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', (self.requeue << 0)))
-
+        
     def get_size(self):
         return 1
 
@@ -3558,24 +3702,26 @@ class BasicRecover(AMQPMethodPayload):
     """
     Redeliver unacknowledged messages
     
-    This method asks the server to redeliver all unacknowledged messages on a
-    specified channel. Zero or more messages may be redelivered.  This method
+    This method asks the server to redeliver all unacknowledged
+    messages on a
+    specified channel. Zero or more messages may be redelivered.
+    This method
     replaces the asynchronous Recover.
     """
-    __slots__ = (u'requeue',)
+    __slots__ = (u'requeue', )
 
     NAME = u'basic.recover'
 
-    INDEX = (60, 110)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x6E'  # CLASS ID + METHOD ID
+    INDEX = (60, 110)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x6E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
 
@@ -3584,8 +3730,10 @@ class BasicRecover(AMQPMethodPayload):
         Create frame basic.recover
 
         :param requeue: Requeue the message
-            If this field is zero, the message will be redelivered to the original
-            recipient. If this bit is 1, the server will attempt to requeue the message,
+            If this field is zero, the message will be redelivered to
+            the original
+            recipient. If this bit is 1, the server will attempt to
+            requeue the message,
             potentially then delivering it to an alternative subscriber.
         :type requeue: bool (bit in AMQP)
         """
@@ -3593,7 +3741,7 @@ class BasicRecover(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', (self.requeue << 0)))
-
+        
     def get_size(self):
         return 1
 
@@ -3617,12 +3765,12 @@ class BasicRecoverOk(AMQPMethodPayload):
 
     NAME = u'basic.recover-ok'
 
-    INDEX = (60, 111)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x3C\x00\x6F'  # CLASS ID + METHOD ID
+    INDEX = (60, 111)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x3C\x00\x6F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x3C\x00\x6F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3630,6 +3778,7 @@ class BasicRecoverOk(AMQPMethodPayload):
         """
         Create frame basic.recover-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3639,15 +3788,22 @@ class BasicRecoverOk(AMQPMethodPayload):
 
 class Tx(AMQPClass):
     """
-    The tx class allows publish and ack operations to be batched into atomic
+    The tx class allows publish and ack operations to be batched into
     
-    units of work.  The intention is that all publish and ack requests issued
-    within a transaction will complete successfully or none of them will.
-    Servers SHOULD implement atomic transactions at least where all publish
-    or ack requests affect a single queue.  Transactions that cover multiple
-    queues may be non-atomic, given that queues can be created and destroyed
+    atomic
+    units of work. The intention is that all publish and ack requests
+    issued
+    within a transaction will complete successfully or none of them
+    will.
+    Servers SHOULD implement atomic transactions at least where all
+    publish
+    or ack requests affect a single queue. Transactions that cover
+    multiple
+    queues may be non-atomic, given that queues can be created and
+    destroyed
     asynchronously, and such events do not form part of any transaction.
-    Further, the behaviour of transactions with respect to the immediate and
+    Further, the behaviour of transactions with respect to the immediate
+    and
     mandatory flags on Basic.Publish methods is not defined.
     """
     NAME = u'tx'
@@ -3658,19 +3814,21 @@ class TxCommit(AMQPMethodPayload):
     """
     Commit the current transaction
     
-    This method commits all message publications and acknowledgments performed in
-    the current transaction.  A new transaction starts immediately after a commit.
+    This method commits all message publications and acknowledgments
+    performed in
+    the current transaction. A new transaction starts immediately
+    after a commit.
     """
     __slots__ = ()
 
     NAME = u'tx.commit'
 
-    INDEX = (90, 20)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x5A\x00\x14'  # CLASS ID + METHOD ID
+    INDEX = (90, 20)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x5A\x00\x14'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x14\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3678,6 +3836,7 @@ class TxCommit(AMQPMethodPayload):
         """
         Create frame tx.commit
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3689,19 +3848,20 @@ class TxCommitOk(AMQPMethodPayload):
     """
     Confirm a successful commit
     
-    This method confirms to the client that the commit succeeded. Note that if a commit
+    This method confirms to the client that the commit succeeded.
+    Note that if a commit
     fails, the server raises a channel exception.
     """
     __slots__ = ()
 
     NAME = u'tx.commit-ok'
 
-    INDEX = (90, 21)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x5A\x00\x15'  # CLASS ID + METHOD ID
+    INDEX = (90, 21)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x5A\x00\x15'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3709,6 +3869,7 @@ class TxCommitOk(AMQPMethodPayload):
         """
         Create frame tx.commit-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3720,21 +3881,24 @@ class TxRollback(AMQPMethodPayload):
     """
     Abandon the current transaction
     
-    This method abandons all message publications and acknowledgments performed in
-    the current transaction. A new transaction starts immediately after a rollback.
-    Note that unacked messages will not be automatically redelivered by rollback;
+    This method abandons all message publications and
+    acknowledgments performed in
+    the current transaction. A new transaction starts immediately
+    after a rollback.
+    Note that unacked messages will not be automatically redelivered
+    by rollback;
     if that is required an explicit recover call should be issued.
     """
     __slots__ = ()
 
     NAME = u'tx.rollback'
 
-    INDEX = (90, 30)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x5A\x00\x1E'  # CLASS ID + METHOD ID
+    INDEX = (90, 30)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x5A\x00\x1E'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x1E\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3742,6 +3906,7 @@ class TxRollback(AMQPMethodPayload):
         """
         Create frame tx.rollback
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3753,19 +3918,20 @@ class TxRollbackOk(AMQPMethodPayload):
     """
     Confirm successful rollback
     
-    This method confirms to the client that the rollback succeeded. Note that if an
+    This method confirms to the client that the rollback succeeded.
+    Note that if an
     rollback fails, the server raises a channel exception.
     """
     __slots__ = ()
 
     NAME = u'tx.rollback-ok'
 
-    INDEX = (90, 31)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x5A\x00\x1F'  # CLASS ID + METHOD ID
+    INDEX = (90, 31)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x5A\x00\x1F'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3773,6 +3939,7 @@ class TxRollbackOk(AMQPMethodPayload):
         """
         Create frame tx.rollback-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3784,19 +3951,21 @@ class TxSelect(AMQPMethodPayload):
     """
     Select standard transaction mode
     
-    This method sets the channel to use standard transactions. The client must use this
-    method at least once on a channel before using the Commit or Rollback methods.
+    This method sets the channel to use standard transactions. The
+    client must use this
+    method at least once on a channel before using the Commit or
+    Rollback methods.
     """
     __slots__ = ()
 
     NAME = u'tx.select'
 
-    INDEX = (90, 10)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x5A\x00\x0A'  # CLASS ID + METHOD ID
+    INDEX = (90, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x5A\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x0A\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3804,6 +3973,7 @@ class TxSelect(AMQPMethodPayload):
         """
         Create frame tx.select
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3815,19 +3985,20 @@ class TxSelectOk(AMQPMethodPayload):
     """
     Confirm transaction mode
     
-    This method confirms to the client that the channel was successfully set to use
+    This method confirms to the client that the channel was
+    successfully set to use
     standard transactions.
     """
     __slots__ = ()
 
     NAME = u'tx.select-ok'
 
-    INDEX = (90, 11)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x5A\x00\x0B'  # CLASS ID + METHOD ID
+    INDEX = (90, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x5A\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3835,6 +4006,7 @@ class TxSelectOk(AMQPMethodPayload):
         """
         Create frame tx.select-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -3847,9 +4019,9 @@ class Confirm(AMQPClass):
     The confirm class allows publishers to put the channel in
     
     confirm mode and subsequently be notified when messages have been
-    handled by the broker.  The intention is that all messages
+    handled by the broker. The intention is that all messages
     published on a channel in confirm mode will be acknowledged at
-    some point.  By acknowledging a message the broker assumes
+    some point. By acknowledging a message the broker assumes
     responsibility for it and indicates that it has done something
     it deems reasonable with it.
     Unroutable mandatory or immediate messages are acknowledged
@@ -3874,20 +4046,20 @@ class ConfirmSelect(AMQPMethodPayload):
     The client can only use this method on a non-transactional
     channel.
     """
-    __slots__ = (u'nowait',)
+    __slots__ = (u'nowait', )
 
     NAME = u'confirm.select'
 
-    INDEX = (85, 10)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x55\x00\x0A'  # CLASS ID + METHOD ID
+    INDEX = (85, 10)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x55\x00\x0A'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
 
     # See constructor pydoc for details
-    FIELDS = [
+    FIELDS = [ 
         Field(u'nowait', u'bit', u'bit', reserved=False),
     ]
 
@@ -3895,8 +4067,10 @@ class ConfirmSelect(AMQPMethodPayload):
         """
         Create frame confirm.select
 
-        :param nowait: If set, the server will not respond to the method. the client should
-            not wait for a reply method.  If the server could not complete the
+        :param nowait: If set, the server will not respond to the method. the
+            client should
+            not wait for a reply method. If the server could not
+            complete the
             method it will raise a channel or connection exception.
         :type nowait: bool (bit in AMQP)
         """
@@ -3904,7 +4078,7 @@ class ConfirmSelect(AMQPMethodPayload):
 
     def write_arguments(self, buf):
         buf.write(struct.pack('!B', (self.nowait << 0)))
-
+        
     def get_size(self):
         return 1
 
@@ -3920,20 +4094,21 @@ class ConfirmSelect(AMQPMethodPayload):
 
 class ConfirmSelectOk(AMQPMethodPayload):
     """
-    This method confirms to the client that the channel was successfully
+    This method confirms to the client that the channel was
     
+    successfully
     set to use publisher acknowledgements.
     """
     __slots__ = ()
 
     NAME = u'confirm.select-ok'
 
-    INDEX = (85, 11)  # (Class ID, Method ID)
-    BINARY_HEADER = b'\x00\x55\x00\x0B'  # CLASS ID + METHOD ID
+    INDEX = (85, 11)          # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x55\x00\x0B'      # CLASS ID + METHOD ID
 
     SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
-    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x55\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
@@ -3941,6 +4116,7 @@ class ConfirmSelectOk(AMQPMethodPayload):
         """
         Create frame confirm.select-ok
         """
+
 
     @staticmethod
     def from_buffer(buf, start_offset):
@@ -4013,6 +4189,7 @@ IDENT_TO_METHOD = {
     (50, 10): QueueDeclare,
 }
 
+
 BINARY_HEADER_TO_METHOD = {
     b'\x00\x5A\x00\x15': TxCommitOk,
     b'\x00\x3C\x00\x64': BasicRecoverAsync,
@@ -4078,6 +4255,7 @@ BINARY_HEADER_TO_METHOD = {
     b'\x00\x32\x00\x0A': QueueDeclare,
 }
 
+
 CLASS_ID_TO_CONTENT_PROPERTY_LIST = {
     60: BasicContentPropertyList,
 }
@@ -4117,7 +4295,7 @@ REPLY_REASONS_FOR = {
 # Methods that are replies for other, ie. ConnectionOpenOk: ConnectionOpen
 # a method may be a reply for ONE or NONE other methods
 # if a method has no replies, it will have an empty list as value here
-REPLIES_FOR = {
+REPLIES_FOR= {
     BasicGetEmpty: [],
     BasicRecoverOk: [],
     BasicReturn: [],

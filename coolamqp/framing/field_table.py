@@ -1,4 +1,5 @@
 # coding=UTF-8
+from __future__ import print_function, division, absolute_import
 """
 That funny type, field-table...
 
@@ -11,11 +12,23 @@ A table is of form ( (name1::bytes, fv1), (name2::bytes, fv2), ...)
 
 NOTE: it's not buffers, it's memoryview all along
 """
-from __future__ import absolute_import, division, print_function
 
 import struct
 
 import six
+
+
+def _tobuf(buf, pattern, *vals):
+    return buf.write(struct.pack(pattern, *vals))
+
+
+def _tobufv(buf, value, pattern, *vals):
+    _tobuf(buf, pattern, *vals)
+    buf.write(value)
+
+
+def _frombuf(pattern, buf, offset):
+    return struct.unpack_from(pattern, buf, offset)
 
 
 def enframe_decimal(buf, v):  # convert decimal to bytes
@@ -23,39 +36,41 @@ def enframe_decimal(buf, v):  # convert decimal to bytes
     for k in six.moves.xrange(20):
         k = v * (10 ** dps)
         if abs(k - int(k)) < 0.00001:  # epsilon
-            return buf.write(struct.pack('!BI', dps, k))
+            return _tobuf(buf, '!BI', dps, k)
 
     raise ValueError('Could not convert %s to decimal', v)
 
 
 def deframe_decimal(buf, offset):
-    scale, val = struct.unpack_from('!BI', buf, offset)
+    scale, val = _frombuf('!BI', buf, offset)
     return val / (10 ** scale), 5
 
 
 def deframe_shortstr(buf, offset):  # -> value, bytes_eaten
-    ln, = struct.unpack_from('!B', buf, offset)
+    ln, = _frombuf('!B', buf, offset)
     return buf[offset + 1:offset + 1 + ln], 1 + ln
 
 
 def enframe_shortstr(buf, value):
-    buf.write(struct.pack('!B', len(value)))
-    buf.write(value)
+    _tobufv(buf, value, '!B', len(value))
 
 
 def deframe_longstr(buf, offset):  # -> value, bytes_eaten
-    ln, = struct.unpack_from('!I', buf, offset)
+    ln, = _frombuf('!I', buf, offset)
     return buf[offset + 4:offset + 4 + ln], 4 + ln
 
 
 def enframe_longstr(buf, value):
-    buf.write(struct.pack('!I', len(value)))
-    buf.write(value)
+    _tobufv(buf, value, '!I', len(value))
 
+
+def _c2none(buf, v):
+    return None
 
 FIELD_TYPES = {
     # length, struct, (option)to_bytes (callable(buffer, value)),
-    #                 (option)from_bytes (callable(buffer, offset) -> value, bytes_consumed),
+    #                 (option)from_bytes (callable(buffer, offset) ->
+    #                                           value, bytes_consumed),
     #                 (option)get_len (callable(value) -> length in bytes)
     't': (1, '!?'),  # boolean
     'b': (1, '!b'),
@@ -78,9 +93,14 @@ FIELD_TYPES = {
         lambda val: len(val) + 4),
     # longstr
     'T': (8, '!Q'),
-    'V': (0, None, lambda buf, v: None, lambda buf, ofs: None, 0),
+    'V': (0, None, _c2none, _c2none, 0),
     # rendered as None
 }
+
+if six.PY3:
+    chrpy3 = chr
+else:
+    chrpy3 = lambda x: x
 
 
 def enframe_field_value(buf, fv):
@@ -90,16 +110,14 @@ def enframe_field_value(buf, fv):
     opt = FIELD_TYPES[type]
 
     if opt[1] is not None:
-        buf.write(struct.pack(opt[1], value))
+        _tobuf(buf, opt[1], value)
     else:
         opt[2](buf, value)
 
 
 def deframe_field_value(buf, offset):  # -> (value, type), bytes_consumed
     start_offset = offset
-    field_type = buf[offset]
-    if six.PY3:
-        field_type = chr(field_type)
+    field_type = chrpy3(buf[offset])
     offset += 1
 
     if field_type not in FIELD_TYPES.keys():
@@ -120,7 +138,7 @@ def deframe_field_value(buf, offset):  # -> (value, type), bytes_consumed
 
 def deframe_array(buf, offset):
     start_offset = offset
-    ln, = struct.unpack_from('!I', buf, offset)
+    ln, = _frombuf('!I', buf, offset)
     offset += 4
 
     values = []
@@ -138,7 +156,7 @@ def deframe_array(buf, offset):
 
 
 def enframe_array(buf, array):
-    buf.write(struct.pack('!I', frame_array_size(array) - 4))
+    _tobuf(buf, '!I', frame_array_size(array) - 4)
     for fv in array:
         enframe_field_value(buf, fv)
 
@@ -150,11 +168,10 @@ def enframe_table(buf, table):
     :param table:
     :return:
     """
-    buf.write(struct.pack('!I', frame_table_size(table) - 4))
+    _tobuf(buf, '!I', frame_table_size(table) - 4)
 
     for name, fv in table:
-        buf.write(struct.pack('!B', len(name)))
-        buf.write(name)
+        _tobufv(buf, name, '!B', len(name))
         enframe_field_value(buf, fv)
 
 
@@ -195,8 +212,9 @@ def frame_array_size(array):
 
 
 def frame_table_size(table):
-    """:return: length of table representation, in bytes, INCLUDING length header"""
-
+    """
+    :return: length of table representation, in bytes, INCLUDING length
+     header"""
     return 4 + sum(1 + len(k) + frame_field_value_size(fv) for k, fv in table)
 
 

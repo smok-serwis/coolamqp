@@ -5,14 +5,12 @@ python:
  - "3.4"
  - "3.5"
  - "pypy"
-cache: pip
-before_script:
-  - pip install codeclimate-test-reporter
 script:
  - python compile_definitions.py
  - python setup.py nosetests
 install:
  - pip install -r requirements.txt
+ - pip install --force-reinstall "coverage>=4.0,<4.4" codeclimate-test-reporter
 after_success:
  - codeclimate-test-reporter
  - bash build.sh

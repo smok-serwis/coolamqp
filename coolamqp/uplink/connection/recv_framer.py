@@ -19,6 +19,9 @@ FRAME_TYPES = {
 }
 
 
+ordpy2 = ord if six.PY2 else lambda x: x
+
+
 class ReceivingFramer(object):
     """
     Assembles AMQP framing from received data.
@@ -29,15 +32,20 @@ class ReceivingFramer(object):
     Not thread safe.
 
     State machine
-        (frame_type is None)  and has_bytes(1)        ->          (frame_type <- bytes(1))
+        (frame_type is None)  and has_bytes(1)        ->
+                (frame_type <- bytes(1))
 
-        (frame_type is HEARTBEAT) and has_bytes(AMQPHeartbeatFrame.LENGTH-1)  ->          (output_frame, frame_type <- None)
-        (frame_type is not HEARTBEAT and not None) and has_bytes(6)  ->      (frame_channel <- bytes(2),
-                                                                 frame_size <- bytes(4))
+        (frame_type is HEARTBEAT) and has_bytes(AMQPHeartbeatFrame.LENGTH-1)
+                      ->          (output_frame, frame_type <- None)
+        (frame_type is not HEARTBEAT and not None) and has_bytes(6)  ->
+                                       (frame_channel <- bytes(2),
+                                         frame_size <- bytes(4))
 
-        (frame_size is not None) and has_bytes(frame_size+1)    ->  (output_frame,
-                                                                            frame_type <- None
-                                                                            frame_size < None)
+        (frame_size is not None) and has_bytes(frame_size+1)    ->
+                    (output_frame,
+
+                                    frame_type <- None
+                                    frame_size < None)
     """
 
     def __init__(self, on_frame=lambda frame: None):
@@ -64,9 +72,15 @@ class ReceivingFramer(object):
         while self._statemachine():
             pass
 
-    def _extract(self,
-                 up_to):  # return up to up_to bytes from current chunk, switch if necessary
-        assert self.total_data_len >= up_to, 'Tried to extract %s but %s remaining' % (
+    def _extract_single_byte(self):
+        return ordpy2(self._extract(1)[0])
+
+    def _extract(self, up_to):
+        """
+        return up to up_to bytes from current chunk, switch if necessary
+        """
+        assert self.total_data_len >= up_to, \
+            'Tried to extract %s but %s remaining' % (
             up_to, self.total_data_len)
         if up_to >= len(self.chunks[0]):
             q = self.chunks.popleft()
@@ -79,13 +93,11 @@ class ReceivingFramer(object):
             len(q), up_to)
         return q
 
+
     def _statemachine(self):
         # state rule 1
         if self.frame_type is None and self.total_data_len > 0:
-            if six.PY3:
-                self.frame_type = self._extract(1)[0]
-            else:
-                self.frame_type = ord(self._extract(1)[0])
+            self.frame_type = self._extract_single_byte()
 
             if self.frame_type not in (
                     FRAME_HEARTBEAT, FRAME_HEADER, FRAME_METHOD, FRAME_BODY):
@@ -141,11 +153,7 @@ class ReceivingFramer(object):
 
                 payload = memoryview(payload.getvalue())
 
-            z = self._extract(1)[0]
-            if six.PY2:
-                z = ord(z)
-
-            if z != FRAME_END:
+            if self._extract_single_byte() != FRAME_END:
                 raise ValueError('Invalid frame end')
 
             try:
