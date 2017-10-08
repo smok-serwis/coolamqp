@@ -30,6 +30,7 @@ def _tobufv(buf, value, pattern, *vals):
 def _frombuf(pattern, buf, offset):
     return struct.unpack_from(pattern, buf, offset)
 
+
 def enframe_decimal(buf, v):  # convert decimal to bytes
     dps = 0
     for k in six.moves.xrange(20):
@@ -63,6 +64,9 @@ def enframe_longstr(buf, value):
     _tobufv(buf, value, '!I', len(value))
 
 
+def _c2none(buf, v):
+    return None
+
 FIELD_TYPES = {
     # length, struct, (option)to_bytes (callable(buffer, value)),
     #                 (option)from_bytes (callable(buffer, offset) ->
@@ -89,7 +93,7 @@ FIELD_TYPES = {
         lambda val: len(val) + 4),
     # longstr
     'T': (8, '!Q'),
-    'V': (0, None, lambda buf, v: None, lambda buf, ofs: None, 0),
+    'V': (0, None, _c2none, _c2none, 0),
     # rendered as None
 }
 

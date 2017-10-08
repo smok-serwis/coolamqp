@@ -19,10 +19,7 @@ FRAME_TYPES = {
 }
 
 
-if six.PY2:
-    ordpy2 = ord
-else:
-    ordpy2 = lambda x: x
+ordpy2 = ord if six.PY2 else lambda x: x
 
 
 class ReceivingFramer(object):
