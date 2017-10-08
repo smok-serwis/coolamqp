@@ -71,7 +71,8 @@ class AMQPHeaderFrame(AMQPFrame):
 
     def write_to(self, buf):
         buf.write(struct.pack('!BHLHHQ', FRAME_HEADER, self.channel,
-                              12 + self.properties.get_size(), self.class_id, 0,
+                              12 + self.properties.get_size(), self.class_id,
+                              0,
                               self.body_size))
         self.properties.write_to(buf)
         buf.write(FRAME_END_BYTE)
@@ -83,7 +84,8 @@ class AMQPHeaderFrame(AMQPFrame):
                                                          payload_as_buffer, 0)
         properties = CLASS_ID_TO_CONTENT_PROPERTY_LIST[class_id].from_buffer(
             payload_as_buffer, 12)
-        return AMQPHeaderFrame(channel, class_id, weight, body_size, properties)
+        return AMQPHeaderFrame(channel, class_id, weight, body_size,
+                               properties)
 
     def get_size(self):
         # frame header is always 7, frame end is 1, content header is 12 + props
@@ -104,7 +106,8 @@ class AMQPBodyFrame(AMQPFrame):
         self.data = data
 
     def write_to(self, buf):
-        buf.write(struct.pack('!BHL', FRAME_BODY, self.channel, len(self.data)))
+        buf.write(
+            struct.pack('!BHL', FRAME_BODY, self.channel, len(self.data)))
         buf.write(self.data)
         buf.write(FRAME_END_BYTE)
 

@@ -15,5 +15,6 @@ from __future__ import absolute_import, division, print_function
 
 from coolamqp.uplink.connection import Connection, HeaderOrBodyWatch, \
     MethodWatch, AnyWatch, FailWatch
-from coolamqp.uplink.handshake import PUBLISHER_CONFIRMS, CONSUMER_CANCEL_NOTIFY
+from coolamqp.uplink.handshake import PUBLISHER_CONFIRMS, \
+    CONSUMER_CANCEL_NOTIFY
 from coolamqp.uplink.listener import ListenerThread

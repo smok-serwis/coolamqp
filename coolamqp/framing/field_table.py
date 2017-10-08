@@ -70,14 +70,16 @@ FIELD_TYPES = {
     'd': (8, '!d'),
     'D': (5, None, enframe_decimal, deframe_decimal),  # decimal-value
     's': (
-    None, None, enframe_shortstr, deframe_shortstr, lambda val: len(val) + 1),
-# shortstr
+        None, None, enframe_shortstr, deframe_shortstr,
+        lambda val: len(val) + 1),
+    # shortstr
     'S': (
-    None, None, enframe_longstr, deframe_longstr, lambda val: len(val) + 4),
-# longstr
+        None, None, enframe_longstr, deframe_longstr,
+        lambda val: len(val) + 4),
+    # longstr
     'T': (8, '!Q'),
     'V': (0, None, lambda buf, v: None, lambda buf, ofs: None, 0),
-# rendered as None
+    # rendered as None
 }
 
 
@@ -106,7 +108,8 @@ def deframe_field_value(buf, offset):  # -> (value, type), bytes_consumed
     opt = FIELD_TYPES[field_type]
 
     if opt[1] is not None:
-        field_val, = struct.unpack_from(FIELD_TYPES[field_type][1], buf, offset)
+        field_val, = struct.unpack_from(FIELD_TYPES[field_type][1], buf,
+                                        offset)
         offset += opt[0]
     else:
         field_val, delta = opt[3](buf, offset)

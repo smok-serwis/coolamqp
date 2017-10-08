@@ -44,7 +44,7 @@ class Heartbeater(object):
         self.connection.send([AMQPHeartbeatFrame()], priority=True)
 
         if (
-            monotonic.monotonic() - self.last_heartbeat_on) > 2 * self.heartbeat_interval:
+                    monotonic.monotonic() - self.last_heartbeat_on) > 2 * self.heartbeat_interval:
             # closing because of heartbeat
             self.connection.send(None)
 

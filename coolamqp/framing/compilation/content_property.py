@@ -9,7 +9,6 @@ from coolamqp.framing.compilation.textcode_fields import get_counter, \
 
 logger = logging.getLogger(__name__)
 
-
 INIT_I = u'\n    def __init__(self, %s):\n'
 SLOTS_I = u'\n    __slots__ = (%s)\n'
 FROM_BUFFER_1 = u'    def from_buffer(cls, buf, start_offset):\n        ' \
@@ -35,6 +34,7 @@ SPACER = u'''
     """
 '''
 GET_SIZE_HEADER = u'\n    def get_size(self):\n'
+
 
 def _compile_particular_content_property_list_class(zpf, fields):
     """
@@ -101,7 +101,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
     FFN = u', '.join(format_field_name(field.name) for field in present_fields)
 
     if len(present_fields) > 0:
-        mod.append(INIT_I % (FFN, ))
+        mod.append(INIT_I % (FFN,))
 
     for field in present_fields:
         mod.append(ASSIGN_A.replace(u'%s', format_field_name(
@@ -122,11 +122,11 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(u'    @classmethod\n')
     mod.append(
         FROM_BUFFER_1 % (
-        zpf_length,))
+            zpf_length,))
     mod.append(get_from_buffer(
         present_fields
         , prefix='', indent_level=2))
-    mod.append(u'        return cls(%s)\n' % (FFN, ))
+    mod.append(u'        return cls(%s)\n' % (FFN,))
 
     # get_size
     mod.append(GET_SIZE_HEADER)

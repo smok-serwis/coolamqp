@@ -33,7 +33,7 @@ class AMQPError(CoolAMQPError):
             self.reply_text,
             self.class_id,
             self.method_id)
-        )
+                                               )
 
     def __init__(self, *args):
         """

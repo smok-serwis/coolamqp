@@ -40,7 +40,6 @@ class BodyReceiveMode(object):
     # these constitute received pieces. this is always ZC
 
 
-
 class Consumer(Channeler):
     """
     This object represents a consumer in the system.
@@ -442,14 +441,14 @@ class MessageReceiver(object):
         self.header = None  # AMQPHeaderFrame
         if consumer.body_receive_mode == BodyReceiveMode.MEMORYVIEW:
             self.body = None  # None is an important sign - first piece of
-                              # message
+            # message
         else:
             self.body = []  # list of payloads
         self.data_to_go = None  # set on receiving header, how much bytes we
-                                # need yet
+        # need yet
         self.message_size = None  # in bytes, of currently received message
         self.offset = 0  # used only in MEMORYVIEW mode - pointer to self.body
-                         #  (which would be a buffer)
+        #  (which would be a buffer)
 
         self.acks_pending = set()  # list of things to ack/reject
 

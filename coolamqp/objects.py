@@ -14,10 +14,12 @@ logger = logging.getLogger(__name__)
 
 EMPTY_PROPERTIES = MessageProperties()
 
+
 def toutf8(q):
     if isinstance(q, six.binary_type):
         q = q.decode('utf8')
     return q
+
 
 def tobytes(q):
     if isinstance(q, six.text_type):
@@ -134,7 +136,6 @@ class ReceivedMessage(Message):
 
         self.ack = ack or LAMBDA_NONE
         self.nack = nack or LAMBDA_NONE
-
 
 
 class Exchange(object):
@@ -273,7 +274,7 @@ class NodeDefinition(object):
                                            (six.text_type, six.binary_type)):
             connstr = args[0].decode('utf8') if isinstance(args[0],
                                                            six.binary_type) else \
-            args[0]
+                args[0]
             # AMQP connstring
             if not connstr.startswith(u'amqp://'):
                 raise ValueError(u'should begin with amqp://')
@@ -297,4 +298,4 @@ class NodeDefinition(object):
     def __str__(self):
         return six.text_type(
             b'amqp://%s:%s@%s/%s'.encode('utf8') % (
-            self.host, self.port, self.user, self.virtual_host))
+                self.host, self.port, self.user, self.virtual_host))

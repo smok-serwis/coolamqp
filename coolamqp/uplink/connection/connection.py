@@ -238,7 +238,7 @@ class Connection(object):
                     continue
 
                 if ((not watch_triggered) or (not watch.oneshot)) and (
-                not watch.cancelled):
+                        not watch.cancelled):
                     # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                     alive_watches.append(watch)
 
@@ -266,7 +266,7 @@ class Connection(object):
                 continue
 
             if ((not watch_triggered) or (not watch.oneshot)) and (
-            not watch.cancelled):
+                    not watch.cancelled):
                 # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
                 alive_watches.append(watch)
 

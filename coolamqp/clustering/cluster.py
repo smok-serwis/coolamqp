@@ -105,7 +105,8 @@ class Cluster(object):
         fut.set_running_or_notify_cancel()  # it's running right now
         on_message = on_message or (
             lambda rmsg: self.events.put_nowait(MessageReceived(rmsg)))
-        con = Consumer(queue, on_message, future_to_notify=fut, *args, **kwargs)
+        con = Consumer(queue, on_message, future_to_notify=fut, *args,
+                       **kwargs)
         self.attache_group.add(con)
         return con, fut
 
