@@ -22,6 +22,9 @@ import six
 def _tobuf(buf, pattern, *vals):
     return buf.write(struct.pack(pattern, *vals))
 
+def _tobufv(buf, value, pattern, *vals):
+    _tobuf(buf, pattern, *vals)
+    buf.write(value)
 
 def enframe_decimal(buf, v):  # convert decimal to bytes
     dps = 0
@@ -44,8 +47,7 @@ def deframe_shortstr(buf, offset):  # -> value, bytes_eaten
 
 
 def enframe_shortstr(buf, value):
-    _tobuf(buf, '!B', len(value))
-    buf.write(value)
+    _tobufv(buf, value, '!B', len(value))
 
 
 def deframe_longstr(buf, offset):  # -> value, bytes_eaten
@@ -54,8 +56,7 @@ def deframe_longstr(buf, offset):  # -> value, bytes_eaten
 
 
 def enframe_longstr(buf, value):
-    _tobuf(buf, '!I', len(value))
-    buf.write(value)
+    _tobufv(buf, value, '!I', len(value))
 
 
 FIELD_TYPES = {
@@ -162,8 +163,7 @@ def enframe_table(buf, table):
     _tobuf(buf, '!I', frame_table_size(table) - 4)
 
     for name, fv in table:
-        _tobuf(buf, '!B', len(name))
-        buf.write(name)
+        _tobufv(buf, name, '!B', len(name))
         enframe_field_value(buf, fv)
 
 
