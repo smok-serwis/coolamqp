@@ -21,7 +21,8 @@ def _compile_particular_content_property_list_class(zpf, fields):
     from coolamqp.framing.compilation.utilities import format_field_name
 
     if any(field.basic_type == 'bit' for field in fields):
-        return u"raise NotImplementedError('I don't support bits in properties yet')"
+        NB = u"raise NotImplementedError('I don't support bits in properties')"
+        return NB
 
     # Convert ZPF to a list of [if_exists::bool]
     even = True
@@ -33,11 +34,13 @@ def _compile_particular_content_property_list_class(zpf, fields):
         if not even:
             p = p[:7]
 
-        zpf_bits.extend(map(lambda x: bool(int(x)), p))
+        for x in p:
+            zpf_bits.append(bool(int(x)))
 
     zpf_length = len(zpf)
 
-    # 1 here does not mean that field is present. All bit fields are present, but 0 in a ZPF. Fix this.
+    # 1 here does not mean that field is present. All bit fields are present,
+    # but 0 in a ZPF. Fix this.
     zpf_bits = [zpf_bit or field.type == 'bit' for zpf_bit, field in
                 zip(zpf_bits, fields)]
 
@@ -83,10 +86,12 @@ class ParticularContentTypeList(AMQPContentPropertyList):
     ZERO_PROPERTY_FLAGS = %s
 ''' % (x,))
 
+    FFN = u', '.join(format_field_name(field.name) for field in present_fields)
+
     if len(present_fields) > 0:
         mod.append(u'''
     def __init__(self, %s):
-''' % (u', '.join(format_field_name(field.name) for field in present_fields)))
+''' % (FFN, ))
 
     for field in present_fields:
         mod.append(u'        self.%s = %s\n'.replace(u'%s', format_field_name(
@@ -112,9 +117,7 @@ class ParticularContentTypeList(AMQPContentPropertyList):
     mod.append(get_from_buffer(
         present_fields
         , prefix='', indent_level=2))
-    mod.append(u'        return cls(%s)\n' %
-               u', '.join(
-                   format_field_name(field.name) for field in present_fields))
+    mod.append(u'        return cls(%s)\n' % (FFN, ))
 
     # get_size
     mod.append(u'\n    def get_size(self):\n')
