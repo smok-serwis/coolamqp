@@ -1,5 +1,9 @@
 ## Change log
 
+* 0.92:
+
+ * TBA
+
 * v0.91:
   * removed annoying warnings
 
