@@ -2,7 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
-
+import copy
 import six
 
 from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
@@ -41,6 +41,7 @@ class _ValueField(_Field):
         if not isinstance(xml_names, tuple):
             xml_names = (xml_names, )
         self.xml_names = xml_names
+        assert field_type is not None
         self.field_name = field_name
         self.field_type = field_type
         self.default = default
@@ -95,6 +96,10 @@ class BaseObject(object):
     def findall(cls, xml):
         return [cls(p) for p in xml.findall(cls.NAME)]
 
+    def _replace(self, **kwargs):
+        c = copy.copy(self)
+        c.__dict__.update(**kwargs)
+        return c
 
 class Constant(BaseObject):
     NAME = 'constant'
@@ -110,9 +115,9 @@ class Field(BaseObject):
     FIELDS = [
         _name,
         _ValueField(('domain', 'type'), 'type', str),
-        _SimpleField('label', None),
+        _SimpleField('label', default=None),
         _SimpleField('reserved', lambda x: bool(int(x)), default=0),
-        _ComputedField('basic_type', lambda elem: elem.attrib['type'] == elem.attrib['name']),
+        _ComputedField('basic_type', lambda elem: elem.attrib.get('type', '') == elem.attrib.get('name', '')),
         _docs
     ]
 
@@ -120,7 +125,7 @@ class Class(BaseObject):
     NAME = 'class'
     FIELDS = [
         _name,
-        _ValueField('index', int),
+        _SimpleField('index', int),
         _ComputedField('docs', lambda elem: get_docs(elem, label=True)),
         _ComputedField('methods', lambda elem: sorted(
             [Method(me) for me in elem.getchildren() if me.tag == 'method'],

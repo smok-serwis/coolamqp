@@ -124,9 +124,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     # Output classes
     for cls in Class.findall(xml):
 
-        cls = cls._replace(
-            properties=[p._replace(basic_type=domain_to_basic_type[p.type]) for
-                        p in cls.properties])
+        cls.properties = [p._replace(basic_type=domain_to_basic_type[p.type]) for
+                        p in cls.properties]
 
         line('''\nclass %s(AMQPClass):
     """
@@ -491,7 +490,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
         # Get me a dict - (classid, methodid) => class of method
         dct = {}
-        for cls in get_classes(xml):
+        for cls in Class.findall(xml):
             for method in cls.methods:
                 dct[((cls.index, method.index))] = '%s%s' % (
                     name_class(cls.name), format_method_class_name(method.name))
