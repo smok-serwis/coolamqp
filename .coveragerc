@@ -1,7 +1,7 @@
 [run]
 branch=1
 include=
-    coolamqp/*
+  coolamqp/*
 omit=
   tests/*
   compile_definitions.py
