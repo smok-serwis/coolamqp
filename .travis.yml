@@ -10,7 +10,7 @@ cache:
     - $HOME/build/smok-serwis/coolamqp/.eggs
     - $HOME/.cache
 script:
- - python -m coolamqp.framing.compilation.compile_definitions
+ - python compile_definitions.py
  - python setup.py nosetests
 install:
  - pip install -r requirements.txt
