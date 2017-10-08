@@ -18,6 +18,7 @@ FRAME_TYPES = {
     FRAME_METHOD: AMQPMethodFrame
 }
 
+
 if six.PY2:
     ordpy2 = ord
 else:
