@@ -5,17 +5,14 @@ python:
  - "3.4"
  - "3.5"
  - "pypy"
-cache:
-  directories:
-    - $HOME/build/smok-serwis/coolamqp/.eggs
-    - $HOME/.cache
+cache: pip
 script:
  - python compile_definitions.py
- - python setup.py nosetests --with-coverage
+ - python setup.py nosetests
+ - codeclimate-test-reporter
 install:
  - pip install -r requirements.txt
 after_success:
- - codeclimate-test-reporter
  - bash build.sh
 services:
  - rabbitmq
