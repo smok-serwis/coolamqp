@@ -5,7 +5,10 @@ python:
  - "3.4"
  - "3.5"
  - "pypy"
-cache: pip
+cache:
+  directories:
+    - $HOME/build/smok-serwis/coolamqp/.eggs
+    - $HOME/.cache
 script:
  - python -m coolamqp.framing.compilation.compile_definitions
  - python setup.py nosetests
