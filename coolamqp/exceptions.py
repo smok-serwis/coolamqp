@@ -1,7 +1,7 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-from coolamqp.framing.definitions import HARD_ERRORS
+from coolamqp.framing.definitions import HARD_ERRORS, RESOURCE_LOCKED
 
 
 class CoolAMQPError(Exception):
