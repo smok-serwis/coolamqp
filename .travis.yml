@@ -12,5 +12,6 @@ install:
  - pip install -r requirements.txt
 after_success:
  - CODECLIMATE_REPO_TOKEN=e8e05973a6c49139de5f98013cd285f9238b78d20f053f37f6e7deeab2c2c52f codeclimate-test-reporter
+ - bash build.sh
 services:
  - rabbitmq
