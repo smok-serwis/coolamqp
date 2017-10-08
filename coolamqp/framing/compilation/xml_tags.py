@@ -3,7 +3,7 @@ from __future__ import print_function, absolute_import, division
 import six
 import logging
 import copy
-
+import math
 from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 from .xml_fields import *
 
@@ -16,6 +16,7 @@ def _boolint(x):
 __all__ = [
     'Domain', 'Method', 'Class', 'Field', 'Constant'
 ]
+
 
 class BaseObject(object):
 
@@ -60,12 +61,10 @@ class Class(BaseObject):
     FIELDS = [
         _name,
         _SimpleField('index', int),
-        _ComputedField('docs', lambda elem: get_docs(elem, label=True)),
-        _ComputedField('methods', lambda elem: sorted(
-            [Method(me) for me in elem.getchildren() if me.tag == 'method'],
+        _docs_with_label,
+        _ComputedField('methods', lambda elem: sorted(map(Method, _get_tagchild(elem, 'method')),
             key=lambda m: (m.name.strip('-')[0], -len(m.response)))),
-        _ComputedField('properties', lambda elem: [Field(e) for e in elem.getchildren() if
-                   e.tag == 'field'])
+        _ComputedField('properties', lambda elem: map(Field, _get_tagchild(elem, 'field')))
     ]
 
 

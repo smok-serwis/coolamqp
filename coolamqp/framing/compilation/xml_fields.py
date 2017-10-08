@@ -12,7 +12,7 @@ def nop(x):
 
 __all__ = [
     '_name', '_docs', '_ComputedField', '_ValueField', '_SimpleField',
-    'get_docs'
+    '_docs_with_label'
 ]
 
 class _Field(object):
@@ -65,7 +65,7 @@ class _SimpleField(_ValueField):
         super(_SimpleField, self).__init__(name, name, field_type, default)
 
 
-def get_docs(elem, label=False):
+def get_docs(elem, label):
     """Parse an XML element. Return documentation"""
     for kid in elem.getchildren():
 
@@ -79,6 +79,7 @@ def get_docs(elem, label=False):
         return elem.attrib.get('label', None)
 
 _name = _SimpleField('name', six.text_type)
-_docs = _ComputedField('docs', lambda elem: get_docs(elem))
+_docs = _ComputedField('docs', lambda elem: get_docs(elem, False))
+_docs_with_label = _ComputedField('docs', lambda elem: get_docs(elem, True))
 
 
