@@ -51,7 +51,14 @@ class Cluster(object):
             raise NotImplementedError(u'Multiple nodes not supported yet')
 
         self.node, = nodes
-        self.on_fail = on_fail
+
+        if self.on_fail is not None:
+            def decorated():
+                if not self.listener.terminating:
+                    on_fail()
+            self.on_fail = decorated
+        else:
+            self.on_fail = on_fail
 
     def declare(self, obj, persistent=False):
         """
@@ -176,10 +183,7 @@ class Cluster(object):
         self.snr = SingleNodeReconnector(self.node, self.attache_group, self.listener)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
-            self.snr.on_fail.add(
-                (lambda snr, of: lambda: of() if not snr.terminating else None)(
-                    self.listener, self.on_fail)
-            )
+            self.snr.on_fail.add(self.on_fail)
 
         # Spawn a transactional publisher and a noack publisher
         self.pub_tr = Publisher(Publisher.MODE_CNPUB)
