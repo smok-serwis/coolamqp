@@ -5,10 +5,9 @@ Cluster will emit Events.
 They mean that something, like, happened.
 """
 from __future__ import print_function, absolute_import, division
-import six
-import time
+
 import logging
-import monotonic
+
 from coolamqp.objects import ReceivedMessage
 
 logger = logging.getLogger(__name__)
@@ -44,6 +43,8 @@ class MessageReceived(ReceivedMessage, Event):
 
     def __init__(self, msg):
         """:type msg: ReceivedMessage"""
-        ReceivedMessage.__init__(self, msg.body, msg.exchange_name, msg.routing_key,
-                                 properties=msg.properties, delivery_tag=msg.delivery_tag,
+        ReceivedMessage.__init__(self, msg.body, msg.exchange_name,
+                                 msg.routing_key,
+                                 properties=msg.properties,
+                                 delivery_tag=msg.delivery_tag,
                                  ack=msg.ack, nack=msg.nack)

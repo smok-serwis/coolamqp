@@ -12,22 +12,26 @@ from __future__ import absolute_import, division, print_function
 
 import collections
 import logging
-import struct
-import six
 import warnings
 
-from coolamqp.framing.definitions import ChannelOpenOk, BasicPublish, Basic, BasicAck
-from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, AMQPHeaderFrame
+import six
+
+from coolamqp.framing.definitions import ChannelOpenOk, BasicPublish, Basic, \
+    BasicAck
+from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, \
+    AMQPHeaderFrame
 
 try:
     # these extensions will be available
-    from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk, BasicNack
+    from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk, \
+        BasicNack
 except ImportError:
     pass
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch, FailWatch
-from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, Synchronized
+from coolamqp.attaches.utils import AtomicTagger, FutureConfirmableRejectable, \
+    Synchronized
 
 from concurrent.futures import Future
 from coolamqp.objects import Exchange
@@ -35,8 +39,9 @@ from coolamqp.objects import Exchange
 logger = logging.getLogger(__name__)
 
 # for holding messages when MODE_CNPUB and link is down
-CnpubMessageSendOrder = collections.namedtuple('CnpubMessageSendOrder', ('message', 'exchange_name',
-                                                                         'routing_key', 'future'))
+CnpubMessageSendOrder = collections.namedtuple('CnpubMessageSendOrder',
+                                               ('message', 'exchange_name',
+                                                'routing_key', 'future'))
 
 
 # todo what if publisher in MODE_CNPUB fails mid message? they dont seem to be recovered
@@ -126,8 +131,11 @@ class Publisher(Channeler, Synchronized):
             body = body[max_body_size:]
 
         self.connection.send([
-            AMQPMethodFrame(self.channel_id, BasicPublish(exchange_name, routing_key, False, False)),
-            AMQPHeaderFrame(self.channel_id, Basic.INDEX, 0, len(message.body), message.properties)
+            AMQPMethodFrame(self.channel_id,
+                            BasicPublish(exchange_name, routing_key, False,
+                                         False)),
+            AMQPHeaderFrame(self.channel_id, Basic.INDEX, 0, len(message.body),
+                            message.properties)
         ])
 
         # todo optimize it - if there's only one frame it can with previous send
@@ -148,13 +156,14 @@ class Publisher(Channeler, Synchronized):
             try:
                 msg, xchg, rk, fut = self.messages.popleft()
             except IndexError:
-                #todo see docs/casefile-0001
+                # todo see docs/casefile-0001
                 break
 
             if not fut.set_running_or_notify_cancel():
                 continue  # cancelled
 
-            self.tagger.deposit(self.tagger.get_key(), FutureConfirmableRejectable(fut))
+            self.tagger.deposit(self.tagger.get_key(),
+                                FutureConfirmableRejectable(fut))
             assert isinstance(xchg, (six.binary_type, six.text_type))
             self._pub(msg, xchg, rk)
 
@@ -203,7 +212,8 @@ class Publisher(Channeler, Synchronized):
         if self.mode == Publisher.MODE_NOACK:
             # If we are not connected right now, drop the message on the floor and log it with DEBUG
             if self.state != ST_ONLINE:
-                logger.debug(u'Publish request, but not connected - dropping the message')
+                logger.debug(
+                    u'Publish request, but not connected - dropping the message')
             else:
                 self._pub(message, exchange, routing_key)
 
@@ -223,7 +233,8 @@ class Publisher(Channeler, Synchronized):
 
     def on_operational(self, operational):
         state = {True: u'up', False: u'down'}[operational]
-        mode = {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[self.mode]
+        mode = {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[
+            self.mode]
 
         logger.info('Publisher %s is %s', mode, state)
 
@@ -232,8 +243,9 @@ class Publisher(Channeler, Synchronized):
         # Assert that mode is OK
         if self.mode == Publisher.MODE_CNPUB:
             if PUBLISHER_CONFIRMS not in self.connection.extensions:
-                warnings.warn(u'Broker does not support publisher_confirms, refusing to start publisher',
-                              RuntimeWarning)
+                warnings.warn(
+                    u'Broker does not support publisher_confirms, refusing to start publisher',
+                    RuntimeWarning)
                 self.state = ST_OFFLINE
                 self.critically_failed = True
                 return
@@ -245,7 +257,8 @@ class Publisher(Channeler, Synchronized):
             # the functionality.
 
             if self.mode == Publisher.MODE_CNPUB:
-                self.method_and_watch(ConfirmSelect(False), ConfirmSelectOk, self.on_setup)
+                self.method_and_watch(ConfirmSelect(False), ConfirmSelectOk,
+                                      self.on_setup)
             elif self.mode == Publisher.MODE_NOACK:
                 # A-OK! Boot it.
                 self.state = ST_ONLINE
@@ -263,7 +276,8 @@ class Publisher(Channeler, Synchronized):
 
                 # now we need to listen for BasicAck and BasicNack
 
-                mw = MethodWatch(self.channel_id, (BasicAck, BasicNack), self._on_cnpub_delivery)
+                mw = MethodWatch(self.channel_id, (BasicAck, BasicNack),
+                                 self._on_cnpub_delivery)
                 mw.oneshot = False
                 self.connection.watch(mw)
                 self._mode_cnpub_process_deliveries()

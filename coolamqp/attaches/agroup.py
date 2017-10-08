@@ -5,9 +5,8 @@ This is an attache that attaches multiple attaches.
 It evicts cancelled attaches.
 """
 from __future__ import print_function, absolute_import, division
-import six
+
 import logging
-import weakref
 
 logger = logging.getLogger(__name__)
 

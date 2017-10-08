@@ -6,7 +6,7 @@ Provides reactors that can authenticate an AQMP session
 """
 import six
 from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
-    ConnectionTune, ConnectionTuneOk, ConnectionOpen, ConnectionOpenOk, ConnectionClose
+    ConnectionTune, ConnectionTuneOk, ConnectionOpen, ConnectionOpenOk
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
 
@@ -15,7 +15,8 @@ CONSUMER_CANCEL_NOTIFY = b'consumer_cancel_notify'
 
 SUPPORTED_EXTENSIONS = [
     PUBLISHER_CONFIRMS,
-    CONSUMER_CANCEL_NOTIFY  # half assed support - we just .cancel the consumer, see #12
+    CONSUMER_CANCEL_NOTIFY
+    # half assed support - we just .cancel the consumer, see #12
 ]
 
 CLIENT_DATA = [
@@ -25,8 +26,11 @@ CLIENT_DATA = [
     (b'version', (b'0.91', 'S')),
     (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', 'S')),
     (
-    b'information', (b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details', 'S')),
-    (b'capabilities', ([(capa, (True, 't')) for capa in SUPPORTED_EXTENSIONS], 'F')),
+        b'information', (
+        b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details',
+        'S')),
+    (b'capabilities',
+     ([(capa, (True, 't')) for capa in SUPPORTED_EXTENSIONS], 'F')),
 ]
 
 WATCHDOG_TIMEOUT = 10
@@ -48,7 +52,8 @@ class Handshaker(object):
         self.password = node_definition.password.encode('utf8')
         self.virtual_host = node_definition.virtual_host.encode('utf8')
         self.heartbeat = node_definition.heartbeat or 0
-        self.connection.watch_for_method(0, ConnectionStart, self.on_connection_start)
+        self.connection.watch_for_method(0, ConnectionStart,
+                                         self.on_connection_start)
 
         # Callbacks
         self.on_success = on_success
@@ -83,7 +88,8 @@ class Handshaker(object):
                         self.connection.extensions.append(label)
 
         self.connection.watchdog(WATCHDOG_TIMEOUT, self.on_watchdog)
-        self.connection.watch_for_method(0, ConnectionTune, self.on_connection_tune)
+        self.connection.watch_for_method(0, ConnectionTune,
+                                         self.on_connection_tune)
         self.connection.send([
             AMQPMethodFrame(0,
                             ConnectionStartOk(CLIENT_DATA, b'PLAIN',
@@ -95,12 +101,16 @@ class Handshaker(object):
     def on_connection_tune(self, payload):
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
-        for channel in six.moves.xrange(1, (65535 if payload.channel_max == 0 else payload.channel_max) + 1):
+        for channel in six.moves.xrange(1, (
+        65535 if payload.channel_max == 0 else payload.channel_max) + 1):
             self.connection.free_channels.append(channel)
 
-        self.connection.watch_for_method(0, ConnectionOpenOk, self.on_connection_open_ok)
+        self.connection.watch_for_method(0, ConnectionOpenOk,
+                                         self.on_connection_open_ok)
         self.connection.send([
-            AMQPMethodFrame(0, ConnectionTuneOk(payload.channel_max, payload.frame_max, self.connection.heartbeat)),
+            AMQPMethodFrame(0, ConnectionTuneOk(payload.channel_max,
+                                                payload.frame_max,
+                                                self.connection.heartbeat)),
             AMQPMethodFrame(0, ConnectionOpen(self.virtual_host))
         ])
 

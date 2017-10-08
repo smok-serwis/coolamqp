@@ -4,14 +4,13 @@ Base class for consumer or publisher with the capabiility to
 set up and tear down channels
 """
 from __future__ import print_function, absolute_import, division
-import six
-from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, AMQPHeaderFrame
-from coolamqp.framing.definitions import ChannelOpen, ChannelOpenOk, BasicConsume, \
-    BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, ExchangeDeclareOk, \
-    QueueBind, QueueBindOk, ChannelClose, ChannelCloseOk, BasicCancel, BasicDeliver, \
-    BasicAck, BasicReject, ACCESS_REFUSED, RESOURCE_LOCKED, BasicCancelOk
-from coolamqp.uplink import HeaderOrBodyWatch, MethodWatch
+
 import logging
+
+from coolamqp.framing.definitions import ChannelOpen, ChannelOpenOk, \
+    ChannelClose, ChannelCloseOk, BasicCancel, \
+    BasicCancelOk
+from coolamqp.framing.frames import AMQPMethodFrame
 
 ST_OFFLINE = 0  # Consumer is *not* consuming, no setup attempts are being made
 ST_SYNCING = 1  # A process targeted at consuming has been started
@@ -136,7 +135,8 @@ class Channeler(Attache):
             self.on_operational(False)
         self.state = ST_OFFLINE
 
-        if not isinstance(payload, (ChannelClose, ChannelCloseOk)) and (payload is not None):
+        if not isinstance(payload, (ChannelClose, ChannelCloseOk)) and (
+            payload is not None):
             # I do not know how to handle that!
             return
 
@@ -157,7 +157,8 @@ class Channeler(Attache):
         self.channel_id = None
 
         if isinstance(payload, ChannelClose):
-            logger.debug('Channel closed: %s %s', payload.reply_code, payload.reply_text.tobytes())
+            logger.debug('Channel closed: %s %s', payload.reply_code,
+                         payload.reply_text.tobytes())
 
     def methods(self, payloads):
         """
@@ -171,7 +172,8 @@ class Channeler(Attache):
         if self.channel_id is None:
             return  # advanced teardown xD
 
-        frames = [AMQPMethodFrame(self.channel_id, payload) for payload in payloads]
+        frames = [AMQPMethodFrame(self.channel_id, payload) for payload in
+                  payloads]
         self.connection.send(frames)
 
     def method(self, payload):
@@ -182,7 +184,8 @@ class Channeler(Attache):
         """
         self.methods([payload])
 
-    def method_and_watch(self, method_payload, method_classes_to_watch, callable):
+    def method_and_watch(self, method_payload, method_classes_to_watch,
+                         callable):
         """
         Syntactic sugar for
 
@@ -192,7 +195,8 @@ class Channeler(Attache):
                                              callable)
         """
         assert self.channel_id is not None
-        self.connection.method_and_watch(self.channel_id, method_payload, method_classes_to_watch, callable)
+        self.connection.method_and_watch(self.channel_id, method_payload,
+                                         method_classes_to_watch, callable)
 
     def on_setup(self, payload):
         """
@@ -212,7 +216,8 @@ class Channeler(Attache):
 
         To be called by on_close, when it needs to be notified just one more time.
         """
-        self.connection.watch_for_method(self.channel_id, (ChannelClose, ChannelCloseOk, BasicCancel, BasicCancelOk),
+        self.connection.watch_for_method(self.channel_id, (
+        ChannelClose, ChannelCloseOk, BasicCancel, BasicCancelOk),
                                          self.on_close,
                                          on_fail=self.on_close)
 
