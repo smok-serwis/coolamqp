@@ -11,13 +11,15 @@ from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 # docs may be None
 
 Constant = namedtuple('Constant', (
-'name', 'value', 'kind', 'docs'))  # kind is AMQP constant class # value is int
+    'name', 'value', 'kind',
+    'docs'))  # kind is AMQP constant class # value is int
 Field = namedtuple('Field', (
-'name', 'type', 'label', 'docs', 'reserved', 'basic_type'))  # reserved is bool
+    'name', 'type', 'label', 'docs', 'reserved',
+    'basic_type'))  # reserved is bool
 # synchronous is bool, constant is bool
 # repponse is a list of method.name
 Class_ = namedtuple('Class_', (
-'name', 'index', 'docs', 'methods', 'properties'))  # label is int
+    'name', 'index', 'docs', 'methods', 'properties'))  # label is int
 Domain = namedtuple('Domain',
                     ('name', 'type', 'elementary'))  # elementary is bool
 

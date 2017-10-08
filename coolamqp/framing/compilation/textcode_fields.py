@@ -66,7 +66,7 @@ def get_counter(fields, prefix=u'', indent_level=2):
         accumulator += int(math.ceil(bits / 8))
 
     return (u'    ' * indent_level) + u'return ' + (
-    u' + '.join([str(accumulator)] + parts)) + u'\n'
+        u' + '.join([str(accumulator)] + parts)) + u'\n'
 
 
 def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
@@ -208,7 +208,7 @@ def get_serializer(fields, prefix='', indent_level=2):
             for bit_name, modif in zip(bits, range(8)):
                 if bit_name != 'False':
                     p.append('(' + bit_name + ' << %s)' % (
-                    modif,))  # yes you can << bools
+                        modif,))  # yes you can << bools
             format_args.append(u' | '.join(p))
         del bits[:]
 

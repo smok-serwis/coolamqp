@@ -15,6 +15,18 @@ logger = logging.getLogger(__name__)
 EMPTY_PROPERTIES = MessageProperties()
 
 
+def toutf8(q):
+    if isinstance(q, six.binary_type):
+        q = q.decode('utf8')
+    return q
+
+
+def tobytes(q):
+    if isinstance(q, six.text_type):
+        q = q.encode('utf8')
+    return q
+
+
 class Callable(object):
     """
     Add a bunch of callables to one list, and just invoke'm.
@@ -41,7 +53,8 @@ class Message(object):
     """
     An AMQP message. Has a binary body, and some properties.
 
-    Properties is a highly regularized class - see coolamqp.framing.definitions.BasicContentPropertyList
+    Properties is a highly regularized class - see
+    coolamqp.framing.definitions.BasicContentPropertyList
     for a list of possible properties.
     """
 
@@ -51,13 +64,15 @@ class Message(object):
         """
         Create a Message object.
 
-        Please take care with passing empty bodies, as py-amqp has some failure on it.
+        Please take care with passing empty bodies, as py-amqp has some
+        failure on it.
 
         :param body: stream of octets
         :type body: anything with a buffer interface
         :param properties: AMQP properties to be sent along.
                            default is 'no properties at all'
-                           You can pass a dict - it will be passed to MessageProperties,
+                           You can pass a dict - it will be passed to
+                           MessageProperties,
                            but it's slow - don't do that.
         :type properties: MessageProperties instance, None or a dict (SLOW!)
         """
@@ -85,7 +100,8 @@ class ReceivedMessage(Message):
     It additionally has an exchange name, routing key used, it's delivery tag,
     and methods for ack() or nack().
 
-    Note that if the consumer that generated this message was no_ack, .ack() and .nack() are no-ops.
+    Note that if the consumer that generated this message was no_ack, .ack()
+    and .nack() are no-ops.
     """
 
     def __init__(self, body, exchange_name, routing_key,
@@ -95,19 +111,22 @@ class ReceivedMessage(Message):
                  nack=None):
         """
         :param body: message body. A stream of octets.
-        :type body: str (py2) or bytes (py3) or a list of memoryviews, if particular disabled-by-default option
-                    is turned on.
+        :type body: str (py2) or bytes (py3) or a list of memoryviews, if
+            particular disabled-by-default option is turned on.
         :param exchange_name: name of exchange this message was submitted to
         :type exchange_name: memoryview
         :param routing_key: routing key with which this message was sent
         :type routing_key: memoryview
         :param properties: a suitable BasicContentPropertyList subinstance.
-                           be prepared that value of properties that are strings will be memoryviews
-        :param delivery_tag: delivery tag assigned by AMQP broker to confirm this message
-        :param ack: a callable to call when you want to ack (via basic.ack) this message. None if received
-             by the no-ack mechanism
-        :param nack: a callable to call when you want to nack (via basic.reject) this message. None if received
-             by the no-ack mechanism
+                           be prepared that value of properties that are
+                           strings will be memoryviews
+        :param delivery_tag: delivery tag assigned by AMQP broker to confirm
+            this message
+        :param ack: a callable to call when you want to ack (via basic.ack)
+            this message. None if received by the no-ack mechanism
+        :param nack: a callable to call when you want to nack
+            (via basic.reject) this message. None if received by the no-ack
+             mechanism
         """
         Message.__init__(self, body, properties=properties)
 
@@ -130,13 +149,12 @@ class Exchange(object):
     def __init__(self, name=u'', type=b'direct', durable=True,
                  auto_delete=False):
         """
-        :type name: unicode is preferred, binary type will get decoded to unicode with utf8
+        :type name: unicode is preferred, binary type will get decoded to
+             unicode with utf8
         :param type: exchange type. binary/unicode
         """
-        self.name = name.decode('utf8') if isinstance(name,
-                                                      six.binary_type) else name  # must be unicode
-        self.type = type.encode('utf8') if isinstance(type,
-                                                      six.text_type) else type  # must be bytes
+        self.name = toutf8(name)  # must be unicode
+        self.type = tobytes(type)  # must be bytes
         self.durable = durable
         self.auto_delete = auto_delete
 
@@ -179,8 +197,7 @@ class Queue(object):
         :param exclusive: Is this queue exclusive?
         :param auto_delete: Is this queue auto_delete ?
         """
-        self.name = name.encode('utf8') if isinstance(name,
-                                                      six.text_type) else name  #: public, must be bytes
+        self.name = tobytes(name)  #: public, must be bytes
         # if name is '', this will be filled in with broker-generated name upon declaration
         self.durable = durable
         self.exchange = exchange
@@ -257,7 +274,7 @@ class NodeDefinition(object):
                                            (six.text_type, six.binary_type)):
             connstr = args[0].decode('utf8') if isinstance(args[0],
                                                            six.binary_type) else \
-            args[0]
+                args[0]
             # AMQP connstring
             if not connstr.startswith(u'amqp://'):
                 raise ValueError(u'should begin with amqp://')
@@ -281,4 +298,4 @@ class NodeDefinition(object):
     def __str__(self):
         return six.text_type(
             b'amqp://%s:%s@%s/%s'.encode('utf8') % (
-            self.host, self.port, self.user, self.virtual_host))
+                self.host, self.port, self.user, self.virtual_host))

@@ -136,7 +136,7 @@ class Channeler(Attache):
         self.state = ST_OFFLINE
 
         if not isinstance(payload, (ChannelClose, ChannelCloseOk)) and (
-            payload is not None):
+                    payload is not None):
             # I do not know how to handle that!
             return
 
@@ -217,7 +217,7 @@ class Channeler(Attache):
         To be called by on_close, when it needs to be notified just one more time.
         """
         self.connection.watch_for_method(self.channel_id, (
-        ChannelClose, ChannelCloseOk, BasicCancel, BasicCancelOk),
+            ChannelClose, ChannelCloseOk, BasicCancel, BasicCancelOk),
                                          self.on_close,
                                          on_fail=self.on_close)
 

@@ -27,8 +27,8 @@ CLIENT_DATA = [
     (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', 'S')),
     (
         b'information', (
-        b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details',
-        'S')),
+            b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details',
+            'S')),
     (b'capabilities',
      ([(capa, (True, 't')) for capa in SUPPORTED_EXTENSIONS], 'F')),
 ]
@@ -102,7 +102,7 @@ class Handshaker(object):
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
         for channel in six.moves.xrange(1, (
-        65535 if payload.channel_max == 0 else payload.channel_max) + 1):
+                65535 if payload.channel_max == 0 else payload.channel_max) + 1):
             self.connection.free_channels.append(channel)
 
         self.connection.watch_for_method(0, ConnectionOpenOk,

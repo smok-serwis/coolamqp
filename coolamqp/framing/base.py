@@ -13,9 +13,9 @@ BASIC_TYPES = {u'bit': (None, None, "0", None),  # special case
                u'short': (2, 'H', "b'\\x00\\x00'", 2),
                u'long': (4, 'I', "b'\\x00\\x00\\x00\\x00'", 4),
                u'longlong': (
-               8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
+                   8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
                u'timestamp': (
-               8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
+                   8, 'Q', "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'", 8),
                u'table': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),
                # special case
                u'longstr': (None, None, "b'\\x00\\x00\\x00\\x00'", 4),

@@ -17,6 +17,7 @@ exclude_paths:
 - examples/**
 - tests/**
 - coolamqp/framing/definitions.py
+- compile_definitions.py
 ratings:
   paths:
   - coolamqp/**

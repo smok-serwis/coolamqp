@@ -12,9 +12,9 @@ from __future__ import absolute_import, division, print_function
 
 import collections
 import logging
-import warnings
-
+import struct
 import six
+import warnings
 
 from coolamqp.framing.definitions import ChannelOpenOk, BasicPublish, Basic, \
     BasicAck
@@ -233,7 +233,8 @@ class Publisher(Channeler, Synchronized):
 
     def on_operational(self, operational):
         state = {True: u'up', False: u'down'}[operational]
-        mode = {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[
+        mode = \
+        {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[
             self.mode]
 
         logger.info('Publisher %s is %s', mode, state)
