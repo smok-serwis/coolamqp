@@ -16,3 +16,5 @@ after_success:
  - bash build.sh
 services:
  - rabbitmq
+notifications:
+   slack: digicort:lbgdFcFmWmHtHKDEMI3FwQK5
