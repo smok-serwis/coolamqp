@@ -151,6 +151,7 @@ class Publisher(Channeler, Synchronized):
         """
         assert self.state == ST_ONLINE
         assert self.mode == Publisher.MODE_CNPUB
+        assert self.tagger is not None
 
         while len(self.messages) > 0:
             try:
@@ -265,20 +266,17 @@ class Publisher(Channeler, Synchronized):
                 self.state = ST_ONLINE
                 self.on_operational(True)
 
-        elif self.mode == Publisher.MODE_CNPUB:
+        elif (self.mode == Publisher.MODE_CNPUB) and isinstance(payload, ConfirmSelectOk):
             # Because only in this case it makes sense to check for MODE_CNPUB
+            # A-OK! Boot it.
+            self.tagger = AtomicTagger()
+            self.state = ST_ONLINE
+            self.on_operational(True)
 
-            if isinstance(payload, ConfirmSelectOk):
-                # A-OK! Boot it.
-                self.state = ST_ONLINE
-                self.on_operational(True)
+            # now we need to listen for BasicAck and BasicNack
 
-                self.tagger = AtomicTagger()
-
-                # now we need to listen for BasicAck and BasicNack
-
-                mw = MethodWatch(self.channel_id, (BasicAck, BasicNack),
-                                 self._on_cnpub_delivery)
-                mw.oneshot = False
-                self.connection.watch(mw)
-                self._mode_cnpub_process_deliveries()
+            mw = MethodWatch(self.channel_id, (BasicAck, BasicNack),
+                             self._on_cnpub_delivery)
+            mw.oneshot = False
+            self.connection.watch(mw)
+            self._mode_cnpub_process_deliveries()
