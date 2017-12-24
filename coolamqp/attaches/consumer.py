@@ -11,7 +11,7 @@ from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.exceptions import AMQPError
 from coolamqp.framing.definitions import ChannelOpenOk, BasicConsume, \
     BasicConsumeOk, QueueDeclare, QueueDeclareOk, ExchangeDeclare, \
-    ExchangeDeclareOk, \
+    ExchangeDeclareOk, ChannelCloseOk, \
     QueueBind, QueueBindOk, ChannelClose, BasicDeliver, BasicCancel, \
     BasicAck, BasicReject, RESOURCE_LOCKED, BasicCancelOk, BasicQos, BasicQosOk
 from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame
@@ -187,9 +187,9 @@ class Consumer(Channeler):
         # you'll blow up big next time you try to use this consumer if you
         # can't cancel, but just close
         if self.consumer_tag is not None:
-            self.method(BasicCancel(self.consumer_tag, False))
+            self.method_and_watch(BasicCancel(self.consumer_tag, False), (BasicCancelOk, ), self.on_close)
         else:
-            self.method(ChannelClose(0, b'cancelling', 0, 0))
+            self.method_and_watch(ChannelClose(0, b'cancelling', 0, 0), (ChannelCloseOk), self.on_close)
 
         if self.attache_group is not None:
             self.attache_group.on_cancel_customer(self)
