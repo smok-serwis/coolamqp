@@ -36,17 +36,21 @@ class Cluster(object):
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes, on_fail=None):
+    def __init__(self, nodes, on_fail=None, extra_client_properties=None):
         """
         :param nodes: list of nodes, or a single node. For now, only one is supported.
         :type nodes: NodeDefinition instance or a list of NodeDefinition instances
         :param on_fail: callable/0 to call when connection fails in an
             unclean way. This is a one-shot
         :type on_fail: callable/0
+        :param extra_client_properties: string to include in client properties
+        :type extra_client_properties: binary
         """
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
             nodes = [nodes]
+
+        self.extra_client_properties = extra_client_properties
 
         if len(nodes) > 1:
             raise NotImplementedError(u'Multiple nodes not supported yet')
@@ -190,7 +194,7 @@ class Cluster(object):
         self.events = six.moves.queue.Queue()  # for coolamqp.clustering.events.*
 
         self.snr = SingleNodeReconnector(self.node, self.attache_group,
-                                         self.listener)
+                                         self.listener, self.extra_client_properties)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)

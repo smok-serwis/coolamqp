@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestA(unittest.TestCase):
     def setUp(self):
-        self.c = Cluster([NODE])
+        self.c = Cluster([NODE], extra_client_properties=b'hello world')
         self.c.start()
 
     def tearDown(self):

@@ -1,6 +1,6 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-
+import copy
 """
 Provides reactors that can authenticate an AQMP session
 """
@@ -90,6 +90,12 @@ class Handshaker(object):
         self.connection.watchdog(WATCHDOG_TIMEOUT, self.on_watchdog)
         self.connection.watch_for_method(0, ConnectionTune,
                                          self.on_connection_tune)
+
+        if self.connection.extra_client_properties is not None:
+            global CLIENT_DATA
+            CLIENT_DATA = copy.copy(CLIENT_DATA)
+            CLIENT_DATA.append((b'client-id', (six.binary_type(self.connection.extra_client_properties), 'S')),)
+
         self.connection.send([
             AMQPMethodFrame(0,
                             ConnectionStartOk(CLIENT_DATA, b'PLAIN',

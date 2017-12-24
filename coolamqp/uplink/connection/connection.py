@@ -67,7 +67,7 @@ class Connection(object):
     This logger is talkative mostly on INFO, and regarding connection state
     """
 
-    def __init__(self, node_definition, listener_thread):
+    def __init__(self, node_definition, listener_thread, extra_client_properties=None):
         """
         Create an object that links to an AMQP broker.
 
@@ -75,9 +75,11 @@ class Connection(object):
 
         :param node_definition: NodeDefinition instance to use
         :param listener_thread: ListenerThread to use as async engine
+        :param extra_client_properties: string to include in client properties
         """
         self.listener_thread = listener_thread
         self.node_definition = node_definition
+        self.extra_client_properties = extra_client_properties
 
         self.recvf = ReceivingFramer(self.on_frame)
 

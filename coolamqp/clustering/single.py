@@ -14,11 +14,12 @@ class SingleNodeReconnector(object):
     Connection to one node. It will do it's best to remain alive.
     """
 
-    def __init__(self, node_def, attache_group, listener_thread):
+    def __init__(self, node_def, attache_group, listener_thread, extra_client_properties=None):
         self.listener_thread = listener_thread
         self.node_def = node_def
         self.attache_group = attache_group
         self.connection = None
+        self.extra_client_properties = extra_client_properties
 
         self.terminating = False
 
@@ -33,7 +34,7 @@ class SingleNodeReconnector(object):
         assert self.connection is None
 
         # Initiate connecting - this order is very important!
-        self.connection = Connection(self.node_def, self.listener_thread)
+        self.connection = Connection(self.node_def, self.listener_thread, extra_client_properties=self.extra_client_properties)
         self.attache_group.attach(self.connection)
         self.connection.start()
         self.connection.finalize.add(self.on_fail)
