@@ -261,6 +261,9 @@ class Consumer(Channeler):
             # OK, our cancelling went just fine - proceed with teardown
             self.register_on_close_watch()
             self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
+            if self.future_to_notify_on_dead is not None:  # notify it was cancelled
+                self.future_to_notify_on_dead.set_result(None)
+                self.future_to_notify_on_dead = None
             return
 
         if isinstance(payload, ChannelClose):
@@ -296,7 +299,7 @@ class Consumer(Channeler):
             payload)  # this None's self.connection and returns port
         self.fail_on_first_time_resource_locked = False
 
-        if self.future_to_notify_on_dead:  # notify it was cancelled
+        if self.future_to_notify_on_dead is not None:  # notify it was cancelled
             logger.info('Consumer successfully cancelled')
             self.future_to_notify_on_dead.set_result(None)
             self.future_to_notify_on_dead = None
