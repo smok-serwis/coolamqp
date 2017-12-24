@@ -244,6 +244,10 @@ class Consumer(Channeler):
 
         should_retry = False
 
+        if self.future_to_notify_on_dead is not None:  # notify it was cancelled
+            self.future_to_notify_on_dead.set_result(None)
+            self.future_to_notify_on_dead = None
+
         if isinstance(payload, ChannelClose):
             rc = payload.reply_code
             if rc == RESOURCE_LOCKED:
@@ -258,21 +262,14 @@ class Consumer(Channeler):
                     # suggests something is very wrong
                     self.cancelled = True
                     self.on_cancel()
+                    if self.future_to_notify:
+                        self.future_to_notify.set_exception(AMQPError(payload))
+                        self.future_to_notify = None
                 else:
                     # Do not notify the user, and retry at will.
                     # Do not zero the future - we will need to later confirm
                     # it, so it doesn't leak.
                     should_retry = True
-
-            if self.future_to_notify:
-                self.future_to_notify.set_exception(AMQPError(payload))
-                self.future_to_notify = None
-
-
-        if self.future_to_notify_on_dead is not None:  # notify it was cancelled
-            self.future_to_notify_on_dead.set_result(None)
-            self.future_to_notify_on_dead = None
-
 
         if isinstance(payload, BasicCancel):
             # Consumer Cancel Notification - by RabbitMQ
