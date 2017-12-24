@@ -11,8 +11,9 @@ CoolAMQP
 [![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=latest)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
-
+A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other (pure Python)
+AMQP clients cannot even hope to match.
+ 
 Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
 
 tl;dr - [this](coolamqp/framing/definitions.py) is **machine-generated** compile-time.

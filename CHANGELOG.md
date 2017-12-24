@@ -1,6 +1,6 @@
 * v0.94:
 
- * ...
+ * #32 - Custom client properties
 
 * v0.93:
 
