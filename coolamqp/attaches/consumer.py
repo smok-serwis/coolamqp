@@ -244,28 +244,6 @@ class Consumer(Channeler):
 
         should_retry = False
 
-        if isinstance(payload, BasicCancel):
-            # Consumer Cancel Notification - by RabbitMQ
-            # send them back those memoryviews :D
-
-            # on_close is a one_shot watch. We need to re-register it now.
-            self.register_on_close_watch()
-            self.methods([BasicCancelOk(payload.consumer_tag),
-                          ChannelClose(0, b'Received basic.cancel', 0, 0)])
-            self.cancelled = True  # wasn't I?
-            self.on_cancel()
-            self.on_broker_cancel()
-            return
-
-        if isinstance(payload, BasicCancelOk):
-            # OK, our cancelling went just fine - proceed with teardown
-            self.register_on_close_watch()
-            self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
-            if self.future_to_notify_on_dead is not None:  # notify it was cancelled
-                self.future_to_notify_on_dead.set_result(None)
-                self.future_to_notify_on_dead = None
-            return
-
         if isinstance(payload, ChannelClose):
             rc = payload.reply_code
             if rc == RESOURCE_LOCKED:
@@ -289,6 +267,31 @@ class Consumer(Channeler):
             if self.future_to_notify:
                 self.future_to_notify.set_exception(AMQPError(payload))
                 self.future_to_notify = None
+
+
+        if self.future_to_notify_on_dead is not None:  # notify it was cancelled
+            self.future_to_notify_on_dead.set_result(None)
+            self.future_to_notify_on_dead = None
+
+
+        if isinstance(payload, BasicCancel):
+            # Consumer Cancel Notification - by RabbitMQ
+            # send them back those memoryviews :D
+
+            # on_close is a one_shot watch. We need to re-register it now.
+            self.register_on_close_watch()
+            self.methods([BasicCancelOk(payload.consumer_tag),
+                          ChannelClose(0, b'Received basic.cancel', 0, 0)])
+            self.cancelled = True  # wasn't I?
+            self.on_cancel()
+            self.on_broker_cancel()
+            return
+
+        if isinstance(payload, BasicCancelOk):
+            # OK, our cancelling went just fine - proceed with teardown
+            self.register_on_close_watch()
+            self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
+            return
 
         # We might not want to throw the connection away.
         should_retry = should_retry and (not self.cancelled)
