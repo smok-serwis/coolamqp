@@ -299,6 +299,7 @@ class Consumer(Channeler):
         if self.future_to_notify_on_dead:  # notify it was cancelled
             logger.info('Consumer successfully cancelled')
             self.future_to_notify_on_dead.set_result(None)
+            self.future_to_notify_on_dead = None
 
         if should_retry:
             if old_con.state == ST_ONLINE:
