@@ -37,10 +37,14 @@ class FutureConfirmableRejectable(ConfirmableRejectable):
         self.future = future
 
     def confirm(self):
+        assert self.future is not None
         self.future.set_result(None)
+        self.future = None
 
     def reject(self):
+        assert self.future is not None
         self.future.set_exception(Exception())
+        self.future = None
 
 
 class AtomicTagger(object):

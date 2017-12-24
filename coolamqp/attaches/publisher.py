@@ -266,12 +266,10 @@ class Publisher(Channeler, Synchronized):
                 self.state = ST_ONLINE
                 self.on_operational(True)
 
-        elif (self.mode == Publisher.MODE_CNPUB) and isinstance(payload, ConfirmSelectOk):
+        elif self.mode == Publisher.MODE_CNPUB and isinstance(payload, ConfirmSelectOk):
             # Because only in this case it makes sense to check for MODE_CNPUB
             # A-OK! Boot it.
             self.tagger = AtomicTagger()
-            self.state = ST_ONLINE
-            self.on_operational(True)
 
             # now we need to listen for BasicAck and BasicNack
 
@@ -279,4 +277,6 @@ class Publisher(Channeler, Synchronized):
                              self._on_cnpub_delivery)
             mw.oneshot = False
             self.connection.watch(mw)
+            self.state = ST_ONLINE
+            self.on_operational(True)
             self._mode_cnpub_process_deliveries()
