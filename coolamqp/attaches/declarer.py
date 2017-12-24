@@ -89,14 +89,12 @@ class DeleteQueue(Operation):
     def perform(self):
         queue = self.obj
 
-        print('bang')
         self.declarer.method_and_watch(
             QueueDelete(queue.name, False, False, False),
             (QueueDeleteOk, ChannelClose),
             self._callback)
 
     def _callback(self, payload):
-        print('got', payload)
         assert not self.done
         self.done = True
         if isinstance(payload, ChannelClose):
