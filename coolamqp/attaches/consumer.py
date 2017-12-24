@@ -302,11 +302,6 @@ class Consumer(Channeler):
             payload)  # this None's self.connection and returns port
         self.fail_on_first_time_resource_locked = False
 
-        if self.future_to_notify_on_dead is not None:  # notify it was cancelled
-            logger.info('Consumer successfully cancelled')
-            self.future_to_notify_on_dead.set_result(None)
-            self.future_to_notify_on_dead = None
-
         if should_retry:
             if old_con.state == ST_ONLINE:
                 logger.info('Retrying with %s', self.queue.name)
