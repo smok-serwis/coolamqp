@@ -17,3 +17,7 @@ after_success:
 services: rabbitmq
 notifications:
    slack: digicort:lbgdFcFmWmHtHKDEMI3FwQK5
+addons:
+  apt:
+    packages:
+      - rabbitmq-server
