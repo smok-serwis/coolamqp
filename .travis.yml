@@ -14,7 +14,6 @@ install:
 after_success:
  - codeclimate-test-reporter
  - bash build.sh
-services:
- - rabbitmq
+services: rabbitmq
 notifications:
    slack: digicort:lbgdFcFmWmHtHKDEMI3FwQK5
