@@ -187,7 +187,9 @@ class Consumer(Channeler):
         # you'll blow up big next time you try to use this consumer if you
         # can't cancel, but just close
         if self.consumer_tag is not None:
-            self.method(BasicCancel(self.consumer_tag, False))
+            self.method_and_watch(BasicCancel(self.consumer_tag, False),
+                                  [BasicCancelOk],
+                                  self.on_close)
         else:
             self.method(ChannelClose(0, b'cancelling', 0, 0))
 
