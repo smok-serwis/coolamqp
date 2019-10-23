@@ -2,10 +2,12 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import collections
+import monotonic
 import time
 import socket
 import six
 
+from coolamqp.exceptions import ConnectionDead
 from coolamqp.uplink.connection.recv_framer import ReceivingFramer
 from coolamqp.uplink.connection.send_framer import SendingFramer
 from coolamqp.framing.frames import AMQPMethodFrame
@@ -122,7 +124,7 @@ class Connection(object):
         while len(self.callables_on_connected) > 0:
             self.callables_on_connected.pop()()
 
-    def start(self):
+    def start(self, timeout):
         """
         Start processing events for this connect. Create the socket,
         transmit 'AMQP\x00\x00\x09\x01' and roll.
@@ -131,13 +133,15 @@ class Connection(object):
         """
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        start_at = monotonic.monotonic()
         while True:
             try:
                 sock.connect(
                     (self.node_definition.host, self.node_definition.port))
             except socket.error as e:
                 time.sleep(0.5)  # Connection refused? Very bad things?
+                if monotonic.monotonic() - start_at < timeout:
+                    raise ConnectionDead()
             else:
                 break
 
