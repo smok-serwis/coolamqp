@@ -140,7 +140,7 @@ class Connection(object):
                     (self.node_definition.host, self.node_definition.port))
             except socket.error as e:
                 time.sleep(0.5)  # Connection refused? Very bad things?
-                if monotonic.monotonic() - start_at < timeout:
+                if monotonic.monotonic() - start_at > timeout:
                     raise ConnectionDead()
             else:
                 break
