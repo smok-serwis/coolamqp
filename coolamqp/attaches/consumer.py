@@ -141,8 +141,7 @@ class Consumer(Channeler):
         self.future_to_notify = future_to_notify
         self.future_to_notify_on_dead = None  # .cancel
 
-        self.fail_on_first_time_resource_locked = \
-            fail_on_first_time_resource_locked
+        self.fail_on_first_time_resource_locked = fail_on_first_time_resource_locked
         self.cancel_on_failure = cancel_on_failure
         self.body_receive_mode = body_receive_mode
 
@@ -230,7 +229,6 @@ class Consumer(Channeler):
         Note, this can be called multiple times, and eventually with None.
 
         """
-
         if self.cancel_on_failure and (not self.cancelled):
             logger.debug(
                 'Consumer is cancel_on_failure and failure seen, True->cancelled')
@@ -288,6 +286,7 @@ class Consumer(Channeler):
             if self.future_to_notify:
                 self.future_to_notify.set_exception(AMQPError(payload))
                 self.future_to_notify = None
+                logger.debug('Notifying connection closed with %s', payload)
 
         # We might not want to throw the connection away.
         should_retry = should_retry and (not self.cancelled)

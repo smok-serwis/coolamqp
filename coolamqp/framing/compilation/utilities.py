@@ -139,4 +139,5 @@ def ffmt(data, *args, **kwargs):
     for arg in args:
         op = str if kwargs.get('sane', True) else frepr
         data = data.replace('%s', op(arg), 1)
+    data = data.replace('%S', '%s')
     return data

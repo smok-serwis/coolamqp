@@ -428,6 +428,16 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
                 line('    ]\n')
 
+            # __repr__
+            line('''\n    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return '%s(%S)' % (', '.join(map(repr, [%s])))\n''',
+                 full_class_name,
+                 u", ".join(['self.'+format_field_name(field.name) for field in non_reserved_fields]))
+
             # constructor
             line('''\n    def __init__(%s):
         """
