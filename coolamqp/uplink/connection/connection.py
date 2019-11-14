@@ -44,7 +44,9 @@ def alert_watches(watches, trigger):
             continue
 
         if not any((watch_triggered, watch.oneshot, watch.cancelled)):
-            # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
+            # Watch remains alive if it was NOT triggered, or it's NOT a oneshot or it's not cancelled
+            alive_watches.append(watch)
+        elif not watch.oneshot and not watch.cancelled:
             alive_watches.append(watch)
     return alive_watches, watch_handled
 
