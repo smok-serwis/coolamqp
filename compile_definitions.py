@@ -42,7 +42,7 @@ Generated automatically by CoolAMQP from AMQP machine-readable specification.
 See coolamqp.uplink.framing.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
-CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
+CoolAMQP is copyright (c) 2016-2018 DMS Serwis s.c., 2018-2019 SMOK sp. z o.o.
 
 
 ###########################################################
