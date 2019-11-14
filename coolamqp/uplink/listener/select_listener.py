@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function
 
 import collections
 import heapq
+import itertools
 import logging
 import select
-from select import epoll    # this will raise ImportError on import with gevent monkey-patched environments
 import socket
 
 import monotonic
@@ -19,10 +19,13 @@ RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
 RW = RO | select.EPOLLOUT
 
 
-class EpollSocket(BaseSocket):
+class SelectSocket(BaseSocket):
     """
-    EpollListener substitutes your BaseSockets with this
+    SelectListener substitutes your BaseSockets with this
     """
+
+    def __hash__(self):
+        return self.socket.fileno().__hash__()
 
     def __init__(self, sock, on_read, on_fail, listener):
         BaseSocket.__init__(self, sock, on_read=on_read, on_fail=on_fail)
@@ -34,11 +37,6 @@ class EpollSocket(BaseSocket):
         This can actually get called not by ListenerThread.
         """
         BaseSocket.send(self, data, priority=priority)
-        try:
-            self.listener.epoll.modify(self, RW)
-        except socket.error:
-            # silence. If there are errors, it's gonna get nuked soon.
-            pass
 
     def oneshot(self, seconds_after, callable):
         """
@@ -57,18 +55,22 @@ class EpollSocket(BaseSocket):
         self.listener.noshot(self)
 
 
-class EpollListener(object):
+class SelectListener(object):
     """
-    A listener using epoll.
+    A listener using select.
     """
 
     def __init__(self):
-        self.epoll = epoll()
+        self.readable_sockets = set()
+        self.writable_sockets = set()
+        self.exception_sockets = set()
         self.fd_to_sock = {}
         self.time_events = []
 
     def wait(self, timeout=1):
-        events = self.epoll.poll(timeout=timeout)
+        rd_socks, wd_socks, ex_socks = select.select(self.readable_sockets,
+                                                     self.writable_sockets,
+                                                     self.exception_sockets, timeout)
 
         # Timer events
         mono = monotonic.monotonic()
@@ -76,31 +78,26 @@ class EpollListener(object):
             ts, fd, callback = heapq.heappop(self.time_events)
             callback()
 
-        for fd, event in events:
-            sock = self.fd_to_sock[fd]
+        for readable_socket in rd_socks:
+            readable_socket.on_read()
 
-            # Errors
-            try:
-                if event & (select.EPOLLERR | select.EPOLLHUP):
-                    raise SocketFailed()
+        for exception_socket in ex_socks:
+            exception_socket.on_fail()
+            exception_socket.close()
+            self.noshot(exception_socket)
 
-                if event & select.EPOLLIN:
-                    sock.on_read()
+        for writable_socket in itertools.chain(wd_socks, self.readable_sockets - set(self.writable_sockets)):
+            a = writable_socket.on_write()
+            if a and writable_socket in self.writable_sockets:
+                # This socket is done sending data as for now
+                self.writable_sockets.remove(writable_socket)
+            if not a:
+                self.writable_sockets.add(writable_socket)
 
-                if event & select.EPOLLOUT:
-
-                    sock.on_write()
-                    # I'm done with sending for now
-                    if len(sock.data_to_send) == 0 and len(
-                            sock.priority_queue) == 0:
-                        self.epoll.modify(sock.fileno(), RO)
-
-            except SocketFailed:
-                self.epoll.unregister(fd)
-                del self.fd_to_sock[fd]
-                sock.on_fail()
-                self.noshot(sock)
-                sock.close()
+        # Check if the socket wants to send anything more
+        for readable_socket in self.readable_sockets:
+            if len(readable_socket.data_to_send) > 0:
+                self.writable_sockets.add(readable_socket)
 
     def noshot(self, sock):
         """
@@ -118,12 +115,15 @@ class EpollListener(object):
         This object is unusable after this call.
         """
         self.time_events = []
-        for sock in list(six.itervalues(self.fd_to_sock)):
+        for sock in self.readable_sockets:
             sock.on_fail()
             sock.close()
 
+        self.readable_sockets = set()
+        self.writable_sockets = set()
+        self.exception_sockets = set()
+
         self.fd_to_sock = {}
-        self.epoll.close()
 
     def oneshot(self, sock, delta, callback):
         """
@@ -149,8 +149,9 @@ class EpollListener(object):
 
         :return: a BaseSocket instance to use instead of this socket
         """
-        sock = EpollSocket(sock, on_read, on_fail, self)
+        sock = SelectSocket(sock, on_read, on_fail, self)
         self.fd_to_sock[sock.fileno()] = sock
 
-        self.epoll.register(sock, RW)
+        self.readable_sockets.add(sock)
+        self.exception_sockets.add(sock)
         return sock

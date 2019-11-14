@@ -4,7 +4,11 @@ from __future__ import absolute_import, division, print_function
 import threading
 
 from coolamqp.objects import Callable
-from coolamqp.uplink.listener.epoll_listener import EpollListener
+try:
+    from coolamqp.uplink.listener.epoll_listener import EpollListener
+except ImportError:  # module 'select' has no attribute epoll, a sure sign of monkey patching
+    pass
+from .select_listener import SelectListener
 
 
 class ListenerThread(threading.Thread):
@@ -18,6 +22,7 @@ class ListenerThread(threading.Thread):
         threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
         self.terminating = False
+        self.listener = None
         self._call_next_io_event = Callable(oneshots=True)
 
     def call_next_io_event(self, callable):
@@ -36,7 +41,10 @@ class ListenerThread(threading.Thread):
 
     def init(self):
         """Called before start. It is not safe to fork after this"""
-        self.listener = EpollListener()
+        try:
+            self.listener = EpollListener()
+        except NameError:   # not imported due to gevent monkey patching
+            self.listener = SelectListener()
 
     def run(self):
         while not self.terminating:

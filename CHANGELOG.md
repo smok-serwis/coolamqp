@@ -1,6 +1,10 @@
+* v0.95rc1:
+
+ * added a select-based listener in order to integrate with gevent
+
 * v0.94:
 
- * ...
+ * _no such version_
 
 * v0.93:
 
