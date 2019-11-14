@@ -60,7 +60,7 @@ class TestDouble(unittest.TestCase):
         try:
             con2, fut2 = self.c2.consume(q,
                                          fail_on_first_time_resource_locked=True)
-            fut2.result()
+            fut2.result(timeout=20)
         except AMQPError as e:
             self.assertEquals(e.reply_code, RESOURCE_LOCKED)
             self.assertFalse(e.is_hard_error())

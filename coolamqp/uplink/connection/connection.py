@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import logging
 import collections
 import monotonic
+import uuid
 import time
 import socket
 import six
@@ -44,8 +45,16 @@ def alert_watches(watches, trigger):
             continue
 
         if not any((watch_triggered, watch.oneshot, watch.cancelled)):
-            # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
+            # Watch remains alive if it was NOT triggered, or it's NOT a oneshot or it's not cancelled
             alive_watches.append(watch)
+        elif not watch.oneshot and not watch.cancelled:
+            alive_watches.append(watch)
+        elif watch.oneshot and not watch_triggered:
+            alive_watches.append(watch)
+
+    if set(alive_watches) != set(watches):
+        for removed_watch in set(watches)-set(alive_watches):
+            logger.debug('Removing watch %s', repr(removed_watch))
     return alive_watches, watch_handled
 
 
@@ -80,7 +89,7 @@ class Connection(object):
         """
         self.listener_thread = listener_thread
         self.node_definition = node_definition
-
+        self.uuid = uuid.uuid4().hex[:5]
         self.recvf = ReceivingFramer(self.on_frame)
 
         # todo a list doesn't seem like a very strong atomicity guarantee
@@ -100,6 +109,10 @@ class Connection(object):
         self.heartbeat = None
         self.extensions = []
 
+        # To be filled in later
+        self.listener_socket = None
+        self.sendf = None
+
     def call_on_connected(self, callable):
         """
         Register a callable to be called when this links to the server.
@@ -117,7 +130,7 @@ class Connection(object):
 
     def on_connected(self):
         """Called by handshaker upon reception of final connection.open-ok"""
-        logger.info('Connection ready.')
+        logger.info('[%s] Connection ready.', self.uuid)
 
         self.state = ST_ONLINE
 
@@ -145,7 +158,7 @@ class Connection(object):
             else:
                 break
 
-        logger.debug('TCP connection established, authentication in progress')
+        logger.debug('[%s] TCP connection established, authentication in progress', self.uuid)
 
         sock.settimeout(0)
         sock.send(b'AMQP\x00\x00\x09\x01')
@@ -204,7 +217,8 @@ class Connection(object):
 
         if isinstance(payload, ConnectionClose):
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
-            logger.info(u'Broker closed our connection - code %s reason %s',
+            logger.info(u'[%s] Broker closed our connection - code %s reason %s',
+                        self.uuid,
                         payload.reply_code,
                         payload.reply_text.tobytes().decode('utf8'))
 
@@ -244,7 +258,7 @@ class Connection(object):
         watch_handled = False  # True if ANY watch handled this
 
         if isinstance(frame, AMQPMethodFrame):
-            logger.debug('Received %s', frame.payload.NAME)
+            logger.debug('[%s] Received %s', self.uuid, frame.payload.NAME)
 
         # ==================== process per-channel watches
         #
@@ -273,7 +287,10 @@ class Connection(object):
             self.any_watches.append(watch)
 
         if not watch_handled:
-            logger.warn('Unhandled frame %s', frame)
+            if isinstance(frame, AMQPMethodFrame):
+                logger.warning('[%s] Unhandled method frame %s', self.uuid, repr(frame.payload))
+            else:
+                logger.warning('[%s] Unhandled frame %s', self.uuid, frame)
 
     def watchdog(self, delay, callback):
         """
