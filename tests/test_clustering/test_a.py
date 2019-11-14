@@ -202,7 +202,7 @@ class TestA(unittest.TestCase):
 
         data = b'hello'
         self.c.publish(Message(data), routing_key=u'hello', confirm=True)
-        m = self.c.drain(1)
+        m = self.c.drain(3)
         self.assertIsInstance(m, MessageReceived)
         self.assertIsInstance(m.body[0], memoryview)
         self.assertEquals(m.body[0], data)

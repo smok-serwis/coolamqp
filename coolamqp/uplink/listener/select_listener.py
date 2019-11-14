@@ -6,17 +6,12 @@ import heapq
 import itertools
 import logging
 import select
-import socket
 
 import monotonic
-import six
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
 
 logger = logging.getLogger(__name__)
-
-RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
-RW = RO | select.EPOLLOUT
 
 
 class SelectSocket(BaseSocket):
@@ -79,7 +74,17 @@ class SelectListener(object):
             callback()
 
         for readable_socket in rd_socks:
-            readable_socket.on_read()
+            try:
+                readable_socket.on_read()
+            except SocketFailed:
+                self.readable_sockets.remove(readable_socket)
+                self.exception_sockets.remove(readable_socket)
+                try:
+                    self.writable_sockets.remove(readable_socket)
+                except KeyError:
+                    pass
+                readable_socket.on_fail()
+                readable_socket.close()
 
         for exception_socket in ex_socks:
             exception_socket.on_fail()
