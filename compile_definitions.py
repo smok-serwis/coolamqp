@@ -532,7 +532,7 @@ REPLY_REASONS_FOR = {\n''')
 # Methods that are replies for other, ie. ConnectionOpenOk: ConnectionOpen
 # a method may be a reply for ONE or NONE other methods
 # if a method has no replies, it will have an empty list as value here
-REPLIES_FOR= {\n''')
+REPLIES_FOR = {\n''')
 
     for k, v in methods_that_are_replies_for.items():
         line(u'    %s: [%s],\n' % (k, u', '.join(map(str, v))))
