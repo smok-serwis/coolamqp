@@ -2,6 +2,9 @@
 from __future__ import print_function, absolute_import, division
 import six
 import unittest
+
+import tests
+
 from coolamqp.attaches import Consumer
 from coolamqp.objects import Queue
 

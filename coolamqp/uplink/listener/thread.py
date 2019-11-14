@@ -41,10 +41,20 @@ class ListenerThread(threading.Thread):
 
     def init(self):
         """Called before start. It is not safe to fork after this"""
+        GEVENT_INSTALLED = False
         try:
-            self.listener = EpollListener()
+            EpollListener
         except NameError:   # not imported due to gevent monkey patching
-            self.listener = SelectListener()
+            GEVENT_INSTALLED = True
+        else:
+            try:
+                import gevent.monkey
+            except ImportError:
+                GEVENT_INSTALLED = False
+            else:
+                GEVENT_INSTALLED = 'socket' in gevent.monkey.saved
+
+        self.listener = SelectListener() if GEVENT_INSTALLED else EpollListener()
 
     def run(self):
         while not self.terminating:

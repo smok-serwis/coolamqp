@@ -7,11 +7,15 @@ import six
 import os
 import unittest
 import time, logging, threading, monotonic
+
+import tests
+
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
     ReceivedMessage, Exchange
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
-
 import time
+
+
 
 NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
