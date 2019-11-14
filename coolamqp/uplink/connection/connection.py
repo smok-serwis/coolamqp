@@ -274,7 +274,7 @@ class Connection(object):
 
         if not watch_handled:
             if isinstance(frame, AMQPMethodFrame):
-                logger.warning('Unhandled method frame %s', frame.FRAME_TYPE)
+                logger.warning('Unhandled method frame %s', frame.payload.NAME)
             else:
                 logger.warning('Unhandled frame %s', frame)
 
