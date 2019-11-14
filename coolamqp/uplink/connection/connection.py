@@ -273,7 +273,10 @@ class Connection(object):
             self.any_watches.append(watch)
 
         if not watch_handled:
-            logger.warn('Unhandled frame %s', frame)
+            if isinstance(frame, AMQPMethodFrame):
+                logger.warning('Unhandled method frame %s', frame.FRAME_TYPE)
+            else:
+                logger.warning('Unhandled frame %s', frame)
 
     def watchdog(self, delay, callback):
         """
