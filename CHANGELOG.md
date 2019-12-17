@@ -1,3 +1,7 @@
+* v0.96:
+
+* _TBA_
+
 * v0.95:
 
  * multiple bugs fixed
