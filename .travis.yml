@@ -1,8 +1,6 @@
 language: python
 python:
  - "2.7"
- - "3.3"
- - "3.4"
  - "3.5"
  - "pypy"
 script:
@@ -14,5 +12,8 @@ install:
 after_success:
  - codeclimate-test-reporter
  - bash build.sh
-services:
- - rabbitmq
+services: rabbitmq
+addons:
+  apt:
+    packages:
+      - rabbitmq-server

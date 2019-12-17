@@ -1,3 +1,11 @@
+* v0.95:
+
+ * multiple bugs fixed
+
+* v0.94:
+
+_version skipped_
+
 * v0.93:
 
  * Large refactor of XML schema compiler

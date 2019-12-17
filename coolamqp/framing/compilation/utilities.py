@@ -9,6 +9,7 @@ from coolamqp.framing.base import BASIC_TYPES
 
 from .xml_tags import *
 
+
 # docs may be None
 
 
@@ -37,7 +38,6 @@ def get_size(fields):  # assume all fields have static length
         size += int(math.ceil(bits / 8))
 
     return size
-
 
 
 def as_unicode(callable):
@@ -139,4 +139,5 @@ def ffmt(data, *args, **kwargs):
     for arg in args:
         op = str if kwargs.get('sane', True) else frepr
         data = data.replace('%s', op(arg), 1)
+    data = data.replace('%S', '%s')
     return data

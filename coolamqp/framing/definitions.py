@@ -7,7 +7,7 @@ Generated automatically by CoolAMQP from AMQP machine-readable specification.
 See coolamqp.uplink.framing.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
-CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
+CoolAMQP is copyright (c) 2016-2018 DMS Serwis s.c., 2018-2019 SMOK sp. z o.o.
 
 
 ###########################################################
@@ -130,8 +130,8 @@ INTERNAL_ERROR = 541
                       # resume
                       # normal operations.
 
-HARD_ERRORS = [CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, SYNTAX_ERROR, COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME, RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, INTERNAL_ERROR]
 SOFT_ERRORS = [CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND, RESOURCE_LOCKED, PRECONDITION_FAILED]
+HARD_ERRORS = [CONNECTION_FORCED, INVALID_PATH, FRAME_ERROR, SYNTAX_ERROR, COMMAND_INVALID, CHANNEL_ERROR, UNEXPECTED_FRAME, RESOURCE_ERROR, NOT_ALLOWED, NOT_IMPLEMENTED, INTERNAL_ERROR]
 
 
 DOMAIN_TO_BASIC_TYPE = {
@@ -195,6 +195,13 @@ class ConnectionBlocked(AMQPMethodPayload):
         Field(u'reason', u'shortstr', u'shortstr', reserved=False),
     ]
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionBlocked(%s)' % (', '.join(map(repr, [self.reason])))
+
     def __init__(self, reason):
         """
         Create frame connection.blocked
@@ -252,6 +259,13 @@ class ConnectionClose(AMQPMethodPayload):
         Field(u'class-id', u'class-id', u'short', reserved=False),
         Field(u'method-id', u'method-id', u'short', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionClose(%s)' % (', '.join(map(repr, [self.reply_code, self.reply_text, self.class_id, self.method_id])))
 
     def __init__(self, reply_code, reply_text, class_id, method_id):
         """
@@ -316,6 +330,13 @@ class ConnectionCloseOk(AMQPMethodPayload):
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionCloseOk(%s)' % (', '.join(map(repr, [])))
+
     def __init__(self):
         """
         Create frame connection.close-ok
@@ -348,7 +369,7 @@ class ConnectionOpen(AMQPMethodPayload):
     INDEX = (10, 40)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x28'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -359,6 +380,13 @@ class ConnectionOpen(AMQPMethodPayload):
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
         Field(u'reserved-2', u'bit', u'bit', reserved=True),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionOpen(%s)' % (', '.join(map(repr, [self.virtual_host])))
 
     def __init__(self, virtual_host):
         """
@@ -407,7 +435,7 @@ class ConnectionOpenOk(AMQPMethodPayload):
     INDEX = (10, 41)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x29'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -417,6 +445,13 @@ class ConnectionOpenOk(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionOpenOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -450,7 +485,7 @@ class ConnectionStart(AMQPMethodPayload):
     INDEX = (10, 10)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x0A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -463,6 +498,13 @@ class ConnectionStart(AMQPMethodPayload):
         Field(u'mechanisms', u'longstr', u'longstr', reserved=False),
         Field(u'locales', u'longstr', u'longstr', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionStart(%s)' % (', '.join(map(repr, [self.version_major, self.version_minor, self.server_properties, self.mechanisms, self.locales])))
 
     def __init__(self, version_major, version_minor, server_properties, mechanisms, locales):
         """
@@ -552,7 +594,7 @@ class ConnectionSecure(AMQPMethodPayload):
     INDEX = (10, 20)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x14'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -561,6 +603,13 @@ class ConnectionSecure(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'challenge', u'longstr', u'longstr', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionSecure(%s)' % (', '.join(map(repr, [self.challenge])))
 
     def __init__(self, challenge):
         """
@@ -604,7 +653,7 @@ class ConnectionStartOk(AMQPMethodPayload):
     INDEX = (10, 11)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x0B'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -616,6 +665,13 @@ class ConnectionStartOk(AMQPMethodPayload):
         Field(u'response', u'longstr', u'longstr', reserved=False),
         Field(u'locale', u'shortstr', u'shortstr', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionStartOk(%s)' % (', '.join(map(repr, [self.client_properties, self.mechanism, self.response, self.locale])))
 
     def __init__(self, client_properties, mechanism, response, locale):
         """
@@ -698,7 +754,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
     INDEX = (10, 21)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x15'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -707,6 +763,13 @@ class ConnectionSecureOk(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'response', u'longstr', u'longstr', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionSecureOk(%s)' % (', '.join(map(repr, [self.response])))
 
     def __init__(self, response):
         """
@@ -752,7 +815,7 @@ class ConnectionTune(AMQPMethodPayload):
     INDEX = (10, 30)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x1E'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -763,6 +826,13 @@ class ConnectionTune(AMQPMethodPayload):
         Field(u'frame-max', u'long', u'long', reserved=False),
         Field(u'heartbeat', u'short', u'short', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionTune(%s)' % (', '.join(map(repr, [self.channel_max, self.frame_max, self.heartbeat])))
 
     def __init__(self, channel_max, frame_max, heartbeat):
         """
@@ -823,7 +893,7 @@ class ConnectionTuneOk(AMQPMethodPayload):
     INDEX = (10, 31)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x0A\x00\x1F'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -834,6 +904,13 @@ class ConnectionTuneOk(AMQPMethodPayload):
         Field(u'frame-max', u'long', u'long', reserved=False),
         Field(u'heartbeat', u'short', u'short', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionTuneOk(%s)' % (', '.join(map(repr, [self.channel_max, self.frame_max, self.heartbeat])))
 
     def __init__(self, channel_max, frame_max, heartbeat):
         """
@@ -897,6 +974,13 @@ class ConnectionUnblocked(AMQPMethodPayload):
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x3D\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConnectionUnblocked(%s)' % (', '.join(map(repr, [])))
+
     def __init__(self):
         """
         Create frame connection.unblocked
@@ -952,6 +1036,13 @@ class ChannelClose(AMQPMethodPayload):
         Field(u'class-id', u'class-id', u'short', reserved=False),
         Field(u'method-id', u'method-id', u'short', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ChannelClose(%s)' % (', '.join(map(repr, [self.reply_code, self.reply_text, self.class_id, self.method_id])))
 
     def __init__(self, reply_code, reply_text, class_id, method_id):
         """
@@ -1015,6 +1106,13 @@ class ChannelCloseOk(AMQPMethodPayload):
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x14\x00\x29\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ChannelCloseOk(%s)' % (', '.join(map(repr, [])))
+
     def __init__(self):
         """
         Create frame channel.close-ok
@@ -1057,6 +1155,13 @@ class ChannelFlow(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'active', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ChannelFlow(%s)' % (', '.join(map(repr, [self.active])))
 
     def __init__(self, active):
         """
@@ -1110,6 +1215,13 @@ class ChannelFlowOk(AMQPMethodPayload):
         Field(u'active', u'bit', u'bit', reserved=False),
     ]
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ChannelFlowOk(%s)' % (', '.join(map(repr, [self.active])))
+
     def __init__(self, active):
         """
         Create frame channel.flow-ok
@@ -1152,7 +1264,7 @@ class ChannelOpen(AMQPMethodPayload):
     INDEX = (20, 10)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x14\x00\x0A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -1162,6 +1274,13 @@ class ChannelOpen(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ChannelOpen(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -1192,7 +1311,7 @@ class ChannelOpenOk(AMQPMethodPayload):
     INDEX = (20, 11)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x14\x00\x0B'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -1202,6 +1321,13 @@ class ChannelOpenOk(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'reserved-1', u'longstr', u'longstr', reserved=True),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ChannelOpenOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -1242,7 +1368,7 @@ class ExchangeBind(AMQPMethodPayload):
     INDEX = (40, 30)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x1E'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -1256,6 +1382,13 @@ class ExchangeBind(AMQPMethodPayload):
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeBind(%s)' % (', '.join(map(repr, [self.destination, self.source, self.routing_key, self.no_wait, self.arguments])))
 
     def __init__(self, destination, source, routing_key, no_wait, arguments):
         """
@@ -1336,11 +1469,18 @@ class ExchangeBindOk(AMQPMethodPayload):
     INDEX = (40, 31)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x1F'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeBindOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -1369,7 +1509,7 @@ class ExchangeDeclare(AMQPMethodPayload):
     INDEX = (40, 10)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x0A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -1386,6 +1526,13 @@ class ExchangeDeclare(AMQPMethodPayload):
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeDeclare(%s)' % (', '.join(map(repr, [self.exchange, self.type_, self.passive, self.durable, self.auto_delete, self.internal, self.no_wait, self.arguments])))
 
     def __init__(self, exchange, type_, passive, durable, auto_delete, internal, no_wait, arguments):
         """
@@ -1504,7 +1651,7 @@ class ExchangeDelete(AMQPMethodPayload):
     INDEX = (40, 20)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x14'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -1516,6 +1663,13 @@ class ExchangeDelete(AMQPMethodPayload):
         Field(u'if-unused', u'bit', u'bit', reserved=False),
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeDelete(%s)' % (', '.join(map(repr, [self.exchange, self.if_unused, self.no_wait])))
 
     def __init__(self, exchange, if_unused, no_wait):
         """
@@ -1576,11 +1730,18 @@ class ExchangeDeclareOk(AMQPMethodPayload):
     INDEX = (40, 11)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x0B'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeDeclareOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -1607,11 +1768,18 @@ class ExchangeDeleteOk(AMQPMethodPayload):
     INDEX = (40, 21)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x15'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeDeleteOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -1638,7 +1806,7 @@ class ExchangeUnbind(AMQPMethodPayload):
     INDEX = (40, 40)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x28'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -1652,6 +1820,13 @@ class ExchangeUnbind(AMQPMethodPayload):
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeUnbind(%s)' % (', '.join(map(repr, [self.destination, self.source, self.routing_key, self.no_wait, self.arguments])))
 
     def __init__(self, destination, source, routing_key, no_wait, arguments):
         """
@@ -1726,11 +1901,18 @@ class ExchangeUnbindOk(AMQPMethodPayload):
     INDEX = (40, 51)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x28\x00\x33'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x28\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ExchangeUnbindOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -1776,7 +1958,7 @@ class QueueBind(AMQPMethodPayload):
     INDEX = (50, 20)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x14'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -1790,6 +1972,13 @@ class QueueBind(AMQPMethodPayload):
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueBind(%s)' % (', '.join(map(repr, [self.queue, self.exchange, self.routing_key, self.no_wait, self.arguments])))
 
     def __init__(self, queue, exchange, routing_key, no_wait, arguments):
         """
@@ -1882,11 +2071,18 @@ class QueueBindOk(AMQPMethodPayload):
     INDEX = (50, 21)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x15'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x32\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueBindOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -1917,7 +2113,7 @@ class QueueDeclare(AMQPMethodPayload):
     INDEX = (50, 10)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x0A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -1933,6 +2129,13 @@ class QueueDeclare(AMQPMethodPayload):
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueDeclare(%s)' % (', '.join(map(repr, [self.queue, self.passive, self.durable, self.exclusive, self.auto_delete, self.no_wait, self.arguments])))
 
     def __init__(self, queue, passive, durable, exclusive, auto_delete, no_wait, arguments):
         """
@@ -2047,7 +2250,7 @@ class QueueDelete(AMQPMethodPayload):
     INDEX = (50, 40)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x28'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2060,6 +2263,13 @@ class QueueDelete(AMQPMethodPayload):
         Field(u'if-empty', u'bit', u'bit', reserved=False),
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueDelete(%s)' % (', '.join(map(repr, [self.queue, self.if_unused, self.if_empty, self.no_wait])))
 
     def __init__(self, queue, if_unused, if_empty, no_wait):
         """
@@ -2125,7 +2335,7 @@ class QueueDeclareOk(AMQPMethodPayload):
     INDEX = (50, 11)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x0B'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2136,6 +2346,13 @@ class QueueDeclareOk(AMQPMethodPayload):
         Field(u'message-count', u'message-count', u'long', reserved=False),
         Field(u'consumer-count', u'long', u'long', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueDeclareOk(%s)' % (', '.join(map(repr, [self.queue, self.message_count, self.consumer_count])))
 
     def __init__(self, queue, message_count, consumer_count):
         """
@@ -2190,7 +2407,7 @@ class QueueDeleteOk(AMQPMethodPayload):
     INDEX = (50, 41)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x29'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2199,6 +2416,13 @@ class QueueDeleteOk(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueDeleteOk(%s)' % (', '.join(map(repr, [self.message_count])))
 
     def __init__(self, message_count):
         """
@@ -2238,7 +2462,7 @@ class QueuePurge(AMQPMethodPayload):
     INDEX = (50, 30)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x1E'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2249,6 +2473,13 @@ class QueuePurge(AMQPMethodPayload):
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueuePurge(%s)' % (', '.join(map(repr, [self.queue, self.no_wait])))
 
     def __init__(self, queue, no_wait):
         """
@@ -2297,7 +2528,7 @@ class QueuePurgeOk(AMQPMethodPayload):
     INDEX = (50, 31)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x1F'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2306,6 +2537,13 @@ class QueuePurgeOk(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueuePurgeOk(%s)' % (', '.join(map(repr, [self.message_count])))
 
     def __init__(self, message_count):
         """
@@ -2343,7 +2581,7 @@ class QueueUnbind(AMQPMethodPayload):
     INDEX = (50, 50)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x32'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2356,6 +2594,13 @@ class QueueUnbind(AMQPMethodPayload):
         Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueUnbind(%s)' % (', '.join(map(repr, [self.queue, self.exchange, self.routing_key, self.arguments])))
 
     def __init__(self, queue, exchange, routing_key, arguments):
         """
@@ -2423,11 +2668,18 @@ class QueueUnbindOk(AMQPMethodPayload):
     INDEX = (50, 51)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x32\x00\x33'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x32\x00\x33\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'QueueUnbindOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -2609,6 +2861,13 @@ class BasicAck(AMQPMethodPayload):
         Field(u'multiple', u'bit', u'bit', reserved=False),
     ]
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicAck(%s)' % (', '.join(map(repr, [self.delivery_tag, self.multiple])))
+
     def __init__(self, delivery_tag, multiple):
         """
         Create frame basic.ack
@@ -2659,7 +2918,7 @@ class BasicConsume(AMQPMethodPayload):
     INDEX = (60, 20)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x14'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2675,6 +2934,13 @@ class BasicConsume(AMQPMethodPayload):
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
         Field(u'arguments', u'table', u'table', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicConsume(%s)' % (', '.join(map(repr, [self.queue, self.consumer_tag, self.no_local, self.no_ack, self.exclusive, self.no_wait, self.arguments])))
 
     def __init__(self, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments):
         """
@@ -2786,6 +3052,13 @@ class BasicCancel(AMQPMethodPayload):
         Field(u'no-wait', u'no-wait', u'bit', reserved=False),
     ]
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicCancel(%s)' % (', '.join(map(repr, [self.consumer_tag, self.no_wait])))
+
     def __init__(self, consumer_tag, no_wait):
         """
         Create frame basic.cancel
@@ -2833,7 +3106,7 @@ class BasicConsumeOk(AMQPMethodPayload):
     INDEX = (60, 21)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x15'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2842,6 +3115,13 @@ class BasicConsumeOk(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicConsumeOk(%s)' % (', '.join(map(repr, [self.consumer_tag])))
 
     def __init__(self, consumer_tag):
         """
@@ -2893,6 +3173,13 @@ class BasicCancelOk(AMQPMethodPayload):
         Field(u'consumer-tag', u'consumer-tag', u'shortstr', reserved=False),
     ]
 
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicCancelOk(%s)' % (', '.join(map(repr, [self.consumer_tag])))
+
     def __init__(self, consumer_tag):
         """
         Create frame basic.cancel-ok
@@ -2937,7 +3224,7 @@ class BasicDeliver(AMQPMethodPayload):
     INDEX = (60, 60)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x3C'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -2950,6 +3237,13 @@ class BasicDeliver(AMQPMethodPayload):
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
         Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicDeliver(%s)' % (', '.join(map(repr, [self.consumer_tag, self.delivery_tag, self.redelivered, self.exchange, self.routing_key])))
 
     def __init__(self, consumer_tag, delivery_tag, redelivered, exchange, routing_key):
         """
@@ -3023,7 +3317,7 @@ class BasicGet(AMQPMethodPayload):
     INDEX = (60, 70)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x46'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3034,6 +3328,13 @@ class BasicGet(AMQPMethodPayload):
         Field(u'queue', u'queue-name', u'shortstr', reserved=False),
         Field(u'no-ack', u'no-ack', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicGet(%s)' % (', '.join(map(repr, [self.queue, self.no_ack])))
 
     def __init__(self, queue, no_ack):
         """
@@ -3086,7 +3387,7 @@ class BasicGetOk(AMQPMethodPayload):
     INDEX = (60, 71)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x47'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3099,6 +3400,13 @@ class BasicGetOk(AMQPMethodPayload):
         Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
         Field(u'message-count', u'message-count', u'long', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicGetOk(%s)' % (', '.join(map(repr, [self.delivery_tag, self.redelivered, self.exchange, self.routing_key, self.message_count])))
 
     def __init__(self, delivery_tag, redelivered, exchange, routing_key, message_count):
         """
@@ -3167,7 +3475,7 @@ class BasicGetEmpty(AMQPMethodPayload):
     INDEX = (60, 72)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x48'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
@@ -3177,6 +3485,13 @@ class BasicGetEmpty(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'reserved-1', u'shortstr', u'shortstr', reserved=True),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicGetEmpty(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3226,6 +3541,13 @@ class BasicNack(AMQPMethodPayload):
         Field(u'multiple', u'bit', u'bit', reserved=False),
         Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicNack(%s)' % (', '.join(map(repr, [self.delivery_tag, self.multiple, self.requeue])))
 
     def __init__(self, delivery_tag, multiple, requeue):
         """
@@ -3286,7 +3608,7 @@ class BasicPublish(AMQPMethodPayload):
     INDEX = (60, 40)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x28'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3299,6 +3621,13 @@ class BasicPublish(AMQPMethodPayload):
         Field(u'mandatory', u'bit', u'bit', reserved=False),
         Field(u'immediate', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicPublish(%s)' % (', '.join(map(repr, [self.exchange, self.routing_key, self.mandatory, self.immediate])))
 
     def __init__(self, exchange, routing_key, mandatory, immediate):
         """
@@ -3391,7 +3720,7 @@ class BasicQos(AMQPMethodPayload):
     INDEX = (60, 10)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x0A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3402,6 +3731,13 @@ class BasicQos(AMQPMethodPayload):
         Field(u'prefetch-count', u'short', u'short', reserved=False),
         Field(u'global', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicQos(%s)' % (', '.join(map(repr, [self.prefetch_size, self.prefetch_count, self.global_])))
 
     def __init__(self, prefetch_size, prefetch_count, global_):
         """
@@ -3483,11 +3819,18 @@ class BasicQosOk(AMQPMethodPayload):
     INDEX = (60, 11)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x0B'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x3C\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicQosOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3520,7 +3863,7 @@ class BasicReturn(AMQPMethodPayload):
     INDEX = (60, 50)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x32'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = False     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3532,6 +3875,13 @@ class BasicReturn(AMQPMethodPayload):
         Field(u'exchange', u'exchange-name', u'shortstr', reserved=False),
         Field(u'routing-key', u'shortstr', u'shortstr', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicReturn(%s)' % (', '.join(map(repr, [self.reply_code, self.reply_text, self.exchange, self.routing_key])))
 
     def __init__(self, reply_code, reply_text, exchange, routing_key):
         """
@@ -3599,7 +3949,7 @@ class BasicReject(AMQPMethodPayload):
     INDEX = (60, 90)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x5A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3609,6 +3959,13 @@ class BasicReject(AMQPMethodPayload):
         Field(u'delivery-tag', u'delivery-tag', u'longlong', reserved=False),
         Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicReject(%s)' % (', '.join(map(repr, [self.delivery_tag, self.requeue])))
 
     def __init__(self, delivery_tag, requeue):
         """
@@ -3658,7 +4015,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
     INDEX = (60, 100)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x64'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3667,6 +4024,13 @@ class BasicRecoverAsync(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicRecoverAsync(%s)' % (', '.join(map(repr, [self.requeue])))
 
     def __init__(self, requeue):
         """
@@ -3715,7 +4079,7 @@ class BasicRecover(AMQPMethodPayload):
     INDEX = (60, 110)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x6E'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -3724,6 +4088,13 @@ class BasicRecover(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'requeue', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicRecover(%s)' % (', '.join(map(repr, [self.requeue])))
 
     def __init__(self, requeue):
         """
@@ -3768,11 +4139,18 @@ class BasicRecoverOk(AMQPMethodPayload):
     INDEX = (60, 111)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x3C\x00\x6F'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x3C\x00\x6F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'BasicRecoverOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3826,11 +4204,18 @@ class TxCommit(AMQPMethodPayload):
     INDEX = (90, 20)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x5A\x00\x14'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x14\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'TxCommit(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3859,11 +4244,18 @@ class TxCommitOk(AMQPMethodPayload):
     INDEX = (90, 21)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x5A\x00\x15'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x15\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'TxCommitOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3896,11 +4288,18 @@ class TxRollback(AMQPMethodPayload):
     INDEX = (90, 30)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x5A\x00\x1E'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x1E\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'TxRollback(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3929,11 +4328,18 @@ class TxRollbackOk(AMQPMethodPayload):
     INDEX = (90, 31)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x5A\x00\x1F'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x1F\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'TxRollbackOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3963,11 +4369,18 @@ class TxSelect(AMQPMethodPayload):
     INDEX = (90, 10)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x5A\x00\x0A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x0A\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'TxSelect(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -3996,11 +4409,18 @@ class TxSelectOk(AMQPMethodPayload):
     INDEX = (90, 11)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x5A\x00\x0B'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x5A\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'TxSelectOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -4053,7 +4473,7 @@ class ConfirmSelect(AMQPMethodPayload):
     INDEX = (85, 10)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x55\x00\x0A'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = False  # this means that argument part has always the same content
@@ -4062,6 +4482,13 @@ class ConfirmSelect(AMQPMethodPayload):
     FIELDS = [ 
         Field(u'nowait', u'bit', u'bit', reserved=False),
     ]
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConfirmSelect(%s)' % (', '.join(map(repr, [self.nowait])))
 
     def __init__(self, nowait):
         """
@@ -4106,11 +4533,18 @@ class ConfirmSelectOk(AMQPMethodPayload):
     INDEX = (85, 11)          # (Class ID, Method ID)
     BINARY_HEADER = b'\x00\x55\x00\x0B'      # CLASS ID + METHOD ID
 
-    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
 
     IS_SIZE_STATIC = True     # this means that argument part has always the same length
     IS_CONTENT_STATIC = True  # this means that argument part has always the same content
     STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x55\x00\x0B\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return 'ConfirmSelectOk(%s)' % (', '.join(map(repr, [])))
 
     def __init__(self):
         """
@@ -4125,134 +4559,134 @@ class ConfirmSelectOk(AMQPMethodPayload):
 
 
 IDENT_TO_METHOD = {
-    (90, 21): TxCommitOk,
-    (60, 100): BasicRecoverAsync,
-    (10, 11): ConnectionStartOk,
-    (60, 40): BasicPublish,
-    (60, 50): BasicReturn,
-    (40, 21): ExchangeDeleteOk,
-    (20, 20): ChannelFlow,
-    (40, 31): ExchangeBindOk,
-    (60, 21): BasicConsumeOk,
-    (10, 21): ConnectionSecureOk,
-    (90, 30): TxRollback,
-    (90, 10): TxSelect,
-    (85, 11): ConfirmSelectOk,
-    (10, 61): ConnectionUnblocked,
-    (50, 11): QueueDeclareOk,
-    (60, 70): BasicGet,
-    (90, 11): TxSelectOk,
-    (10, 30): ConnectionTune,
-    (60, 11): BasicQosOk,
-    (60, 80): BasicAck,
-    (20, 21): ChannelFlowOk,
-    (60, 60): BasicDeliver,
-    (90, 31): TxRollbackOk,
-    (60, 20): BasicConsume,
-    (85, 10): ConfirmSelect,
-    (20, 40): ChannelClose,
-    (60, 71): BasicGetOk,
-    (50, 30): QueuePurge,
-    (10, 31): ConnectionTuneOk,
-    (10, 40): ConnectionOpen,
-    (60, 30): BasicCancel,
-    (50, 50): QueueUnbind,
-    (40, 10): ExchangeDeclare,
-    (10, 50): ConnectionClose,
-    (20, 10): ChannelOpen,
-    (20, 41): ChannelCloseOk,
-    (60, 110): BasicRecover,
-    (60, 90): BasicReject,
-    (50, 31): QueuePurgeOk,
-    (50, 40): QueueDelete,
-    (40, 20): ExchangeDelete,
-    (50, 20): QueueBind,
-    (10, 41): ConnectionOpenOk,
-    (60, 120): BasicNack,
-    (60, 31): BasicCancelOk,
-    (90, 20): TxCommit,
-    (10, 10): ConnectionStart,
-    (60, 10): BasicQos,
-    (40, 11): ExchangeDeclareOk,
-    (10, 51): ConnectionCloseOk,
-    (40, 51): ExchangeUnbindOk,
-    (20, 11): ChannelOpenOk,
-    (60, 72): BasicGetEmpty,
-    (40, 30): ExchangeBind,
-    (60, 111): BasicRecoverOk,
-    (40, 40): ExchangeUnbind,
-    (10, 20): ConnectionSecure,
-    (50, 41): QueueDeleteOk,
-    (50, 51): QueueUnbindOk,
-    (50, 21): QueueBindOk,
     (10, 60): ConnectionBlocked,
+    (10, 50): ConnectionClose,
+    (10, 51): ConnectionCloseOk,
+    (10, 40): ConnectionOpen,
+    (10, 41): ConnectionOpenOk,
+    (10, 10): ConnectionStart,
+    (10, 20): ConnectionSecure,
+    (10, 11): ConnectionStartOk,
+    (10, 21): ConnectionSecureOk,
+    (10, 30): ConnectionTune,
+    (10, 31): ConnectionTuneOk,
+    (10, 61): ConnectionUnblocked,
+    (20, 40): ChannelClose,
+    (20, 41): ChannelCloseOk,
+    (20, 20): ChannelFlow,
+    (20, 21): ChannelFlowOk,
+    (20, 10): ChannelOpen,
+    (20, 11): ChannelOpenOk,
+    (40, 30): ExchangeBind,
+    (40, 31): ExchangeBindOk,
+    (40, 10): ExchangeDeclare,
+    (40, 20): ExchangeDelete,
+    (40, 11): ExchangeDeclareOk,
+    (40, 21): ExchangeDeleteOk,
+    (40, 40): ExchangeUnbind,
+    (40, 51): ExchangeUnbindOk,
+    (50, 20): QueueBind,
+    (50, 21): QueueBindOk,
     (50, 10): QueueDeclare,
+    (50, 40): QueueDelete,
+    (50, 11): QueueDeclareOk,
+    (50, 41): QueueDeleteOk,
+    (50, 30): QueuePurge,
+    (50, 31): QueuePurgeOk,
+    (50, 50): QueueUnbind,
+    (50, 51): QueueUnbindOk,
+    (60, 80): BasicAck,
+    (60, 20): BasicConsume,
+    (60, 30): BasicCancel,
+    (60, 21): BasicConsumeOk,
+    (60, 31): BasicCancelOk,
+    (60, 60): BasicDeliver,
+    (60, 70): BasicGet,
+    (60, 71): BasicGetOk,
+    (60, 72): BasicGetEmpty,
+    (60, 120): BasicNack,
+    (60, 40): BasicPublish,
+    (60, 10): BasicQos,
+    (60, 11): BasicQosOk,
+    (60, 50): BasicReturn,
+    (60, 90): BasicReject,
+    (60, 100): BasicRecoverAsync,
+    (60, 110): BasicRecover,
+    (60, 111): BasicRecoverOk,
+    (90, 20): TxCommit,
+    (90, 21): TxCommitOk,
+    (90, 30): TxRollback,
+    (90, 31): TxRollbackOk,
+    (90, 10): TxSelect,
+    (90, 11): TxSelectOk,
+    (85, 10): ConfirmSelect,
+    (85, 11): ConfirmSelectOk,
 }
 
 
 BINARY_HEADER_TO_METHOD = {
-    b'\x00\x5A\x00\x15': TxCommitOk,
-    b'\x00\x3C\x00\x64': BasicRecoverAsync,
-    b'\x00\x0A\x00\x0B': ConnectionStartOk,
-    b'\x00\x3C\x00\x28': BasicPublish,
-    b'\x00\x3C\x00\x32': BasicReturn,
-    b'\x00\x28\x00\x15': ExchangeDeleteOk,
-    b'\x00\x14\x00\x14': ChannelFlow,
-    b'\x00\x28\x00\x1F': ExchangeBindOk,
-    b'\x00\x3C\x00\x15': BasicConsumeOk,
-    b'\x00\x0A\x00\x15': ConnectionSecureOk,
-    b'\x00\x5A\x00\x1E': TxRollback,
-    b'\x00\x5A\x00\x0A': TxSelect,
-    b'\x00\x55\x00\x0B': ConfirmSelectOk,
-    b'\x00\x0A\x00\x3D': ConnectionUnblocked,
-    b'\x00\x32\x00\x0B': QueueDeclareOk,
-    b'\x00\x3C\x00\x46': BasicGet,
-    b'\x00\x5A\x00\x0B': TxSelectOk,
-    b'\x00\x0A\x00\x1E': ConnectionTune,
-    b'\x00\x3C\x00\x0B': BasicQosOk,
-    b'\x00\x3C\x00\x50': BasicAck,
-    b'\x00\x14\x00\x15': ChannelFlowOk,
-    b'\x00\x3C\x00\x3C': BasicDeliver,
-    b'\x00\x5A\x00\x1F': TxRollbackOk,
-    b'\x00\x3C\x00\x14': BasicConsume,
-    b'\x00\x55\x00\x0A': ConfirmSelect,
-    b'\x00\x14\x00\x28': ChannelClose,
-    b'\x00\x3C\x00\x47': BasicGetOk,
-    b'\x00\x32\x00\x1E': QueuePurge,
-    b'\x00\x0A\x00\x1F': ConnectionTuneOk,
-    b'\x00\x0A\x00\x28': ConnectionOpen,
-    b'\x00\x3C\x00\x1E': BasicCancel,
-    b'\x00\x32\x00\x32': QueueUnbind,
-    b'\x00\x28\x00\x0A': ExchangeDeclare,
-    b'\x00\x0A\x00\x32': ConnectionClose,
-    b'\x00\x14\x00\x0A': ChannelOpen,
-    b'\x00\x14\x00\x29': ChannelCloseOk,
-    b'\x00\x3C\x00\x6E': BasicRecover,
-    b'\x00\x3C\x00\x5A': BasicReject,
-    b'\x00\x32\x00\x1F': QueuePurgeOk,
-    b'\x00\x32\x00\x28': QueueDelete,
-    b'\x00\x28\x00\x14': ExchangeDelete,
-    b'\x00\x32\x00\x14': QueueBind,
-    b'\x00\x0A\x00\x29': ConnectionOpenOk,
-    b'\x00\x3C\x00\x78': BasicNack,
-    b'\x00\x3C\x00\x1F': BasicCancelOk,
-    b'\x00\x5A\x00\x14': TxCommit,
-    b'\x00\x0A\x00\x0A': ConnectionStart,
-    b'\x00\x3C\x00\x0A': BasicQos,
-    b'\x00\x28\x00\x0B': ExchangeDeclareOk,
-    b'\x00\x0A\x00\x33': ConnectionCloseOk,
-    b'\x00\x28\x00\x33': ExchangeUnbindOk,
-    b'\x00\x14\x00\x0B': ChannelOpenOk,
-    b'\x00\x3C\x00\x48': BasicGetEmpty,
-    b'\x00\x28\x00\x1E': ExchangeBind,
-    b'\x00\x3C\x00\x6F': BasicRecoverOk,
-    b'\x00\x28\x00\x28': ExchangeUnbind,
-    b'\x00\x0A\x00\x14': ConnectionSecure,
-    b'\x00\x32\x00\x29': QueueDeleteOk,
-    b'\x00\x32\x00\x33': QueueUnbindOk,
-    b'\x00\x32\x00\x15': QueueBindOk,
     b'\x00\x0A\x00\x3C': ConnectionBlocked,
+    b'\x00\x0A\x00\x32': ConnectionClose,
+    b'\x00\x0A\x00\x33': ConnectionCloseOk,
+    b'\x00\x0A\x00\x28': ConnectionOpen,
+    b'\x00\x0A\x00\x29': ConnectionOpenOk,
+    b'\x00\x0A\x00\x0A': ConnectionStart,
+    b'\x00\x0A\x00\x14': ConnectionSecure,
+    b'\x00\x0A\x00\x0B': ConnectionStartOk,
+    b'\x00\x0A\x00\x15': ConnectionSecureOk,
+    b'\x00\x0A\x00\x1E': ConnectionTune,
+    b'\x00\x0A\x00\x1F': ConnectionTuneOk,
+    b'\x00\x0A\x00\x3D': ConnectionUnblocked,
+    b'\x00\x14\x00\x28': ChannelClose,
+    b'\x00\x14\x00\x29': ChannelCloseOk,
+    b'\x00\x14\x00\x14': ChannelFlow,
+    b'\x00\x14\x00\x15': ChannelFlowOk,
+    b'\x00\x14\x00\x0A': ChannelOpen,
+    b'\x00\x14\x00\x0B': ChannelOpenOk,
+    b'\x00\x28\x00\x1E': ExchangeBind,
+    b'\x00\x28\x00\x1F': ExchangeBindOk,
+    b'\x00\x28\x00\x0A': ExchangeDeclare,
+    b'\x00\x28\x00\x14': ExchangeDelete,
+    b'\x00\x28\x00\x0B': ExchangeDeclareOk,
+    b'\x00\x28\x00\x15': ExchangeDeleteOk,
+    b'\x00\x28\x00\x28': ExchangeUnbind,
+    b'\x00\x28\x00\x33': ExchangeUnbindOk,
+    b'\x00\x32\x00\x14': QueueBind,
+    b'\x00\x32\x00\x15': QueueBindOk,
     b'\x00\x32\x00\x0A': QueueDeclare,
+    b'\x00\x32\x00\x28': QueueDelete,
+    b'\x00\x32\x00\x0B': QueueDeclareOk,
+    b'\x00\x32\x00\x29': QueueDeleteOk,
+    b'\x00\x32\x00\x1E': QueuePurge,
+    b'\x00\x32\x00\x1F': QueuePurgeOk,
+    b'\x00\x32\x00\x32': QueueUnbind,
+    b'\x00\x32\x00\x33': QueueUnbindOk,
+    b'\x00\x3C\x00\x50': BasicAck,
+    b'\x00\x3C\x00\x14': BasicConsume,
+    b'\x00\x3C\x00\x1E': BasicCancel,
+    b'\x00\x3C\x00\x15': BasicConsumeOk,
+    b'\x00\x3C\x00\x1F': BasicCancelOk,
+    b'\x00\x3C\x00\x3C': BasicDeliver,
+    b'\x00\x3C\x00\x46': BasicGet,
+    b'\x00\x3C\x00\x47': BasicGetOk,
+    b'\x00\x3C\x00\x48': BasicGetEmpty,
+    b'\x00\x3C\x00\x78': BasicNack,
+    b'\x00\x3C\x00\x28': BasicPublish,
+    b'\x00\x3C\x00\x0A': BasicQos,
+    b'\x00\x3C\x00\x0B': BasicQosOk,
+    b'\x00\x3C\x00\x32': BasicReturn,
+    b'\x00\x3C\x00\x5A': BasicReject,
+    b'\x00\x3C\x00\x64': BasicRecoverAsync,
+    b'\x00\x3C\x00\x6E': BasicRecover,
+    b'\x00\x3C\x00\x6F': BasicRecoverOk,
+    b'\x00\x5A\x00\x14': TxCommit,
+    b'\x00\x5A\x00\x15': TxCommitOk,
+    b'\x00\x5A\x00\x1E': TxRollback,
+    b'\x00\x5A\x00\x1F': TxRollbackOk,
+    b'\x00\x5A\x00\x0A': TxSelect,
+    b'\x00\x5A\x00\x0B': TxSelectOk,
+    b'\x00\x55\x00\x0A': ConfirmSelect,
+    b'\x00\x55\x00\x0B': ConfirmSelectOk,
 }
 
 
@@ -4264,98 +4698,98 @@ CLASS_ID_TO_CONTENT_PROPERTY_LIST = {
 # if a method is NOT a reply, it will not be in this dict
 # a method may be a reply for AT MOST one method
 REPLY_REASONS_FOR = {
-    BasicGetEmpty: BasicGet,
-    BasicGetOk: BasicGet,
+    ConnectionCloseOk: ConnectionClose,
+    ConnectionOpenOk: ConnectionOpen,
+    ConnectionStartOk: ConnectionStart,
+    ConnectionSecureOk: ConnectionSecure,
+    ConnectionTuneOk: ConnectionTune,
+    ChannelCloseOk: ChannelClose,
+    ChannelFlowOk: ChannelFlow,
+    ChannelOpenOk: ChannelOpen,
+    ExchangeBindOk: ExchangeBind,
+    ExchangeDeclareOk: ExchangeDeclare,
     ExchangeDeleteOk: ExchangeDelete,
-    TxSelectOk: TxSelect,
+    ExchangeUnbindOk: ExchangeUnbind,
     QueueBindOk: QueueBind,
+    QueueDeclareOk: QueueDeclare,
+    QueueDeleteOk: QueueDelete,
+    QueuePurgeOk: QueuePurge,
+    QueueUnbindOk: QueueUnbind,
     BasicConsumeOk: BasicConsume,
     BasicCancelOk: BasicCancel,
-    TxRollbackOk: TxRollback,
-    TxCommitOk: TxCommit,
-    ChannelOpenOk: ChannelOpen,
-    QueueDeleteOk: QueueDelete,
-    ExchangeUnbindOk: ExchangeUnbind,
-    ExchangeBindOk: ExchangeBind,
-    ChannelCloseOk: ChannelClose,
+    BasicGetOk: BasicGet,
+    BasicGetEmpty: BasicGet,
     BasicQosOk: BasicQos,
-    ConnectionStartOk: ConnectionStart,
-    QueueUnbindOk: QueueUnbind,
+    TxCommitOk: TxCommit,
+    TxRollbackOk: TxRollback,
+    TxSelectOk: TxSelect,
     ConfirmSelectOk: ConfirmSelect,
-    ConnectionCloseOk: ConnectionClose,
-    QueuePurgeOk: QueuePurge,
-    QueueDeclareOk: QueueDeclare,
-    ExchangeDeclareOk: ExchangeDeclare,
-    ConnectionTuneOk: ConnectionTune,
-    ConnectionSecureOk: ConnectionSecure,
-    ConnectionOpenOk: ConnectionOpen,
-    ChannelFlowOk: ChannelFlow,
 }
 
 # Methods that are replies for other, ie. ConnectionOpenOk: ConnectionOpen
 # a method may be a reply for ONE or NONE other methods
 # if a method has no replies, it will have an empty list as value here
-REPLIES_FOR= {
-    BasicGetEmpty: [],
-    BasicRecoverOk: [],
-    BasicReturn: [],
-    QueueDeclare: [QueueDeclareOk],
-    BasicGetOk: [],
-    ConnectionSecure: [ConnectionSecureOk],
-    ConnectionTune: [ConnectionTuneOk],
-    TxRollback: [TxRollbackOk],
-    TxSelectOk: [],
-    QueueBindOk: [],
-    ChannelFlow: [ChannelFlowOk],
-    BasicConsumeOk: [],
-    BasicConsume: [BasicConsumeOk],
-    BasicRecover: [],
-    BasicCancelOk: [],
-    ConfirmSelect: [ConfirmSelectOk],
-    BasicGet: [BasicGetOk, BasicGetEmpty],
-    TxRollbackOk: [],
-    QueueBind: [QueueBindOk],
-    ExchangeDelete: [ExchangeDeleteOk],
-    BasicAck: [],
-    ConnectionClose: [ConnectionCloseOk],
-    ChannelOpenOk: [],
-    QueueDeleteOk: [],
-    ExchangeUnbindOk: [],
-    ConnectionStart: [ConnectionStartOk],
-    BasicQos: [BasicQosOk],
-    QueueUnbind: [QueueUnbindOk],
-    BasicQosOk: [],
-    BasicReject: [],
-    ExchangeBindOk: [],
-    ChannelCloseOk: [],
-    ExchangeDeclare: [ExchangeDeclareOk],
+REPLIES_FOR = {
     ConnectionBlocked: [],
-    BasicPublish: [],
-    ExchangeUnbind: [ExchangeUnbindOk],
-    ExchangeDeleteOk: [],
-    BasicNack: [],
-    ConnectionStartOk: [],
-    ExchangeBind: [ExchangeBindOk],
-    QueueDelete: [QueueDeleteOk],
-    ConfirmSelectOk: [],
+    ConnectionClose: [ConnectionCloseOk],
     ConnectionCloseOk: [],
-    QueuePurge: [QueuePurgeOk],
-    QueueUnbindOk: [],
-    ChannelOpen: [ChannelOpenOk],
-    ChannelClose: [ChannelCloseOk],
-    QueuePurgeOk: [],
-    QueueDeclareOk: [],
-    BasicCancel: [BasicCancelOk],
-    ExchangeDeclareOk: [],
-    TxCommitOk: [],
-    ConnectionTuneOk: [],
-    ConnectionSecureOk: [],
-    ConnectionUnblocked: [],
-    ConnectionOpenOk: [],
-    ChannelFlowOk: [],
-    BasicRecoverAsync: [],
-    TxSelect: [TxSelectOk],
-    BasicDeliver: [],
-    TxCommit: [TxCommitOk],
     ConnectionOpen: [ConnectionOpenOk],
+    ConnectionOpenOk: [],
+    ConnectionStart: [ConnectionStartOk],
+    ConnectionSecure: [ConnectionSecureOk],
+    ConnectionStartOk: [],
+    ConnectionSecureOk: [],
+    ConnectionTune: [ConnectionTuneOk],
+    ConnectionTuneOk: [],
+    ConnectionUnblocked: [],
+    ChannelClose: [ChannelCloseOk],
+    ChannelCloseOk: [],
+    ChannelFlow: [ChannelFlowOk],
+    ChannelFlowOk: [],
+    ChannelOpen: [ChannelOpenOk],
+    ChannelOpenOk: [],
+    ExchangeBind: [ExchangeBindOk],
+    ExchangeBindOk: [],
+    ExchangeDeclare: [ExchangeDeclareOk],
+    ExchangeDelete: [ExchangeDeleteOk],
+    ExchangeDeclareOk: [],
+    ExchangeDeleteOk: [],
+    ExchangeUnbind: [ExchangeUnbindOk],
+    ExchangeUnbindOk: [],
+    QueueBind: [QueueBindOk],
+    QueueBindOk: [],
+    QueueDeclare: [QueueDeclareOk],
+    QueueDelete: [QueueDeleteOk],
+    QueueDeclareOk: [],
+    QueueDeleteOk: [],
+    QueuePurge: [QueuePurgeOk],
+    QueuePurgeOk: [],
+    QueueUnbind: [QueueUnbindOk],
+    QueueUnbindOk: [],
+    BasicAck: [],
+    BasicConsume: [BasicConsumeOk],
+    BasicCancel: [BasicCancelOk],
+    BasicConsumeOk: [],
+    BasicCancelOk: [],
+    BasicDeliver: [],
+    BasicGet: [BasicGetOk, BasicGetEmpty],
+    BasicGetOk: [],
+    BasicGetEmpty: [],
+    BasicNack: [],
+    BasicPublish: [],
+    BasicQos: [BasicQosOk],
+    BasicQosOk: [],
+    BasicReturn: [],
+    BasicReject: [],
+    BasicRecoverAsync: [],
+    BasicRecover: [],
+    BasicRecoverOk: [],
+    TxCommit: [TxCommitOk],
+    TxCommitOk: [],
+    TxRollback: [TxRollbackOk],
+    TxRollbackOk: [],
+    TxSelect: [TxSelectOk],
+    TxSelectOk: [],
+    ConfirmSelect: [ConfirmSelectOk],
+    ConfirmSelectOk: [],
 }

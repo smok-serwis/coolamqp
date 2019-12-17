@@ -42,7 +42,7 @@ Generated automatically by CoolAMQP from AMQP machine-readable specification.
 See coolamqp.uplink.framing.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
-CoolAMQP is copyright (c) 2016 DMS Serwis s.c.
+CoolAMQP is copyright (c) 2016-2018 DMS Serwis s.c., 2018-2019 SMOK sp. z o.o.
 
 
 ###########################################################
@@ -428,6 +428,16 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
                 line('    ]\n')
 
+            # __repr__
+            line('''\n    def __repr__(self):
+        """
+        Convert the frame to a Python-representable string
+        :return: Python string representation
+        """
+        return '%s(%S)' % (', '.join(map(repr, [%s])))\n''',
+                 full_class_name,
+                 u", ".join(['self.'+format_field_name(field.name) for field in non_reserved_fields]))
+
             # constructor
             line('''\n    def __init__(%s):
         """
@@ -522,7 +532,7 @@ REPLY_REASONS_FOR = {\n''')
 # Methods that are replies for other, ie. ConnectionOpenOk: ConnectionOpen
 # a method may be a reply for ONE or NONE other methods
 # if a method has no replies, it will have an empty list as value here
-REPLIES_FOR= {\n''')
+REPLIES_FOR = {\n''')
 
     for k, v in methods_that_are_replies_for.items():
         line(u'    %s: [%s],\n' % (k, u', '.join(map(str, v))))

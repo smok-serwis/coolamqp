@@ -18,7 +18,6 @@ FRAME_TYPES = {
     FRAME_METHOD: AMQPMethodFrame
 }
 
-
 ordpy2 = ord if six.PY2 else lambda x: x
 
 
@@ -81,7 +80,7 @@ class ReceivingFramer(object):
         """
         assert self.total_data_len >= up_to, \
             'Tried to extract %s but %s remaining' % (
-            up_to, self.total_data_len)
+                up_to, self.total_data_len)
         if up_to >= len(self.chunks[0]):
             q = self.chunks.popleft()
         else:
@@ -92,7 +91,6 @@ class ReceivingFramer(object):
         assert len(q) <= up_to, 'extracted %s but %s was requested' % (
             len(q), up_to)
         return q
-
 
     def _statemachine(self):
         # state rule 1
@@ -125,7 +123,7 @@ class ReceivingFramer(object):
         # state rule 3
         elif (self.frame_type != FRAME_HEARTBEAT) and (
                     self.frame_type is not None) and (
-            self.frame_size is None) and (
+                    self.frame_size is None) and (
                     self.total_data_len > 6):
             hdr = b''
             while len(hdr) < 6:

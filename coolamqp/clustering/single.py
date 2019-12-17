@@ -29,13 +29,13 @@ class SingleNodeReconnector(object):
     def is_connected(self):
         return self.connection is not None
 
-    def connect(self):
+    def connect(self, timeout):
         assert self.connection is None
 
         # Initiate connecting - this order is very important!
         self.connection = Connection(self.node_def, self.listener_thread)
         self.attache_group.attach(self.connection)
-        self.connection.start()
+        self.connection.start(timeout)
         self.connection.finalize.add(self.on_fail)
 
     def _on_fail(self):

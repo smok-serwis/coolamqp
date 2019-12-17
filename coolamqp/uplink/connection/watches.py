@@ -1,8 +1,12 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
+import logging
 
 from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeaderFrame, \
     AMQPBodyFrame
+from coolamqp.framing.base import AMQPMethodPayload
+
+logger = logging.getLogger(__name__)
 
 
 class Watch(object):
@@ -123,9 +127,12 @@ class MethodWatch(Watch):
         self.callable = callable
         if isinstance(method_or_methods, (list, tuple)):
             self.methods = tuple(method_or_methods)
-        else:
-            self.methods = method_or_methods
+        elif issubclass(method_or_methods, AMQPMethodPayload):
+            self.methods = (method_or_methods, )
         self.on_end = on_end
+
+    def __repr__(self):
+        return '<MethodWatch %s, %s, %s, on_end=%s>' % (self.channel, self.methods, self.callable, self.on_end)
 
     def failed(self):
         if self.on_end is not None:

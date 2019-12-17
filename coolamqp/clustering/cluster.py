@@ -7,10 +7,12 @@ import six
 import logging
 import warnings
 import time
+import monotonic
 from coolamqp.uplink import ListenerThread
 from coolamqp.clustering.single import SingleNodeReconnector
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.objects import Exchange
+from coolamqp.exceptions import ConnectionDead
 from concurrent.futures import Future
 
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
@@ -165,7 +167,7 @@ class Cluster(object):
             raise NotImplementedError(
                 u'Sorry, this functionality is not yet implemented!')
 
-    def start(self, wait=True):
+    def start(self, wait=True, timeout=10.0):
         """
         Connect to broker. Initialize Cluster.
 
@@ -173,7 +175,9 @@ class Cluster(object):
         It is not safe to fork after this.
 
         :param wait: block until connection is ready
+        :param timeout: timeout to wait until the connection is ready. If it is not, a ConnectionDead error will be raised
         :raise RuntimeError: called more than once
+        :raise ConnectionDead: failed to connect within timeout
         """
 
         try:
@@ -206,12 +210,15 @@ class Cluster(object):
 
         self.listener.init()
         self.listener.start()
-        self.snr.connect()
+        self.snr.connect(timeout=timeout)
 
         # todo not really elegant
         if wait:
-            while not self.snr.is_connected():
+            start_at = monotonic.monotonic()
+            while not self.snr.is_connected() and monotonic.monotonic() - start_at < timeout:
                 time.sleep(0.1)
+            if not self.snr.is_connected():
+                raise ConnectionDead('Could not connect within %s seconds' % (timeout, ))
 
     def shutdown(self, wait=True):
         """

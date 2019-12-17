@@ -2,10 +2,13 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import collections
+import monotonic
+import uuid
 import time
 import socket
 import six
 
+from coolamqp.exceptions import ConnectionDead
 from coolamqp.uplink.connection.recv_framer import ReceivingFramer
 from coolamqp.uplink.connection.send_framer import SendingFramer
 from coolamqp.framing.frames import AMQPMethodFrame
@@ -17,6 +20,42 @@ from coolamqp.uplink.connection.states import ST_ONLINE, ST_OFFLINE, \
 from coolamqp.objects import Callable
 
 logger = logging.getLogger(__name__)
+
+
+def alert_watches(watches, trigger):
+    """
+    Notify all watches in this collection.
+
+    Return a list of alive watches.
+    :param watches: list of Watch
+    :return: tuple of (list of Watch, bool - was any watch fired?)
+    """
+    watch_handled = False
+    alive_watches = []
+    while len(watches) > 0:
+        watch = watches.pop()
+
+        if watch.cancelled:
+            continue
+
+        watch_triggered = watch.is_triggered_by(trigger)
+        watch_handled |= watch_triggered
+
+        if watch.cancelled:
+            continue
+
+        if not any((watch_triggered, watch.oneshot, watch.cancelled)):
+            # Watch remains alive if it was NOT triggered, or it's NOT a oneshot or it's not cancelled
+            alive_watches.append(watch)
+        elif not watch.oneshot and not watch.cancelled:
+            alive_watches.append(watch)
+        elif watch.oneshot and not watch_triggered:
+            alive_watches.append(watch)
+
+    if set(alive_watches) != set(watches):
+        for removed_watch in set(watches)-set(alive_watches):
+            logger.debug('Removing watch %s', repr(removed_watch))
+    return alive_watches, watch_handled
 
 
 class Connection(object):
@@ -50,7 +89,7 @@ class Connection(object):
         """
         self.listener_thread = listener_thread
         self.node_definition = node_definition
-
+        self.uuid = uuid.uuid4().hex[:5]
         self.recvf = ReceivingFramer(self.on_frame)
 
         # todo a list doesn't seem like a very strong atomicity guarantee
@@ -70,6 +109,10 @@ class Connection(object):
         self.heartbeat = None
         self.extensions = []
 
+        # To be filled in later
+        self.listener_socket = None
+        self.sendf = None
+
     def call_on_connected(self, callable):
         """
         Register a callable to be called when this links to the server.
@@ -87,14 +130,14 @@ class Connection(object):
 
     def on_connected(self):
         """Called by handshaker upon reception of final connection.open-ok"""
-        logger.info('Connection ready.')
+        logger.info('[%s] Connection ready.', self.uuid)
 
         self.state = ST_ONLINE
 
         while len(self.callables_on_connected) > 0:
             self.callables_on_connected.pop()()
 
-    def start(self):
+    def start(self, timeout):
         """
         Start processing events for this connect. Create the socket,
         transmit 'AMQP\x00\x00\x09\x01' and roll.
@@ -103,17 +146,19 @@ class Connection(object):
         """
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        start_at = monotonic.monotonic()
         while True:
             try:
                 sock.connect(
                     (self.node_definition.host, self.node_definition.port))
             except socket.error as e:
                 time.sleep(0.5)  # Connection refused? Very bad things?
+                if monotonic.monotonic() - start_at > timeout:
+                    raise ConnectionDead()
             else:
                 break
 
-        logger.debug('TCP connection established, authentication in progress')
+        logger.debug('[%s] TCP connection established, authentication in progress', self.uuid)
 
         sock.settimeout(0)
         sock.send(b'AMQP\x00\x00\x09\x01')
@@ -172,7 +217,8 @@ class Connection(object):
 
         if isinstance(payload, ConnectionClose):
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
-            logger.info(u'Broker closed our connection - code %s reason %s',
+            logger.info(u'[%s] Broker closed our connection - code %s reason %s',
+                        self.uuid,
                         payload.reply_code,
                         payload.reply_text.tobytes().decode('utf8'))
 
@@ -212,7 +258,7 @@ class Connection(object):
         watch_handled = False  # True if ANY watch handled this
 
         if isinstance(frame, AMQPMethodFrame):
-            logger.debug('Received %s', frame.payload.NAME)
+            logger.debug('[%s] Received %s', self.uuid, frame.payload.NAME)
 
         # ==================== process per-channel watches
         #
@@ -222,25 +268,8 @@ class Connection(object):
             watches = self.watches[frame.channel]  # a list
             self.watches[frame.channel] = []
 
-            alive_watches = []
-            while len(watches) > 0:
-                watch = watches.pop()
-
-                if watch.cancelled:
-                    # print('watch',watch,'was cancelled')
-                    continue
-
-                watch_triggered = watch.is_triggered_by(frame)
-                watch_handled |= watch_triggered
-
-                if watch.cancelled:
-                    # print('watch',watch,'was cancelled')
-                    continue
-
-                if ((not watch_triggered) or (not watch.oneshot)) and (
-                        not watch.cancelled):
-                    # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
-                    alive_watches.append(watch)
+            alive_watches, f = alert_watches(watches, frame)
+            watch_handled |= f
 
             if frame.channel in self.watches:
                 # unwatch_all might have gotten called, check that
@@ -248,33 +277,20 @@ class Connection(object):
                     self.watches[frame.channel].append(watch)
 
         # ==================== process "any" watches
-        alive_watches = []
         any_watches = self.any_watches
         self.any_watches = []
-        while len(any_watches):
-            watch = any_watches.pop()
+        alive_watches, f = alert_watches(any_watches, frame)
 
-            if watch.cancelled:
-                # print('any watch', watch, 'was cancelled')
-                continue
-
-            watch_triggered = watch.is_triggered_by(frame)
-            watch_handled |= watch_triggered
-
-            if watch.cancelled:
-                # print('any watch', watch, 'was cancelled')
-                continue
-
-            if ((not watch_triggered) or (not watch.oneshot)) and (
-                    not watch.cancelled):
-                # Watch remains alive if it was NOT triggered, or it's NOT a oneshot
-                alive_watches.append(watch)
+        watch_handled |= f
 
         for watch in alive_watches:
             self.any_watches.append(watch)
 
         if not watch_handled:
-            logger.warn('Unhandled frame %s', frame)
+            if isinstance(frame, AMQPMethodFrame):
+                logger.warning('[%s] Unhandled method frame %s', self.uuid, repr(frame.payload))
+            else:
+                logger.warning('[%s] Unhandled frame %s', self.uuid, frame)
 
     def watchdog(self, delay, callback):
         """

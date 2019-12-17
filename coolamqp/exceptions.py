@@ -28,8 +28,9 @@ class AMQPError(CoolAMQPError):
         return 'AMQP error %s: %s' % (self.reply_code, self.reply_text)
 
     def __repr__(self):
-        return 'AMQPError('+repr(self.reply_code)+', '+repr(self.reply_text)+ \
-                ', '+repr(self.class_id)+', '+repr(self.method_id)+')'
+        return 'AMQPError(' + repr(self.reply_code) + ', ' + repr(
+            self.reply_text) + \
+               ', ' + repr(self.class_id) + ', ' + repr(self.method_id) + ')'
 
     def __init__(self, *args):
         """
