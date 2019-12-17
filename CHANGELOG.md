@@ -1,6 +1,6 @@
 * v0.96:
 
-* _TBA_
+* Python 3.6 and 3.7 officially supported and tested against. Also same done for PyPY 3.5
 
 * v0.95:
 
