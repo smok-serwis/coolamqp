@@ -1,6 +1,10 @@
+* v0.95:
+
+ * multiple bugs fixed
+
 * v0.94:
 
- * ...
+_version skipped_
 
 * v0.93:
 
