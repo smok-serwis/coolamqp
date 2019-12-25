@@ -127,6 +127,8 @@ class Channeler(Attache):
             Be prepared!
 
         """
+        super(Channeler, self).on_close(payload=payload)
+
         if self.connection is None:
             # teardown already done
             return
