@@ -201,7 +201,6 @@ class Consumer(Channeler):
         super(Consumer, self).on_operational(operational)
 
         if operational:
-            assert self.receiver is None
             self.receiver = MessageReceiver(self)
 
             # notify the future
