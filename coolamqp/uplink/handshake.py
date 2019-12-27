@@ -91,6 +91,7 @@ class Handshaker(object):
         self.connection.watchdog(WATCHDOG_TIMEOUT, self.on_watchdog)
         self.connection.watch_for_method(0, ConnectionTune,
                                          self.on_connection_tune)
+        global CLIENT_DATA
         CLIENT_DATA = CLIENT_DATA.copy()
         CLIENT_DATA.extend(self.EXTRA_PROPERTIES)
         self.connection.send([
