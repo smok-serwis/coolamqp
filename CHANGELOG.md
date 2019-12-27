@@ -2,6 +2,7 @@
 
 * Python 3.6 and 3.7 officially supported and tested against. Also same done for PyPY 3.5
 * fixing #40
+* added #32
 
 * v0.95:
 
