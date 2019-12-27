@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 Provides reactors that can authenticate an AQMP session
 """
 import six
+import copy
 from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
     ConnectionTune, ConnectionTuneOk, ConnectionOpen, ConnectionOpenOk
 from coolamqp.framing.frames import AMQPMethodFrame
@@ -92,7 +93,7 @@ class Handshaker(object):
         self.connection.watch_for_method(0, ConnectionTune,
                                          self.on_connection_tune)
         global CLIENT_DATA
-        CLIENT_DATA = CLIENT_DATA.copy()
+        CLIENT_DATA = copy.copy(CLIENT_DATA)
         CLIENT_DATA.extend(self.EXTRA_PROPERTIES)
         self.connection.send([
             AMQPMethodFrame(0,
