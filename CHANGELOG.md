@@ -1,6 +1,7 @@
 # v0.97:
 
-* _TBA_
+* Changed copyright in connection properties to better reflect the current situation
+  * also, noted that in [README](README.md).
 
 # v0.96:
 

@@ -48,3 +48,11 @@ if you need every CPU cycle you can get.
 * channel flow mechanism is not supported (#11)
 * _confirm=True_ is not available if you're not RabbitMQ (#8)
 * no Windows support (#9)
+
+
+## Copyright holder change
+
+Since SMOK sp. z o.o. was incorporated, it inherited all SMOK-related
+IP of previous operator of the service, DMS Serwis s.c., which
+continues to operate within it's designated company agreement.
+From there stems the copyright holder name change.
