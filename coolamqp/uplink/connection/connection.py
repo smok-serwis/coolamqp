@@ -78,7 +78,7 @@ class Connection(object):
     This logger is talkative mostly on INFO, and regarding connection state
     """
 
-    def __init__(self, node_definition, listener_thread):
+    def __init__(self, node_definition, listener_thread, extra_properties):
         """
         Create an object that links to an AMQP broker.
 
@@ -86,12 +86,14 @@ class Connection(object):
 
         :param node_definition: NodeDefinition instance to use
         :param listener_thread: ListenerThread to use as async engine
+        :param extra_properties: extra properties to send to the target server
+            must conform to the syntax given in (/coolamqp/uplink/handshake.py)'s CLIENT_PROPERTIES
         """
         self.listener_thread = listener_thread
         self.node_definition = node_definition
         self.uuid = uuid.uuid4().hex[:5]
         self.recvf = ReceivingFramer(self.on_frame)
-
+        self.extra_properties = extra_properties
         # todo a list doesn't seem like a very strong atomicity guarantee
         self.watches = {}  # channel => list of [Watch instance]
         self.any_watches = []  # list of Watches that should check everything
@@ -170,7 +172,7 @@ class Connection(object):
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk),
                               self.on_connection_close)
 
-        Handshaker(self, self.node_definition, self.on_connected)
+        Handshaker(self, self.node_definition, self.on_connected, self.extra_properties)
 
     def on_fail(self):
         """

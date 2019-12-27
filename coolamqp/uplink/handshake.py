@@ -23,7 +23,7 @@ CLIENT_DATA = [
     # because RabbitMQ is some kind of a fascist and does not allow
     # these fields to be of type short-string
     (b'product', (b'CoolAMQP', 'S')),
-    (b'version', (b'0.91', 'S')),
+    (b'version', (b'0.96', 'S')),
     (b'copyright', (b'Copyright (C) 2016-2017 DMS Serwis', 'S')),
     (
         b'information', (
@@ -41,7 +41,7 @@ class Handshaker(object):
     Object that given a connection rolls the handshake.
     """
 
-    def __init__(self, connection, node_definition, on_success):
+    def __init__(self, connection, node_definition, on_success, extra_properties=None):
         """
         :param connection: Connection instance to use
         :type node_definition: NodeDefinition
@@ -57,6 +57,7 @@ class Handshaker(object):
 
         # Callbacks
         self.on_success = on_success
+        self.EXTRA_PROPERTIES = extra_properties or []
 
     # Called by internal setup
     def on_watchdog(self):
@@ -90,6 +91,8 @@ class Handshaker(object):
         self.connection.watchdog(WATCHDOG_TIMEOUT, self.on_watchdog)
         self.connection.watch_for_method(0, ConnectionTune,
                                          self.on_connection_tune)
+        CLIENT_DATA = CLIENT_DATA.copy()
+        CLIENT_DATA.extend(self.EXTRA_PROPERTIES)
         self.connection.send([
             AMQPMethodFrame(0,
                             ConnectionStartOk(CLIENT_DATA, b'PLAIN',
