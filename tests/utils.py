@@ -12,7 +12,9 @@ from coolamqp.backends.base import AMQPBackend, ConnectionFailedError
 
 
 def getamqp():
-    amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')])
+    amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')], extra_properties=[
+        (b'mode', (b'Testing', 'S')),
+    ])
     amqp.start()
     return amqp
 
