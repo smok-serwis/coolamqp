@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 Provides reactors that can authenticate an AQMP session
 """
 import six
+import typing as tp
 import copy
 from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
     ConnectionTune, ConnectionTuneOk, ConnectionOpen, ConnectionOpenOk
@@ -42,7 +43,11 @@ class Handshaker(object):
     Object that given a connection rolls the handshake.
     """
 
-    def __init__(self, connection, node_definition, on_success, extra_properties=None):
+    def __init__(self, connection,  # type: coolamqp.uplink.connection.Connection
+                 node_definition,  # type: coolamqp.objects.NodeDefinition
+                 on_success,  # type: tp.Callable[[], None]
+                 extra_properties=None  # type: tp.Dict[bytes, tp.Tuple[tp.Any, str]]
+                 ):
         """
         :param connection: Connection instance to use
         :type node_definition: NodeDefinition
@@ -72,7 +77,8 @@ class Handshaker(object):
             # closing the connection this way will get to Connection by channels of ListenerThread
             self.connection.send(None)
 
-    def on_connection_start(self, payload):
+    def on_connection_start(self, payload  # type: coolamqp.framing.base.AMQPPayload
+                            ):
 
         sasl_mechanisms = payload.mechanisms.tobytes().split(b' ')
         locale_supported = payload.locales.tobytes().split(b' ')
@@ -103,7 +109,8 @@ class Handshaker(object):
                                               ))
         ])
 
-    def on_connection_tune(self, payload):
+    def on_connection_tune(self, payload  # type: coolamqp.framing.base.AMQPPayload
+                           ):
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
         for channel in six.moves.xrange(1, (
@@ -124,5 +131,6 @@ class Handshaker(object):
             from coolamqp.uplink.heartbeat import Heartbeater
             Heartbeater(self.connection, self.connection.heartbeat)
 
-    def on_connection_open_ok(self, payload):
+    def on_connection_open_ok(self, payload  # type: coolamqp.framing.base.AMQPPayload
+                              ):
         self.on_success()

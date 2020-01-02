@@ -1,6 +1,8 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
+import typing as tp
+
 import monotonic
 
 from coolamqp.framing.frames import AMQPHeartbeatFrame
@@ -12,7 +14,9 @@ class Heartbeater(object):
     An object that handles heartbeats
     """
 
-    def __init__(self, connection, heartbeat_interval=0):
+    def __init__(self, connection,  # type: coolamqp.uplink.connection.Connection
+                 heartbeat_interval=0  # type: tp.Union[int, float]
+                 ):
         self.connection = connection
         self.heartbeat_interval = heartbeat_interval
 
@@ -44,7 +48,7 @@ class Heartbeater(object):
         self.connection.send([AMQPHeartbeatFrame()], priority=True)
 
         if (
-                    monotonic.monotonic() - self.last_heartbeat_on) > 2 * self.heartbeat_interval:
+                monotonic.monotonic() - self.last_heartbeat_on) > 2 * self.heartbeat_interval:
             # closing because of heartbeat
             self.connection.send(None)
 
