@@ -18,6 +18,7 @@ exclude_paths:
 - tests/**
 - coolamqp/framing/definitions.py
 - compile_definitions.py
+- stress_tests/**
 ratings:
   paths:
   - coolamqp/**
