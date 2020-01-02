@@ -4,6 +4,7 @@ Core objects used in CoolAMQP
 """
 import logging
 import uuid
+import typing as tp
 
 import six
 
@@ -104,15 +105,17 @@ class ReceivedMessage(Message):
     and .nack() are no-ops.
     """
 
-    def __init__(self, body, exchange_name, routing_key,
-                 properties=None,
-                 delivery_tag=None,
-                 ack=None,
-                 nack=None):
+    def __init__(self, body,            # type: tp.Union[six.binary_type, memoryview, tp.List[memoryview]]
+                 exchange_name,         # type: memoryview
+                 routing_key,           # type: memoryview
+                 properties=None,       # type: MessageProperties
+                 delivery_tag=None,     # type: int
+                 ack=None,              # type: tp.Callable[[], None]
+                 nack=None):            # type: tp.Callable[[], None]
         """
         :param body: message body. A stream of octets.
         :type body: str (py2) or bytes (py3) or a list of memoryviews, if
-            particular disabled-by-default option is turned on.
+            particular disabled-by-default option is turned on, or a single memoryview
         :param exchange_name: name of exchange this message was submitted to
         :type exchange_name: memoryview
         :param routing_key: routing key with which this message was sent
@@ -124,9 +127,11 @@ class ReceivedMessage(Message):
             this message
         :param ack: a callable to call when you want to ack (via basic.ack)
             this message. None if received by the no-ack mechanism
+        :type ack: Callable[[], None]
         :param nack: a callable to call when you want to nack
             (via basic.reject) this message. None if received by the no-ack
              mechanism
+        :type nack: Callable[[], None]
         """
         Message.__init__(self, body, properties=properties)
 
@@ -231,20 +236,20 @@ class NodeDefinition(object):
         """
         Create a cluster node definition.
 
-            a = NodeDefinition(host='192.168.0.1', user='admin', password='password',
-                            virtual_host='vhost')
+        >>> a = NodeDefinition(host='192.168.0.1', user='admin', password='password',
+        >>>                   virtual_host='vhost')
 
         or
 
-            a = NodeDefinition('192.168.0.1', 'admin', 'password')
+        >>> a = NodeDefinition('192.168.0.1', 'admin', 'password')
             
         or
         
-            a = NodeDefinition('amqp://user:password@host/virtual_host')
+        >>> a = NodeDefinition('amqp://user:password@host/virtual_host')
         
         or
         
-            a = NodeDefinition('amqp://user:password@host:port/virtual_host', hearbeat=20)
+        >>> a = NodeDefinition('amqp://user:password@host:port/virtual_host', hearbeat=20)
 
         AMQP connection string may be either bytes or str/unicode
         

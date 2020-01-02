@@ -9,6 +9,7 @@ python:
 script:
  - python compile_definitions.py
  - python setup.py nosetests
+ - python -m stress_tests
 install:
  - pip install -r requirements.txt
  - pip install --force-reinstall "coverage>=4.0,<4.4" codeclimate-test-reporter
