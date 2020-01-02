@@ -5,13 +5,14 @@ python:
  - "3.6"
  - "3.7"
  - "pypy"
- - "pypy3.5"
+ - "pypy3.6"
 script:
  - python compile_definitions.py
  - python setup.py nosetests tests
  - python -m stress_tests
 install:
  - pip install -r requirements.txt
+ - pip install -r stress_tests/requirements.txt
  - pip install --force-reinstall "coverage>=4.0,<4.4" codeclimate-test-reporter
 after_success:
  - codeclimate-test-reporter
