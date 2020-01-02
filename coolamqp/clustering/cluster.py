@@ -3,20 +3,22 @@
 THE object you interface with
 """
 from __future__ import print_function, absolute_import, division
-import six
+
 import logging
-import warnings
 import time
-import monotonic
-from coolamqp.uplink import ListenerThread
-from coolamqp.clustering.single import SingleNodeReconnector
-from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
-from coolamqp.objects import Exchange
-from coolamqp.exceptions import ConnectionDead
+import warnings
 from concurrent.futures import Future
 
+import monotonic
+import six
+
+from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
     NothingMuch
+from coolamqp.clustering.single import SingleNodeReconnector
+from coolamqp.exceptions import ConnectionDead
+from coolamqp.objects import Exchange
+from coolamqp.uplink import ListenerThread
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ class Cluster(object):
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes, on_fail=None, extra_properties=None):
+    def __init__(self, nodes, on_fail=None, extra_properties=None, log_frames=False):
         """
         :param nodes: list of nodes, or a single node. For now, only one is supported.
         :type nodes: NodeDefinition instance or a list of NodeDefinition instances
@@ -47,6 +49,9 @@ class Cluster(object):
         :type on_fail: callable/0
         :param extra_properties: refer to documentation in [/coolamqp/connection/connection.py]
             Connection.__init__
+        :param log_frames: an object that will have it's method .on_frame(timestamp,
+            frame, direction) called upon receiving/sending a frame. Timestamp is UNIX timestamp,
+            frame is AMQPFrame, direction is one of 'to_client', 'to_server'
         """
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
@@ -57,6 +62,7 @@ class Cluster(object):
 
         self.node, = nodes
         self.extra_properties = extra_properties
+        self.log_frames = log_frames
 
         if on_fail is not None:
             def decorated():
@@ -170,7 +176,7 @@ class Cluster(object):
             raise NotImplementedError(
                 u'Sorry, this functionality is not yet implemented!')
 
-    def start(self, wait=True, timeout=10.0):
+    def start(self, wait=True, timeout=10.0, log_frames=False):
         """
         Connect to broker. Initialize Cluster.
 
@@ -181,6 +187,7 @@ class Cluster(object):
         :param timeout: timeout to wait until the connection is ready. If it is not, a ConnectionDead error will be raised
         :raise RuntimeError: called more than once
         :raise ConnectionDead: failed to connect within timeout
+        :param log_frames: whether to keep a log of sent/received frames in self.log_frames
         """
 
         try:
@@ -197,7 +204,8 @@ class Cluster(object):
         self.events = six.moves.queue.Queue()  # for coolamqp.clustering.events.*
 
         self.snr = SingleNodeReconnector(self.node, self.attache_group,
-                                         self.listener, self.extra_properties)
+                                         self.listener, self.extra_properties,
+                                         self.log_frames)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)

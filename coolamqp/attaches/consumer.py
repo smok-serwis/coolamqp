@@ -4,7 +4,6 @@ from __future__ import absolute_import, division, print_function
 import io
 import logging
 import uuid
-
 from concurrent.futures import Future
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
@@ -133,6 +132,7 @@ class Consumer(Channeler):
         self.receiver = None  # MessageReceiver instance
 
         self.attache_group = None  # attache group this belongs to.
+        self.channel_close_sent = False  # for avoiding situations where ChannelClose is sent twice
         # if this is not None, then it has an attribute
         # on_cancel_customer(Consumer instance)
         self.qos = _qosify(qos)
@@ -186,11 +186,13 @@ class Consumer(Channeler):
         # you'll blow up big next time you try to use this consumer if you
         # can't cancel, but just close
         if self.consumer_tag is not None:
-            self.method_and_watch(BasicCancel(self.consumer_tag, False),
-                                  [BasicCancelOk],
-                                  self.on_close)
+            if not self.channel_close_sent:
+                self.method_and_watch(BasicCancel(self.consumer_tag, False),
+                                      [BasicCancelOk],
+                                      self.on_close)
         else:
-            self.method(ChannelClose(0, b'cancelling', 0, 0))
+            if not self.channel_close_sent:
+                self.method(ChannelClose(0, b'cancelling', 0, 0))
 
         if self.attache_group is not None:
             self.attache_group.on_cancel_customer(self)
@@ -201,6 +203,7 @@ class Consumer(Channeler):
         super(Consumer, self).on_operational(operational)
 
         if operational:
+            self.channel_close_sent = False
             self.receiver = MessageReceiver(self)
 
             # notify the future
@@ -249,8 +252,10 @@ class Consumer(Channeler):
 
             # on_close is a one_shot watch. We need to re-register it now.
             self.register_on_close_watch()
-            self.methods([BasicCancelOk(payload.consumer_tag),
-                          ChannelClose(0, b'Received basic.cancel', 0, 0)])
+            if not self.channel_close_sent:
+                self.methods([BasicCancelOk(payload.consumer_tag),
+                              ChannelClose(0, b'Received basic.cancel', 0, 0)])
+                self.channel_close_sent = True
             self.cancelled = True  # wasn't I?
             self.on_cancel()
             self.on_broker_cancel()
@@ -259,7 +264,9 @@ class Consumer(Channeler):
         if isinstance(payload, BasicCancelOk):
             # OK, our cancelling went just fine - proceed with teardown
             self.register_on_close_watch()
-            self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
+            if not self.channel_close_sent:
+                self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
+                self.channel_close_sent = True
             return
 
         if isinstance(payload, ChannelClose):

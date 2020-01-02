@@ -26,7 +26,10 @@ if __name__ == '__main__':
     server.start()
     client.start()
 
-    time.sleep(20)
+    try:
+        time.sleep(20)
+    except KeyboardInterrupt:
+        pass
 
     notify_client.put(None)
     notify_server.put(None)

@@ -1,10 +1,10 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import, division
-import six
+
 import logging
 
-from coolamqp.uplink import Connection
 from coolamqp.objects import Callable
+from coolamqp.uplink import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -14,12 +14,14 @@ class SingleNodeReconnector(object):
     Connection to one node. It will do it's best to remain alive.
     """
 
-    def __init__(self, node_def, attache_group, listener_thread, extra_properties=None):
+    def __init__(self, node_def, attache_group, listener_thread, extra_properties=None,
+                 log_frames=False):
         self.listener_thread = listener_thread
         self.node_def = node_def
         self.attache_group = attache_group
         self.connection = None
         self.extra_properties = extra_properties
+        self.log_frames = log_frames
 
         self.terminating = False
 
@@ -34,7 +36,9 @@ class SingleNodeReconnector(object):
         assert self.connection is None
 
         # Initiate connecting - this order is very important!
-        self.connection = Connection(self.node_def, self.listener_thread, self.extra_properties)
+        self.connection = Connection(self.node_def, self.listener_thread,
+                                     extra_properties=self.extra_properties,
+                                     log_frames=self.log_frames)
         self.attache_group.attach(self.connection)
         self.connection.start(timeout)
         self.connection.finalize.add(self.on_fail)

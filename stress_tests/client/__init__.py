@@ -10,7 +10,7 @@ from satella.coding.concurrent import TerminableThread
 
 from coolamqp.clustering.events import ReceivedMessage, NothingMuch
 from coolamqp.objects import Queue, Message
-from ..settings import connect, queue_names
+from ..settings import connect, queue_names, LogFramesToFile
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,10 @@ ANSWER_PROBABILITY = 0.7
 def run_multiple_if_probability(probability: float, callable: tp.Callable[[], None]) -> None:
     prob = random.random()
     while prob < probability:
-        callable()
+        try:
+            callable()
+        except Exception as e:
+            return
         prob = random.random()
 
 
@@ -108,7 +111,8 @@ class ConnectAndDisconnectThread(TerminableThread):
 def run(client_notify, result_client, server_notify, server_result):
     logging.basicConfig(level=logging.DEBUG)
 
-    amqp = connect(on_fail=lambda: result_client.put('fail'))
+    lftf = LogFramesToFile('client.txt')
+    amqp = connect(on_fail=result_client, log_frames=lftf)
     cad = ConnectAndDisconnectThread(amqp)
 
     server_notify.put(None)
@@ -123,5 +127,8 @@ def run(client_notify, result_client, server_notify, server_result):
             terminating = True
         except Empty:
             time.sleep(1)
+        except KeyboardInterrupt:
+            break
 
-        logger.warning('Got %s connections', len(cad.connections))
+    lftf.close()
+    # logger.warning('Got %s connections', len(cad.connections))

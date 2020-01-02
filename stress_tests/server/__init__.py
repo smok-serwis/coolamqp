@@ -5,7 +5,7 @@ from coolamqp.objects import Queue, Message
 
 logger = logging.getLogger(__name__)
 from satella.coding.concurrent import TerminableThread
-from ..settings import queue_names, connect
+from ..settings import queue_names, connect, LogFramesToFile
 
 
 class Server(TerminableThread):
@@ -28,7 +28,9 @@ class Server(TerminableThread):
 def run(notify_client, result_client, notify_server, server_result):
     logging.basicConfig(level=logging.DEBUG)
 
-    amqp = connect(on_fail=lambda: server_result.put('fail'))
+    lftf = LogFramesToFile('server.txt')
+
+    amqp = connect(on_fail=server_result, log_frames=lftf)
     server = Server(amqp)
 
     notify_client.put(None)
@@ -36,6 +38,11 @@ def run(notify_client, result_client, notify_server, server_result):
 
     server.start()
 
-    notify_server.get()
+    try:
+        notify_server.get()
+    except KeyboardInterrupt:
+        pass
 
     server.terminate().join()
+
+    lftf.close()

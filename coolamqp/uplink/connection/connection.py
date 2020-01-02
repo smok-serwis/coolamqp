@@ -1,23 +1,24 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import logging
+
 import collections
-import monotonic
-import uuid
-import time
+import logging
 import socket
-import six
+import time
+import uuid
+
+import monotonic
 
 from coolamqp.exceptions import ConnectionDead
+from coolamqp.framing.definitions import ConnectionClose, ConnectionCloseOk
+from coolamqp.framing.frames import AMQPMethodFrame
+from coolamqp.objects import Callable
 from coolamqp.uplink.connection.recv_framer import ReceivingFramer
 from coolamqp.uplink.connection.send_framer import SendingFramer
-from coolamqp.framing.frames import AMQPMethodFrame
-from coolamqp.uplink.handshake import Handshaker
-from coolamqp.framing.definitions import ConnectionClose, ConnectionCloseOk
-from coolamqp.uplink.connection.watches import MethodWatch, Watch
 from coolamqp.uplink.connection.states import ST_ONLINE, ST_OFFLINE, \
     ST_CONNECTING
-from coolamqp.objects import Callable
+from coolamqp.uplink.connection.watches import MethodWatch
+from coolamqp.uplink.handshake import Handshaker
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,10 @@ class Connection(object):
     This logger is talkative mostly on INFO, and regarding connection state
     """
 
-    def __init__(self, node_definition, listener_thread, extra_properties):
+    def __init__(self, node_definition,  # type: coolamqp.objects.NodeDefinition
+                 listener_thread, extra_properties,  # type: tp.Dict[bytes, tp.Tuple[tp.Any, str]]
+                 log_frames=None
+                 ):
         """
         Create an object that links to an AMQP broker.
 
@@ -114,6 +118,9 @@ class Connection(object):
         # To be filled in later
         self.listener_socket = None
         self.sendf = None
+
+        # To log frames
+        self.log_frames = log_frames
 
     def call_on_connected(self, callable):
         """
@@ -237,6 +244,10 @@ class Connection(object):
         :param frames: list of frames or None to close the link
         :param reason: optional human-readable reason for this action
         """
+        if self.log_frames is not None:
+            for frame in frames:
+                self.log_frames.on_frame(time.monotonic(), frame, 'to_server')
+
         if frames is not None:
             # for frame in frames:
             #     if isinstance(frame, AMQPMethodFrame):
@@ -257,6 +268,9 @@ class Connection(object):
 
         :param frame: AMQPFrame that was received
         """
+        if self.log_frames is not None:
+            self.log_frames.on_frame(time.monotonic(), frame, 'to_client')
+
         watch_handled = False  # True if ANY watch handled this
 
         if isinstance(frame, AMQPMethodFrame):
