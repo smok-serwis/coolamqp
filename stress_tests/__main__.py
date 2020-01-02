@@ -2,7 +2,6 @@ import logging
 import multiprocessing
 import sys
 import time
-from queue import Empty
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -11,6 +10,8 @@ if __name__ == '__main__':
     if sys.version.startswith('2.7'):
         logger.critical('This will not run on Python 2.x1')
         sys.exit(0)
+
+    from queue import Empty
 
     notify_client, result_client, notify_server, result_server = multiprocessing.Queue(), multiprocessing.Queue(), multiprocessing.Queue(), multiprocessing.Queue()
 
