@@ -554,6 +554,6 @@ REPLIES_FOR = {\n''')
 
 if __name__ == '__main__':
     compile_definitions()
-    proc = subprocess.run(['yapf', 'coolamqp/framing/definitions.py'], stdout=subprocess.PIPE)
+    proc = subprocess.check_output(['yapf', 'coolamqp/framing/definitions.py'])
     with open('coolamqp/framing/definitions.py', 'wb') as f_out:
-        f_out.write(proc.stdout)
+        f_out.write(proc)
