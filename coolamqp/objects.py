@@ -4,7 +4,6 @@ Core objects used in CoolAMQP
 """
 import logging
 import uuid
-import typing as tp
 
 import six
 
@@ -105,13 +104,13 @@ class ReceivedMessage(Message):
     and .nack() are no-ops.
     """
 
-    def __init__(self, body,            # type: tp.Union[six.binary_type, memoryview, tp.List[memoryview]]
-                 exchange_name,         # type: memoryview
-                 routing_key,           # type: memoryview
-                 properties=None,       # type: MessageProperties
-                 delivery_tag=None,     # type: int
-                 ack=None,              # type: tp.Callable[[], None]
-                 nack=None):            # type: tp.Callable[[], None]
+    def __init__(self, body,
+                 exchange_name,
+                 routing_key,
+                 properties=None,
+                 delivery_tag=None,
+                 ack=None,
+                 nack=None):
         """
         :param body: message body. A stream of octets.
         :type body: str (py2) or bytes (py3) or a list of memoryviews, if
@@ -125,13 +124,14 @@ class ReceivedMessage(Message):
                            strings will be memoryviews
         :param delivery_tag: delivery tag assigned by AMQP broker to confirm
             this message
+        :type delivery_tag: int
         :param ack: a callable to call when you want to ack (via basic.ack)
             this message. None if received by the no-ack mechanism
-        :type ack: Callable[[], None]
+        :type ack: tp.Callable[[], None]
         :param nack: a callable to call when you want to nack
             (via basic.reject) this message. None if received by the no-ack
              mechanism
-        :type nack: Callable[[], None]
+        :type nack: tp.Callable[[], None]
         """
         Message.__init__(self, body, properties=properties)
 
@@ -166,15 +166,15 @@ class Exchange(object):
         assert isinstance(self.name, six.text_type)
         assert isinstance(self.type, six.binary_type)
 
-    def __repr__(self):
+    def __repr__(self):  # type: () -> str
         return u'Exchange(%s, %s, %s, %s)' % (
             repr(self.name), repr(self.type), repr(self.durable),
             repr(self.auto_delete))
 
-    def __hash__(self):
+    def __hash__(self):  # type: () -> int
         return self.name.__hash__()
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # type: (Exchange) -> bool
         return (self.name == other.name) and (type(self) == type(other))
 
 
@@ -300,7 +300,7 @@ class NodeDefinition(object):
         else:
             raise ValueError(u'What did you exactly pass?')
 
-    def __str__(self):
+    def __str__(self):  # type: () -> str
         return six.text_type(
             b'amqp://%s:%s@%s/%s'.encode('utf8') % (
                 self.host, self.port, self.user, self.virtual_host))

@@ -6,6 +6,7 @@ from __future__ import print_function, absolute_import, division
 
 import logging
 import time
+import typing as tp
 import warnings
 from concurrent.futures import Future
 
@@ -34,6 +35,17 @@ class Cluster(object):
     Call .start() to connect to AMQP.
 
     It is not safe to fork() after .start() is called, but it's OK before.
+
+    :param nodes: list of nodes, or a single node. For now, only one is supported.
+    :type nodes: NodeDefinition instance or a list of NodeDefinition instances
+    :param on_fail: callable/0 to call when connection fails in an
+        unclean way. This is a one-shot
+    :type on_fail: callable/0
+    :param extra_properties: refer to documentation in [/coolamqp/connection/connection.py]
+        Connection.__init__
+    :param log_frames: an object that will have it's method .on_frame(timestamp,
+        frame, direction) called upon receiving/sending a frame. Timestamp is UNIX timestamp,
+        frame is AMQPFrame, direction is one of 'to_client', 'to_server'
     """
 
     # Events you can be informed about
@@ -41,18 +53,6 @@ class Cluster(object):
     ST_LINK_REGAINED = 1  # Link has been regained
 
     def __init__(self, nodes, on_fail=None, extra_properties=None, log_frames=None):
-        """
-        :param nodes: list of nodes, or a single node. For now, only one is supported.
-        :type nodes: NodeDefinition instance or a list of NodeDefinition instances
-        :param on_fail: callable/0 to call when connection fails in an
-            unclean way. This is a one-shot
-        :type on_fail: callable/0
-        :param extra_properties: refer to documentation in [/coolamqp/connection/connection.py]
-            Connection.__init__
-        :param log_frames: an object that will have it's method .on_frame(timestamp,
-            frame, direction) called upon receiving/sending a frame. Timestamp is UNIX timestamp,
-            frame is AMQPFrame, direction is one of 'to_client', 'to_server'
-        """
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
             nodes = [nodes]
@@ -144,6 +144,7 @@ class Cluster(object):
         :param exchange: exchange to use. Default is the "direct" empty-name exchange.
         :type exchange: unicode/bytes (exchange name) or Exchange object.
         :param routing_key: routing key to use
+        :type routing_key: tp.Union[str, bytes]
         :param confirm: Whether to publish it using confirms/transactions.
                         If you choose so, you will receive a Future that can be used
                         to check it broker took responsibility for this message.

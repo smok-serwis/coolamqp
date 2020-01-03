@@ -1,7 +1,7 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-from coolamqp.framing.definitions import HARD_ERRORS, RESOURCE_LOCKED
+from coolamqp.framing.definitions import HARD_ERRORS
 
 
 class CoolAMQPError(Exception):
@@ -20,14 +20,14 @@ class AMQPError(CoolAMQPError):
     Base class for errors received from AMQP server
     """
 
-    def is_hard_error(self):
+    def is_hard_error(self):  # type: () -> bool
         """Does this error close the connection?"""
         return self.reply_code in HARD_ERRORS
 
-    def __str__(self):
+    def __str__(self):  # type: () -> str
         return 'AMQP error %s: %s' % (self.reply_code, self.reply_text)
 
-    def __repr__(self):
+    def __repr__(self):  # type: () -> str
         return 'AMQPError(' + repr(self.reply_code) + ', ' + repr(
             self.reply_text) + \
                ', ' + repr(self.class_id) + ', ' + repr(self.method_id) + ')'

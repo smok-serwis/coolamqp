@@ -75,6 +75,38 @@ class Consumer(Channeler):
 
     >>> con.on_broker_cancel.add(im_cancelled_by_broker)
 
+    :param queue: Queue object, being consumed from right now.
+        Note that name of anonymous queue might change at any time!
+    :type queue: coolamqp.objects.Queue
+    :param on_message: callable that will process incoming messages
+    :type on_message: callable(ReceivedMessage instance)
+    :param no_ack: Will this consumer require acknowledges from messages?
+    :type no_ack: bool
+    :param qos: a tuple of (prefetch size, prefetch window) for this
+        consumer, or an int (prefetch window only).
+        If an int is passed, prefetch size will be set to 0 (which means
+        undefined), and this int will be used for prefetch window
+    :type qos: tuple(int, int) or tuple(None, int) or int
+    :param cancel_on_failure: Consumer will cancel itself when link goes
+        down
+    :type cancel_on_failure: bool
+    :param future_to_notify: Future to succeed when this consumer goes
+                             online for the first time.
+                             This future can also raise with AMQPError if
+                             it fails to.
+    :type future_to_notify: concurrent.futures.Future
+    :param fail_on_first_time_resource_locked: When consumer is declared
+        for the first time, and RESOURCE_LOCKED is encountered, it will
+        fail the future with ResourceLocked, and consumer will cancel
+        itself.
+        By default it will retry until success is made.
+        If the consumer doesn't get the chance to be declared - because
+        of a connection fail - next reconnect will consider this to be
+        SECOND declaration, ie. it will retry ad infinitum
+    :type fail_on_first_time_resource_locked: bool
+    :param body_receive_mode: how should message.body be received. This
+        has a performance impact
+    :type body_receive_mode: a property of BodyReceiveMode
     """
 
     def __init__(self, queue, on_message, no_ack=True, qos=None,
@@ -87,39 +119,6 @@ class Consumer(Channeler):
         Note that if you specify QoS, it is applied before basic.consume is
         sent. This will prevent the broker from hammering you into oblivion
         with a mountain of messages.
-
-        :param queue: Queue object, being consumed from right now.
-            Note that name of anonymous queue might change at any time!
-        :type queue: coolamqp.objects.Queue
-        :param on_message: callable that will process incoming messages
-        :type on_message: callable(ReceivedMessage instance)
-        :param no_ack: Will this consumer require acknowledges from messages?
-        :type no_ack: bool
-        :param qos: a tuple of (prefetch size, prefetch window) for this
-            consumer, or an int (prefetch window only).
-            If an int is passed, prefetch size will be set to 0 (which means
-            undefined), and this int will be used for prefetch window
-        :type qos: tuple(int, int) or tuple(None, int) or int
-        :param cancel_on_failure: Consumer will cancel itself when link goes
-            down
-        :type cancel_on_failure: bool
-        :param future_to_notify: Future to succeed when this consumer goes
-                                 online for the first time.
-                                 This future can also raise with AMQPError if
-                                 it fails to.
-        :type future_to_notify: concurrent.futures.Future
-        :param fail_on_first_time_resource_locked: When consumer is declared
-            for the first time, and RESOURCE_LOCKED is encountered, it will
-            fail the future with ResourceLocked, and consumer will cancel
-            itself.
-            By default it will retry until success is made.
-            If the consumer doesn't get the chance to be declared - because
-            of a connection fail - next reconnect will consider this to be
-            SECOND declaration, ie. it will retry ad infinitum
-        :type fail_on_first_time_resource_locked: bool
-        :param body_receive_mode: how should message.body be received. This
-            has a performance impact
-        :type body_receive_mode: BodyReceiveMode.*
         """
         super(Consumer, self).__init__()
 
