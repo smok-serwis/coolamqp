@@ -8,7 +8,7 @@ CoolAMQP
 [![PyPI](https://img.shields.io/pypi/pyversions/CoolAMQP.svg)]()
 [![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
 [![PyPI](https://img.shields.io/pypi/wheel/CoolAMQP.svg)]()
-[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=develop)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.

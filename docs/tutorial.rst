@@ -53,7 +53,10 @@ This will create an auto-delete and exclusive queue. After than, a consumer will
 _no_ack=False_ will mean that we have to manually confirm messages. 
 
 You can specify a callback, that will be called with a message if one's received by this consumer. Since
-we did not do that, this will go to a generic queue belonging to _Cluster_. 
+we did not do that, this will go to a generic queue belonging to _Cluster_.
+
+.. autoclass: coolamqp.clustering.Cluster
+:members:
 
 _consumer_ is a _Consumer_ object. This allows us to do some things with the consumer (such as setting QoS),
 but most importantly it allows us to cancel it later. _consume_confirm_ is a _Future_, that will succeed
@@ -75,4 +78,13 @@ This creates a message with no properties, and sends it through default (direct)
 Note that CoolAMQP simply considers your messages to be bags of bytes + properties. It will not modify them,
 nor decode, and will always expect and return bytes.
 
-To actually get our message ...
+To actually get our message, we need to start a consumer first. To do that, just invoke:
+
+::
+
+    cluster.consume(Queue('name of the queue'), **kwargs)
+
+Where kwargs are passed directly to Consumer class
+
+.. autoclass: coolamqp.attaches.Consumer
+:members:
