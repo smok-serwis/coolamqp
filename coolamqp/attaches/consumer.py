@@ -192,7 +192,6 @@ class Consumer(Channeler):
                 self.method_and_watch(BasicCancel(self.consumer_tag, False),
                                       [BasicCancelOk],
                                       self.on_close)
-                self.channel_close_sent = True
         else:
             if not self.channel_close_sent and self.state == ST_ONLINE:
                 self.method(ChannelClose(0, b'cancelling', 0, 0))

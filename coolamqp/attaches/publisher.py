@@ -65,6 +65,12 @@ class Publisher(Channeler, Synchronized):
     Since this may be called by other threads than ListenerThread, this has locking.
 
     _pub and on_fail are synchronized so that _pub doesn't see a partially destroyed class.
+
+    :param mode: Publishing mode to use. One of:
+         MODE_NOACK - use non-ack mode
+         MODE_CNPUB - use consumer publishing mode. A switch to MODE_TXPUB will be made
+                      if broker does not support these.
+    :raise ValueError: mode invalid
     """
     MODE_NOACK = 0  # no-ack publishing
     MODE_CNPUB = 1  # RabbitMQ publisher confirms extension
@@ -76,14 +82,6 @@ class Publisher(Channeler, Synchronized):
         """This publisher will never work (eg. MODE_CNPUB on a broker not supporting publisher confirms)"""
 
     def __init__(self, mode):
-        """
-        Create a new publisher
-        :param mode: Publishing mode to use. One of:
-                         MODE_NOACK - use non-ack mode
-                         MODE_CNPUB - use consumer publishing mode. A switch to MODE_TXPUB will be made
-                                      if broker does not support these.
-        :raise ValueError: mode invalid
-        """
         Channeler.__init__(self)
         Synchronized.__init__(self)
 
