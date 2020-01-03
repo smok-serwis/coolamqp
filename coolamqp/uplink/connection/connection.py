@@ -10,6 +10,7 @@ import uuid
 import monotonic
 
 from coolamqp.exceptions import ConnectionDead
+from coolamqp.framing.base import AMQPMethodPayload
 from coolamqp.framing.definitions import ConnectionClose, ConnectionCloseOk
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.objects import Callable
@@ -344,6 +345,8 @@ class Connection(object):
             self.watches[watch.channel].append(watch)
 
     def watch_for_method(self, channel, method, callback, on_fail=None):
+        # type: (int, AMQPMethodPayload, tp.Callable[[AMQPMethodPayload], None],
+        #   tp.Optional[tp.Callable[[AMQPMethodPayload], None]]) -> MethodWatch
         """
         :param channel: channel to monitor
         :param method: AMQPMethodPayload class or tuple of AMQPMethodPayload classes

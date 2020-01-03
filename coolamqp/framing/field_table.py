@@ -15,15 +15,15 @@ NOTE: it's not buffers, it's memoryview all along
 """
 
 import struct
-
+import io
 import six
 
 
-def _tobuf(buf, pattern, *vals):
+def _tobuf(buf, pattern, *vals):  # type: (io.BytesIO, str, *tp.Any) -> int
     return buf.write(struct.pack(pattern, *vals))
 
 
-def _tobufv(buf, value, pattern, *vals):
+def _tobufv(buf, value, pattern, *vals):  # type: (io.BytesIO, bytes, str, *tp.Any) -> None
     _tobuf(buf, pattern, *vals)
     buf.write(value)
 

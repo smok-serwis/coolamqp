@@ -18,6 +18,7 @@ class AMQPMethodFrame(AMQPFrame):
     FRAME_TYPE = FRAME_METHOD
 
     def __init__(self, channel, payload):
+        # type: (int, coolamqp.framing.base.AMQPMethodPayload) -> None
         """
         :param channel: channel ID
         :param payload: AMQPMethodPayload instance
@@ -25,7 +26,7 @@ class AMQPMethodFrame(AMQPFrame):
         AMQPFrame.__init__(self, channel)
         self.payload = payload
 
-    def __str__(self):
+    def __str__(self):  # type: () -> str
         return 'AMQPMethodFrame(%s, %s)' % (self.channel, self.payload)
 
     def write_to(self, buf):
@@ -51,7 +52,7 @@ class AMQPMethodFrame(AMQPFrame):
         else:
             return AMQPMethodFrame(channel, payload)
 
-    def get_size(self):
+    def get_size(self):  # type: () -> int
         # frame_header = (method(1) + channel(2) + length(4) + class(2) + method(2) + payload(N) + frame_end(1))
         return 12 + self.payload.get_size()
 
@@ -60,6 +61,7 @@ class AMQPHeaderFrame(AMQPFrame):
     FRAME_TYPE = FRAME_HEADER
 
     def __init__(self, channel, class_id, weight, body_size, properties):
+        # type: (int, int, int, int, AMQPContentPropertyList) -> None
         """
         :param channel: channel ID
         :param class_id: class ID
@@ -91,11 +93,11 @@ class AMQPHeaderFrame(AMQPFrame):
         return AMQPHeaderFrame(channel, class_id, weight, body_size,
                                properties)
 
-    def get_size(self):
+    def get_size(self):  # type: () -> int
         # frame header is always 7, frame end is 1, content header is 12 + props
         return 20 + self.properties.get_size()
 
-    def __str__(self):
+    def __str__(self):  # type: () -> str
         return 'AMQPHeaderFrame(%s, %s, %s, %s, %s)' % (self.channel, self.class_id, self.weight,
                                                         self.body_size, self.properties)
 
@@ -105,7 +107,7 @@ class AMQPBodyFrame(AMQPFrame):
 
     FRAME_SIZE_WITHOUT_PAYLOAD = 8
 
-    def __init__(self, channel, data):
+    def __init__(self, channel, data):  # type: (int, bytes) -> None
         """
         :type data: binary
         """
@@ -123,10 +125,10 @@ class AMQPBodyFrame(AMQPFrame):
     def unserialize(channel, payload_as_buffer):
         return AMQPBodyFrame(channel, payload_as_buffer)
 
-    def get_size(self):
+    def get_size(self):  # type: () -> int
         return 8 + len(self.data)
 
-    def __str__(self):
+    def __str__(self):  # type: () -> str
         return '<AMQPBodyFrame of size %s>' % (len(self.data),)
 
 

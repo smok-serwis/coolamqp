@@ -6,6 +6,7 @@ set up and tear down channels
 from __future__ import print_function, absolute_import, division
 
 import logging
+import typing as tp
 
 from coolamqp.framing.definitions import ChannelOpen, ChannelOpenOk, \
     ChannelClose, ChannelCloseOk, BasicCancel, \
@@ -29,7 +30,7 @@ class Attache(object):
         self.state = ST_OFFLINE
         self.connection = None
 
-    def attach(self, connection):
+    def attach(self, connection):  # type (coolamqp.uplink.connection.Connection) -> None
         """
         Attach to a connection.
 
@@ -69,7 +70,7 @@ class Channeler(Attache):
         super(Channeler, self).__init__()
         self.channel_id = None  # channel obtained from Connection
 
-    def attach(self, connection):
+    def attach(self, connection):  # type (coolamqp.uplink.connection.Connection) -> None
         """
         Attach this object to a live Connection.
 
@@ -81,7 +82,7 @@ class Channeler(Attache):
 
     # ------- event handlers
 
-    def on_operational(self, operational):
+    def on_operational(self, operational):  # type: (bool) -> None
         """
         [EXTEND ME] Called by internal methods (on_*) when channel has achieved (or lost) operational status.
 
@@ -97,6 +98,7 @@ class Channeler(Attache):
         """
 
     def on_close(self, payload=None):
+        # type (tp.Optional[coolamqp.framing.base.AMQPMethodPayload) -> None
         """
         [EXTEND ME] Handler for channeler destruction.
 
@@ -161,6 +163,7 @@ class Channeler(Attache):
                          payload.reply_text.tobytes())
 
     def methods(self, payloads):
+        # type: (tp.Iterable[coolamqp.framing.base.AMQPMethodPayload]) -> None
         """
         Syntactic sugar for
 
@@ -177,6 +180,7 @@ class Channeler(Attache):
         self.connection.send(frames)
 
     def method(self, payload):
+        # type: (tp.Iterable[coolamqp.framing.base.AMQPMethodPayload]) -> None
         """
         Syntactic sugar for:
 
@@ -186,6 +190,8 @@ class Channeler(Attache):
 
     def method_and_watch(self, method_payload, method_classes_to_watch,
                          callable):
+        # type: (coolamqp.framing.base.AMQPMethodPayload,
+        # tp.Iterable[type], tp.Callable[[coolamqp.framing.base.AMQPMethodPayload], None]) -> None
         """
         Syntactic sugar for
 
@@ -198,7 +204,7 @@ class Channeler(Attache):
         self.connection.method_and_watch(self.channel_id, method_payload,
                                          method_classes_to_watch, callable)
 
-    def on_setup(self, payload):
+    def on_setup(self, payload):  # type: (coolamqp.framing.base.AMQPMethodPayload) -> None
         """
         [OVERRIDE ME!] Called with a method frame that signifies a part of setup.
 

@@ -1,11 +1,10 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-import logging
-
-logger = logging.getLogger(__name__)
+import typing as tp
 
 AMQP_HELLO_HEADER = b'AMQP\x00\x00\x09\x01'
+
 
 # name => (length|None, struct ID|None, reserved-field-value : for struct if structable, bytes else, length of default)
 BASIC_TYPES = {u'bit': (None, None, "0", None),  # special case
@@ -29,10 +28,10 @@ DYNAMIC_BASIC_TYPES = (u'table', u'longstr', u'shortstr')
 class AMQPFrame(object):  # base class for framing
     FRAME_TYPE = None  # override me!
 
-    def __init__(self, channel):
+    def __init__(self, channel):  # type: (int) -> None
         self.channel = channel
 
-    def write_to(self, buf):
+    def write_to(self, buf):  # type: (io.BinaryIO) -> None
         """
         Write a complete frame to buffer
 
@@ -52,26 +51,29 @@ class AMQPFrame(object):  # base class for framing
         """
         raise NotImplementedError('Override me')
 
-    def get_size(self):
+    def get_size(self):  # type: () -> int
         """
         Return size of this frame, in bytes, from frame type to frame_end
         :return: int
         """
         raise NotImplementedError('Override me')
 
+    def __str__(self):  # type: () -> str
+        return 'AMQPFrame(%s)' % (self.channel,)
+
 
 class AMQPPayload(object):
     """Payload is something that can write itself to bytes,
     or at least provide a buffer to do it."""
 
-    def write_to(self, buf):
+    def write_to(self, buf):  # type: (buffer) -> None
         """
         Emit itself into a buffer, from length to FRAME_END
 
         :param buf: buffer to write to (will be written using .write)
         """
 
-    def get_size(self):
+    def get_size(self):  # type: () -> int
         """
         Return size of this payload
         :return: int
@@ -95,10 +97,11 @@ class AMQPContentPropertyList(object):
 
     # todo they are immutable, so they could just serialize themselves...
 
-    def __str__(self):
+    def __str__(self):  # type: () -> str
         return '<AMQPContentPropertyList>'
 
     def get(self, property_name, default=None):
+        # type: (str, str) -> tp.Union[memoryview, bytes]
         """
         Return a particular property, or default if not defined
         :param property_name: property name, unicode
@@ -127,7 +130,7 @@ class AMQPContentPropertyList(object):
         raise Exception(u'This is an abstract method')
 
     @staticmethod
-    def from_buffer(self, buf, start_offset):
+    def from_buffer(self, buf, start_offset):  # type: (buffer, int) -> AMQPContentPropertyList
         """
         Return an instance of self, loaded from a buffer.
 
@@ -137,7 +140,7 @@ class AMQPContentPropertyList(object):
         """
         raise Exception(u'This is an abstract method')
 
-    def get_size(self):
+    def get_size(self):  # type: () -> int
         """
         How long is property_flags + property_values
         :return: int
@@ -150,7 +153,7 @@ class AMQPMethodPayload(AMQPPayload):
     REPLY_WITH = []
     FIELDS = []
 
-    def get_size(self):
+    def get_size(self):  # type: () -> int
         """
         Calculate the size of this frame.
 
@@ -162,7 +165,7 @@ class AMQPMethodPayload(AMQPPayload):
 
         raise NotImplementedError()
 
-    def write_arguments(self, buf):
+    def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         """
         Write the argument portion of this frame into buffer.
 
@@ -173,7 +176,7 @@ class AMQPMethodPayload(AMQPPayload):
         raise NotImplementedError()
 
     @staticmethod
-    def from_buffer(buf, offset):
+    def from_buffer(buf, offset):  # type: (buffer, int) -> AMQPMethodPayload
         """
         Construct this frame from a buffer
 
