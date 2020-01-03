@@ -165,12 +165,12 @@ class AMQPMethodPayload(AMQPPayload):
 
         raise RuntimeError('Should never be executed!')
 
-    def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
+    def write_arguments(self, buf):
         """
-        Write the argument portion of this frame into buffer.
+        Write the argument portion of this frame into target buffer.
 
         :param buf: buffer to write to
-        :return: how many bytes written
+        :type buf: tp.BinaryIO
         :raise ValueError: some field here is invalid!
         """
         raise NotImplementedError()
@@ -184,7 +184,7 @@ class AMQPMethodPayload(AMQPPayload):
         :type buf: buffer or memoryview
         :param offset: offset the argument portion begins at
         :type offset: int
-        :return: tuple of (an instance of this class, amount of bytes consumed as int)
+        :return: an instance of this class
         :raise ValueError: invalid data
         """
         raise NotImplementedError('')
