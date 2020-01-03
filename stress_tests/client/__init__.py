@@ -119,9 +119,9 @@ def run(client_notify, result_client, server_notify, server_result):
     client_notify.get()
 
     cad.start()
-
+    started_at = time.monotonic()
     terminating = False
-    while not terminating:
+    while not terminating and (time.monotonic() < started_at + 40):  # run for 40 seconds
         try:
             client_notify.get(timeout=1.0)
             terminating = True
@@ -129,6 +129,8 @@ def run(client_notify, result_client, server_notify, server_result):
             time.sleep(1)
         except KeyboardInterrupt:
             break
+
+    server_notify.put(None)
 
     lftf.close()
     # logger.warning('Got %s connections', len(cad.connections))
