@@ -104,6 +104,7 @@ class AMQPContentPropertyList(object):
         # type: (str, str) -> tp.Union[memoryview, bytes]
         """
         Return a particular property, or default if not defined
+
         :param property_name: property name, unicode
         :param default: default value
         :return: memoryview or bytes
@@ -117,6 +118,7 @@ class AMQPContentPropertyList(object):
 
         This leaves us with a canonical representation, that can be used
         in obtaining a particular property list
+
         :param property_flags: binary
         :return: binary
         """
@@ -143,6 +145,7 @@ class AMQPContentPropertyList(object):
     def get_size(self):  # type: () -> int
         """
         How long is property_flags + property_values
+
         :return: int
         """
         raise Exception(u'This is an abstract method')
@@ -157,7 +160,11 @@ class AMQPMethodPayload(AMQPPayload):
         """
         Calculate the size of this frame.
 
+        Needs to be overloaded, unless you're a class with IS_CONTENT_STATIC
+
         :return: int, size of argument section
+        :raises RuntimeError: this class isn't IS_CONTENT_STATIC and this method was called directly.
+            In this case, you should have rather subclassed it.
         """
         if self.IS_CONTENT_STATIC:
             return len(

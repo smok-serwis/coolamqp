@@ -163,12 +163,12 @@ def enframe_array(buf, array):
         enframe_field_value(buf, fv)
 
 
-def enframe_table(buf, table):
+def enframe_table(buf, table):  # type (tp.BinaryIO, table) -> None
     """
     Write AMQP table to buffer
-    :param buf:
-    :param table:
-    :return:
+
+    :param buf: target buffer to write to
+    :param table: table to write
     """
     _tobuf(buf, '!I', frame_table_size(table) - 4)
 
