@@ -29,10 +29,10 @@ class SingleNodeReconnector(object):
 
         self.on_fail.add(self._on_fail)
 
-    def is_connected(self):
+    def is_connected(self):  # type: () -> bool
         return self.connection is not None
 
-    def connect(self, timeout):
+    def connect(self, timeout):  # type: (float) -> None
         assert self.connection is None
 
         # Initiate connecting - this order is very important!
