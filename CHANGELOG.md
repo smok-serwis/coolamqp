@@ -1,3 +1,12 @@
+# v0.100:
+
+* significant docs update
+* cosmetics
+
+# v0.99:
+
+* *bugfix release*: extra requirements added to [setup.py](/setup.py)
+
 # v0.98:
 
 * *bugfix release*: fixed multiple race conditions, added stress tests

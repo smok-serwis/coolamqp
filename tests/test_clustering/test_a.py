@@ -207,7 +207,7 @@ class TestA(unittest.TestCase):
         self.assertEquals(m.body[0], data)
 
         data = six.binary_type(os.urandom(512 * 1024))
-        self.c.publish(Message(data), routing_key=u'hello7', confirm=True)
+        self.c.publish(Message(data), routing_key=u'hello8', confirm=True)
         m = self.c.drain(5)
         self.assertIsInstance(m, MessageReceived)
         self.assertTrue(all([isinstance(x, memoryview) for x in m.body]))
