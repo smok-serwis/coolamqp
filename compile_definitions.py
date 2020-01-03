@@ -2,6 +2,7 @@ from __future__ import division
 
 import collections
 import struct
+import subprocess
 from xml.etree import ElementTree
 
 import math
@@ -42,7 +43,7 @@ Generated automatically by CoolAMQP from AMQP machine-readable specification.
 See coolamqp.uplink.framing.compilation for the tool
 
 AMQP is copyright (c) 2016 OASIS
-CoolAMQP is copyright (c) 2016-2018 DMS Serwis s.c., 2018-2019 SMOK sp. z o.o.
+CoolAMQP is copyright (c) 2016-2018 DMS Serwis s.c., 2018-2020 SMOK sp. z o.o.
 
 
 ###########################################################
@@ -553,6 +554,6 @@ REPLIES_FOR = {\n''')
 
 if __name__ == '__main__':
     compile_definitions()
-    # proc = subprocess.run(['yapf', 'coolamqp/framing/definitions.py'], stdout=subprocess.PIPE)
-    # with open('coolamqp/framing/definitions.py', 'wb') as f_out:
-    #     f_out.write(proc.stdout)
+    proc = subprocess.run(['yapf', 'coolamqp/framing/definitions.py'], stdout=subprocess.PIPE)
+    with open('coolamqp/framing/definitions.py', 'wb') as f_out:
+        f_out.write(proc.stdout)

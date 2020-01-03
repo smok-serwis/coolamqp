@@ -175,8 +175,8 @@ class AMQPMethodPayload(AMQPPayload):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def from_buffer(buf, offset):  # type: (buffer, int) -> AMQPMethodPayload
+    @classmethod
+    def from_buffer(cls, buf, offset):  # type: (buffer, int) -> AMQPMethodPayload
         """
         Construct this frame from a buffer
 
@@ -184,7 +184,7 @@ class AMQPMethodPayload(AMQPPayload):
         :type buf: buffer or memoryview
         :param offset: offset the argument portion begins at
         :type offset: int
-        :return: tuple of (an instance of %s, amount of bytes consumed as int)
+        :return: tuple of (an instance of this class, amount of bytes consumed as int)
         :raise ValueError: invalid data
         """
         raise NotImplementedError('')
