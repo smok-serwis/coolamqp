@@ -137,6 +137,9 @@ class EpollListener(object):
                                               callback
                                               ))
 
+    def activate(self, sock):  # type: (coolamqp.uplink.listener.epoll_listener.EpollSocket) -> None
+        self.epoll.register(sock.sock, RW)
+
     def register(self, sock, on_read=lambda data: None,
                  on_fail=lambda: None):
         """
@@ -151,5 +154,4 @@ class EpollListener(object):
         sock = EpollSocket(sock, on_read, on_fail, self)
         self.fd_to_sock[sock.fileno()] = sock
 
-        self.epoll.register(sock, RW)
         return sock

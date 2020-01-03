@@ -176,11 +176,15 @@ class Connection(object):
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk),
                               self.on_connection_close)
 
-        self.sendf = SendingFramer(self.listener_socket.send)
-        Handshaker(self, self.node_definition, self.on_connected, self.extra_properties)
+        # Note that these are placed in just the right order. Sometimes there would
+        # be a race condition that ConnectionStart has arrived before there could
+        # be a watch for it set
         self.listener_socket = self.listener_thread.register(sock,
                                                              on_read=self.recvf.put,
                                                              on_fail=self.on_fail)
+        self.sendf = SendingFramer(self.listener_socket.send)
+        Handshaker(self, self.node_definition, self.on_connected, self.extra_properties)
+        self.listener_thread.activate(self.listener_socket)
 
     def on_fail(self):
         """
