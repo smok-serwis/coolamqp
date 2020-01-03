@@ -5,6 +5,7 @@ Concrete frame definitions
 from __future__ import absolute_import, division, print_function
 
 import struct
+
 import six
 
 from coolamqp.framing.base import AMQPFrame
@@ -23,6 +24,9 @@ class AMQPMethodFrame(AMQPFrame):
         """
         AMQPFrame.__init__(self, channel)
         self.payload = payload
+
+    def __str__(self):
+        return 'AMQPMethodFrame(%s, %s)' % (self.channel, self.payload)
 
     def write_to(self, buf):
         if self.payload.IS_CONTENT_STATIC:
@@ -91,6 +95,10 @@ class AMQPHeaderFrame(AMQPFrame):
         # frame header is always 7, frame end is 1, content header is 12 + props
         return 20 + self.properties.get_size()
 
+    def __str__(self):
+        return 'AMQPHeaderFrame(%s, %s, %s, %s, %s)' % (self.channel, self.class_id, self.weight,
+                                                        self.body_size, self.properties)
+
 
 class AMQPBodyFrame(AMQPFrame):
     FRAME_TYPE = FRAME_BODY
@@ -118,6 +126,9 @@ class AMQPBodyFrame(AMQPFrame):
     def get_size(self):
         return 8 + len(self.data)
 
+    def __str__(self):
+        return '<AMQPBodyFrame of size %s>' % (len(self.data),)
+
 
 class AMQPHeartbeatFrame(AMQPFrame):
     FRAME_TYPE = FRAME_HEARTBEAT
@@ -132,3 +143,6 @@ class AMQPHeartbeatFrame(AMQPFrame):
 
     def get_size(self):
         return AMQPHeartbeatFrame.LENGTH
+
+    def __str__(self):
+        return 'AMQPHeartbeatFrame()'

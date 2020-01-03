@@ -1,3 +1,7 @@
+# v0.98:
+
+* *bugfix release*: fixed multiple race conditions, added stress tests
+
 # v0.97:
 
 * Changed copyright in connection properties to better reflect the current situation

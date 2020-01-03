@@ -95,6 +95,9 @@ class AMQPContentPropertyList(object):
 
     # todo they are immutable, so they could just serialize themselves...
 
+    def __str__(self):
+        return '<AMQPContentPropertyList>'
+
     def get(self, property_name, default=None):
         """
         Return a particular property, or default if not defined

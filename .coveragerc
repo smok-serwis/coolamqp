@@ -4,5 +4,6 @@ include=
   coolamqp/*
 omit=
   tests/*
+  stress_tests/*
   compile_definitions.py
   coolamqp/framing/definitions.py

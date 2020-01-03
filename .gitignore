@@ -13,6 +13,8 @@ coolamqp/framing/definitions.py
 env/
 build/
 docs/_build/
+client.txt
+server.txt
 develop-eggs/
 htmlcov/
 dist/
