@@ -156,6 +156,10 @@ texinfo_documents = [
 from coolamqp.framing.definitions import BINARY_HEADER_TO_METHOD
 
 with open('frames.rst', 'w') as f_out:
+    f_out.write('''===========================
+Glossary of all AMQP frames
+===========================
+''')
     for class_ in BINARY_HEADER_TO_METHOD.values():
         f_out.write('.. autoclass:: coolamqp.framing.definitions.%s\n    :members:\n\n' % (
             class_.__qualname__,))
