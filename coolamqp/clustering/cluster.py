@@ -136,12 +136,11 @@ class Cluster(object):
 
     def publish(self, message, exchange=None, routing_key=u'', tx=None,
                 confirm=None):
-        # type: (coolamqp.objects.Message, tp.Optional[coolamqp.objects.Exchange],
-        #   tp.Union[str, bytes], bool, bool) -> concurrent.futures.Future
         """
         Publish a message.
 
         :param message: Message to publish
+        :type message: coolamqp.objects.Message
         :param exchange: exchange to use. Default is the "direct" empty-name exchange.
         :type exchange: unicode/bytes (exchange name) or Exchange object.
         :param routing_key: routing key to use
@@ -149,8 +148,10 @@ class Cluster(object):
                         If you choose so, you will receive a Future that can be used
                         to check it broker took responsibility for this message.
                         Note that if tx if False, and message cannot be delivered to broker at once,
-                        it will be discarded.
+                        it will be discarded
+        :type confirm: tp.Optional[bool]
         :param tx: deprecated, alias for confirm
+        :type tx: tp.Optional[bool]
         :return: Future or None
         """
         if isinstance(exchange, Exchange):
@@ -182,8 +183,7 @@ class Cluster(object):
             raise NotImplementedError(
                 u'Sorry, this functionality is not yet implemented!')
 
-    def start(self, wait=True, timeout=10.0, log_frames=None):
-        # type: (bool, float, bool) -> None
+    def start(self, wait=True, timeout=10.0, log_frames=None):  # type: (bool, float, bool) -> None
         """
         Connect to broker. Initialize Cluster.
 
@@ -191,7 +191,8 @@ class Cluster(object):
         It is not safe to fork after this.
 
         :param wait: block until connection is ready
-        :param timeout: timeout to wait until the connection is ready. If it is not, a ConnectionDead error will be raised
+        :param timeout: timeout to wait until the connection is ready. If it is not, a
+                        ConnectionDead error will be raised
         :raise RuntimeError: called more than once
         :raise ConnectionDead: failed to connect within timeout
         :param log_frames: whether to keep a log of sent/received frames in self.log_frames
@@ -236,7 +237,7 @@ class Cluster(object):
             while not self.snr.is_connected() and monotonic.monotonic() - start_at < timeout:
                 time.sleep(0.1)
             if not self.snr.is_connected():
-                raise ConnectionDead('Could not connect within %s seconds' % (timeout, ))
+                raise ConnectionDead('Could not connect within %s seconds' % (timeout,))
 
     def shutdown(self, wait=True):  # type: (bool) -> None
         """

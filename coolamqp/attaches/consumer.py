@@ -64,18 +64,16 @@ class Consumer(Channeler):
     You can subscribe to be informed when the consumer is cancelled (for any
     reason, server or client side) with:
 
-        con, fut = Cluster.consume(...)
-
-        def im_called_on_cancel_for_any_reason():   # must have arity of 0
-            ..
-
-        con.on_cancel.add(im_called_on_cancel_for_any_reason)
-        con.cancel()
+    >>> con, fut = Cluster.consume(...)
+    >>> def im_called_on_cancel_for_any_reason():   # must have arity of 0
+    >>>     ..
+    >>> con.on_cancel.add(im_called_on_cancel_for_any_reason)
+    >>> con.cancel()
 
     Or, if RabbitMQ is in use, you can be informed upon a Consumer Cancel
     Notification:
 
-        con.on_broker_cancel.add(im_cancelled_by_broker)
+    >>> con.on_broker_cancel.add(im_cancelled_by_broker)
 
     """
 
@@ -92,9 +90,11 @@ class Consumer(Channeler):
 
         :param queue: Queue object, being consumed from right now.
             Note that name of anonymous queue might change at any time!
+        :type queue: coolamqp.objects.Queue
         :param on_message: callable that will process incoming messages
         :type on_message: callable(ReceivedMessage instance)
         :param no_ack: Will this consumer require acknowledges from messages?
+        :type no_ack: bool
         :param qos: a tuple of (prefetch size, prefetch window) for this
             consumer, or an int (prefetch window only).
             If an int is passed, prefetch size will be set to 0 (which means
@@ -107,6 +107,7 @@ class Consumer(Channeler):
                                  online for the first time.
                                  This future can also raise with AMQPError if
                                  it fails to.
+        :type future_to_notify: concurrent.futures.Future
         :param fail_on_first_time_resource_locked: When consumer is declared
             for the first time, and RESOURCE_LOCKED is encountered, it will
             fail the future with ResourceLocked, and consumer will cancel
@@ -165,11 +166,12 @@ class Consumer(Channeler):
             self.method(BasicQos(prefetch_size or 0, prefetch_count, False))
         self.qos = prefetch_size or 0, prefetch_count
 
-    def cancel(self):
+    def cancel(self):  # type: () -> None
         """
         Cancel the customer.
 
         .ack() or .nack() for messages from this customer will have no effect.
+
         :return: a Future to tell when it's done. The future will always
                  succeed - sooner, or later.
                  NOTE: Future is OK'd when entire channel is destroyed
@@ -191,9 +193,11 @@ class Consumer(Channeler):
                 self.method_and_watch(BasicCancel(self.consumer_tag, False),
                                       [BasicCancelOk],
                                       self.on_close)
+                self.channel_close_sent = True
         else:
             if not self.channel_close_sent and self.state == ST_ONLINE:
                 self.method(ChannelClose(0, b'cancelling', 0, 0))
+                self.channel_close_sent = True
 
         if self.attache_group is not None:
             self.attache_group.on_cancel_customer(self)
@@ -317,6 +321,7 @@ class Consumer(Channeler):
     def on_delivery(self, sth):
         """
         Callback for delivery-related shit
+
         :param sth: AMQPMethodFrame WITH basic-deliver, AMQPHeaderFrame or
             AMQPBodyFrame
         """
