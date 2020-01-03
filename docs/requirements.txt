@@ -1,1 +1,5 @@
 sphinx-autodoc-typehints
+six
+monotonic
+futures
+typing
