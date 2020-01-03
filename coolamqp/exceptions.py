@@ -3,8 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 from coolamqp.framing.definitions import HARD_ERRORS, RESOURCE_LOCKED
 
-
-__all__ ['HARD_ERRORS', 'RESOURCE_LOCKED', 'CoolAMQPError', 'ConnectionDead', 'AMQPError']
+__all__ = ['HARD_ERRORS', 'RESOURCE_LOCKED', 'CoolAMQPError', 'ConnectionDead', 'AMQPError']
 
 
 class CoolAMQPError(Exception):
