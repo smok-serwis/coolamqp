@@ -158,4 +158,4 @@ from coolamqp.framing.definitions import BINARY_HEADER_TO_METHOD
 with open('frames.rst', 'w') as f_out:
     for class_ in BINARY_HEADER_TO_METHOD.values():
         f_out.write('.. autoclass:: coolamqp.framing.definitions.%s\n    :members:\n\n' % (
-            class_.__qualname__))
+            class_.__qualname__,))
