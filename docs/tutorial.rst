@@ -56,8 +56,8 @@ _no_ack=False_ will mean that we have to manually confirm messages.
 You can specify a callback, that will be called with a message if one's received by this consumer. Since
 we did not do that, this will go to a generic queue belonging to _Cluster_.
 
-.. autoclass: coolamqp.clustering.Cluster
-:members:
+.. autoclass:: coolamqp.clustering.Cluster
+    :members:
 
 _consumer_ is a _Consumer_ object. This allows us to do some things with the consumer (such as setting QoS),
 but most importantly it allows us to cancel it later. _consume_confirm_ is a _Future_, that will succeed
