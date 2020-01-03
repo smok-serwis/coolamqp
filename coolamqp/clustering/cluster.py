@@ -78,6 +78,7 @@ class Cluster(object):
         #       concurrent.futures.Future
         """
         Declare a Queue/Exchange
+
         :param obj: Queue/Exchange object
         :param persistent: should it be redefined upon reconnect?
         :return: Future
@@ -87,6 +88,7 @@ class Cluster(object):
     def drain(self, timeout):  # type: (float) -> Event
         """
         Return an Event.
+
         :param timeout: time to wait for an event. 0 means return immediately. None means block forever
         :return: an Event instance. NothingMuch is returned when there's nothing within a given timoeout
         """
@@ -239,6 +241,7 @@ class Cluster(object):
     def shutdown(self, wait=True):  # type: (bool) -> None
         """
         Terminate all connections, release resources - finish the job.
+
         :param wait: block until this is done
         :raise RuntimeError: if called without start() being called first
         """

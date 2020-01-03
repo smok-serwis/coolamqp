@@ -3,3 +3,4 @@ six
 monotonic
 futures
 typing
+typed_ast
