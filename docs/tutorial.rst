@@ -25,6 +25,7 @@ Cluster instances are used to interface with the cluster (or a single broker). I
 accepts a list of nodes:
 
 ::
+
     from coolamqp.clustering import Cluster
     cluster = Cluster([node])
     cluster.start(wait=True)
@@ -86,5 +87,5 @@ To actually get our message, we need to start a consumer first. To do that, just
 
 Where kwargs are passed directly to Consumer class
 
-.. autoclass: coolamqp.attaches.Consumer
-:members:
+.. autoclass:: coolamqp.attaches.Consumer
+    :members:
