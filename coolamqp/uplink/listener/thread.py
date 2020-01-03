@@ -38,6 +38,9 @@ class ListenerThread(threading.Thread):
         """Called before start. It is not safe to fork after this"""
         self.listener = EpollListener()
 
+    def activate(self, sock):
+        self.listener.activate(sock)
+
     def run(self):
         while not self.terminating:
             self.listener.wait(timeout=1)
