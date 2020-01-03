@@ -5,7 +5,7 @@ python:
  - "3.6"
  - "3.7"
  - "pypy"
- - "pypy3.6"
+ - "pypy3.5"
 script:
  - python compile_definitions.py
  - python setup.py nosetests --tests tests
