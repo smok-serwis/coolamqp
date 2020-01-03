@@ -5,11 +5,11 @@ Test things
 from __future__ import print_function, absolute_import, division
 
 import logging
-import monotonic
 import os
 import time
 import unittest
 
+import monotonic
 import six
 
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
@@ -112,13 +112,13 @@ class TestA(unittest.TestCase):
         self.c.publish(Message(b'hello4', properties={
             'content_type': b'text/plain',
             'content_encoding': b'utf8'
-        }), routing_key=u'hello', confirm=True).result()
+        }), routing_key=u'hello4', confirm=True).result()
 
         self.assertRaises(RuntimeError,
                           lambda: self.c.publish(Message(b'hello4', properties={
                               'content_type': b'text/plain',
                               'content_encoding': b'utf8'
-                          }), routing_key=u'hello', confirm=True,
+                          }), routing_key=u'hello4', confirm=True,
                                                  tx=True).result())
 
         time.sleep(1)
@@ -142,7 +142,7 @@ class TestA(unittest.TestCase):
         self.c.publish(Message(b'hello5', properties={
             'content_type': b'text/plain',
             'content_encoding': b'utf8'
-        }), routing_key=u'hello', tx=True).result()
+        }), routing_key=u'hello5', tx=True).result()
 
         time.sleep(1)
 
@@ -161,7 +161,7 @@ class TestA(unittest.TestCase):
         con, fut = self.c.consume(Queue(u'hello6', exclusive=True),
                                   on_message=ok, no_ack=True)
         fut.result()
-        self.c.publish(Message(b'hello6'), routing_key=u'hello',
+        self.c.publish(Message(b'hello6'), routing_key=u'hello6',
                        tx=True).result()
 
         time.sleep(1)

@@ -1,17 +1,16 @@
 # coding=UTF-8
-"""
-Double trouble!
-"""
+"""Double uplink, double the trouble!"""
 from __future__ import print_function, absolute_import, division
-import six
+
+import logging
+import time
 import unittest
-import time, logging, threading
-from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
-    ReceivedMessage
+
 from coolamqp.clustering import Cluster
+from coolamqp.exceptions import AMQPError, RESOURCE_LOCKED
+from coolamqp.objects import NodeDefinition, Queue
 
 NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
-from coolamqp.exceptions import AMQPError, RESOURCE_LOCKED
 
 logging.basicConfig(level=logging.DEBUG)
 
