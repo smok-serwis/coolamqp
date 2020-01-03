@@ -7,7 +7,7 @@ Welcome to CoolAMQP's documentation!
 
     tutorial
     caveats
-
+    frames
 
 Indices and tables
 ==================

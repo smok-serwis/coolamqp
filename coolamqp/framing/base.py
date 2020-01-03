@@ -163,7 +163,7 @@ class AMQPMethodPayload(AMQPPayload):
             return len(
                 self.STATIC_CONTENT) - 4 - 4 - 1  # minus length, class, method, frame_end
 
-        raise NotImplementedError()
+        raise RuntimeError('Should never be executed!')
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         """

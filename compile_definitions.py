@@ -2,7 +2,6 @@ from __future__ import division
 
 import collections
 import struct
-import subprocess
 from xml.etree import ElementTree
 
 import math
@@ -385,7 +384,20 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             line('''\nclass %s(AMQPMethodPayload):
     """
     %s
-    """
+''', full_class_name, to_docstring(method.label, method.docs))
+
+            for field in non_reserved_fields:
+                if (field.label is not None) or (field.docs is not None):
+                    line('    :param %s: %s\n',
+                         format_field_name(field.name),
+                         to_docstring(field.label, field.docs, prefix=12,
+                                      blank=False))
+
+                line('    :type %s: %s (%s in AMQP)\n',
+                     format_field_name(field.name),
+                     TYPE_TRANSLATOR[field.basic_type], field.type)
+
+            line('''    """
     __slots__ = (%s)
 
     NAME = %s
@@ -398,9 +410,6 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     IS_SIZE_STATIC = %s     # this means that argument part has always the same length
     IS_CONTENT_STATIC = %s  # this means that argument part has always the same content
 ''',
-
-                 full_class_name,
-                 to_docstring(method.label, method.docs),
                  slots,
                  frepr(cls.name + '.' + method.name),
                  frepr(cls.index), frepr(method.index),
@@ -446,44 +455,32 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             line('''\n    def __repr__(self):       # type: () -> str
         """
         Convert the frame to a Python-representable string
+
         :return: Python string representation
         """
-        return '%s(%S)' % (', '.join(map(repr, [%s])))\n''',
+        return '%s(%S)' % (', '.join(map(repr, [%s])))''',
                  full_class_name,
                  u", ".join(['self.'+format_field_name(field.name) for field in non_reserved_fields]))
 
-            # constructor
-            line('''\n    def __init__(%s):
+            if len(non_reserved_fields) > 0:
+
+                # constructor
+                line('''\n\n    def __init__(%s):
         """
         Create frame %s
+        """
 ''',
-                 u', '.join(
-                     ['self'] + [format_field_name(field.name) for field in
-                                 non_reserved_fields]),
-                 cls.name + '.' + method.name,
-                 )
+                     u', '.join(
+                         ['self'] + [format_field_name(field.name) for field in
+                                     non_reserved_fields]),
+                     cls.name + '.' + method.name,
+                     )
 
-            if len(non_reserved_fields) > 0:
-                line('\n')
+                for field in non_reserved_fields:
+                    line('        self.%s = %s\n', format_field_name(field.name),
+                         format_field_name(field.name))
 
-            for field in non_reserved_fields:
-                if (field.label is not None) or (field.docs is not None):
-                    line('        :param %s: %s\n',
-                         format_field_name(field.name),
-                         to_docstring(field.label, field.docs, prefix=12,
-                                      blank=False))
-
-                line('        :type %s: %s (%s in AMQP)\n',
-                     format_field_name(field.name),
-                     TYPE_TRANSLATOR[field.basic_type], field.type)
-
-            line('        """\n')
-
-            for field in non_reserved_fields:
-                line('        self.%s = %s\n', format_field_name(field.name),
-                     format_field_name(field.name))
-
-            if len(non_reserved_fields) == 0:
+            elif len(non_reserved_fields) == 0:
                 line('\n')
 
             # end
@@ -496,16 +493,15 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 line('    def get_size(self):       # type: () -> int\n')
                 line(get_counter(method.fields, 'self.', 2))
 
-            line('''\n    @staticmethod
-    def from_buffer(buf, start_offset):     # type: (buffer, int) -> %s
+            line('''\n    @classmethod
+    def from_buffer(cls, buf, start_offset):     # type: (buffer, int) -> %s
         offset = start_offset
 ''', full_class_name)
 
             line(get_from_buffer(method.fields, '', 2,
                                  remark=(method.name == 'deliver')))
 
-            line("        return %s(%s)",
-                 full_class_name,
+            line("        return cls(%s)",
                  u', '.join(
                      format_field_name(field.name) for field in method.fields if
                      not field.reserved))
@@ -557,6 +553,6 @@ REPLIES_FOR = {\n''')
 
 if __name__ == '__main__':
     compile_definitions()
-    proc = subprocess.run(['yapf', 'coolamqp/framing/definitions.py'], stdout=subprocess.PIPE)
-    with open('coolamqp/framing/definitions.py', 'wb') as f_out:
-        f_out.write(proc.stdout)
+    # proc = subprocess.run(['yapf', 'coolamqp/framing/definitions.py'], stdout=subprocess.PIPE)
+    # with open('coolamqp/framing/definitions.py', 'wb') as f_out:
+    #     f_out.write(proc.stdout)
