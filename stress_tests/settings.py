@@ -30,4 +30,4 @@ class LogFramesToFile:
         self.file.flush()
 
 
-queue_names = (str(v) for v in range(2))
+queue_names = (str(v) for v in range(100))

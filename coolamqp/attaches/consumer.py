@@ -186,12 +186,12 @@ class Consumer(Channeler):
         # you'll blow up big next time you try to use this consumer if you
         # can't cancel, but just close
         if self.consumer_tag is not None:
-            if not self.channel_close_sent:
+            if not self.channel_close_sent and self.state == ST_ONLINE:
                 self.method_and_watch(BasicCancel(self.consumer_tag, False),
                                       [BasicCancelOk],
                                       self.on_close)
         else:
-            if not self.channel_close_sent:
+            if not self.channel_close_sent and self.state == ST_ONLINE:
                 self.method(ChannelClose(0, b'cancelling', 0, 0))
 
         if self.attache_group is not None:
@@ -431,6 +431,12 @@ class Consumer(Channeler):
             self.connection.watch(self.deliver_watch)
 
             self.state = ST_ONLINE
+
+            if self.cancelled:
+                self.method(ChannelClose(0, b'Received basic.cancel-ok', 0, 0))
+                self.channel_close_sent = True
+                self.state = ST_OFFLINE
+                return
 
             # resend QoS, in case of sth
             if self.qos is not None:

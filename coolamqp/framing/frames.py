@@ -126,6 +126,9 @@ class AMQPBodyFrame(AMQPFrame):
     def get_size(self):
         return 8 + len(self.data)
 
+    def __str__(self):
+        return '<AMQPBodyFrame of size %s>' % (len(self.data),)
+
 
 class AMQPHeartbeatFrame(AMQPFrame):
     FRAME_TYPE = FRAME_HEARTBEAT
@@ -140,3 +143,6 @@ class AMQPHeartbeatFrame(AMQPFrame):
 
     def get_size(self):
         return AMQPHeartbeatFrame.LENGTH
+
+    def __str__(self):
+        return 'AMQPHeartbeatFrame()'

@@ -27,7 +27,7 @@ if __name__ == '__main__':
     client.start()
 
     try:
-        time.sleep(20)
+        time.sleep(40)
     except KeyboardInterrupt:
         pass
 
