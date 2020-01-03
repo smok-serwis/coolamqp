@@ -2,6 +2,8 @@
 
 * significant docs update
 * cosmetics
+* fixed a bug wherein on very much loaded systems `ConnectionStart` would arrive before
+  a watch could be registered for it
 
 # v0.99:
 
