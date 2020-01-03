@@ -176,11 +176,11 @@ class Connection(object):
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk),
                               self.on_connection_close)
 
+        self.sendf = SendingFramer(self.listener_socket.send)
         Handshaker(self, self.node_definition, self.on_connected, self.extra_properties)
         self.listener_socket = self.listener_thread.register(sock,
                                                              on_read=self.recvf.put,
                                                              on_fail=self.on_fail)
-        self.sendf = SendingFramer(self.listener_socket.send)
 
     def on_fail(self):
         """
