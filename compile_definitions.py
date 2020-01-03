@@ -385,6 +385,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             line('''\nclass %s(AMQPMethodPayload):
     """
     %s
+
 ''', full_class_name, to_docstring(method.label, method.docs))
 
             for field in non_reserved_fields:

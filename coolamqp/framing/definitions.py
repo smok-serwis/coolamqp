@@ -206,6 +206,7 @@ class ConnectionBlocked(AMQPMethodPayload):
     This method indicates that a connection has been blocked
     
     and does not accept new publishes.
+
     :type reason: binary type (max length 255) (shortstr in AMQP)
     """
     __slots__ = (u'reason', )
@@ -269,6 +270,7 @@ class ConnectionClose(AMQPMethodPayload):
     exception, the
     sender provides the class and method id of the method which
     caused the exception.
+
     :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
     :type reply_text: binary type (max length 255) (reply-text in AMQP)
     :param class_id: Failing method class
@@ -355,6 +357,7 @@ class ConnectionCloseOk(AMQPMethodPayload):
     recipient that it is
     safe to release resources for the connection and close the
     socket.
+
     """
     __slots__ = ()
 
@@ -396,6 +399,7 @@ class ConnectionOpen(AMQPMethodPayload):
     the number
     of each type of entity that may be used, per connection and/or
     in total.
+
     :param virtual_host: Virtual host name
             The name of the virtual host to work with.
     :type virtual_host: binary type (max length 255) (path in AMQP)
@@ -464,6 +468,7 @@ class ConnectionOpenOk(AMQPMethodPayload):
     
     This method signals to the client that the connection is ready
     for use.
+
     """
     __slots__ = ()
 
@@ -510,6 +515,7 @@ class ConnectionStart(AMQPMethodPayload):
     protocol version that the server proposes, along with a list of
     security mechanisms
     which the client can use for authentication.
+
     :param version_major: Protocol major version
             The major version number can take any value from 0 to 99 as
             defined in the
@@ -636,6 +642,7 @@ class ConnectionSecure(AMQPMethodPayload):
     received sufficient information to authenticate each other. This
     method challenges
     the client to provide more information.
+
     :param challenge: Security challenge data
             Challenge information, a block of opaque binary data passed
             to the security
@@ -697,6 +704,7 @@ class ConnectionStartOk(AMQPMethodPayload):
     Select security mechanism and locale
     
     This method selects a SASL security mechanism.
+
     :param client_properties: Client properties
             The properties SHOULD contain at least these fields:
             "product", giving the name
@@ -812,6 +820,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
     This method attempts to authenticate, passing a block of SASL
     data for the security
     mechanism at the server side.
+
     :param response: Security response data
             A block of opaque data passed to the security mechanism. The
             contents of this
@@ -875,6 +884,7 @@ class ConnectionTune(AMQPMethodPayload):
     This method proposes a set of connection configuration values to
     the client. The
     client can accept and/or adjust these.
+
     :param channel_max: Proposed maximum channels
             Specifies highest channel number that the server permits.
             Usable channel numbers
@@ -962,6 +972,7 @@ class ConnectionTuneOk(AMQPMethodPayload):
     the server.
     Certain fields are negotiated, others provide capability
     information.
+
     :param channel_max: Negotiated maximum channels
             The maximum total number of channels that the client will
             use per connection.
@@ -1046,6 +1057,7 @@ class ConnectionUnblocked(AMQPMethodPayload):
     This method indicates that a connection has been unblocked
     
     and now accepts publishes.
+
     """
     __slots__ = ()
 
@@ -1098,6 +1110,7 @@ class ChannelClose(AMQPMethodPayload):
     the sender provides
     the class and method id of the method which caused the
     exception.
+
     :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
     :type reply_text: binary type (max length 255) (reply-text in AMQP)
     :param class_id: Failing method class
@@ -1183,6 +1196,7 @@ class ChannelCloseOk(AMQPMethodPayload):
     This method confirms a Channel.Close method and tells the
     recipient that it is safe
     to release resources for the channel.
+
     """
     __slots__ = ()
 
@@ -1225,6 +1239,7 @@ class ChannelFlow(AMQPMethodPayload):
     it can process. Note that this method is not intended for window
     control. It does
     not affect contents returned by Basic.Get-Ok methods.
+
     :param active: Start/stop content frames
             If 1, the peer starts sending content frames. If 0, the peer
             stops sending
@@ -1285,6 +1300,7 @@ class ChannelFlowOk(AMQPMethodPayload):
     
     Confirms to the peer that a flow command was received and
     processed.
+
     :param active: Current flow setting
             Confirms the setting of the processed flow method: 1 means
             the peer will start
@@ -1345,6 +1361,7 @@ class ChannelOpen(AMQPMethodPayload):
     Open a channel for use
     
     This method opens a channel to the server.
+
     """
     __slots__ = ()
 
@@ -1388,6 +1405,7 @@ class ChannelOpenOk(AMQPMethodPayload):
     
     This method signals to the client that the channel is ready for
     use.
+
     """
     __slots__ = ()
 
@@ -1441,6 +1459,7 @@ class ExchangeBind(AMQPMethodPayload):
     Bind exchange to an exchange
     
     This method binds an exchange to an exchange.
+
     :param destination: Name of the destination exchange to bind to
             Specifies the name of the destination exchange to bind.
     :type destination: binary type (max length 255) (exchange-name in AMQP)
@@ -1554,6 +1573,7 @@ class ExchangeBindOk(AMQPMethodPayload):
     Confirm bind successful
     
     This method confirms that the bind was successful.
+
     """
     __slots__ = ()
 
@@ -1590,6 +1610,7 @@ class ExchangeDeclare(AMQPMethodPayload):
     This method creates an exchange if it does not already exist,
     and if the exchange
     exists, verifies that it is of the correct and expected class.
+
     :param exchange: Exchange names starting with "amq." are reserved for
             pre-declared and
             standardised exchanges. The client MAY declare an
@@ -1752,6 +1773,7 @@ class ExchangeDelete(AMQPMethodPayload):
     This method deletes an exchange. When an exchange is deleted all
     queue bindings on
     the exchange are cancelled.
+
     :param exchange: The client must not attempt to delete an exchange that
             does not exist.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
@@ -1838,6 +1860,7 @@ class ExchangeDeclareOk(AMQPMethodPayload):
     This method confirms a Declare method and confirms the name of
     the exchange,
     essential for automatically-named exchanges.
+
     """
     __slots__ = ()
 
@@ -1872,6 +1895,7 @@ class ExchangeDeleteOk(AMQPMethodPayload):
     Confirm deletion of an exchange
     
     This method confirms the deletion of an exchange.
+
     """
     __slots__ = ()
 
@@ -1906,6 +1930,7 @@ class ExchangeUnbind(AMQPMethodPayload):
     Unbind an exchange from an exchange
     
     This method unbinds an exchange from an exchange.
+
     :param destination: Specifies the name of the destination exchange to unbind.
     :type destination: binary type (max length 255) (exchange-name in AMQP)
     :param source: Specifies the name of the source exchange to unbind.
@@ -2013,6 +2038,7 @@ class ExchangeUnbindOk(AMQPMethodPayload):
     Confirm unbind successful
     
     This method confirms that the unbind was successful.
+
     """
     __slots__ = ()
 
@@ -2066,6 +2092,7 @@ class QueueBind(AMQPMethodPayload):
     are bound to a direct exchange and subscription queues are bound
     to a topic
     exchange.
+
     :param queue: Specifies the name of the queue to bind.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :param exchange: Name of the exchange to bind to
@@ -2191,6 +2218,7 @@ class QueueBindOk(AMQPMethodPayload):
     Confirm bind successful
     
     This method confirms that the bind was successful.
+
     """
     __slots__ = ()
 
@@ -2229,6 +2257,7 @@ class QueueDeclare(AMQPMethodPayload):
     specify various properties that control the durability of the
     queue and its
     contents, and the level of sharing for the queue.
+
     :param queue: The queue name may be empty, in which case the server
             MUST create a new
             queue with a unique generated name and return this to
@@ -2384,6 +2413,7 @@ class QueueDelete(AMQPMethodPayload):
     to a dead-letter queue if this is defined in the server
     configuration, and all
     consumers on the queue are cancelled.
+
     :param queue: Specifies the name of the queue to delete.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :param if_unused: Delete only if unused
@@ -2479,6 +2509,7 @@ class QueueDeclareOk(AMQPMethodPayload):
     This method confirms a Declare method and confirms the name of
     the queue, essential
     for automatically-named queues.
+
     :param queue: Reports the name of the queue. if the server generated a
             queue name, this field
             contains that name.
@@ -2557,6 +2588,7 @@ class QueueDeleteOk(AMQPMethodPayload):
     Confirm deletion of a queue
     
     This method confirms the deletion of a queue.
+
     :param message_count: Reports the number of messages deleted.
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     """
@@ -2614,6 +2646,7 @@ class QueuePurge(AMQPMethodPayload):
     This method removes all messages from a queue which are not
     awaiting
     acknowledgment.
+
     :param queue: Specifies the name of the queue to purge.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :type no_wait: bool (no-wait in AMQP)
@@ -2685,6 +2718,7 @@ class QueuePurgeOk(AMQPMethodPayload):
     Confirms a queue purge
     
     This method confirms the purge of a queue.
+
     :param message_count: Reports the number of messages purged.
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     """
@@ -2740,6 +2774,7 @@ class QueueUnbind(AMQPMethodPayload):
     Unbind a queue from an exchange
     
     This method unbinds a queue from an exchange.
+
     :param queue: Specifies the name of the queue to unbind.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :param exchange: The name of the exchange to unbind from.
@@ -2837,6 +2872,7 @@ class QueueUnbindOk(AMQPMethodPayload):
     Confirm unbind successful
     
     This method confirms that the unbind was successful.
+
     """
     __slots__ = ()
 
@@ -3039,6 +3075,7 @@ class BasicAck(AMQPMethodPayload):
     confirm mode.
     The acknowledgement can be for a single message or a set of
     messages up to and including a specific message.
+
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :param multiple: Acknowledge multiple messages
             If set to 1, the delivery tag is treated as "up to and
@@ -3111,6 +3148,7 @@ class BasicConsume(AMQPMethodPayload):
     messages from a specific queue. Consumers last as long as the
     channel they were
     declared on, or until the client cancels them.
+
     :param queue: Specifies the name of the queue to consume from.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :param consumer_tag: Specifies the identifier for the consumer. the consumer tag
@@ -3252,6 +3290,7 @@ class BasicCancel(AMQPMethodPayload):
     for the broker to be able to identify those clients that are
     capable of accepting the method, through some means of
     capability negotiation.
+
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     :type no_wait: bool (no-wait in AMQP)
     """
@@ -3322,6 +3361,7 @@ class BasicConsumeOk(AMQPMethodPayload):
     The server provides the client with a consumer tag, which is
     used by the client
     for methods called on the consumer at a later stage.
+
     :param consumer_tag: Holds the consumer tag specified by the client or provided
             by the server.
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
@@ -3381,6 +3421,7 @@ class BasicCancelOk(AMQPMethodPayload):
     Confirm a cancelled consumer
     
     This method confirms that the cancellation was completed.
+
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     """
     __slots__ = (u'consumer_tag', )
@@ -3444,6 +3485,7 @@ class BasicDeliver(AMQPMethodPayload):
     the server responds with Deliver methods as and when messages
     arrive for that
     consumer.
+
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :type redelivered: bool (redelivered in AMQP)
@@ -3553,6 +3595,7 @@ class BasicGet(AMQPMethodPayload):
     dialogue that is designed for specific types of application
     where synchronous
     functionality is more important than performance.
+
     :param queue: Specifies the name of the queue to get a message from.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :type no_ack: bool (no-ack in AMQP)
@@ -3627,6 +3670,7 @@ class BasicGetOk(AMQPMethodPayload):
     delivered by 'get-ok' must be acknowledged unless the no-ack
     option was set in the
     get method.
+
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :type redelivered: bool (redelivered in AMQP)
     :param exchange: Specifies the name of the exchange that the message was
@@ -3730,6 +3774,7 @@ class BasicGetEmpty(AMQPMethodPayload):
     This method tells the client that the queue has no messages
     available for the
     client.
+
     """
     __slots__ = ()
 
@@ -3781,6 +3826,7 @@ class BasicNack(AMQPMethodPayload):
     confirm mode of unhandled messages. If a publisher receives this
     method, it
     probably needs to republish the offending messages.
+
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :param multiple: Reject multiple messages
             If set to 1, the delivery tag is treated as "up to and
@@ -3867,6 +3913,7 @@ class BasicPublish(AMQPMethodPayload):
     to queues as defined by the exchange configuration and
     distributed to any active
     consumers when the transaction, if any, is committed.
+
     :param exchange: Specifies the name of the exchange to publish to. the
             exchange name can be
             empty, meaning the default exchange. If the exchange name is
@@ -3989,6 +4036,7 @@ class BasicQos(AMQPMethodPayload):
     qos method could in principle apply to both peers, it is
     currently meaningful only
     for the server.
+
     :param prefetch_size: Prefetch window in octets
             The client can request that messages be sent in advance so
             that when the client
@@ -4097,6 +4145,7 @@ class BasicQosOk(AMQPMethodPayload):
     server. The requested QoS applies to all active consumers until
     a new QoS is
     defined.
+
     """
     __slots__ = ()
 
@@ -4137,6 +4186,7 @@ class BasicReturn(AMQPMethodPayload):
     reply code and text provide information about the reason that
     the message was
     undeliverable.
+
     :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
     :type reply_text: binary type (max length 255) (reply-text in AMQP)
     :param exchange: Specifies the name of the exchange that the message was
@@ -4234,6 +4284,7 @@ class BasicReject(AMQPMethodPayload):
     cancel large incoming messages, or return untreatable messages
     to their original
     queue.
+
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :param requeue: Requeue the message
             If requeue is true, the server will attempt to requeue the
@@ -4305,6 +4356,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
     specified channel. Zero or more messages may be redelivered.
     This method
     is deprecated in favour of the synchronous Recover/Recover-Ok.
+
     :param requeue: Requeue the message
             If this field is zero, the message will be redelivered to
             the original
@@ -4370,6 +4422,7 @@ class BasicRecover(AMQPMethodPayload):
     specified channel. Zero or more messages may be redelivered.
     This method
     replaces the asynchronous Recover.
+
     :param requeue: Requeue the message
             If this field is zero, the message will be redelivered to
             the original
@@ -4431,6 +4484,7 @@ class BasicRecoverOk(AMQPMethodPayload):
     Confirm recovery
     
     This method acknowledges a Basic.Recover method.
+
     """
     __slots__ = ()
 
@@ -4492,6 +4546,7 @@ class TxCommit(AMQPMethodPayload):
     performed in
     the current transaction. A new transaction starts immediately
     after a commit.
+
     """
     __slots__ = ()
 
@@ -4527,6 +4582,7 @@ class TxCommitOk(AMQPMethodPayload):
     This method confirms to the client that the commit succeeded.
     Note that if a commit
     fails, the server raises a channel exception.
+
     """
     __slots__ = ()
 
@@ -4567,6 +4623,7 @@ class TxRollback(AMQPMethodPayload):
     Note that unacked messages will not be automatically redelivered
     by rollback;
     if that is required an explicit recover call should be issued.
+
     """
     __slots__ = ()
 
@@ -4603,6 +4660,7 @@ class TxRollbackOk(AMQPMethodPayload):
     This method confirms to the client that the rollback succeeded.
     Note that if an
     rollback fails, the server raises a channel exception.
+
     """
     __slots__ = ()
 
@@ -4640,6 +4698,7 @@ class TxSelect(AMQPMethodPayload):
     client must use this
     method at least once on a channel before using the Commit or
     Rollback methods.
+
     """
     __slots__ = ()
 
@@ -4675,6 +4734,7 @@ class TxSelectOk(AMQPMethodPayload):
     This method confirms to the client that the channel was
     successfully set to use
     standard transactions.
+
     """
     __slots__ = ()
 
@@ -4735,6 +4795,7 @@ class ConfirmSelect(AMQPMethodPayload):
     
     The client can only use this method on a non-transactional
     channel.
+
     :param nowait: If set, the server will not respond to the method. the
             client should
             not wait for a reply method. If the server could not
@@ -4796,6 +4857,7 @@ class ConfirmSelectOk(AMQPMethodPayload):
     
     successfully
     set to use publisher acknowledgements.
+
     """
     __slots__ = ()
 
