@@ -30,10 +30,11 @@ accepts a list of nodes:
     cluster = Cluster([node])
     cluster.start(wait=True)
 
+*wait=True* will block until connection is completed. After this, you can use other methods.
+
 .. autoclass:: coolamqp.clustering.Cluster
     :members:
 
-*wait=True* will block until connection is completed. After this, you can use other methods.
 
 Publishing and consuming
 ------------------------
