@@ -6,7 +6,6 @@ from __future__ import print_function, absolute_import, division
 
 import collections
 import logging
-
 from concurrent.futures import Future
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE

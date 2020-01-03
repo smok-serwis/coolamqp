@@ -16,7 +16,7 @@ Vagrant.configure("2") do |config|
     
     # Python
     apt-get install -y htop curl python python-setuptools python-pip python-dev build-essential rabbitmq-server python3 python3-pip python3-setuptools
-    sudo pip install --upgrade pip setuptools
+    sudo python -m pip install --upgrade pip setuptools
     sudo pip3 install --upgrade pip setuptools
     
     /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management
@@ -27,10 +27,10 @@ Vagrant.configure("2") do |config|
     rabbitmqctl set_user_tags user administrator
     
     # Install deps
-    sudo pip install -r /vagrant/requirements.txt
-    sudo pip install nose coverage mock
+    sudo python -m pip install -r /vagrant/requirements.txt
+    sudo python -m pip install nose coverage mock yapf
     sudo pip3 install -r /vagrant/requirements.txt
-    sudo pip3 install nose coverage mock
+    sudo pip3 install nose coverage mock yapf
     
     sudo pip3 install -r /vagrant/stress_tests/requirements.txt
     

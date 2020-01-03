@@ -1,10 +1,11 @@
 from __future__ import division
 
 import collections
-import math
 import struct
+import subprocess
 from xml.etree import ElementTree
 
+import math
 import six
 
 from coolamqp.framing.compilation.utilities import Constant, Class, \
@@ -58,7 +59,11 @@ binary string? It's a memoryview all right.
 Only thing that isn't are field names in tables.
 """
 
-import struct, collections, logging, six
+import struct
+import collections
+import logging
+import six
+import typing as tp
 
 from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
@@ -77,7 +82,19 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     FRAME_END = None
     con_classes = collections.defaultdict(list)
     line('# Core constants\n')
+    was_linefeed_before = True
     for constant in Constant.findall(xml):
+        if not was_linefeed_before:
+            line('\n')
+        was_docs_output = False
+        if constant.docs:
+            was_docs_output = True
+            lines = constant.docs.split('\n')
+            line(' # %s\n', lines[0])
+            if len(lines) > 1:
+                for ln in lines[1:]:
+                    line(u' ' * len(g))
+                    line(u' # %s\n', ln)
         if pythonify_name(constant.name) == 'FRAME_END':
             FRAME_END = constant.value
         g = ffmt('%s = %s\n', pythonify_name(constant.name), constant.value)
@@ -88,15 +105,12 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 z = u'b' + z
             g = ffmt('%s_BYTE = %s\n', pythonify_name(constant.name), z)
             line(g)
-        if constant.docs:
-            lines = constant.docs.split('\n')
-            line(' # %s\n', lines[0])
-            if len(lines) > 1:
-                for ln in lines[1:]:
-                    line(u' ' * len(g))
-                    line(u' # %s\n', ln)
-        else:
+
+        if was_docs_output:
             line('\n')
+            was_linefeed_before = True
+        else:
+            was_linefeed_before = False
 
         if constant.kind:
             con_classes[constant.kind].append(pythonify_name(constant.name))
@@ -260,7 +274,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
             line(u'''
     @staticmethod
-    def typize(*fields):
+    def typize(*fields):        # type: (*str) -> type
     ''')
             line(u'    zpf = bytearray([\n')
 
@@ -316,7 +330,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
             line(u'''
     @staticmethod
-    def from_buffer(buf, offset):
+    def from_buffer(buf, offset):    # type: (buffer, int) -> %s
         """
         Return a content property list instance unserialized from
         buffer, so that buf[offset] marks the start of property flags
@@ -429,7 +443,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 line('    ]\n')
 
             # __repr__
-            line('''\n    def __repr__(self):
+            line('''\n    def __repr__(self):       # type: () -> str
         """
         Convert the frame to a Python-representable string
         :return: Python string representation
@@ -476,16 +490,16 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             if not is_content_static:
                 from coolamqp.framing.compilation.textcode_fields import \
                     get_serializer, get_counter, get_from_buffer
-                line('\n    def write_arguments(self, buf):\n')
+                line('\n    def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None\n')
                 line(get_serializer(method.fields, 'self.', 2))
 
-                line('    def get_size(self):\n')
+                line('    def get_size(self):       # type: () -> int\n')
                 line(get_counter(method.fields, 'self.', 2))
 
             line('''\n    @staticmethod
-    def from_buffer(buf, start_offset):
+    def from_buffer(buf, start_offset):     # type: (buffer, int) -> %s
         offset = start_offset
-''')
+''', full_class_name)
 
             line(get_from_buffer(method.fields, '', 2,
                                  remark=(method.name == 'deliver')))
@@ -543,3 +557,6 @@ REPLIES_FOR = {\n''')
 
 if __name__ == '__main__':
     compile_definitions()
+    proc = subprocess.run(['yapf', 'coolamqp/framing/definitions.py'], stdout=subprocess.PIPE)
+    with open('coolamqp/framing/definitions.py', 'wb') as f_out:
+        f_out.write(proc.stdout)

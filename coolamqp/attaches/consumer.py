@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 import io
 import logging
+import typing as tp
 import uuid
 from concurrent.futures import Future
 
@@ -153,7 +154,7 @@ class Consumer(Channeler):
             oneshots=True)  #: public, called on Customer Cancel Notification
         #  (RabbitMQ)
 
-    def set_qos(self, prefetch_size, prefetch_count):
+    def set_qos(self, prefetch_size, prefetch_count):  # type: (int, int) -> None
         """
         Set new QoS for this consumer.
 
@@ -199,7 +200,7 @@ class Consumer(Channeler):
 
         return self.future_to_notify_on_dead
 
-    def on_operational(self, operational):
+    def on_operational(self, operational):  # type: (bool) -> None
         super(Consumer, self).on_operational(operational)
 
         if operational:
@@ -218,6 +219,7 @@ class Consumer(Channeler):
             self.receiver = None
 
     def on_close(self, payload=None):
+        # type: (tp.Optional[coolamqp.framing.base.AMQPMethodPayload]) -> None
         """
         Handle closing the channel. It sounds like an exception...
 
@@ -333,7 +335,7 @@ class Consumer(Channeler):
             # No point in listening for more stuff, that's all the watches
             # even listen for
 
-    def on_setup(self, payload):
+    def on_setup(self, payload):  # type: (coolamqp.framing.base.AMQPMethodPayload) -> None
         """Called with different kinds of frames - during setup"""
 
         if isinstance(payload, ChannelOpenOk):
@@ -465,7 +467,7 @@ class MessageReceiver(object):
     self.consumer.connection.send(None)
     """
 
-    def __init__(self, consumer):
+    def __init__(self, consumer):  # type: (Consumer) -> None
         self.consumer = consumer
         self.state = 0  # 0 - waiting for Basic-Deliver
         # 1 - waiting for Header
@@ -502,7 +504,7 @@ class MessageReceiver(object):
         """Called by Consumer to inform upon discarding this receiver"""
         self.state = 3
 
-    def confirm(self, delivery_tag, success):
+    def confirm(self, delivery_tag, success):  # type: (int, tp.Callable[[], None]) -> None
         """
         This crafts a constructor for confirming messages.
 

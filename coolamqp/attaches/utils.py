@@ -14,13 +14,13 @@ class ConfirmableRejectable(object):
     just support this protocol.
     """
 
-    def confirm(self):
+    def confirm(self):  # type: () -> None
         """
         This has been ACK'd
         :return: don't care
         """
 
-    def reject(self):
+    def reject(self):  # type: () -> None
         """
         This has been REJECT'd/NACK'd
         :return: don't care
@@ -33,13 +33,13 @@ class FutureConfirmableRejectable(ConfirmableRejectable):
     or Exception it with a message
     """
 
-    def __init__(self, future):
+    def __init__(self, future):  # type: (concurrent.futures.Future) -> None
         self.future = future
 
-    def confirm(self):
+    def confirm(self):  # type: () -> None
         self.future.set_result(None)
 
-    def reject(self):
+    def reject(self):  # type: () -> None
         self.future.set_exception(Exception())
 
 

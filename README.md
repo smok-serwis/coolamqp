@@ -56,3 +56,12 @@ Since SMOK sp. z o.o. was incorporated, it inherited all SMOK-related
 IP of previous operator of the service, DMS Serwis s.c., which
 continues to operate within it's designated company agreement.
 From there stems the copyright holder name change.
+
+## Compiling definitions.py
+
+Make sure that you have `yapf` installed, then perform:
+```python
+python compile_definitions.py
+```
+and you're all set. The only files modified is
+[definitions.py](coolamqp/framing/definitions.py).
