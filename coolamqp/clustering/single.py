@@ -15,7 +15,7 @@ class SingleNodeReconnector(object):
     """
 
     def __init__(self, node_def, attache_group, listener_thread, extra_properties=None,
-                 log_frames=False):
+                 log_frames=None):
         self.listener_thread = listener_thread
         self.node_def = node_def
         self.attache_group = attache_group

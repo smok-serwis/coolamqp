@@ -40,7 +40,7 @@ class Cluster(object):
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes, on_fail=None, extra_properties=None, log_frames=False):
+    def __init__(self, nodes, on_fail=None, extra_properties=None, log_frames=None):
         """
         :param nodes: list of nodes, or a single node. For now, only one is supported.
         :type nodes: NodeDefinition instance or a list of NodeDefinition instances
