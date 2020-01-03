@@ -25,7 +25,7 @@ CLIENT_DATA = [
     # because RabbitMQ is some kind of a fascist and does not allow
     # these fields to be of type short-string
     (b'product', (b'CoolAMQP', 'S')),
-    (b'version', (b'0.97a1', 'S')),
+    (b'version', (b'0.98', 'S')),
     (b'copyright', (b'Copyright (C) 2016-2019 SMOK sp. z o.o.', 'S')),
     (
         b'information', (
