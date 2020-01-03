@@ -91,6 +91,7 @@ class Connection(object):
 
         :param node_definition: NodeDefinition instance to use
         :param listener_thread: ListenerThread to use as async engine
+        :type listener_thread: coolamqp.uplink.listener.ListenerThread
         :param extra_properties: extra properties to send to the target server
             must conform to the syntax given in (/coolamqp/uplink/handshake.py)'s CLIENT_PROPERTIES
         """
@@ -171,7 +172,12 @@ class Connection(object):
         logger.debug('[%s] TCP connection established, authentication in progress', self.uuid)
 
         sock.settimeout(0)
-        sock.send(b'AMQP\x00\x00\x09\x01')
+        header = bytearray(b'AMQP\x00\x00\x09\x01')
+        rest = sock.send(header)
+        while rest < len(header):
+            time.sleep(0.1)
+            header = header[rest:]
+            rest = sock.send(header)
 
         self.watch_for_method(0, (ConnectionClose, ConnectionCloseOk),
                               self.on_connection_close)
@@ -254,9 +260,6 @@ class Connection(object):
                 self.log_frames.on_frame(time.monotonic(), frame, 'to_server')
 
         if frames is not None:
-            # for frame in frames:
-            #     if isinstance(frame, AMQPMethodFrame):
-            #         print('Sending ', frame.payload)
             self.sendf.send(frames, priority=priority)
         else:
             # Listener socket will kill us when time is right

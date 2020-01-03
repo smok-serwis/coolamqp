@@ -11,7 +11,7 @@ from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
     ConnectionTune, ConnectionTuneOk, ConnectionOpen, ConnectionOpenOk
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
-
+from coolamqp import __version__
 PUBLISHER_CONFIRMS = b'publisher_confirms'
 CONSUMER_CANCEL_NOTIFY = b'consumer_cancel_notify'
 
@@ -25,7 +25,7 @@ CLIENT_DATA = [
     # because RabbitMQ is some kind of a fascist and does not allow
     # these fields to be of type short-string
     (b'product', (b'CoolAMQP', 'S')),
-    (b'version', (b'0.100', 'S')),
+    (b'version', (__version__.encode('utf8'), 'S')),
     (b'copyright', (b'Copyright (C) 2016-2020 SMOK sp. z o.o.', 'S')),
     (
         b'information', (

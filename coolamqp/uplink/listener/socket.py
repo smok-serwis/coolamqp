@@ -136,7 +136,7 @@ class BaseSocket(object):
                     # We can send a priority pack
                     self.data_to_send.appendleft(self.priority_queue.popleft())
 
-    def fileno(self):
+    def fileno(self):  # type: () -> int
         """Return descriptor number"""
         return self.sock.fileno()
 

@@ -1,3 +1,8 @@
+# v0.101:
+
+* bugfix: a race condition during connection setup itself
+* moved __version__ to coolamqp root
+
 # v0.100:
 
 * significant docs update

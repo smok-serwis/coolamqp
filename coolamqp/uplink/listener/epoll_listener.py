@@ -21,6 +21,10 @@ RW = RO | select.EPOLLOUT
 class EpollSocket(BaseSocket):
     """
     EpollListener substitutes your BaseSockets with this
+    :type sock: socket.socket
+    :type on_read: tp.Callable[[bytes], None]
+    :type on_fail: tp.Callable[[], None]
+    :type listener: coolamqp.uplink.listener.ListenerThread
     """
 
     def __init__(self, sock, on_read, on_fail, listener):
@@ -65,8 +69,14 @@ class EpollListener(object):
         self.epoll = select.epoll()
         self.fd_to_sock = {}
         self.time_events = []
+        self.sockets_to_activate = []
 
     def wait(self, timeout=1):
+        for socket_to_activate in self.sockets_to_activate:
+            logger.debug('Activating fd %s', (socket_to_activate.fileno(),))
+            self.epoll.register(socket_to_activate.fileno(), RW)
+        self.sockets_to_activate = []
+
         events = self.epoll.poll(timeout=timeout)
 
         # Timer events
@@ -138,7 +148,7 @@ class EpollListener(object):
                                               ))
 
     def activate(self, sock):  # type: (coolamqp.uplink.listener.epoll_listener.EpollSocket) -> None
-        self.epoll.register(sock.sock, RW)
+        self.sockets_to_activate.append(sock)
 
     def register(self, sock, on_read=lambda data: None,
                  on_fail=lambda: None):

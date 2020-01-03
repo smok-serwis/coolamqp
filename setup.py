@@ -2,8 +2,10 @@
 # coding=UTF-8
 from setuptools import setup, find_packages
 
+from coolamqp import __version__
 
 setup(keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],
+      version=__version__,
       packages=find_packages(include=['coolamqp', 'coolamqp.*']),
       long_description=u'''Pure Python AMQP client, but with dynamic class generation and memoryviews FOR THE GODSPEED.
 
