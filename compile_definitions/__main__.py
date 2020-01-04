@@ -39,7 +39,7 @@ from __future__ import print_function, absolute_import
 A Python version of the AMQP machine-readable specification.
 
 Generated automatically by CoolAMQP from AMQP machine-readable specification.
-See coolamqp.uplink.framing.compilation for the tool
+See compile_definitions for the tool
 
 AMQP is copyright (c) 2016 OASIS
 CoolAMQP is copyright (c) 2016-2018 DMS Serwis s.c., 2018-2020 SMOK sp. z o.o.
