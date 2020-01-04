@@ -8,8 +8,9 @@ from xml.etree import ElementTree
 import math
 import six
 
-from coolamqp.framing.compilation.utilities import name_class, format_method_class_name, \
-    format_field_name, ffmt, to_docstring, pythonify_name, to_code_binary, frepr, get_size
+from compile_definitions.utilities import ffmt, to_docstring, pythonify_name, to_code_binary, frepr, \
+    format_method_class_name, name_class, get_size
+from coolamqp.framing.compilation.utilities import format_field_name
 from .xml_tags import Constant, Class, Domain
 
 TYPE_TRANSLATOR = {
