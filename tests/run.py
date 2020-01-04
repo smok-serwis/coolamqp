@@ -6,9 +6,9 @@ from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, 
 from coolamqp.exceptions import AMQPError
 from coolamqp.clustering import Cluster
 
-import time
+import os
 
-NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
+NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
 amqp = Cluster([NODE])

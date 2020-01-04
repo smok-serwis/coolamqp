@@ -1,11 +1,12 @@
 import logging
+import os
 
 from coolamqp.clustering import Cluster
 from coolamqp.objects import NodeDefinition
 
 logger = logging.getLogger(__name__)
 
-NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
+NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
 

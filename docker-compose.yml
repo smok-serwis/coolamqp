@@ -1,0 +1,17 @@
+version: '3.2'
+services:
+  amqp:
+    image: rabbitmq
+  tests:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile
+    depends_on:
+      - amqp
+  stress_tests:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile
+    command: python -m stress_tests
+    depends_on:
+      - amqp

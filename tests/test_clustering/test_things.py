@@ -2,6 +2,7 @@
 
 from __future__ import print_function, absolute_import, division
 import six
+import os
 import unittest
 import time, logging, threading, monotonic, warnings
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
@@ -10,7 +11,7 @@ from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
 
 import time
 
-NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
+NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -18,7 +19,7 @@ class TestConnecting(unittest.TestCase):
     def test_on_fail(self):
         q = {'failed': False}
         c = Cluster(
-            NodeDefinition('127.0.0.1', 'xguest', 'xguest', heartbeat=20),
+            NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'xguest', 'xguest', heartbeat=20),
             on_fail=lambda: q.update(failed=True))
         c.start()
         time.sleep(5)

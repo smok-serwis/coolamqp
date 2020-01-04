@@ -2,6 +2,7 @@
 from __future__ import print_function, absolute_import, division
 import six
 import unittest
+import os
 import time, logging, threading
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
     ReceivedMessage, Exchange
@@ -10,7 +11,7 @@ from coolamqp.exceptions import AMQPError
 import time
 
 # todo handle bad auth
-NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
+NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
 

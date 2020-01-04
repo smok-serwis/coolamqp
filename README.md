@@ -94,3 +94,21 @@ A downloaded from OASIS machine-readable AMQP 0.9.1 specification.
 
 Sources for the documentation, available
 [here](https://coolamqp.readthedocs.io/en/latest/).
+
+## Running unit tests
+
+Unit tests are powered by nose. They require an available AMQP broker.
+If you host the broker other than localhost, set the env *AMQP_HOST* to correct value.
+The default username used is guest, and password is guest.
+
+You can also run unit tests from Docker, if you wish so. To launch the unit test suite:
+
+```bash
+docker-compose up tests
+```
+
+To launch the stress test suite
+
+```bash
+docker-compose up stress_tests
+```
