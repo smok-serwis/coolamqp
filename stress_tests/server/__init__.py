@@ -26,15 +26,12 @@ class Server(TerminableThread):
 
 
 def run(notify_client, result_client, notify_server, server_result):
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
 
     lftf = LogFramesToFile('server.txt')
 
     amqp = connect(on_fail=server_result, log_frames=lftf)
     server = Server(amqp)
-
-    notify_client.put(None)
-    notify_server.get()
 
     server.start()
 
