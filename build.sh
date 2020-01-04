@@ -4,7 +4,7 @@ set -x
 set -e
 
 pip install yapf
-python compile_definitions.py
+python -m compile_definitions
 python setup.py bdist bdist_wheel
 
 if [ $TRAVIS_BRANCH == "master" ]; then
