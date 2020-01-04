@@ -27,11 +27,22 @@ class AMQPError(CoolAMQPError):
         return self.reply_code in HARD_ERRORS
 
     def __str__(self):  # type: () -> str
-        return 'AMQP error %s: %s' % (self.reply_code, self.reply_text)
+        return 'AMQP error %s: %s' % (self.reply_code, self.__get_reply_text())
+
+    def __get_reply_text(self):  # type: () -> str
+        if isinstance(self.reply_text, memoryview):
+            reply_text = self.reply_text.tobytes().decode('utf8')
+        else:
+            reply_text = self.reply_text
+
+        if isinstance(self.reply_text, bytes):
+            reply_text = self.reply_text.decode('utf8')
+
+        return reply_text
 
     def __repr__(self):  # type: () -> str
         return 'AMQPError(' + repr(self.reply_code) + ', ' + repr(
-            self.reply_text) + \
+            self.__get_reply_text()) + \
                ', ' + repr(self.class_id) + ', ' + repr(self.method_id) + ')'
 
     def __init__(self, *args):

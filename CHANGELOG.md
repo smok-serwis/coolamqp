@@ -3,6 +3,7 @@
 * bugfix: a race condition during connection setup itself
 * moved __version__ to coolamqp root
 * split `compile_definitions` into a separate package
+* exceptions will display their reply_text correctly if fed a memoryview
 
 # v0.100:
 
