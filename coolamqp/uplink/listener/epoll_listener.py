@@ -91,6 +91,7 @@ class EpollListener(object):
             # Errors
             try:
                 if event & (select.EPOLLERR | select.EPOLLHUP):
+                    logger.debug('Socket %s has failed', fd)
                     raise SocketFailed()
 
                 if event & select.EPOLLIN:
@@ -105,6 +106,7 @@ class EpollListener(object):
                         self.epoll.modify(sock.fileno(), RO)
 
             except SocketFailed:
+                logger.debug('Socket %s has raised SocketFailed', fd)
                 self.epoll.unregister(fd)
                 del self.fd_to_sock[fd]
                 sock.on_fail()
