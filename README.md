@@ -11,7 +11,7 @@ CoolAMQP
 [![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=develop)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-A **magical** AMQP client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
+A **magical** AMQP 0.9.1  client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
 
 Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
 
@@ -57,11 +57,40 @@ IP of previous operator of the service, DMS Serwis s.c., which
 continues to operate within it's designated company agreement.
 From there stems the copyright holder name change.
 
-## Compiling definitions.py
+## What is here
 
-Make sure that you have `yapf` installed, then perform:
-```python
-python -m compile_definitions
-```
+### [coolamqp](coolamqp/)
+
+The core module
+
+### [stress_tests](stress_tests/)
+
+A series of stress tests to catch any race conditions
+
+### [tests](tests/)
+
+A series of unit tests that need an AMQP server listening.
+
+### [compile_definitions](compile_definitions/)
+
+A tool to generate [definitions.py](coolamqp/framing/definitions.py)
+from [amqp-0-9-1.xml](resources/amqp0-9-1.xml)
+
+In order to compile the definitions:
+
+* Make sure that you have `yapf` installed
+* then perform:
+  ```python
+  python -m compile_definitions
+  ```
 and you're all set. The only files modified is
 [definitions.py](coolamqp/framing/definitions.py).
+
+### [resources](resources/)
+
+A downloaded from OASIS machine-readable AMQP 0.9.1 specification.
+
+### [docs](docs/)
+
+Sources for the documentation, available
+[here](https://coolamqp.readthedocs.io/en/latest/).

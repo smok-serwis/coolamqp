@@ -18,6 +18,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('..'))
 
 source_parsers = {
@@ -47,8 +48,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'CoolAMQP'
-copyright = u'2016-2020, SMOK Serwis s.c.'
-author = u'DMS Serwis s.c.'
+copyright = u'2016-2020, SMOK sp. z o. o.'
+author = u'SMOK sp. z o. o.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -79,7 +80,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -98,12 +98,10 @@ html_theme = 'alabaster'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'CoolAMQPdoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -133,7 +131,6 @@ latex_documents = [
      u'DMS Serwis s.c.', 'manual'),
 ]
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -142,7 +139,6 @@ man_pages = [
     (master_doc, 'coolamqp', u'CoolAMQP Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 
