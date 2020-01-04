@@ -7,7 +7,7 @@ python:
  - "pypy"
  - "pypy3.5"
 script:
- - python compile_definitions.py
+ - python -m compile_definitions
  - python setup.py nosetests --tests tests
  - python -m stress_tests
 install:

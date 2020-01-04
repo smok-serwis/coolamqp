@@ -1,11 +1,13 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import, division
-import six
-import logging
+
 import copy
+import logging
+
 import math
+
+from compile_definitions.xml_fields import *
 from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
-from .xml_fields import *
 
 logger = logging.getLogger(__name__)
 

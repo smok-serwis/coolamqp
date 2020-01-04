@@ -8,11 +8,9 @@ from xml.etree import ElementTree
 import math
 import six
 
-from coolamqp.framing.compilation.utilities import Constant, Class, \
-    Domain, \
-    name_class, format_method_class_name, format_field_name, ffmt, to_docstring, \
-    pythonify_name, to_code_binary, \
-    frepr, get_size
+from coolamqp.framing.compilation.utilities import name_class, format_method_class_name, \
+    format_field_name, ffmt, to_docstring, pythonify_name, to_code_binary, frepr, get_size
+from .xml_tags import Constant, Class, Domain
 
 TYPE_TRANSLATOR = {
     'shortstr': 'binary type (max length 255)',
@@ -67,7 +65,7 @@ import typing as tp
 
 from coolamqp.framing.base import AMQPClass, AMQPMethodPayload, AMQPContentPropertyList
 from coolamqp.framing.field_table import enframe_table, deframe_table, frame_table_size
-from coolamqp.framing.compilation.content_property import compile_particular_content_property_list_class
+from coolamqp.framing.compilation import compile_particular_content_property_list_class
 
 logger = logging.getLogger(__name__)
 

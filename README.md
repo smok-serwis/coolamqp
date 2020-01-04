@@ -61,7 +61,7 @@ From there stems the copyright holder name change.
 
 Make sure that you have `yapf` installed, then perform:
 ```python
-python compile_definitions.py
+python -m compile_definitions
 ```
 and you're all set. The only files modified is
 [definitions.py](coolamqp/framing/definitions.py).

@@ -2,18 +2,12 @@
 from __future__ import absolute_import, division, print_function
 
 import math
-
 import six
 
 from coolamqp.framing.base import BASIC_TYPES
 
-from .xml_tags import *
-
 
 # docs may be None
-
-
-
 
 def get_size(fields):  # assume all fields have static length
     """Assuming all fields have static length, return their length together. Supports bits"""

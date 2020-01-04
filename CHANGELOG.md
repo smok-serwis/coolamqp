@@ -2,6 +2,7 @@
 
 * bugfix: a race condition during connection setup itself
 * moved __version__ to coolamqp root
+* split `compile_definitions` into a separate package
 
 # v0.100:
 
