@@ -18,3 +18,7 @@ class TestExcs(unittest.TestCase):
         e = AMQPError(100, memoryview(u'wtf'.encode('utf8')), 0, 0)
         self.assertIn('wtf', str(e))
         self.assertIn('wtf', repr(e))
+
+        e = AMQPError(100, u'wtf'.encode('utf8'), 0, 0)
+        self.assertIn('wtf', str(e))
+        self.assertIn('wtf', repr(e))

@@ -35,7 +35,7 @@ class AMQPError(CoolAMQPError):
         else:
             reply_text = self.reply_text
 
-        if isinstance(self.reply_text, bytes):
+        if isinstance(reply_text, bytes):
             reply_text = self.reply_text.decode('utf8')
 
         return reply_text
