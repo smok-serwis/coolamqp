@@ -5,6 +5,7 @@ import time
 import socket
 import collections
 import monotonic
+import os
 
 from coolamqp import Cluster, ClusterNode, ConnectionUp, ConnectionDown, \
     ConnectionUp, ConsumerCancelled
@@ -12,7 +13,7 @@ from coolamqp.backends.base import AMQPBackend, ConnectionFailedError
 
 
 def getamqp():
-    amqp = Cluster([ClusterNode('127.0.0.1', 'guest', 'guest')], extra_properties=[
+    amqp = Cluster([ClusterNode(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest')], extra_properties=[
         (b'mode', (b'Testing', 'S')),
     ])
     amqp.start()

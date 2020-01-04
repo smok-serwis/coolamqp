@@ -5,12 +5,13 @@ from __future__ import print_function, absolute_import, division
 import logging
 import time
 import unittest
+import os
 
 from coolamqp.clustering import Cluster
 from coolamqp.exceptions import AMQPError, RESOURCE_LOCKED
 from coolamqp.objects import NodeDefinition, Queue
 
-NODE = NodeDefinition('127.0.0.1', 'guest', 'guest', heartbeat=20)
+NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 
 logging.basicConfig(level=logging.DEBUG)
 

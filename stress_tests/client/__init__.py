@@ -109,14 +109,11 @@ class ConnectAndDisconnectThread(TerminableThread):
 
 
 def run(client_notify, result_client, server_notify, server_result):
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
 
     lftf = LogFramesToFile('client.txt')
     amqp = connect(on_fail=result_client, log_frames=lftf)
     cad = ConnectAndDisconnectThread(amqp)
-
-    server_notify.put(None)
-    client_notify.get()
 
     cad.start()
     started_at = time.monotonic()
