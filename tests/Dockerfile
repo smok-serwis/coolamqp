@@ -1,3 +1,5 @@
+# For both unit tests and stress tests
+# refer to docker-compose.yaml and README.md for details
 FROM python:3.7
 
 ADD requirements.txt /tmp/requirements.txt
