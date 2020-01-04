@@ -34,6 +34,8 @@ if __name__ == '__main__':
     notify_client.put(None)
     notify_server.put(None)
 
+    if client.is_alive():
+        client.kill()
     server.join()
     client.join()
 
