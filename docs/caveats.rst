@@ -6,7 +6,7 @@ Things to look out for
 memoryviews
 -----------
 
-Since CoolAMQP tries to be fast, it uses memoryviews everywhere. _ReceivedMessage_ properties, and message
+Since CoolAMQP tries to be fast, it uses memoryviews everywhere. **ReceivedMessage** properties, and message
 properties therefore, are memoryviews. So, it you wanted to read the routing key a message was sent with,
 or message's encoding, you should do:
 
@@ -20,7 +20,8 @@ Only the **body** property of the message will be a byte object (and not even th
 Note that YOU, when sending messages, should not use memoryviews. Pass proper byte objects and text objects
 as required.
 
-**AMQPError**'s returned to you via futures will also have memoryviews as **reply_text**!
+**AMQPError**'s returned to you via futures will also have memoryviews as **reply_text**, although they will
+properly display that once __repr__ or __str__ is called on them.
 
 It was considered whether to unserialize short fields, such as **routing_key** or **exchange**, but it was decided against.
 Creating a new memoryview carries at least much overhead as an empty string, but there's no need to copy.
