@@ -4,6 +4,7 @@
 * moved __version__ to coolamqp root
 * split `compile_definitions` into a separate package
 * exceptions will display their reply_text correctly if fed a memoryview
+* added Docker-based tests
 
 # v0.100:
 
