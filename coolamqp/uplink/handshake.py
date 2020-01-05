@@ -7,11 +7,13 @@ Provides reactors that can authenticate an AQMP session
 import six
 import typing as tp
 import copy
+import logging
 from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
     ConnectionTune, ConnectionTuneOk, ConnectionOpen, ConnectionOpenOk
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
 from coolamqp import __version__
+
 PUBLISHER_CONFIRMS = b'publisher_confirms'
 CONSUMER_CANCEL_NOTIFY = b'consumer_cancel_notify'
 
@@ -36,6 +38,8 @@ CLIENT_DATA = [
 ]
 
 WATCHDOG_TIMEOUT = 10
+
+logger = logging.getLogger(__name__)
 
 
 class Handshaker(object):
@@ -111,6 +115,7 @@ class Handshaker(object):
 
     def on_connection_tune(self, payload  # type: coolamqp.framing.base.AMQPPayload
                            ):
+        logger.debug('Responding with ConnectionTuneOk')
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
         for channel in six.moves.xrange(1, (
