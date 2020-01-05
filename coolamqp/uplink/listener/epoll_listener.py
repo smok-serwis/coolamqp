@@ -105,8 +105,8 @@ class EpollListener(object):
                             sock.priority_queue) == 0:
                         self.epoll.modify(sock.fileno(), RO)
 
-            except SocketFailed:
-                logger.debug('Socket %s has raised SocketFailed', fd)
+            except SocketFailed as e:
+                logger.debug('Socket %s has raised %s', fd, e)
                 self.epoll.unregister(fd)
                 del self.fd_to_sock[fd]
                 sock.on_fail()
