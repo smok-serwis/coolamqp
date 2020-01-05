@@ -5,6 +5,7 @@
 * split `compile_definitions` into a separate package
 * exceptions will display their reply_text correctly if fed a memoryview
 * added Docker-based tests
+* far more robust wait in `Cluster.start` made
 
 # v0.100:
 

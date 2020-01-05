@@ -10,8 +10,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from coolamqp.attaches.channeler import Attache, ST_OFFLINE
+from coolamqp.attaches.channeler import Attache, ST_OFFLINE, ST_ONLINE
 from coolamqp.attaches.consumer import Consumer
+from coolamqp.attaches.publisher import Publisher
 
 
 class AttacheGroup(Attache):
@@ -22,6 +23,10 @@ class AttacheGroup(Attache):
     def __init__(self):
         super(AttacheGroup, self).__init__()
         self.attaches = []
+
+        # these two to be filled in during add()
+        self.tx_publisher = None
+        self.non_tx_publisher = None
 
     def add(self, attache):
         """
@@ -41,6 +46,12 @@ class AttacheGroup(Attache):
 
         if isinstance(attache, Consumer):
             attache.attache_group = self
+
+        if isinstance(attache, Publisher):
+            if attache.mode == Publisher.MODE_CNPUB:
+                self.tx_publisher = attache
+            else:
+                self.non_tx_publisher = attache
 
     def on_cancel_customer(self, customer):
         """
@@ -64,3 +75,6 @@ class AttacheGroup(Attache):
         for attache in self.attaches:
             if not attache.cancelled:
                 attache.attach(connection)
+
+    def is_online(self):  # type: () -> bool
+        return self.tx_publisher.state == ST_ONLINE and self.non_tx_publisher.state == ST_ONLINE

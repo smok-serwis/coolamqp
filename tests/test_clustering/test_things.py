@@ -8,6 +8,7 @@ import time, logging, threading, monotonic, warnings
 from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
     ReceivedMessage, Exchange
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
+from coolamqp.exceptions import ConnectionDead
 
 import time
 
@@ -21,8 +22,7 @@ class TestConnecting(unittest.TestCase):
         c = Cluster(
             NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'xguest', 'xguest', heartbeat=20),
             on_fail=lambda: q.update(failed=True))
-        c.start()
-        time.sleep(5)
+        self.assertRaises(ConnectionDead, c.start)
         c.shutdown()
         self.assertTrue(q['failed'])
 

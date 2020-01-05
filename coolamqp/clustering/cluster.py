@@ -232,12 +232,12 @@ class Cluster(object):
         self.listener.start()
         self.snr.connect(timeout=timeout)
 
-        # todo not really elegant
         if wait:
+            # this is only going to take a short amount of time, so we're fine with polling
             start_at = monotonic.monotonic()
-            while not self.snr.is_connected() and monotonic.monotonic() - start_at < timeout:
+            while not self.attache_group.is_online() and monotonic.monotonic() - start_at < timeout:
                 time.sleep(0.1)
-            if not self.snr.is_connected():
+            if not self.attache_group.is_online():
                 raise ConnectionDead('Could not connect within %s seconds' % (timeout,))
 
     def shutdown(self, wait=True):  # type: (bool) -> None
