@@ -1,3 +1,7 @@
+# v0.102:
+
+* _TBA_
+
 # v0.101:
 
 * bugfix: a race condition during connection setup itself
