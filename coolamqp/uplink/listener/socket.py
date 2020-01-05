@@ -94,8 +94,6 @@ class BaseSocket(object):
         except (IOError, socket.error) as e:
             raise SocketFailed(repr(e))
 
-        logger.debug('Received %s', repr(data))
-
         if len(data) == 0:
             raise SocketFailed('connection gracefully closed')
 
@@ -129,7 +127,6 @@ class BaseSocket(object):
 
             try:
                 sent = self.sock.send(self.data_to_send[0])
-                logger.debug('Sent %s', repr(self.data_to_send[0]))
             except (IOError, socket.error):
                 raise SocketFailed()
 

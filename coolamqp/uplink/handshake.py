@@ -116,7 +116,6 @@ class Handshaker(object):
 
     def on_connection_tune(self, payload  # type: coolamqp.framing.base.AMQPPayload
                            ):
-        logger.debug('Responding with ConnectionTuneOk')
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
         self.connection.free_channels.extend(six.moves.xrange(1, (

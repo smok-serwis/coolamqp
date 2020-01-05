@@ -1,6 +1,8 @@
 # v0.102:
 
-* _TBA_
+* due to noticed behaviour on some Linuxes that changing epoll from another thread
+  than is being waited on does not seem to alter the behaviour, EpollListener
+  will now check manually if threads have anything to send
 
 # v0.101:
 
