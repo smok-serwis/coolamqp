@@ -113,6 +113,11 @@ class EpollListener(object):
                 self.noshot(sock)
                 sock.close()
 
+        # Do any of the sockets want to send data Re-register them
+        for socket in self.fd_to_sock.values():
+            if socket.wants_to_send_data():
+                self.epoll.modify(socket.fileno(), RW)
+
     def noshot(self, sock):
         """
         Clear all one-shots for a socket

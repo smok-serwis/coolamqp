@@ -12,6 +12,7 @@ from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
     ConnectionTune, ConnectionTuneOk, ConnectionOpen, ConnectionOpenOk
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
+from coolamqp.uplink.heartbeat import Heartbeater
 from coolamqp import __version__
 
 PUBLISHER_CONFIRMS = b'publisher_confirms'
@@ -118,9 +119,8 @@ class Handshaker(object):
         logger.debug('Responding with ConnectionTuneOk')
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
-        for channel in six.moves.xrange(1, (
-                                                   65535 if payload.channel_max == 0 else payload.channel_max) + 1):
-            self.connection.free_channels.append(channel)
+        self.connection.free_channels.extend(six.moves.xrange(1, (
+            65535 if payload.channel_max == 0 else payload.channel_max) + 1))
 
         self.connection.watch_for_method(0, ConnectionOpenOk,
                                          self.on_connection_open_ok)
@@ -133,7 +133,6 @@ class Handshaker(object):
 
         # Install heartbeat handlers NOW, if necessary
         if self.connection.heartbeat > 0:
-            from coolamqp.uplink.heartbeat import Heartbeater
             Heartbeater(self.connection, self.connection.heartbeat)
 
     def on_connection_open_ok(self, payload  # type: coolamqp.framing.base.AMQPPayload

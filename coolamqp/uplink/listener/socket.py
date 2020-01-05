@@ -104,6 +104,9 @@ class BaseSocket(object):
         except ValueError as e:
             raise SocketFailed(repr(e))
 
+    def wants_to_send_data(self):  # type: () -> bool
+        return not (len(self.data_to_send) == 0 and len(self.priority_queue) == 0)
+
     def on_write(self):
         """
         Socket is writable, called by Listener
