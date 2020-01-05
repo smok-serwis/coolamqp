@@ -88,16 +88,16 @@ class BaseSocket(object):
         if self.is_failed: return
         try:
             data = self.sock.recv(2048)
-        except (IOError, socket.error):
-            raise SocketFailed()
+        except (IOError, socket.error) as e:
+            raise SocketFailed(repr(e))
 
         if len(data) == 0:
-            raise SocketFailed()
+            raise SocketFailed('connection gracefully closed')
 
         try:
             self.my_on_read(data)
-        except ValueError:
-            raise SocketFailed()
+        except ValueError as e:
+            raise SocketFailed(repr(e))
 
     def on_write(self):
         """
