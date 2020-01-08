@@ -1,3 +1,7 @@
+# v0.103:
+
+* bugfix in handling exchange in publish
+
 # v0.102:
 
 * due to noticed behaviour on some Linuxes that changing epoll from another thread

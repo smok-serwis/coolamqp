@@ -159,7 +159,7 @@ class Cluster(object):
             exchange = exchange.name.encode('utf8')
         elif exchange is None:
             exchange = b''
-        else:
+        elif isinstance(exchange, six.text_type):
             exchange = exchange.encode('utf8')
 
         if isinstance(routing_key, six.text_type):
