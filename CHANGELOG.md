@@ -3,6 +3,7 @@
 * more extensive testing (CPython3.8, nightly)
 * fixed a bug wherein future_to_notify_on_dead was set_result multiple times
 * switched to nose2 for tests
+* removed unnecessary print()s
 
 # v0.103:
 
