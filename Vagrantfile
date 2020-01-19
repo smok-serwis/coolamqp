@@ -30,7 +30,7 @@ Vagrant.configure("2") do |config|
     sudo python -m pip install -r /vagrant/requirements.txt
     sudo python -m pip install nose coverage mock yapf
     sudo pip3 install -r /vagrant/requirements.txt
-    sudo pip3 install nose coverage mock yapf
+    sudo pip3 install nose2[coverage_plugin] coverage mock yapf nose2
     
     sudo pip3 install -r /vagrant/stress_tests/requirements.txt
     

@@ -10,7 +10,7 @@ python:
  - "pypy3.5"
 script:
  - python -m compile_definitions
- - python setup.py nosetests --tests tests
+ - nose2 tests
  - python -m stress_tests
 install:
  - pip install -r requirements.txt

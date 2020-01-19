@@ -6,7 +6,7 @@ ADD requirements.txt /tmp/requirements.txt
 ADD stress_tests/requirements.txt /tmp/requirements2.txt
 RUN pip install -r /tmp/requirements.txt && \
     pip install -r /tmp/requirements2.txt && \
-    pip install nose mock coverage
+    pip install nose2 mock coverage nose2[coverage_plugin]
 
 ADD . /coolamqp
 WORKDIR /coolamqp
