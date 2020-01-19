@@ -1,3 +1,7 @@
+# v0.104:
+
+* more extensive testing (CPython3.8, nightly)
+
 # v0.103:
 
 * bugfix in handling exchange in publish
