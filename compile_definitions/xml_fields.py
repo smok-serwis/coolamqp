@@ -13,7 +13,7 @@ def nop(x):
 
 
 def _get_tagchild(elem, tag):
-    return [e for e in elem.getchildren() if e.tag == tag]
+    return [e for e in list(elem) if e.tag == tag]
 
 
 __all__ = [
@@ -98,7 +98,7 @@ class _ChildField(_ComputedField):
 
 def get_docs(elem, label):
     """Parse an XML element. Return documentation"""
-    for kid in elem.getchildren():
+    for kid in list(elem):
 
         if kid.tag == 'rule':
             return get_docs(kid, False)
