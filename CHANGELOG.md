@@ -1,6 +1,7 @@
 # v0.105:
 
-* _TBA_
+* listener thread will be prctl()ed if [prctl](https://pypi.org/project/python-prctl/) is installed
+* extra attribute for Cluster
 
 # v0.104:
 

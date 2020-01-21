@@ -46,13 +46,14 @@ class Cluster(object):
     :param log_frames: an object that will have it's method .on_frame(timestamp,
         frame, direction) called upon receiving/sending a frame. Timestamp is UNIX timestamp,
         frame is AMQPFrame, direction is one of 'to_client', 'to_server'
+    :param name: name to appear in log items and prctl() for the listener thread
     """
 
     # Events you can be informed about
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes, on_fail=None, extra_properties=None, log_frames=None):
+    def __init__(self, nodes, on_fail=None, extra_properties=None, log_frames=None, name=None):
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
             nodes = [nodes]
@@ -60,6 +61,7 @@ class Cluster(object):
         if len(nodes) > 1:
             raise NotImplementedError(u'Multiple nodes not supported yet')
 
+        self.name = name or 'CoolAMQP'
         self.node, = nodes
         self.extra_properties = extra_properties
         self.log_frames = log_frames
@@ -204,9 +206,9 @@ class Cluster(object):
         except AttributeError:
             pass
         else:
-            raise RuntimeError(u'This was already called!')
+            raise RuntimeError(u'[%s] This was already called!' % (self.name, ))
 
-        self.listener = ListenerThread()
+        self.listener = ListenerThread(name=self.name)
 
         self.attache_group = AttacheGroup()
 
@@ -214,7 +216,7 @@ class Cluster(object):
 
         self.snr = SingleNodeReconnector(self.node, self.attache_group,
                                          self.listener, self.extra_properties,
-                                         log_frames)
+                                         log_frames, self.name)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)
@@ -238,7 +240,7 @@ class Cluster(object):
             while not self.attache_group.is_online() and monotonic.monotonic() - start_at < timeout:
                 time.sleep(0.1)
             if not self.attache_group.is_online():
-                raise ConnectionDead('Could not connect within %s seconds' % (timeout,))
+                raise ConnectionDead('[%s] Could not connect within %s seconds' % (self.name, timeout,))
 
     def shutdown(self, wait=True):  # type: (bool) -> None
         """
@@ -253,7 +255,7 @@ class Cluster(object):
         except AttributeError:
             raise RuntimeError(u'shutdown without start')
 
-        logger.info('Commencing shutdown')
+        logger.info('[%s] Commencing shutdown', self.name)
 
         self.listener.terminate()
         if wait:

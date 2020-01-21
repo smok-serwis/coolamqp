@@ -15,13 +15,14 @@ class SingleNodeReconnector(object):
     """
 
     def __init__(self, node_def, attache_group, listener_thread, extra_properties=None,
-                 log_frames=None):
+                 log_frames=None, name=None):
         self.listener_thread = listener_thread
         self.node_def = node_def
         self.attache_group = attache_group
         self.connection = None
         self.extra_properties = extra_properties
         self.log_frames = log_frames
+        self.name = name or 'CoolAMQP'
 
         self.terminating = False
 
@@ -38,7 +39,8 @@ class SingleNodeReconnector(object):
         # Initiate connecting - this order is very important!
         self.connection = Connection(self.node_def, self.listener_thread,
                                      extra_properties=self.extra_properties,
-                                     log_frames=self.log_frames)
+                                     log_frames=self.log_frames,
+                                     name=self.name)
         self.attache_group.attach(self.connection)
         self.connection.start(timeout)
         self.connection.finalize.add(self.on_fail)

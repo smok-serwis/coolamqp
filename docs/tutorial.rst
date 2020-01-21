@@ -27,10 +27,15 @@ accepts a list of nodes:
 ::
 
     from coolamqp.clustering import Cluster
-    cluster = Cluster([node])
+    cluster = Cluster([node], name='My Cluster')
     cluster.start(wait=True)
 
 *wait=True* will block until connection is completed. After this, you can use other methods.
+
+*name* is optional. If you specify it, and have prctl_ installed, the thread will
+receive a provided label, postfixed by **AMQP listener thread**.
+
+.. _prctl: https://pypi.org/project/python-prctl/
 
 .. autoclass:: coolamqp.clustering.Cluster
     :members:

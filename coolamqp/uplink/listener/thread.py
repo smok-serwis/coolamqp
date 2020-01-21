@@ -14,9 +14,10 @@ class ListenerThread(threading.Thread):
     It automatically picks the best listener for given platform.
     """
 
-    def __init__(self):
+    def __init__(self, name=None):
         threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
+        self.name = name or 'CoolAMQP'
         self.terminating = False
         self._call_next_io_event = Callable(oneshots=True)
 
@@ -42,6 +43,13 @@ class ListenerThread(threading.Thread):
         self.listener.activate(sock)
 
     def run(self):
+        try:
+            import prctl
+        except ImportError:
+            pass
+        else:
+            prctl.set_name(self.name+' - AMQP listener thread')
+
         while not self.terminating:
             self.listener.wait(timeout=1)
 

@@ -82,7 +82,8 @@ class Connection(object):
 
     def __init__(self, node_definition,  # type: coolamqp.objects.NodeDefinition
                  listener_thread, extra_properties,  # type: tp.Dict[bytes, tp.Tuple[tp.Any, str]]
-                 log_frames=None
+                 log_frames=None,
+                 name=None          
                  ):
         """
         Create an object that links to an AMQP broker.
@@ -98,6 +99,7 @@ class Connection(object):
         self.listener_thread = listener_thread
         self.node_definition = node_definition
         self.uuid = uuid.uuid4().hex[:5]
+        self.name = name or 'CoolAMQP'
         self.recvf = ReceivingFramer(self.on_frame)
         self.extra_properties = extra_properties
         # todo a list doesn't seem like a very strong atomicity guarantee
@@ -141,7 +143,7 @@ class Connection(object):
 
     def on_connected(self):
         """Called by handshaker upon reception of final connection.open-ok"""
-        logger.info('[%s] Connection ready.', self.uuid)
+        logger.info('[%s] Connection ready.', self.name)
 
         self.state = ST_ONLINE
 
@@ -169,7 +171,7 @@ class Connection(object):
             else:
                 break
 
-        logger.debug('[%s] TCP connection established, authentication in progress', self.uuid)
+        logger.debug('[%s] TCP connection established, authentication in progress', self.name)
 
         sock.settimeout(0)
         header = bytearray(b'AMQP\x00\x00\x09\x01')
@@ -206,7 +208,7 @@ class Connection(object):
         and second time from ListenerThread when socket is disposed of
         Therefore we need to make sure callbacks are called EXACTLY once
         """
-        logger.info('Connection lost')
+        logger.info('[%s] Connection lost', self.name)
 
         self.state = ST_OFFLINE  # Update state
 
@@ -238,7 +240,7 @@ class Connection(object):
         if isinstance(payload, ConnectionClose):
             self.send([AMQPMethodFrame(0, ConnectionCloseOk())])
             logger.info(u'[%s] Broker closed our connection - code %s reason %s',
-                        self.uuid,
+                        self.name,
                         payload.reply_code,
                         payload.reply_text.tobytes().decode('utf8'))
 
@@ -312,9 +314,9 @@ class Connection(object):
 
         if not watch_handled:
             if isinstance(frame, AMQPMethodFrame):
-                logger.warning('[%s] Unhandled method frame %s', self.uuid, repr(frame.payload))
+                logger.warning('[%s] Unhandled method frame %s', self.name, repr(frame.payload))
             else:
-                logger.warning('[%s] Unhandled frame %s', self.uuid, frame)
+                logger.warning('[%s] Unhandled frame %s', self.name, frame)
 
     def watchdog(self, delay, callback):
         """
