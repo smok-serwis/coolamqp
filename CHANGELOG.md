@@ -1,3 +1,7 @@
+# v0.106:
+
+* _TBA_
+
 # v0.105:
 
 * listener thread will be prctl()ed if [prctl](https://pypi.org/project/python-prctl/) is installed
