@@ -302,5 +302,4 @@ class NodeDefinition(object):
 
     def __str__(self):  # type: () -> str
         return six.text_type(
-            b'amqp://%s:%s@%s/%s'.encode('utf8') % (
-                self.host, self.port, self.user, self.virtual_host))
+            'amqp://%s:%s@%s/%s' % (self.host, self.port, self.user, self.virtual_host))
