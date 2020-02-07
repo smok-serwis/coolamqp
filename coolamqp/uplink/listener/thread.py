@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import threading
+import typing as tp
 
 from coolamqp.objects import Callable
 from coolamqp.uplink.listener.epoll_listener import EpollListener
@@ -14,7 +15,7 @@ class ListenerThread(threading.Thread):
     It automatically picks the best listener for given platform.
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None):  # type: (tp.Optional[str]) -> None
         threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
         self.name = name or 'CoolAMQP'

@@ -6,7 +6,7 @@ import logging
 import socket
 import time
 import uuid
-
+import typing as tp
 import monotonic
 
 from coolamqp.exceptions import ConnectionDead

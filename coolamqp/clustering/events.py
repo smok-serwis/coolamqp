@@ -41,7 +41,7 @@ class MessageReceived(ReceivedMessage, Event):
     Something that works as an ersatz ReceivedMessage, but is an event
     """
 
-    def __init__(self, msg):
+    def __init__(self, msg):        # type: (ReceivedMessage) -> None
         """:type msg: ReceivedMessage"""
         ReceivedMessage.__init__(self, msg.body, msg.exchange_name,
                                  msg.routing_key,
