@@ -1,3 +1,7 @@
+# v0.107:
+
+* _TBA_
+
 # v0.106:
 
 * bugfix release: `NodeDefinition` is now properly str-able
