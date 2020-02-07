@@ -8,6 +8,11 @@ python:
  - "nightly"
  - "pypy"
  - "pypy3.5"
+cache: pip
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 script:
  - python -m compile_definitions
  - python setup.py test
@@ -16,9 +21,9 @@ install:
  - pip install -r requirements.txt
  - pip install -r stress_tests/requirements.txt
  - pip install yapf
- - pip install --force-reinstall "coverage>=4.0,<4.4" codeclimate-test-reporter
 after_success:
- - codeclimate-test-reporter
+  - coverage xml
+  - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
  - bash build.sh
 services: rabbitmq
 addons:

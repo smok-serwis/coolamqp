@@ -12,7 +12,7 @@ setup(keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availabilit
 Also, handles your reconnects and transactionality THE RIGHT WAY, though somewhat opinionated''',
       install_requires=['six', 'monotonic', 'futures', 'typing'],
       # per coverage version for codeclimate-reporter
-      tests_require=["nose2", "nose2[coverage_plugin]"],
+      tests_require=["nose2", "coverage", "nose2[coverage_plugin]"],
       test_suite='nose2.collector.collector'
       )
 
