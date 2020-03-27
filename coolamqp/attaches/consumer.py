@@ -112,7 +112,8 @@ class Consumer(Channeler):
                  'attache_group', 'channel_close_sent', 'qos', 'qos_update_sent',
                  'future_to_notify', 'future_to_notify_on_dead',
                  'fail_on_first_time_resource_locked', 'cancel_on_failure',
-                 'body_receive_mode', 'consumer_tag', 'on_cancel', 'on_broker_cancel')
+                 'body_receive_mode', 'consumer_tag', 'on_cancel', 'on_broker_cancel',
+                 'hb_watch', 'deliver_watch')
 
     def __init__(self, queue, on_message, no_ack=True, qos=None,
                  cancel_on_failure=False,
