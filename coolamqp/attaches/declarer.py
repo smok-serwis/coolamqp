@@ -29,6 +29,7 @@ class Operation(object):
     This will register it's own callback. Please, call on_connection_dead when connection is broken
     to fail futures with ConnectionDead, since this object does not watch for Fails
     """
+    __slots__ = ('done', 'fut', 'declarer', 'obj', 'on_done')
 
     def __init__(self, declarer, obj, fut=None):
         self.done = False

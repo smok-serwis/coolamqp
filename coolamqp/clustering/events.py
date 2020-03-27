@@ -40,6 +40,7 @@ class MessageReceived(ReceivedMessage, Event):
     """
     Something that works as an ersatz ReceivedMessage, but is an event
     """
+    __slots__ = ()
 
     def __init__(self, msg):        # type: (ReceivedMessage) -> None
         """:type msg: ReceivedMessage"""
