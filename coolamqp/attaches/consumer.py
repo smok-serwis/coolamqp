@@ -472,7 +472,7 @@ class MessageReceiver(object):
     and may opt to kill the connection on bad framing with
     self.consumer.connection.send(None)
     """
-    __slots__ = ('consumer' 'state', 'bdeliver', 'header', 'body', 'data_to_go',
+    __slots__ = ('consumer', 'state', 'bdeliver', 'header', 'body', 'data_to_go',
                  'message_size', 'offset', 'acks_pending', 'recv_mode')
 
     def __init__(self, consumer):  # type: (Consumer) -> None
