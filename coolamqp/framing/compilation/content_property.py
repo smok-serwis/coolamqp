@@ -141,7 +141,8 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     return u''.join(mod), structers
 
-STRUCTERS_FOR_NOW = {}      # tp.Dict[str, struct.Struct]
+
+STRUCTERS_FOR_NOW = {}      # type: tp.Dict[str, struct.Struct]
 
 
 def compile_particular_content_property_list_class(zpf, fields):
@@ -152,7 +153,7 @@ def compile_particular_content_property_list_class(zpf, fields):
     q, structers = _compile_particular_content_property_list_class(zpf, fields)
     locals_ = {
         'struct': struct,
-        'AMQPContentProperList': AMQPContentPropertyList
+        'AMQPContentPropertyList': AMQPContentPropertyList
     }
     for structer in structers:
         if structer not in STRUCTERS_FOR_NOW:
