@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 """Generate serializers/unserializers/length getters for given property_flags"""
 import six
+import struct
 import logging
 from coolamqp.framing.compilation.textcode_fields import get_counter, \
     get_from_buffer, get_serializer
@@ -14,8 +15,7 @@ SLOTS_I = u'\n    __slots__ = (%s)\n'
 FROM_BUFFER_1 = u'    def from_buffer(cls, buf, start_offset):\n        ' \
                 u'offset = start_offset + %s\n'
 ASSIGN_A = u'        self.%s = %s\n'
-STARTER = u'''import struct
-from coolamqp.framing.base import AMQPContentPropertyList
+STARTER = u'''from coolamqp.framing.base import AMQPContentPropertyList
 
 class ParticularContentTypeList(AMQPContentPropertyList):
     """
@@ -147,13 +147,11 @@ STRUCTERS_FOR_NOW = {}      # type: tp.Dict[str, struct.Struct]
 
 
 def compile_particular_content_property_list_class(zpf, fields):
-    import struct
     from coolamqp.framing.base import AMQPContentPropertyList
     global STRUCTERS_FOR_NOW
 
     q, structers = _compile_particular_content_property_list_class(zpf, fields)
     locals_ = {
-        'struct': struct,
         'AMQPContentPropertyList': AMQPContentPropertyList
     }
     for structer in structers:
