@@ -13,6 +13,13 @@ from coolamqp.framing.definitions import FRAME_METHOD, FRAME_HEARTBEAT, \
     FRAME_BODY, FRAME_HEADER, FRAME_END, \
     IDENT_TO_METHOD, CLASS_ID_TO_CONTENT_PROPERTY_LIST, FRAME_END_BYTE
 
+STRUCT_BH = struct.Struct('!BH')
+STRUCT_BHL = struct.Struct('!BHL')
+STRUCT_HH = struct.Struct('!HH')
+STRUCT_BHLHHQ = struct.Struct('!BHLHHQ')
+STRUCT_HHQ = struct.Struct('!HHQ')
+STRUCT_BHLB = struct.Struct('!BHLB')
+
 
 class AMQPMethodFrame(AMQPFrame):
     FRAME_TYPE = FRAME_METHOD
@@ -31,10 +38,10 @@ class AMQPMethodFrame(AMQPFrame):
 
     def write_to(self, buf):
         if self.payload.IS_CONTENT_STATIC:
-            buf.write(struct.pack('!BH', FRAME_METHOD, self.channel))
+            buf.write(STRUCT_BH.pack(FRAME_METHOD, self.channel))
             buf.write(self.payload.STATIC_CONTENT)
         else:
-            buf.write(struct.pack('!BHL', FRAME_METHOD, self.channel,
+            buf.write(STRUCT_BHL.pack(FRAME_METHOD, self.channel,
                                   4 + self.payload.get_size()))
             buf.write(self.payload.BINARY_HEADER)
             self.payload.write_arguments(buf)
@@ -42,7 +49,7 @@ class AMQPMethodFrame(AMQPFrame):
 
     @classmethod
     def unserialize(cls, channel, payload_as_buffer):
-        clsmet = struct.unpack_from('!HH', payload_as_buffer, 0)
+        clsmet = STRUCT_HH.unpack_from(payload_as_buffer, 0)
 
         try:
             method_payload_class = IDENT_TO_METHOD[clsmet]
@@ -79,7 +86,7 @@ class AMQPHeaderFrame(AMQPFrame):
         self.properties = properties
 
     def write_to(self, buf):
-        buf.write(struct.pack('!BHLHHQ', FRAME_HEADER, self.channel,
+        buf.write(STRUCT_BHLHHQ.pack(FRAME_HEADER, self.channel,
                               12 + self.properties.get_size(), self.class_id,
                               0,
                               self.body_size))
@@ -89,8 +96,7 @@ class AMQPHeaderFrame(AMQPFrame):
     @staticmethod
     def unserialize(channel, payload_as_buffer):
         # payload starts with class ID
-        class_id, weight, body_size = struct.unpack_from('!HHQ',
-                                                         payload_as_buffer, 0)
+        class_id, weight, body_size = STRUCT_HHQ.unpack_from(payload_as_buffer, 0)
         properties = CLASS_ID_TO_CONTENT_PROPERTY_LIST[class_id].from_buffer(
             payload_as_buffer, 12)
         return AMQPHeaderFrame(channel, class_id, weight, body_size,
@@ -126,7 +132,7 @@ class AMQPBodyFrame(AMQPFrame):
 
     def write_to(self, buf):
         buf.write(
-            struct.pack('!BHL', FRAME_BODY, self.channel, len(self.data)))
+            STRUCT_BHL.pack(FRAME_BODY, self.channel, len(self.data)))
         buf.write(self.data)
         buf.write(FRAME_END_BYTE)
 
@@ -144,7 +150,7 @@ class AMQPBodyFrame(AMQPFrame):
 class AMQPHeartbeatFrame(AMQPFrame):
     FRAME_TYPE = FRAME_HEARTBEAT
     LENGTH = 8
-    DATA = struct.pack('!BHLB', FRAME_HEARTBEAT, 0, 0, FRAME_END)
+    DATA = STRUCT_BHLB.pack(FRAME_HEARTBEAT, 0, 0, FRAME_END)
 
     def __init__(self):
         AMQPFrame.__init__(self, 0)
