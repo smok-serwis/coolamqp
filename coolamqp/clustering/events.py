@@ -18,9 +18,13 @@ class Event(object):
     An event emitted by Cluster
     """
 
+    __slots__ = ()
+
 
 class NothingMuch(Event):
     """Nothing happened :D"""
+
+    __slots__ = ()
 
 
 class ConnectionLost(Event):
@@ -34,6 +38,8 @@ class ConnectionLost(Event):
 
     Please examine your Consumer's .state's to check whether link was regained
     """
+
+    __slots__ = ()
 
 
 class MessageReceived(ReceivedMessage, Event):
