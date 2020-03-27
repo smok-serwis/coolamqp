@@ -16,5 +16,5 @@ ENV AMQP_HOST=amqp
 # for those pesky builds on Windows
 RUN chmod -R ugo-x /coolamqp
 
-CMD python setup.py nosetests --tests tests
+CMD python setup.py test
 

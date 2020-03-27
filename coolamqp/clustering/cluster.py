@@ -6,19 +6,19 @@ from __future__ import print_function, absolute_import, division
 
 import logging
 import time
-import typing as tp
 import warnings
-from concurrent.futures import Future
 
 import monotonic
 import six
+import typing as tp
+from concurrent.futures import Future
 
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
     NothingMuch, Event
 from coolamqp.clustering.single import SingleNodeReconnector
 from coolamqp.exceptions import ConnectionDead
-from coolamqp.objects import Exchange
+from coolamqp.objects import Exchange, Message, Queue, FrameLogger
 from coolamqp.uplink import ListenerThread
 
 logger = logging.getLogger(__name__)
@@ -37,15 +37,12 @@ class Cluster(object):
     It is not safe to fork() after .start() is called, but it's OK before.
 
     :param nodes: list of nodes, or a single node. For now, only one is supported.
-    :type nodes: NodeDefinition instance or a list of NodeDefinition instances
     :param on_fail: callable/0 to call when connection fails in an
         unclean way. This is a one-shot
-    :type on_fail: callable/0
     :param extra_properties: refer to documentation in [/coolamqp/connection/connection.py]
         Connection.__init__
-    :param log_frames: an object that will have it's method .on_frame(timestamp,
-        frame, direction) called upon receiving/sending a frame. Timestamp is UNIX timestamp,
-        frame is AMQPFrame, direction is one of 'to_client', 'to_server'
+    :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
+        receives from the broker
     :param name: name to appear in log items and prctl() for the listener thread
     """
 
@@ -53,7 +50,12 @@ class Cluster(object):
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes, on_fail=None, extra_properties=None, log_frames=None, name=None):
+    def __init__(self, nodes,   # type: tp.Union[NodeDefinition, tp.List[NodeDefinition]]
+                 on_fail=None,  # type: tp.Callable[[], None]
+                 extra_properties=None,  # type: tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]
+                 log_frames=None,   # type: FrameLogger
+                 name=None  # type: str
+        ):
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
             nodes = [nodes]
@@ -75,9 +77,9 @@ class Cluster(object):
         else:
             self.on_fail = None
 
-    def declare(self, obj, persistent=False):
-        # type: (tp.Union[coolamqp.objects.Queue, coolamqp.objects.Exchange], bool) ->
-        #       concurrent.futures.Future
+    def declare(self, obj,  # type: tp.Union[Queue, Exchange]
+                persistent=False    # type: bool
+    ):   # type: (...) -> concurrent.futures.Future
         """
         Declare a Queue/Exchange
 
@@ -103,6 +105,7 @@ class Cluster(object):
             return THE_POPE_OF_NOPE
 
     def consume(self, queue, on_message=None, *args, **kwargs):
+        # type: (Queue, tp.Callable[[MessageReceived], None] -> tp.Tuple[Consumer, Future]
         """
         Start consuming from a queue.
 
@@ -115,7 +118,6 @@ class Cluster(object):
             Note that name of anonymous queue might change at any time!
         :param on_message: callable that will process incoming messages
                            if you leave it at None, messages will be .put into self.events
-        :type on_message: callable(ReceivedMessage instance) or None
         :return: a tuple (Consumer instance, and a Future), that tells, when consumer is ready
         """
         fut = Future()
@@ -127,7 +129,7 @@ class Cluster(object):
         self.attache_group.add(con)
         return con, fut
 
-    def delete_queue(self, queue):  # type: (coolamqp.objects.Queue) -> concurrent.futures.Future
+    def delete_queue(self, queue):  # type: (coolamqp.objects.Queue) -> Future
         """
         Delete a queue.
 
@@ -136,26 +138,25 @@ class Cluster(object):
         """
         return self.decl.delete_queue(queue)
 
-    def publish(self, message, exchange=None, routing_key=u'', tx=None,
-                confirm=None):
+    def publish(self, message,  # type: Message
+                exchange=None,  # type: tp.Union[Exchange, str, bytes]
+                routing_key=u'',    # type: tp.Union[str, bytes]
+                tx=None,            # type: tp.Optional[bool]
+                confirm=None        # type: tp.Optional[bool]
+                ):  # type: (...) -> tp.Optional[Future]
         """
         Publish a message.
 
         :param message: Message to publish
-        :type message: coolamqp.objects.Message
         :param exchange: exchange to use. Default is the "direct" empty-name exchange.
-        :type exchange: unicode/bytes (exchange name) or Exchange object.
         :param routing_key: routing key to use
-        :type routing_key: tp.Union[str, bytes]
         :param confirm: Whether to publish it using confirms/transactions.
                         If you choose so, you will receive a Future that can be used
                         to check it broker took responsibility for this message.
                         Note that if tx if False, and message cannot be delivered to broker at once,
                         it will be discarded
-        :type confirm: tp.Optional[bool]
         :param tx: deprecated, alias for confirm
-        :type tx: tp.Optional[bool]
-        :return: Future or None
+        :return: Future to be finished on completion or None, is confirm/tx was not chosen
         """
         if isinstance(exchange, Exchange):
             exchange = exchange.name.encode('utf8')
@@ -206,7 +207,7 @@ class Cluster(object):
         except AttributeError:
             pass
         else:
-            raise RuntimeError(u'[%s] This was already called!' % (self.name, ))
+            raise RuntimeError(u'[%s] This was already called!' % (self.name,))
 
         self.listener = ListenerThread(name=self.name)
 
@@ -240,7 +241,8 @@ class Cluster(object):
             while not self.attache_group.is_online() and monotonic.monotonic() - start_at < timeout:
                 time.sleep(0.1)
             if not self.attache_group.is_online():
-                raise ConnectionDead('[%s] Could not connect within %s seconds' % (self.name, timeout,))
+                raise ConnectionDead(
+                    '[%s] Could not connect within %s seconds' % (self.name, timeout,))
 
     def shutdown(self, wait=True):  # type: (bool) -> None
         """

@@ -144,7 +144,7 @@ class TestA(unittest.TestCase):
             'content_encoding': b'utf8'
         }), routing_key=u'hello5', tx=True).result()
 
-        time.sleep(1)
+        time.sleep(2)
 
         self.assertTrue(P['q'])
 
