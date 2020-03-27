@@ -154,4 +154,5 @@ def compile_particular_content_property_list_class(zpf, fields):
         'struct': struct,
         'AMQPContentPropertyList': AMQPContentPropertyList})
     exec (q, loc)
+    logger.warning('Compiling %s for %s' % q, fields)
     return loc['ParticularContentTypeList']
