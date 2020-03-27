@@ -139,20 +139,28 @@ def _compile_particular_content_property_list_class(zpf, fields):
                :-1])  # skip eol
     mod.append(u' + %s\n' % (zpf_length,))  # account for pf length
 
-    for structer in structers:
-        mod.append(u'STRUCT_%s = struct.Struct("!%s")\n' % (structer, structer))
+    return u''.join(mod), structers
 
-    return u''.join(mod)
+STRUCTERS_FOR_NOW = {}      # tp.Dict[str, struct.Struct]
 
 
 def compile_particular_content_property_list_class(zpf, fields):
     import struct
     from coolamqp.framing.base import AMQPContentPropertyList
+    global STRUCTERS_FOR_NOW
 
-    q = _compile_particular_content_property_list_class(zpf, fields)
-    loc = dict(globals(), **{
+    q, structers = _compile_particular_content_property_list_class(zpf, fields)
+    locals_ = {
         'struct': struct,
-        'AMQPContentPropertyList': AMQPContentPropertyList})
+        'AMQPContentProperList': AMQPContentPropertyList
+    }
+    for structer in structers:
+        if structer not in STRUCTERS_FOR_NOW:
+            STRUCTERS_FOR_NOW[structer] = struct.Struct('!%s' % (structer,))
+
+        locals_['STRUCT_%s' % (structer, )] = STRUCTERS_FOR_NOW[structer]
+
+    loc = dict(globals(), **locals_)
     logger.warning('Compiling %s for %s', q, fields)
     exec (q, loc)
     return loc['ParticularContentTypeList']

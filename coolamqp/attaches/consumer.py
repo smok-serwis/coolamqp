@@ -108,7 +108,7 @@ class Consumer(Channeler):
         has a performance impact
     :type body_receive_mode: a property of BodyReceiveMode
     """
-    __slots__ = ('queue', 'no_ack' 'on_message', 'cancelled', 'receiver',
+    __slots__ = ('queue', 'no_ack', 'on_message', 'cancelled', 'receiver',
                  'attache_group', 'channel_close_sent', 'qos', 'qos_update_sent',
                  'future_to_notify', 'future_to_notify_on_dead',
                  'fail_on_first_time_resource_locked', 'cancel_on_failure',
