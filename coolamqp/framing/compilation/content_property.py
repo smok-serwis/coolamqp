@@ -131,6 +131,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
         present_fields
         , prefix='', indent_level=2)
     structers.update(new_structers)
+    mod.append(line)
     mod.append(u'        return cls(%s)\n' % (FFN,))
 
     # get_size
