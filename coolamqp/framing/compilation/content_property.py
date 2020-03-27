@@ -161,6 +161,5 @@ def compile_particular_content_property_list_class(zpf, fields):
         locals_['STRUCT_%s' % (structer, )] = STRUCTERS_FOR_NOW[structer]
 
     loc = dict(globals(), **locals_)
-    logger.warning('Compiling %s for %s', q, fields)
     exec (q, loc)
     return loc['ParticularContentTypeList']
