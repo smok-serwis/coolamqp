@@ -55,6 +55,7 @@ class Callable(object):
     INTERNAL USE ONLY
     #todo not thread safe
     """
+    __slots__ = ('callables', 'oneshots')
 
     def __init__(self, oneshots=False):
         """:param oneshots: if True, callables will be called and discarded"""
