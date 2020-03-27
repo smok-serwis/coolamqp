@@ -65,6 +65,7 @@ class AMQPFrame(object):  # base class for framing
 class AMQPPayload(object):
     """Payload is something that can write itself to bytes,
     or at least provide a buffer to do it."""
+    __slots__ = ()
 
     def write_to(self, buf):  # type: (buffer) -> None
         """
@@ -83,6 +84,8 @@ class AMQPPayload(object):
 
 class AMQPClass(object):
     """An AMQP class"""
+
+    __slots__ = ()
 
 
 class AMQPContentPropertyList(object):
@@ -152,6 +155,8 @@ class AMQPContentPropertyList(object):
 
 
 class AMQPMethodPayload(AMQPPayload):
+    __slots__ = ()
+
     RESPONSE_TO = None
     REPLY_WITH = []
     FIELDS = []
