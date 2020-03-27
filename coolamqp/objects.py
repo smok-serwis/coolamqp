@@ -79,6 +79,7 @@ class Message(object):
     coolamqp.framing.definitions.BasicContentPropertyList
     for a list of possible properties.
     """
+    __slots__ = ('body', 'properties')
 
     Properties = MessageProperties  # an alias for easier use
 
@@ -126,6 +127,7 @@ class ReceivedMessage(Message):
     Note that if the consumer that generated this message was no_ack, .ack()
     and .nack() are no-ops.
     """
+    __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', 'ack', 'nack')
 
     def __init__(self, body,         # type: tp.Union[str, bytes, bytearray, tp.List[memoryview]]
                  exchange_name,      # type: memoryview
@@ -167,6 +169,7 @@ class Exchange(object):
     This represents an Exchange used in AMQP.
     This is hashable.
     """
+    __slots__ = ('name', 'type', 'durable', 'auto_delete')
 
     direct = None  # the direct exchange
 
@@ -206,6 +209,8 @@ class Queue(object):
     """
     This object represents a Queue that applications consume from or publish to.
     """
+    __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
+                 'anonymous', 'consumer_tag')
 
     def __init__(self, name=b'',    # type: tp.Union[str, bytes]
                  durable=False,     # type: bool
