@@ -1,5 +1,6 @@
-# v0.107:
+# v1.0:
 
+* first solid API release
 * improvements for more speed
 
 # v0.106:
