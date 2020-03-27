@@ -1,6 +1,6 @@
 # v0.107:
 
-* _TBA_
+* improvements for more speed
 
 # v0.106:
 

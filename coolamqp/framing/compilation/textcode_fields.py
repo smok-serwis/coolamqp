@@ -69,12 +69,14 @@ def get_counter(fields, prefix=u'', indent_level=2):
         u' + '.join([str(accumulator)] + parts)) + u'\n'
 
 
+ # type: (...) -> tp.Tuple[str, dict]
 def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
     """
     Emit code that collects values from buf:offset, updating offset as progressing.
     :param remark: BE FUCKING VERBOSE! #DEBUG
     """
     code = []
+    structers = {}
 
     def emit(fmt, *args):
         args = list(args)
@@ -110,18 +112,20 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
 
         del bits[:]
 
-    def emit_structures(dont_do_bits=False):
+    def emit_structures(dont_do_bits=False): # type: (bool) -> dict
         if not dont_do_bits:
             emit_bits()
         if len(to_struct) == 0:
-            return
+            return {}
         fffnames = [a for a, b in to_struct if a != u'_']  # skip reserved
         ffffmts = [b for a, b in to_struct]
-        emit("%s, = struct.unpack_from('!%s', buf, offset)",
-             u', '.join(fffnames), u''.join(ffffmts))
+        fmts = u''.join(ffffmts)
+        emit("%s, = STRUCT_%s.unpack_from(buf, offset)",
+             u', '.join(fffnames), fmts)
         emit("offset += %s", ln['ln'])
         ln['ln'] = 0
         del to_struct[:]
+        return {fmts: fmts}
 
     for field in fields:
         fieldname = prefix + format_field_name(field.name)
@@ -149,7 +153,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
         elif field.basic_type == u'bit':
             bits.append('_' if field.reserved else fieldname)
         elif field.basic_type == u'table':  # oh my god
-            emit_structures()
+            structers.update(emit_structures())
 
             assert len(bits) == 0
             assert len(to_struct) == 0
@@ -160,7 +164,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
             f_q, f_l = ('L', 4) if field.basic_type == u'longstr' else ('B', 1)
             to_struct.append(('s_len', f_q))
             ln['ln'] += f_l
-            emit_structures()
+            structers.update(emit_structures())
             if field.reserved:
                 emit("offset += s_len # reserved field!")
             else:
@@ -171,20 +175,21 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
         if len(bits) == 8:
             emit_bits()
 
-    emit_structures()
+    structers.update(emit_structures())
 
-    return u''.join(code)
+    return u''.join(code), structers
 
 
-def get_serializer(fields, prefix='', indent_level=2):
+def get_serializer(fields, prefix='', indent_level=2):      # type: (list, str) -> str, dict
     """
     Emit code that serializes the fields into buf at offset
 
     :param fields: list of Field instances
     :param prefix: pass "self." is inside a class
-    :return: block of code that does that
+    :return: block of code that does that, dictionary of struct-ers
     """
     code = []
+    structers = {}
 
     def emit(fmt, *args):
         args = list(args)
@@ -213,7 +218,10 @@ def get_serializer(fields, prefix='', indent_level=2):
         del bits[:]
 
     def emit_single_struct_pack():
-        emit("buf.write(struct.pack('!%s', %s))", u''.join(formats),
+        formats_str = u''.join(formats)
+        if formats_str not in structers:
+            structers[formats_str] = formats_str
+        emit("buf.write(STRUCT_%s.pack(%s))", formats_str,
              u', '.join(format_args))
         del formats[:]
         del format_args[:]
@@ -255,4 +263,4 @@ def get_serializer(fields, prefix='', indent_level=2):
 
     emit('')  # eol
 
-    return u''.join(code)
+    return u''.join(code), structers
