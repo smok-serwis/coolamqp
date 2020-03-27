@@ -51,11 +51,11 @@ class Cluster(object):
     ST_LINK_REGAINED = 1  # Link has been regained
 
     def __init__(self, nodes,   # type: tp.Union[NodeDefinition, tp.List[NodeDefinition]]
-                 on_fail=None,  # type: tp.Callable[[], None]
-                 extra_properties=None,  # type: tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]
-                 log_frames=None,   # type: FrameLogger
-                 name=None  # type: str
-        ):
+                 on_fail=None,  # type: tp.Optional[tp.Callable[[], None]]
+                 extra_properties=None,  # type: tp.Optional[tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]]
+                 log_frames=None,   # type: tp.Optional[FrameLogger]
+                 name=None  # type: tp.Optional[str]
+                 ):
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
             nodes = [nodes]
