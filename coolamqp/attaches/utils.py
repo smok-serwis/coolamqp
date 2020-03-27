@@ -220,7 +220,6 @@ class Synchronized(object):
             ...
 
     """
-    __slots__ = ('_monitor_lock', )
 
     def __init__(self):
         self._monitor_lock = threading.Lock()
