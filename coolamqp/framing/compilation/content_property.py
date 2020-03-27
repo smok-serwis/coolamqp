@@ -46,6 +46,8 @@ def _compile_particular_content_property_list_class(zpf, fields):
     """
     from coolamqp.framing.compilation.utilities import format_field_name
 
+    structers = {}
+
     if any(field.basic_type == 'bit' for field in fields):
         return NB
 
@@ -115,7 +117,9 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(repred_zpf)
     mod.append(u')\n')
 
-    mod.append(get_serializer(present_fields, prefix=u'self.', indent_level=2))
+    line, new_structers = get_serializer(present_fields, prefix=u'self.', indent_level=2)
+    structers.update(new_structers)
+    mod.append(line)
 
     # from_buffer
     # note that non-bit values
@@ -123,9 +127,10 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(
         FROM_BUFFER_1 % (
             zpf_length,))
-    mod.append(get_from_buffer(
+    line, new_structers = get_from_buffer(
         present_fields
-        , prefix='', indent_level=2))
+        , prefix='', indent_level=2)
+    structers.update(new_structers)
     mod.append(u'        return cls(%s)\n' % (FFN,))
 
     # get_size
@@ -133,6 +138,9 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[
                :-1])  # skip eol
     mod.append(u' + %s\n' % (zpf_length,))  # account for pf length
+
+    for structer in structers:
+        mod.append(u'STRUCT_%s = struct.Struct("!%s")\n' % (structer, structer))
 
     return u''.join(mod)
 
