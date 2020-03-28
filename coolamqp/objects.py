@@ -2,6 +2,7 @@
 """
 Core objects used in CoolAMQP
 """
+import typing as tp
 import logging
 import uuid
 
@@ -9,10 +10,16 @@ import six
 
 from coolamqp.framing.definitions import \
     BasicContentPropertyList as MessageProperties
+from coolamqp.framing.base import AMQPFrame
 
 logger = logging.getLogger(__name__)
 
 EMPTY_PROPERTIES = MessageProperties()
+
+try:
+    Protocol = tp.Protocol
+except AttributeError:
+    Protocol = object
 
 
 def toutf8(q):
@@ -27,12 +34,28 @@ def tobytes(q):
     return q
 
 
+class FrameLogger(Protocol):
+    def on_frame(self, timestamp,   # type: float
+                 frame,             # type: AMQPFrame
+                 direction          # type: str
+                 ):
+        """
+        Log a frame
+
+        :param timestamp: timestamp in seconds since Unix Epoch
+        :param frame: AMQPFrame to parse
+        :param direction: either 'to_client' when this is frame received from the broker, or
+            'to_server' if it's a frame that's being sent to the broker
+        """
+
+
 class Callable(object):
     """
     Add a bunch of callables to one list, and just invoke'm.
     INTERNAL USE ONLY
     #todo not thread safe
     """
+    __slots__ = ('callables', 'oneshots')
 
     def __init__(self, oneshots=False):
         """:param oneshots: if True, callables will be called and discarded"""
@@ -57,10 +80,12 @@ class Message(object):
     coolamqp.framing.definitions.BasicContentPropertyList
     for a list of possible properties.
     """
+    __slots__ = ('body', 'properties')
 
     Properties = MessageProperties  # an alias for easier use
 
-    def __init__(self, body, properties=None):
+    def __init__(self, body,    # type: bytes
+                 properties=None):
         """
         Create a Message object.
 
@@ -103,35 +128,32 @@ class ReceivedMessage(Message):
     Note that if the consumer that generated this message was no_ack, .ack()
     and .nack() are no-ops.
     """
+    __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', 'ack', 'nack')
 
-    def __init__(self, body,
-                 exchange_name,
-                 routing_key,
+    def __init__(self, body,         # type: tp.Union[str, bytes, bytearray, tp.List[memoryview]]
+                 exchange_name,      # type: memoryview
+                 routing_key,        # type: memoryview
                  properties=None,
-                 delivery_tag=None,
-                 ack=None,
-                 nack=None):
+                 delivery_tag=None,  # type: int
+                 ack=None,           # type: tp.Callable[[], None]
+                 nack=None           # type: tp.Callable[[], None]
+                 ):
         """
         :param body: message body. A stream of octets.
         :type body: str (py2) or bytes (py3) or a list of memoryviews, if
             particular disabled-by-default option is turned on, or a single memoryview
         :param exchange_name: name of exchange this message was submitted to
-        :type exchange_name: memoryview
         :param routing_key: routing key with which this message was sent
-        :type routing_key: memoryview
         :param properties: a suitable BasicContentPropertyList subinstance.
                            be prepared that value of properties that are
                            strings will be memoryviews
         :param delivery_tag: delivery tag assigned by AMQP broker to confirm
             this message
-        :type delivery_tag: int
         :param ack: a callable to call when you want to ack (via basic.ack)
             this message. None if received by the no-ack mechanism
-        :type ack: tp.Callable[[], None]
         :param nack: a callable to call when you want to nack
             (via basic.reject) this message. None if received by the no-ack
              mechanism
-        :type nack: tp.Callable[[], None]
         """
         Message.__init__(self, body, properties=properties)
 
@@ -148,15 +170,18 @@ class Exchange(object):
     This represents an Exchange used in AMQP.
     This is hashable.
     """
+    __slots__ = ('name', 'type', 'durable', 'auto_delete')
 
     direct = None  # the direct exchange
 
-    def __init__(self, name=u'', type=b'direct', durable=True,
-                 auto_delete=False):
+    def __init__(self, name=u'',    # type: tp.Union[str, bytes]
+                 type=b'direct',    # type: tp.Union[str, bytes]
+                 durable=True,      # type: bool
+                 auto_delete=False  # type: bool
+                 ):
         """
         :type name: unicode is preferred, binary type will get decoded to
              unicode with utf8
-        :param type: exchange type. binary/unicode
         """
         self.name = toutf8(name)  # must be unicode
         self.type = tobytes(type)  # must be bytes
@@ -185,9 +210,15 @@ class Queue(object):
     """
     This object represents a Queue that applications consume from or publish to.
     """
+    __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
+                 'anonymous', 'consumer_tag')
 
-    def __init__(self, name=b'', durable=False, exchange=None, exclusive=False,
-                 auto_delete=False):
+    def __init__(self, name=b'',    # type: tp.Union[str, bytes]
+                 durable=False,     # type: bool
+                 exchange=None,     # type: tp.Optional[Exchange]
+                 exclusive=False,   # type: bool
+                 auto_delete=False  # type: bool
+                 ):
         """
         Create a queue definition.
 
@@ -196,7 +227,6 @@ class Queue(object):
             upon declaration. If a disconnect happens, and connection to other node is
             reestablished, this name will CHANGE AGAIN, and be reflected in this object.
             This change will be done before CoolAMQP signals reconnection.
-        :type name: byte type or text type
         :param durable: Is the queue durable?
         :param exchange: Exchange for this queue to bind to. None for no binding.
         :param exclusive: Is this queue exclusive?
@@ -230,37 +260,33 @@ class NodeDefinition(object):
     Definition of a reachable AMQP node.
 
     This object is hashable.
+
+    >>> a = NodeDefinition(host='192.168.0.1', user='admin', password='password',
+    >>>                   virtual_host='vhost')
+
+    or
+
+    >>> a = NodeDefinition('192.168.0.1', 'admin', 'password')
+
+    or
+
+    >>> a = NodeDefinition('amqp://user:password@host/virtual_host')
+
+    or
+
+    >>> a = NodeDefinition('amqp://user:password@host:port/virtual_host', hearbeat=20)
+
+    AMQP connection string may be either bytes or str/unicode
+
+
+    Additional keyword parameters that can be specified:
+        heartbeat - heartbeat interval in seconds
+        port - TCP port to use. Default is 5672
+
+    :raise ValueError: invalid parameters
     """
 
     def __init__(self, *args, **kwargs):
-        """
-        Create a cluster node definition.
-
-        >>> a = NodeDefinition(host='192.168.0.1', user='admin', password='password',
-        >>>                   virtual_host='vhost')
-
-        or
-
-        >>> a = NodeDefinition('192.168.0.1', 'admin', 'password')
-            
-        or
-        
-        >>> a = NodeDefinition('amqp://user:password@host/virtual_host')
-        
-        or
-        
-        >>> a = NodeDefinition('amqp://user:password@host:port/virtual_host', hearbeat=20)
-
-        AMQP connection string may be either bytes or str/unicode
-        
-
-        Additional keyword parameters that can be specified:
-            heartbeat - heartbeat interval in seconds
-            port - TCP port to use. Default is 5672
-            
-        :raise ValueError: invalid parameters
-        """
-
         self.heartbeat = kwargs.pop('heartbeat', None)
         self.port = kwargs.pop('port', 5672)
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=UTF-8
 from setuptools import setup, find_packages
-
 from coolamqp import __version__
 
 setup(keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availability'],

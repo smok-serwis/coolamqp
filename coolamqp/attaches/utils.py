@@ -13,6 +13,7 @@ class ConfirmableRejectable(object):
     Protocol for objects put into AtomicTagger. You need not subclass it,
     just support this protocol.
     """
+    __slots__ = ()
 
     def confirm(self):  # type: () -> None
         """
@@ -32,6 +33,7 @@ class FutureConfirmableRejectable(ConfirmableRejectable):
     A ConfirmableRejectable that can result a future (with None),
     or Exception it with a message
     """
+    __slots__ = ('future', )
 
     def __init__(self, future):  # type: (concurrent.futures.Future) -> None
         self.future = future
@@ -77,6 +79,7 @@ class AtomicTagger(object):
     This has to be fast for most common cases. Corner cases will be resolved correctly,
     but maybe not fast.
     """
+    __slots__ = ('lock', 'next_tag', 'tags')
 
     def __init__(self):
         self.lock = threading.RLock()

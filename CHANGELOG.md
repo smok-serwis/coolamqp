@@ -1,6 +1,7 @@
-# v0.107:
+# v1.0:
 
-* _TBA_
+* first solid API release
+* improvements for more speed
 
 # v0.106:
 

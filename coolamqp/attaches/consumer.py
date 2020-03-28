@@ -108,6 +108,12 @@ class Consumer(Channeler):
         has a performance impact
     :type body_receive_mode: a property of BodyReceiveMode
     """
+    __slots__ = ('queue', 'no_ack', 'on_message', 'cancelled', 'receiver',
+                 'attache_group', 'channel_close_sent', 'qos', 'qos_update_sent',
+                 'future_to_notify', 'future_to_notify_on_dead',
+                 'fail_on_first_time_resource_locked', 'cancel_on_failure',
+                 'body_receive_mode', 'consumer_tag', 'on_cancel', 'on_broker_cancel',
+                 'hb_watch', 'deliver_watch')
 
     def __init__(self, queue, on_message, no_ack=True, qos=None,
                  cancel_on_failure=False,
@@ -127,8 +133,6 @@ class Consumer(Channeler):
 
         self.on_message = on_message
 
-        # private
-        self.cancelled = False  # did the client want to STOP using this
         # consumer?
         self.receiver = None  # MessageReceiver instance
 
@@ -469,6 +473,8 @@ class MessageReceiver(object):
     and may opt to kill the connection on bad framing with
     self.consumer.connection.send(None)
     """
+    __slots__ = ('consumer', 'state', 'bdeliver', 'header', 'body', 'data_to_go',
+                 'message_size', 'offset', 'acks_pending', 'recv_mode')
 
     def __init__(self, consumer):  # type: (Consumer) -> None
         self.consumer = consumer

@@ -77,7 +77,6 @@ class Publisher(Channeler, Synchronized):
 
     # todo add fallback using plain AMQP transactions - this will remove UnusablePublisher and stuff
 
-
     class UnusablePublisher(Exception):
         """This publisher will never work (eg. MODE_CNPUB on a broker not supporting publisher confirms)"""
 

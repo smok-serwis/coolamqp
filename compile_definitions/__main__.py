@@ -118,6 +118,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         line('\n%sS = [%s]', pythonify_name(constant_kind),
              u', '.join(constants))
 
+    structers = {}
+
     # get domains
     domain_to_basic_type = {}
     line('\n\n\nDOMAIN_TO_BASIC_TYPE = {\n')
@@ -489,7 +491,9 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 from coolamqp.framing.compilation.textcode_fields import \
                     get_serializer, get_counter, get_from_buffer
                 line('\n    def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None\n')
-                line(get_serializer(method.fields, 'self.', 2))
+                line_, new_structers = get_serializer(method.fields, 'self.', 2)
+                line(line_)
+                structers.update(new_structers)
 
                 line('    def get_size(self):       # type: () -> int\n')
                 line(get_counter(method.fields, 'self.', 2))
@@ -499,8 +503,10 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         offset = start_offset
 ''', full_class_name)
 
-            line(get_from_buffer(method.fields, '', 2,
-                                 remark=(method.name == 'deliver')))
+            line_, new_structers = get_from_buffer(method.fields, '', 2,
+                                 remark=(method.name == 'deliver'))
+            line(line_)
+            structers.update(new_structers)
 
             line("        return cls(%s)",
                  u', '.join(
@@ -548,6 +554,10 @@ REPLIES_FOR = {\n''')
     for k, v in methods_that_are_replies_for.items():
         line(u'    %s: [%s],\n' % (k, u', '.join(map(str, v))))
     line(u'}\n')
+
+    # Output structers
+    for structer in structers:
+        line(u'STRUCT_%s = struct.Struct("!%s")\n' % (structer, structer))
 
     out.close()
 

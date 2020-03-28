@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 """Generate serializers/unserializers/length getters for given property_flags"""
 import six
+import struct
 import logging
 from coolamqp.framing.compilation.textcode_fields import get_counter, \
     get_from_buffer, get_serializer
@@ -14,8 +15,7 @@ SLOTS_I = u'\n    __slots__ = (%s)\n'
 FROM_BUFFER_1 = u'    def from_buffer(cls, buf, start_offset):\n        ' \
                 u'offset = start_offset + %s\n'
 ASSIGN_A = u'        self.%s = %s\n'
-STARTER = u'''import struct
-from coolamqp.framing.base import AMQPContentPropertyList
+STARTER = u'''from coolamqp.framing.base import AMQPContentPropertyList
 
 class ParticularContentTypeList(AMQPContentPropertyList):
     """
@@ -45,6 +45,8 @@ def _compile_particular_content_property_list_class(zpf, fields):
     :param fields: list of all possible fields in this content property
     """
     from coolamqp.framing.compilation.utilities import format_field_name
+
+    structers = {}
 
     if any(field.basic_type == 'bit' for field in fields):
         return NB
@@ -115,7 +117,9 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(repred_zpf)
     mod.append(u')\n')
 
-    mod.append(get_serializer(present_fields, prefix=u'self.', indent_level=2))
+    line, new_structers = get_serializer(present_fields, prefix=u'self.', indent_level=2)
+    structers.update(new_structers)
+    mod.append(line)
 
     # from_buffer
     # note that non-bit values
@@ -123,9 +127,11 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(
         FROM_BUFFER_1 % (
             zpf_length,))
-    mod.append(get_from_buffer(
+    line, new_structers = get_from_buffer(
         present_fields
-        , prefix='', indent_level=2))
+        , prefix='', indent_level=2)
+    structers.update(new_structers)
+    mod.append(line)
     mod.append(u'        return cls(%s)\n' % (FFN,))
 
     # get_size
@@ -134,16 +140,26 @@ def _compile_particular_content_property_list_class(zpf, fields):
                :-1])  # skip eol
     mod.append(u' + %s\n' % (zpf_length,))  # account for pf length
 
-    return u''.join(mod)
+    return u''.join(mod), structers
+
+
+STRUCTERS_FOR_NOW = {}      # type: tp.Dict[str, struct.Struct]
 
 
 def compile_particular_content_property_list_class(zpf, fields):
-    import struct
     from coolamqp.framing.base import AMQPContentPropertyList
+    global STRUCTERS_FOR_NOW
 
-    q = _compile_particular_content_property_list_class(zpf, fields)
-    loc = dict(globals(), **{
-        'struct': struct,
-        'AMQPContentPropertyList': AMQPContentPropertyList})
+    q, structers = _compile_particular_content_property_list_class(zpf, fields)
+    locals_ = {
+        'AMQPContentPropertyList': AMQPContentPropertyList
+    }
+    for structer in structers:
+        if structer not in STRUCTERS_FOR_NOW:
+            STRUCTERS_FOR_NOW[structer] = struct.Struct('!%s' % (structer,))
+
+        locals_['STRUCT_%s' % (structer, )] = STRUCTERS_FOR_NOW[structer]
+
+    loc = dict(globals(), **locals_)
     exec (q, loc)
     return loc['ParticularContentTypeList']

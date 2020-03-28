@@ -241,7 +241,7 @@ class ConnectionBlocked(AMQPMethodPayload):
         self.reason = reason
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', len(self.reason)))
+        buf.write(STRUCT_B.pack(len(self.reason)))
         buf.write(self.reason)
 
     def get_size(self):  # type: () -> int
@@ -251,7 +251,7 @@ class ConnectionBlocked(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionBlocked
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         reason = buf[offset:offset + s_len]
         offset += s_len
@@ -329,9 +329,9 @@ class ConnectionClose(AMQPMethodPayload):
         self.method_id = method_id
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
+        buf.write(STRUCT_HB.pack(self.reply_code, len(self.reply_text)))
         buf.write(self.reply_text)
-        buf.write(struct.pack('!HH', self.class_id, self.method_id))
+        buf.write(STRUCT_HH.pack(self.class_id, self.method_id))
 
     def get_size(self):  # type: () -> int
         return 7 + len(self.reply_text)
@@ -340,11 +340,11 @@ class ConnectionClose(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionClose
         offset = start_offset
-        reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
+        reply_code, s_len, = STRUCT_HB.unpack_from(buf, offset)
         offset += 3
         reply_text = buf[offset:offset + s_len]
         offset += s_len
-        class_id, method_id, = struct.unpack_from('!HH', buf, offset)
+        class_id, method_id, = STRUCT_HH.unpack_from(buf, offset)
         offset += 4
         return cls(reply_code, reply_text, class_id, method_id)
 
@@ -439,10 +439,10 @@ class ConnectionOpen(AMQPMethodPayload):
         self.virtual_host = virtual_host
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', len(self.virtual_host)))
+        buf.write(STRUCT_B.pack(len(self.virtual_host)))
         buf.write(self.virtual_host)
         buf.write(b'\x00')
-        buf.write(struct.pack('!B', 0))
+        buf.write(STRUCT_B.pack(0))
 
     def get_size(self):  # type: () -> int
         return 3 + len(self.virtual_host)
@@ -451,11 +451,11 @@ class ConnectionOpen(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionOpen
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         virtual_host = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         offset += s_len  # reserved field!
         offset += 1
@@ -500,7 +500,7 @@ class ConnectionOpenOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionOpenOk
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         offset += s_len  # reserved field!
         return cls()
@@ -602,11 +602,11 @@ class ConnectionStart(AMQPMethodPayload):
         self.locales = locales
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!BB', self.version_major, self.version_minor))
+        buf.write(STRUCT_BB.pack(self.version_major, self.version_minor))
         enframe_table(buf, self.server_properties)
-        buf.write(struct.pack('!I', len(self.mechanisms)))
+        buf.write(STRUCT_I.pack(len(self.mechanisms)))
         buf.write(self.mechanisms)
-        buf.write(struct.pack('!I', len(self.locales)))
+        buf.write(STRUCT_I.pack(len(self.locales)))
         buf.write(self.locales)
 
     def get_size(self):  # type: () -> int
@@ -617,15 +617,15 @@ class ConnectionStart(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionStart
         offset = start_offset
-        version_major, version_minor, = struct.unpack_from('!BB', buf, offset)
+        version_major, version_minor, = STRUCT_BB.unpack_from(buf, offset)
         offset += 2
         server_properties, delta = deframe_table(buf, offset)
         offset += delta
-        s_len, = struct.unpack_from('!L', buf, offset)
+        s_len, = STRUCT_L.unpack_from(buf, offset)
         offset += 4
         mechanisms = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!L', buf, offset)
+        s_len, = STRUCT_L.unpack_from(buf, offset)
         offset += 4
         locales = buf[offset:offset + s_len]
         offset += s_len
@@ -682,7 +682,7 @@ class ConnectionSecure(AMQPMethodPayload):
         self.challenge = challenge
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!I', len(self.challenge)))
+        buf.write(STRUCT_I.pack(len(self.challenge)))
         buf.write(self.challenge)
 
     def get_size(self):  # type: () -> int
@@ -692,7 +692,7 @@ class ConnectionSecure(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionSecure
         offset = start_offset
-        s_len, = struct.unpack_from('!L', buf, offset)
+        s_len, = STRUCT_L.unpack_from(buf, offset)
         offset += 4
         challenge = buf[offset:offset + s_len]
         offset += s_len
@@ -781,11 +781,11 @@ class ConnectionStartOk(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         enframe_table(buf, self.client_properties)
-        buf.write(struct.pack('!B', len(self.mechanism)))
+        buf.write(STRUCT_B.pack(len(self.mechanism)))
         buf.write(self.mechanism)
-        buf.write(struct.pack('!I', len(self.response)))
+        buf.write(STRUCT_I.pack(len(self.response)))
         buf.write(self.response)
-        buf.write(struct.pack('!B', len(self.locale)))
+        buf.write(STRUCT_B.pack(len(self.locale)))
         buf.write(self.locale)
 
     def get_size(self):  # type: () -> int
@@ -798,15 +798,15 @@ class ConnectionStartOk(AMQPMethodPayload):
         offset = start_offset
         client_properties, delta = deframe_table(buf, offset)
         offset += delta
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         mechanism = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!L', buf, offset)
+        s_len, = STRUCT_L.unpack_from(buf, offset)
         offset += 4
         response = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         locale = buf[offset:offset + s_len]
         offset += s_len
@@ -860,7 +860,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
         self.response = response
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!I', len(self.response)))
+        buf.write(STRUCT_I.pack(len(self.response)))
         buf.write(self.response)
 
     def get_size(self):  # type: () -> int
@@ -870,7 +870,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionSecureOk
         offset = start_offset
-        s_len, = struct.unpack_from('!L', buf, offset)
+        s_len, = STRUCT_L.unpack_from(buf, offset)
         offset += 4
         response = buf[offset:offset + s_len]
         offset += s_len
@@ -948,8 +948,7 @@ class ConnectionTune(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(
-            struct.pack('!HIH', self.channel_max, self.frame_max,
-                        self.heartbeat))
+            STRUCT_HIH.pack(self.channel_max, self.frame_max, self.heartbeat))
 
     def get_size(self):  # type: () -> int
         return 8
@@ -958,8 +957,8 @@ class ConnectionTune(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionTune
         offset = start_offset
-        channel_max, frame_max, heartbeat, = struct.unpack_from(
-            '!HIH', buf, offset)
+        channel_max, frame_max, heartbeat, = STRUCT_HIH.unpack_from(
+            buf, offset)
         offset += 8
         return cls(channel_max, frame_max, heartbeat)
 
@@ -1036,8 +1035,7 @@ class ConnectionTuneOk(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(
-            struct.pack('!HIH', self.channel_max, self.frame_max,
-                        self.heartbeat))
+            STRUCT_HIH.pack(self.channel_max, self.frame_max, self.heartbeat))
 
     def get_size(self):  # type: () -> int
         return 8
@@ -1046,8 +1044,8 @@ class ConnectionTuneOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConnectionTuneOk
         offset = start_offset
-        channel_max, frame_max, heartbeat, = struct.unpack_from(
-            '!HIH', buf, offset)
+        channel_max, frame_max, heartbeat, = STRUCT_HIH.unpack_from(
+            buf, offset)
         offset += 8
         return cls(channel_max, frame_max, heartbeat)
 
@@ -1169,9 +1167,9 @@ class ChannelClose(AMQPMethodPayload):
         self.method_id = method_id
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
+        buf.write(STRUCT_HB.pack(self.reply_code, len(self.reply_text)))
         buf.write(self.reply_text)
-        buf.write(struct.pack('!HH', self.class_id, self.method_id))
+        buf.write(STRUCT_HH.pack(self.class_id, self.method_id))
 
     def get_size(self):  # type: () -> int
         return 7 + len(self.reply_text)
@@ -1180,11 +1178,11 @@ class ChannelClose(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ChannelClose
         offset = start_offset
-        reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
+        reply_code, s_len, = STRUCT_HB.unpack_from(buf, offset)
         offset += 3
         reply_text = buf[offset:offset + s_len]
         offset += s_len
-        class_id, method_id, = struct.unpack_from('!HH', buf, offset)
+        class_id, method_id, = STRUCT_HH.unpack_from(buf, offset)
         offset += 4
         return cls(reply_code, reply_text, class_id, method_id)
 
@@ -1278,7 +1276,7 @@ class ChannelFlow(AMQPMethodPayload):
         self.active = active
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', (self.active << 0)))
+        buf.write(STRUCT_B.pack((self.active << 0)))
 
     def get_size(self):  # type: () -> int
         return 1
@@ -1287,7 +1285,7 @@ class ChannelFlow(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ChannelFlow
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         active = bool(_bit >> 0)
         offset += 1
@@ -1340,7 +1338,7 @@ class ChannelFlowOk(AMQPMethodPayload):
         self.active = active
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', (self.active << 0)))
+        buf.write(STRUCT_B.pack((self.active << 0)))
 
     def get_size(self):  # type: () -> int
         return 1
@@ -1349,7 +1347,7 @@ class ChannelFlowOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ChannelFlowOk
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         active = bool(_bit >> 0)
         offset += 1
@@ -1393,7 +1391,7 @@ class ChannelOpen(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ChannelOpen
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         offset += s_len  # reserved field!
         return cls()
@@ -1437,7 +1435,7 @@ class ChannelOpenOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ChannelOpenOk
         offset = start_offset
-        s_len, = struct.unpack_from('!L', buf, offset)
+        s_len, = STRUCT_L.unpack_from(buf, offset)
         offset += 4
         offset += s_len  # reserved field!
         return cls()
@@ -1530,13 +1528,13 @@ class ExchangeBind(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.destination)))
+        buf.write(STRUCT_B.pack(len(self.destination)))
         buf.write(self.destination)
-        buf.write(struct.pack('!B', len(self.source)))
+        buf.write(STRUCT_B.pack(len(self.source)))
         buf.write(self.source)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
-        buf.write(struct.pack('!B', (self.no_wait << 0)))
+        buf.write(STRUCT_B.pack((self.no_wait << 0)))
         enframe_table(buf, self.arguments)
 
     def get_size(self):  # type: () -> int
@@ -1547,19 +1545,19 @@ class ExchangeBind(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ExchangeBind
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         destination = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         source = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
@@ -1726,14 +1724,14 @@ class ExchangeDeclare(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(STRUCT_B.pack(len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(struct.pack('!B', len(self.type_)))
+        buf.write(STRUCT_B.pack(len(self.type_)))
         buf.write(self.type_)
         buf.write(
-            struct.pack('!B', (self.passive << 0) | (self.durable << 1) |
-                        (self.auto_delete << 2) | (self.internal << 3) |
-                        (self.no_wait << 4)))
+            STRUCT_B.pack((self.passive << 0) | (self.durable << 1)
+                          | (self.auto_delete << 2) | (self.internal << 3)
+                          | (self.no_wait << 4)))
         enframe_table(buf, self.arguments)
 
     def get_size(self):  # type: () -> int
@@ -1744,15 +1742,15 @@ class ExchangeDeclare(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ExchangeDeclare
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         type_ = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         passive = bool(_bit >> 0)
         durable = bool(_bit >> 1)
@@ -1829,10 +1827,9 @@ class ExchangeDelete(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(STRUCT_B.pack(len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(
-            struct.pack('!B', (self.if_unused << 0) | (self.no_wait << 1)))
+        buf.write(STRUCT_B.pack((self.if_unused << 0) | (self.no_wait << 1)))
 
     def get_size(self):  # type: () -> int
         return 4 + len(self.exchange)
@@ -1841,11 +1838,11 @@ class ExchangeDelete(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ExchangeDelete
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         if_unused = bool(_bit >> 0)
         no_wait = bool(_bit >> 1)
@@ -1995,13 +1992,13 @@ class ExchangeUnbind(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.destination)))
+        buf.write(STRUCT_B.pack(len(self.destination)))
         buf.write(self.destination)
-        buf.write(struct.pack('!B', len(self.source)))
+        buf.write(STRUCT_B.pack(len(self.source)))
         buf.write(self.source)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
-        buf.write(struct.pack('!B', (self.no_wait << 0)))
+        buf.write(STRUCT_B.pack((self.no_wait << 0)))
         enframe_table(buf, self.arguments)
 
     def get_size(self):  # type: () -> int
@@ -2012,19 +2009,19 @@ class ExchangeUnbind(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ExchangeUnbind
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         destination = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         source = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
@@ -2175,13 +2172,13 @@ class QueueBind(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(STRUCT_B.pack(len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
-        buf.write(struct.pack('!B', (self.no_wait << 0)))
+        buf.write(STRUCT_B.pack((self.no_wait << 0)))
         enframe_table(buf, self.arguments)
 
     def get_size(self):  # type: () -> int
@@ -2192,19 +2189,19 @@ class QueueBind(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueueBind
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         queue = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
@@ -2371,12 +2368,12 @@ class QueueDeclare(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
         buf.write(
-            struct.pack('!B', (self.passive << 0) | (self.durable << 1) |
-                        (self.exclusive << 2) | (self.auto_delete << 3) |
-                        (self.no_wait << 4)))
+            STRUCT_B.pack((self.passive << 0) | (self.durable << 1)
+                          | (self.exclusive << 2) | (self.auto_delete << 3)
+                          | (self.no_wait << 4)))
         enframe_table(buf, self.arguments)
 
     def get_size(self):  # type: () -> int
@@ -2386,11 +2383,11 @@ class QueueDeclare(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueueDeclare
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         queue = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         passive = bool(_bit >> 0)
         durable = bool(_bit >> 1)
@@ -2476,11 +2473,11 @@ class QueueDelete(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
         buf.write(
-            struct.pack('!B', (self.if_unused << 0) | (self.if_empty << 1) |
-                        (self.no_wait << 2)))
+            STRUCT_B.pack((self.if_unused << 0) | (self.if_empty << 1)
+                          | (self.no_wait << 2)))
 
     def get_size(self):  # type: () -> int
         return 4 + len(self.queue)
@@ -2489,11 +2486,11 @@ class QueueDelete(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueueDelete
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         queue = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         if_unused = bool(_bit >> 0)
         if_empty = bool(_bit >> 1)
@@ -2563,9 +2560,9 @@ class QueueDeclareOk(AMQPMethodPayload):
         self.consumer_count = consumer_count
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!II', self.message_count, self.consumer_count))
+        buf.write(STRUCT_II.pack(self.message_count, self.consumer_count))
 
     def get_size(self):  # type: () -> int
         return 9 + len(self.queue)
@@ -2574,11 +2571,11 @@ class QueueDeclareOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueueDeclareOk
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         queue = buf[offset:offset + s_len]
         offset += s_len
-        message_count, consumer_count, = struct.unpack_from('!II', buf, offset)
+        message_count, consumer_count, = STRUCT_II.unpack_from(buf, offset)
         offset += 8
         return cls(queue, message_count, consumer_count)
 
@@ -2625,7 +2622,7 @@ class QueueDeleteOk(AMQPMethodPayload):
         self.message_count = message_count
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!I', self.message_count))
+        buf.write(STRUCT_I.pack(self.message_count))
 
     def get_size(self):  # type: () -> int
         return 4
@@ -2634,7 +2631,7 @@ class QueueDeleteOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueueDeleteOk
         offset = start_offset
-        message_count, = struct.unpack_from('!I', buf, offset)
+        message_count, = STRUCT_I.unpack_from(buf, offset)
         offset += 4
         return cls(message_count)
 
@@ -2691,9 +2688,9 @@ class QueuePurge(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!B', (self.no_wait << 0)))
+        buf.write(STRUCT_B.pack((self.no_wait << 0)))
 
     def get_size(self):  # type: () -> int
         return 4 + len(self.queue)
@@ -2702,11 +2699,11 @@ class QueuePurge(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueuePurge
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         queue = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
@@ -2755,7 +2752,7 @@ class QueuePurgeOk(AMQPMethodPayload):
         self.message_count = message_count
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!I', self.message_count))
+        buf.write(STRUCT_I.pack(self.message_count))
 
     def get_size(self):  # type: () -> int
         return 4
@@ -2764,7 +2761,7 @@ class QueuePurgeOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueuePurgeOk
         offset = start_offset
-        message_count, = struct.unpack_from('!I', buf, offset)
+        message_count, = STRUCT_I.unpack_from(buf, offset)
         offset += 4
         return cls(message_count)
 
@@ -2834,11 +2831,11 @@ class QueueUnbind(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(STRUCT_B.pack(len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
         enframe_table(buf, self.arguments)
 
@@ -2850,15 +2847,15 @@ class QueueUnbind(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> QueueUnbind
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         queue = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
@@ -3124,7 +3121,7 @@ class BasicAck(AMQPMethodPayload):
         self.multiple = multiple
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!QB', self.delivery_tag, (self.multiple << 0)))
+        buf.write(STRUCT_QB.pack(self.delivery_tag, (self.multiple << 0)))
 
     def get_size(self):  # type: () -> int
         return 9
@@ -3132,7 +3129,7 @@ class BasicAck(AMQPMethodPayload):
     @classmethod
     def from_buffer(cls, buf, start_offset):  # type: (buffer, int) -> BasicAck
         offset = start_offset
-        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        delivery_tag, _bit, = STRUCT_QB.unpack_from(buf, offset)
         offset += 8
         multiple = bool(_bit >> 0)
         offset += 1
@@ -3230,13 +3227,13 @@ class BasicConsume(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(STRUCT_B.pack(len(self.consumer_tag)))
         buf.write(self.consumer_tag)
         buf.write(
-            struct.pack('!B', (self.no_local << 0) | (self.no_ack << 1) |
-                        (self.exclusive << 2) | (self.no_wait << 3)))
+            STRUCT_B.pack((self.no_local << 0) | (self.no_ack << 1)
+                          | (self.exclusive << 2) | (self.no_wait << 3)))
         enframe_table(buf, self.arguments)
 
     def get_size(self):  # type: () -> int
@@ -3247,15 +3244,15 @@ class BasicConsume(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicConsume
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         queue = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         consumer_tag = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         no_local = bool(_bit >> 0)
         no_ack = bool(_bit >> 1)
@@ -3332,9 +3329,9 @@ class BasicCancel(AMQPMethodPayload):
         self.no_wait = no_wait
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(STRUCT_B.pack(len(self.consumer_tag)))
         buf.write(self.consumer_tag)
-        buf.write(struct.pack('!B', (self.no_wait << 0)))
+        buf.write(STRUCT_B.pack((self.no_wait << 0)))
 
     def get_size(self):  # type: () -> int
         return 2 + len(self.consumer_tag)
@@ -3343,11 +3340,11 @@ class BasicCancel(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicCancel
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         consumer_tag = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         no_wait = bool(_bit >> 0)
         offset += 1
@@ -3399,7 +3396,7 @@ class BasicConsumeOk(AMQPMethodPayload):
         self.consumer_tag = consumer_tag
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(STRUCT_B.pack(len(self.consumer_tag)))
         buf.write(self.consumer_tag)
 
     def get_size(self):  # type: () -> int
@@ -3409,7 +3406,7 @@ class BasicConsumeOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicConsumeOk
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         consumer_tag = buf[offset:offset + s_len]
         offset += s_len
@@ -3457,7 +3454,7 @@ class BasicCancelOk(AMQPMethodPayload):
         self.consumer_tag = consumer_tag
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(STRUCT_B.pack(len(self.consumer_tag)))
         buf.write(self.consumer_tag)
 
     def get_size(self):  # type: () -> int
@@ -3467,7 +3464,7 @@ class BasicCancelOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicCancelOk
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         consumer_tag = buf[offset:offset + s_len]
         offset += s_len
@@ -3549,13 +3546,13 @@ class BasicDeliver(AMQPMethodPayload):
         self.routing_key = routing_key
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', len(self.consumer_tag)))
+        buf.write(STRUCT_B.pack(len(self.consumer_tag)))
         buf.write(self.consumer_tag)
         buf.write(
-            struct.pack('!QBB', self.delivery_tag, (self.redelivered << 0),
-                        len(self.exchange)))
+            STRUCT_QBB.pack(self.delivery_tag, (self.redelivered << 0),
+                            len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
 
     def get_size(self):  # type: () -> int
@@ -3566,19 +3563,19 @@ class BasicDeliver(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicDeliver
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         consumer_tag = buf[offset:offset + s_len]
         offset += s_len
-        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        delivery_tag, _bit, = STRUCT_QB.unpack_from(buf, offset)
         offset += 8
         redelivered = bool(_bit >> 0)
         offset += 1
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
@@ -3640,9 +3637,9 @@ class BasicGet(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.queue)))
+        buf.write(STRUCT_B.pack(len(self.queue)))
         buf.write(self.queue)
-        buf.write(struct.pack('!B', (self.no_ack << 0)))
+        buf.write(STRUCT_B.pack((self.no_ack << 0)))
 
     def get_size(self):  # type: () -> int
         return 4 + len(self.queue)
@@ -3650,11 +3647,11 @@ class BasicGet(AMQPMethodPayload):
     @classmethod
     def from_buffer(cls, buf, start_offset):  # type: (buffer, int) -> BasicGet
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         queue = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         no_ack = bool(_bit >> 0)
         offset += 1
@@ -3735,12 +3732,12 @@ class BasicGetOk(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(
-            struct.pack('!QBB', self.delivery_tag, (self.redelivered << 0),
-                        len(self.exchange)))
+            STRUCT_QBB.pack(self.delivery_tag, (self.redelivered << 0),
+                            len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
-        buf.write(struct.pack('!I', self.message_count))
+        buf.write(STRUCT_I.pack(self.message_count))
 
     def get_size(self):  # type: () -> int
         return 15 + len(self.exchange) + len(self.routing_key)
@@ -3749,19 +3746,19 @@ class BasicGetOk(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicGetOk
         offset = start_offset
-        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        delivery_tag, _bit, = STRUCT_QB.unpack_from(buf, offset)
         offset += 8
         redelivered = bool(_bit >> 0)
         offset += 1
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
-        message_count, = struct.unpack_from('!I', buf, offset)
+        message_count, = STRUCT_I.unpack_from(buf, offset)
         offset += 4
         return cls(delivery_tag, redelivered, exchange, routing_key,
                    message_count)
@@ -3806,7 +3803,7 @@ class BasicGetEmpty(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicGetEmpty
         offset = start_offset
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         offset += s_len  # reserved field!
         return cls()
@@ -3886,8 +3883,8 @@ class BasicNack(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(
-            struct.pack('!QB', self.delivery_tag,
-                        (self.multiple << 0) | (self.requeue << 1)))
+            STRUCT_QB.pack(self.delivery_tag,
+                           (self.multiple << 0) | (self.requeue << 1)))
 
     def get_size(self):  # type: () -> int
         return 9
@@ -3896,7 +3893,7 @@ class BasicNack(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicNack
         offset = start_offset
-        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        delivery_tag, _bit, = STRUCT_QB.unpack_from(buf, offset)
         offset += 8
         multiple = bool(_bit >> 0)
         requeue = bool(_bit >> 1)
@@ -3993,12 +3990,11 @@ class BasicPublish(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(b'\x00\x00')
-        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(STRUCT_B.pack(len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
-        buf.write(
-            struct.pack('!B', (self.mandatory << 0) | (self.immediate << 1)))
+        buf.write(STRUCT_B.pack((self.mandatory << 0) | (self.immediate << 1)))
 
     def get_size(self):  # type: () -> int
         return 5 + len(self.exchange) + len(self.routing_key)
@@ -4007,15 +4003,15 @@ class BasicPublish(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicPublish
         offset = start_offset
-        s_len, = struct.unpack_from('!2xB', buf, offset)
+        s_len, = STRUCT_2xB.unpack_from(buf, offset)
         offset += 3
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         mandatory = bool(_bit >> 0)
         immediate = bool(_bit >> 1)
@@ -4119,8 +4115,8 @@ class BasicQos(AMQPMethodPayload):
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
         buf.write(
-            struct.pack('!IHB', self.prefetch_size, self.prefetch_count,
-                        (self.global_ << 0)))
+            STRUCT_IHB.pack(self.prefetch_size, self.prefetch_count,
+                            (self.global_ << 0)))
 
     def get_size(self):  # type: () -> int
         return 7
@@ -4128,8 +4124,8 @@ class BasicQos(AMQPMethodPayload):
     @classmethod
     def from_buffer(cls, buf, start_offset):  # type: (buffer, int) -> BasicQos
         offset = start_offset
-        prefetch_size, prefetch_count, _bit, = struct.unpack_from(
-            '!IHB', buf, offset)
+        prefetch_size, prefetch_count, _bit, = STRUCT_IHB.unpack_from(
+            buf, offset)
         offset += 6
         global_ = bool(_bit >> 0)
         offset += 1
@@ -4245,11 +4241,11 @@ class BasicReturn(AMQPMethodPayload):
         self.routing_key = routing_key
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!HB', self.reply_code, len(self.reply_text)))
+        buf.write(STRUCT_HB.pack(self.reply_code, len(self.reply_text)))
         buf.write(self.reply_text)
-        buf.write(struct.pack('!B', len(self.exchange)))
+        buf.write(STRUCT_B.pack(len(self.exchange)))
         buf.write(self.exchange)
-        buf.write(struct.pack('!B', len(self.routing_key)))
+        buf.write(STRUCT_B.pack(len(self.routing_key)))
         buf.write(self.routing_key)
 
     def get_size(self):  # type: () -> int
@@ -4260,15 +4256,15 @@ class BasicReturn(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicReturn
         offset = start_offset
-        reply_code, s_len, = struct.unpack_from('!HB', buf, offset)
+        reply_code, s_len, = STRUCT_HB.unpack_from(buf, offset)
         offset += 3
         reply_text = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         exchange = buf[offset:offset + s_len]
         offset += s_len
-        s_len, = struct.unpack_from('!B', buf, offset)
+        s_len, = STRUCT_B.unpack_from(buf, offset)
         offset += 1
         routing_key = buf[offset:offset + s_len]
         offset += s_len
@@ -4331,7 +4327,7 @@ class BasicReject(AMQPMethodPayload):
         self.requeue = requeue
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!QB', self.delivery_tag, (self.requeue << 0)))
+        buf.write(STRUCT_QB.pack(self.delivery_tag, (self.requeue << 0)))
 
     def get_size(self):  # type: () -> int
         return 9
@@ -4340,7 +4336,7 @@ class BasicReject(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicReject
         offset = start_offset
-        delivery_tag, _bit, = struct.unpack_from('!QB', buf, offset)
+        delivery_tag, _bit, = STRUCT_QB.unpack_from(buf, offset)
         offset += 8
         requeue = bool(_bit >> 0)
         offset += 1
@@ -4397,7 +4393,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
         self.requeue = requeue
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', (self.requeue << 0)))
+        buf.write(STRUCT_B.pack((self.requeue << 0)))
 
     def get_size(self):  # type: () -> int
         return 1
@@ -4406,7 +4402,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicRecoverAsync
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         requeue = bool(_bit >> 0)
         offset += 1
@@ -4463,7 +4459,7 @@ class BasicRecover(AMQPMethodPayload):
         self.requeue = requeue
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', (self.requeue << 0)))
+        buf.write(STRUCT_B.pack((self.requeue << 0)))
 
     def get_size(self):  # type: () -> int
         return 1
@@ -4472,7 +4468,7 @@ class BasicRecover(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> BasicRecover
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         requeue = bool(_bit >> 0)
         offset += 1
@@ -4835,7 +4831,7 @@ class ConfirmSelect(AMQPMethodPayload):
         self.nowait = nowait
 
     def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
-        buf.write(struct.pack('!B', (self.nowait << 0)))
+        buf.write(STRUCT_B.pack((self.nowait << 0)))
 
     def get_size(self):  # type: () -> int
         return 1
@@ -4844,7 +4840,7 @@ class ConfirmSelect(AMQPMethodPayload):
     def from_buffer(cls, buf,
                     start_offset):  # type: (buffer, int) -> ConfirmSelect
         offset = start_offset
-        _bit, = struct.unpack_from('!B', buf, offset)
+        _bit, = STRUCT_B.unpack_from(buf, offset)
         offset += 0
         nowait = bool(_bit >> 0)
         offset += 1
@@ -5120,3 +5116,15 @@ REPLIES_FOR = {
     ConfirmSelect: [ConfirmSelectOk],
     ConfirmSelectOk: [],
 }
+STRUCT_B = struct.Struct("!B")
+STRUCT_HB = struct.Struct("!HB")
+STRUCT_HH = struct.Struct("!HH")
+STRUCT_BB = struct.Struct("!BB")
+STRUCT_I = struct.Struct("!I")
+STRUCT_L = struct.Struct("!L")
+STRUCT_HIH = struct.Struct("!HIH")
+STRUCT_2xB = struct.Struct("!2xB")
+STRUCT_II = struct.Struct("!II")
+STRUCT_QB = struct.Struct("!QB")
+STRUCT_QBB = struct.Struct("!QBB")
+STRUCT_IHB = struct.Struct("!IHB")

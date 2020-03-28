@@ -24,6 +24,7 @@ class Attache(object):
     """
     Something that can be attached to connection.
     """
+    __slots__ = ('cancelled', 'state', 'connection')
 
     def __init__(self):
         self.cancelled = False  #: public, if this is True, it won't be attached to next connection
@@ -62,6 +63,7 @@ class Channeler(Attache):
                                          but ordering it to do anything is pointless, because it will not get done
                                          until attach() with new connection is called.
     """
+    __slots__ = ('channel_id', )
 
     def __init__(self):
         """
