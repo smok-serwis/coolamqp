@@ -1,3 +1,7 @@
+# v1.0.1:
+
+* _TBA_
+
 # v1.0:
 
 * first solid API release
