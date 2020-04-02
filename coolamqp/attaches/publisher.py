@@ -24,7 +24,7 @@ from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, \
 try:
     # these extensions will be available
     from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk, \
-        BasicNack, ChannelFlow
+        BasicNack, ChannelFlow, ChannelFlowOk
 except ImportError:
     pass
 
@@ -109,10 +109,13 @@ class Publisher(Channeler, Synchronized):
         assert isinstance(ChannelFlow, payload)
 
         self.content_flow = payload.active
+        self.connection.send([AMQPMethodFrame(self.channel_id,
+                                              ChannelFlowOk(payload.active))])
 
         if payload.active:
             self.connection.send(self.frames_to_send)
             self.frames_to_send = []
+
 
     @Synchronized.synchronized
     def on_fail(self):
