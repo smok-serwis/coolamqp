@@ -2,15 +2,16 @@
 from __future__ import division, absolute_import, print_function
 
 import math
+
 import six
 
 from coolamqp.framing.base import BASIC_TYPES
 from coolamqp.framing.compilation.utilities import as_unicode
 
 
-def ffmt(data, *args, **kwargs):
+def f_fmt(data, *args, **kwargs):
     for arg in args:
-        op = str if kwargs.get('sane', True) else frepr
+        op = str if kwargs.get('sane', True) else f_repr
         data = data.replace('%s', op(arg), 1)
     data = data.replace('%S', '%s')
     return data
@@ -58,7 +59,7 @@ def to_code_binary(p):
     return u"b'" + (u''.join(body)) + u"'"
 
 
-def frepr(p, sop=six.text_type):
+def f_repr(p, sop=six.text_type):
     if isinstance(p, (six.binary_type, six.text_type)):
         p = sop(p)
     s = repr(p)
@@ -71,13 +72,13 @@ def frepr(p, sop=six.text_type):
 
 
 @as_unicode
-def format_method_class_name(methodname):
-    if '-' in methodname:
-        i = methodname.find('-')
-        return methodname[0:i].capitalize() + methodname[
-            i + 1].upper() + methodname[i + 2:]
+def format_method_class_name(method_name):
+    if '-' in method_name:
+        i = method_name.find('-')
+        return method_name[0:i].capitalize() + method_name[
+            i + 1].upper() + method_name[i + 2:]
     else:
-        return methodname.capitalize()
+        return method_name.capitalize()
 
 
 @as_unicode

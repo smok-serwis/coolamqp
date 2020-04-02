@@ -143,7 +143,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
     return u''.join(mod), structers
 
 
-STRUCTERS_FOR_NOW = {}      # type: tp.Dict[str, struct.Struct]
+STRUCTERS_FOR_NOW = {}  # type: tp.Dict[str, struct.Struct]
 
 
 def compile_particular_content_property_list_class(zpf, fields):
@@ -158,8 +158,8 @@ def compile_particular_content_property_list_class(zpf, fields):
         if structer not in STRUCTERS_FOR_NOW:
             STRUCTERS_FOR_NOW[structer] = struct.Struct('!%s' % (structer,))
 
-        locals_['STRUCT_%s' % (structer, )] = STRUCTERS_FOR_NOW[structer]
+        locals_['STRUCT_%s' % (structer,)] = STRUCTERS_FOR_NOW[structer]
 
     loc = dict(globals(), **locals_)
-    exec (q, loc)
+    exec(q, loc)
     return loc['ParticularContentTypeList']

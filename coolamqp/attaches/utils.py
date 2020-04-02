@@ -33,7 +33,7 @@ class FutureConfirmableRejectable(ConfirmableRejectable):
     A ConfirmableRejectable that can result a future (with None),
     or Exception it with a message
     """
-    __slots__ = ('future', )
+    __slots__ = ('future',)
 
     def __init__(self, future):  # type: (concurrent.futures.Future) -> None
         self.future = future

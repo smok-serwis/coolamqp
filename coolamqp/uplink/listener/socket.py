@@ -2,8 +2,8 @@
 from __future__ import absolute_import, division, print_function
 
 import collections
-import socket
 import logging
+import socket
 
 logger = logging.getLogger(__name__)
 

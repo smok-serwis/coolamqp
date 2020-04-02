@@ -1,10 +1,11 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
+
 import logging
 
+from coolamqp.framing.base import AMQPMethodPayload
 from coolamqp.framing.frames import AMQPMethodFrame, AMQPHeaderFrame, \
     AMQPBodyFrame
-from coolamqp.framing.base import AMQPMethodPayload
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,8 @@ logger = logging.getLogger(__name__)
 class Watch(object):
     """
     A watch is placed per-channel, to listen for a particular frame.
+
+    Multiple watches can be registered to listen for a single frame. All watches will be fired then.
     """
 
     class CancelMe(Exception):
@@ -128,7 +131,7 @@ class MethodWatch(Watch):
         if isinstance(method_or_methods, (list, tuple)):
             self.methods = tuple(method_or_methods)
         elif issubclass(method_or_methods, AMQPMethodPayload):
-            self.methods = (method_or_methods, )
+            self.methods = (method_or_methods,)
         self.on_end = on_end
 
     def __repr__(self):

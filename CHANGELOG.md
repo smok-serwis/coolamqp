@@ -1,6 +1,9 @@
 # v1.0.1:
 
-* _TBA_
+* added support for channel flow control and blocking and 
+  unblocking the connection
+* added support for notifying the app when connection
+  becomes blocked
 
 # v1.0:
 

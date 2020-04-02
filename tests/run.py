@@ -1,12 +1,11 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import time, logging, threading
-from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
-    Exchange
-from coolamqp.exceptions import AMQPError
-from coolamqp.clustering import Cluster
 
+import logging
 import os
+
+from coolamqp.clustering import Cluster
+from coolamqp.objects import NodeDefinition, Queue
 
 NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)

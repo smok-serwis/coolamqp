@@ -1,15 +1,17 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
-import unittest
-import time
-import socket
-import collections
-import monotonic
-import os
 
-from coolamqp import Cluster, ClusterNode, ConnectionUp, ConnectionDown, \
-    ConnectionUp, ConsumerCancelled
+import collections
+import os
+import socket
+import time
+import unittest
+
+import monotonic
 from coolamqp.backends.base import AMQPBackend, ConnectionFailedError
+
+from coolamqp import Cluster, ClusterNode, ConnectionDown, \
+    ConnectionUp, ConsumerCancelled
 
 
 def getamqp():

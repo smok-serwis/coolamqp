@@ -42,7 +42,7 @@ class AMQPMethodFrame(AMQPFrame):
             buf.write(self.payload.STATIC_CONTENT)
         else:
             buf.write(STRUCT_BHL.pack(FRAME_METHOD, self.channel,
-                                  4 + self.payload.get_size()))
+                                      4 + self.payload.get_size()))
             buf.write(self.payload.BINARY_HEADER)
             self.payload.write_arguments(buf)
             buf.write(FRAME_END_BYTE)
@@ -87,9 +87,9 @@ class AMQPHeaderFrame(AMQPFrame):
 
     def write_to(self, buf):
         buf.write(STRUCT_BHLHHQ.pack(FRAME_HEADER, self.channel,
-                              12 + self.properties.get_size(), self.class_id,
-                              0,
-                              self.body_size))
+                                     12 + self.properties.get_size(), self.class_id,
+                                     0,
+                                     self.body_size))
         self.properties.write_to(buf)
         buf.write(FRAME_END_BYTE)
 

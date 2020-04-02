@@ -48,7 +48,7 @@ class MessageReceived(ReceivedMessage, Event):
     """
     __slots__ = ()
 
-    def __init__(self, msg):        # type: (ReceivedMessage) -> None
+    def __init__(self, msg):  # type: (ReceivedMessage) -> None
         """:type msg: ReceivedMessage"""
         ReceivedMessage.__init__(self, msg.body, msg.exchange_name,
                                  msg.routing_key,

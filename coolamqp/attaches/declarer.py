@@ -237,7 +237,7 @@ class Declarer(Channeler, Synchronized):
         To be called when it's possible that something can be done
         """
         if (self.state != ST_ONLINE) or len(self.left_to_declare) == 0 or (
-                    self.in_process is not None):
+                self.in_process is not None):
             return
 
         self.in_process = self.left_to_declare.popleft()

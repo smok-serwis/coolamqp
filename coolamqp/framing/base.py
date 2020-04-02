@@ -5,7 +5,6 @@ import typing as tp
 
 AMQP_HELLO_HEADER = b'AMQP\x00\x00\x09\x01'
 
-
 # name => (length|None, struct ID|None, reserved-field-value : for struct if structable, bytes else, length of default)
 BASIC_TYPES = {u'bit': (None, None, "0", None),  # special case
                u'octet': (1, 'B', "b'\\x00'", 1),

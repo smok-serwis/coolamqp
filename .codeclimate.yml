@@ -14,11 +14,11 @@ engines:
   radon:
     enabled: true
 exclude_paths:
-- examples/**
-- tests/**
-- coolamqp/framing/definitions.py
-- compile_definitions/**
-- stress_tests/**
+  - examples/**
+  - tests/**
+  - coolamqp/framing/definitions.py
+  - compile_definitions/**
+  - stress_tests/**
 ratings:
   paths:
-  - coolamqp/**
+    - coolamqp/**

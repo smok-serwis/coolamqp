@@ -11,9 +11,11 @@ CoolAMQP
 [![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=develop)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-A **magical** AMQP 0.9.1  client, that uses **heavy sorcery** to achieve speeds that other AMQP clients cannot even hope to match.
+A **magical** AMQP 0.9.1  client, that uses **heavy sorcery** to achieve speeds that other pure-Python AMQP clients cannot even hope to match.
 
 Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
+
+CoolAMQP uses [semantic versioning 2.0](https://semver.org/spec/v2.0.0.html).
 
 tl;dr - [this](coolamqp/framing/definitions.py) is **machine-generated** compile-time.
 [this](coolamqp/framing/compilation/content_property.py) **generates classes run-time**,

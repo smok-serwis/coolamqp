@@ -3,9 +3,9 @@
 from __future__ import print_function, absolute_import, division
 
 import logging
+import os
 import time
 import unittest
-import os
 
 from coolamqp.clustering import Cluster
 from coolamqp.exceptions import AMQPError, RESOURCE_LOCKED

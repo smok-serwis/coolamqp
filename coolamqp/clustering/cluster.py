@@ -6,12 +6,12 @@ from __future__ import print_function, absolute_import, division
 
 import logging
 import time
+import typing as tp
 import warnings
+from concurrent.futures import Future
 
 import monotonic
 import six
-import typing as tp
-from concurrent.futures import Future
 
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
@@ -44,17 +44,20 @@ class Cluster(object):
     :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
         receives from the broker
     :param name: name to appear in log items and prctl() for the listener thread
+    :param on_blocked: callable to call when ConnectionBlocked/ConnectionUnblocked is received. It will be
+        called with a value of True if connection becomes blocked, and False upon an unblock
     """
 
     # Events you can be informed about
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes,   # type: tp.Union[NodeDefinition, tp.List[NodeDefinition]]
+    def __init__(self, nodes,  # type: tp.Union[NodeDefinition, tp.List[NodeDefinition]]
                  on_fail=None,  # type: tp.Optional[tp.Callable[[], None]]
                  extra_properties=None,  # type: tp.Optional[tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]]
-                 log_frames=None,   # type: tp.Optional[FrameLogger]
-                 name=None  # type: tp.Optional[str]
+                 log_frames=None,  # type: tp.Optional[FrameLogger]
+                 name=None,  # type: tp.Optional[str]
+                 on_blocked=None  # type: tp.Callable[[bool], None]
                  ):
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
@@ -67,6 +70,7 @@ class Cluster(object):
         self.node, = nodes
         self.extra_properties = extra_properties
         self.log_frames = log_frames
+        self.on_blocked = on_blocked
 
         if on_fail is not None:
             def decorated():
@@ -78,8 +82,8 @@ class Cluster(object):
             self.on_fail = None
 
     def declare(self, obj,  # type: tp.Union[Queue, Exchange]
-                persistent=False    # type: bool
-    ):   # type: (...) -> concurrent.futures.Future
+                persistent=False  # type: bool
+                ):  # type: (...) -> concurrent.futures.Future
         """
         Declare a Queue/Exchange
 
@@ -140,9 +144,9 @@ class Cluster(object):
 
     def publish(self, message,  # type: Message
                 exchange=None,  # type: tp.Union[Exchange, str, bytes]
-                routing_key=u'',    # type: tp.Union[str, bytes]
-                tx=None,            # type: tp.Optional[bool]
-                confirm=None        # type: tp.Optional[bool]
+                routing_key=u'',  # type: tp.Union[str, bytes]
+                tx=None,  # type: tp.Optional[bool]
+                confirm=None  # type: tp.Optional[bool]
                 ):  # type: (...) -> tp.Optional[Future]
         """
         Publish a message.
@@ -221,6 +225,9 @@ class Cluster(object):
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)
+
+        if self.on_blocked is not None:
+            self.snr.on_blocked.add(self.on_blocked)
 
         # Spawn a transactional publisher and a noack publisher
         self.pub_tr = Publisher(Publisher.MODE_CNPUB)

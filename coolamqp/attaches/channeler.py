@@ -63,7 +63,7 @@ class Channeler(Attache):
                                          but ordering it to do anything is pointless, because it will not get done
                                          until attach() with new connection is called.
     """
-    __slots__ = ('channel_id', )
+    __slots__ = ('channel_id',)
 
     def __init__(self):
         """
@@ -140,7 +140,7 @@ class Channeler(Attache):
         self.state = ST_OFFLINE
 
         if not isinstance(payload, (ChannelClose, ChannelCloseOk)) and (
-                    payload is not None):
+                payload is not None):
             # I do not know how to handle that!
             return
 
@@ -190,6 +190,15 @@ class Channeler(Attache):
         """
         self.methods([payload])
 
+    def watch_for_method(self, method, callback, on_fail=None):  # type: () -> MethodWatch
+        """
+        Syntactic sugar for
+
+        >>> self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
+        """
+        assert self.channel_id is not None
+        return self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
+
     def method_and_watch(self, method_payload, method_classes_to_watch,
                          callable):
         # type: (coolamqp.framing.base.AMQPMethodPayload,
@@ -197,10 +206,10 @@ class Channeler(Attache):
         """
         Syntactic sugar for
 
-            self.connection.method_and_watch(self.channel_id,
-                                             method_payload,
-                                             method_classes_to_watch,
-                                             callable)
+        >>> self.connection.method_and_watch(self.channel_id,
+        >>>                                  method_payload,
+        >>>                                  method_classes_to_watch,
+        >>>                                  callable)
         """
         assert self.channel_id is not None
         self.connection.method_and_watch(self.channel_id, method_payload,

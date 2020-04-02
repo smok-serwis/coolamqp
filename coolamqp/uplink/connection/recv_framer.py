@@ -105,7 +105,7 @@ class ReceivingFramer(object):
 
         # state rule 2
         elif (self.frame_type == FRAME_HEARTBEAT) and (
-                    self.total_data_len >= AMQPHeartbeatFrame.LENGTH - 1):
+                self.total_data_len >= AMQPHeartbeatFrame.LENGTH - 1):
             data = b''
             while len(data) < AMQPHeartbeatFrame.LENGTH - 1:
                 data = data + self._extract(
@@ -122,9 +122,9 @@ class ReceivingFramer(object):
 
         # state rule 3
         elif (self.frame_type != FRAME_HEARTBEAT) and (
-                    self.frame_type is not None) and (
-                    self.frame_size is None) and (
-                    self.total_data_len > 6):
+                self.frame_type is not None) and (
+                self.frame_size is None) and (
+                self.total_data_len > 6):
             hdr = b''
             while len(hdr) < 6:
                 hdr = hdr + self._extract(6 - len(hdr)).tobytes()
@@ -135,7 +135,7 @@ class ReceivingFramer(object):
 
         # state rule 4
         elif (self.frame_size is not None) and (
-                    self.total_data_len >= (self.frame_size + 1)):
+                self.total_data_len >= (self.frame_size + 1)):
 
             if len(self.chunks[0]) >= self.frame_size:
                 # We can subslice it - it's very fast
