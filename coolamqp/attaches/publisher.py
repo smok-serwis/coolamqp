@@ -24,7 +24,7 @@ from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, \
 try:
     # these extensions will be available
     from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk, \
-        BasicNack, ChannelFlow, ChannelFlowOk
+        BasicNack, ChannelFlow, ChannelFlowOk, ConnectionBlocked, ConnectionUnblocked
 except ImportError:
     pass
 
@@ -97,12 +97,23 @@ class Publisher(Channeler, Synchronized):
 
         self.critically_failed = False
         self.content_flow = True
+        self.blocked = False
         self.frames_to_send = []
 
     @Synchronized.synchronized
     def attach(self, connection):
         Channeler.attach(self, connection)
         connection.watch(FailWatch(self.on_fail))
+
+    def on_connection_blocked(self, payload):
+        if isinstance(payload, ConnectionBlocked):
+            self.blocked = True
+        elif isinstance(payload, ConnectionUnblocked):
+            self.blocked = False
+
+            if self.content_flow:
+                self.connection.send(self.frames_to_send)
+                self.frames_to_send = []
 
     def on_flow_control(self, payload):
         """Called on ChannelFlow"""
@@ -112,10 +123,9 @@ class Publisher(Channeler, Synchronized):
         self.connection.send([AMQPMethodFrame(self.channel_id,
                                               ChannelFlowOk(payload.active))])
 
-        if payload.active:
+        if payload.active and not self.blocked:
             self.connection.send(self.frames_to_send)
             self.frames_to_send = []
-
 
     @Synchronized.synchronized
     def on_fail(self):
@@ -150,15 +160,15 @@ class Publisher(Channeler, Synchronized):
         if len(bodies) == 1:
             frames_to_send.append(AMQPBodyFrame(self.channel_id, bodies[0]))
 
-        if self.content_flow:
+        if self.content_flow and not self.blocked:
             self.connection.send(frames_to_send)
 
             if len(bodies) > 1:
-                while self.content_flow and len(bodies) > 0:
+                while self.content_flow  and not self.blocked and len(bodies) > 0:
                     self.connection.send([AMQPBodyFrame(self.channel_id, bodies[0])])
                     del bodies[0]
 
-                if not self.content_flow and len(bodies) > 0:
+                if not self.content_flow  and not self.blocked and len(bodies) > 0:
                     for body in bodies:
                         self.frames_to_send.append(AMQPBodyFrame(self.channel_id, body))
         else:
@@ -281,7 +291,14 @@ class Publisher(Channeler, Synchronized):
         if isinstance(payload, ChannelOpenOk):
             # Ok, if this has a mode different from MODE_NOACK, we need to additionally set up
             # the functionality.
-            self.watch_for_method(ChannelFlow, self.on_flow_control)
+            mw = MethodWatch(self.channel_id, ChannelFlow, self.on_flow_control)
+            mw.oneshot = False
+            self.connection.watch(mw)
+
+            mw = MethodWatch(0, (ConnectionBlocked, ConnectionUnblocked), self.on_connection_blocked)
+            mw.oneshot = False
+            self.connection.watch(mw)
+
             if self.mode == Publisher.MODE_CNPUB:
                 self.method_and_watch(ConfirmSelect(False), ConfirmSelectOk,
                                       self.on_setup)
