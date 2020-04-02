@@ -15,12 +15,13 @@ class ListenerThread(threading.Thread):
     It automatically picks the best listener for given platform.
     """
 
-    def __init__(self, name=None):  # type: (tp.Optional[str]) -> None
+    def __init__(self, name=None):  # type: (tp.Optional[str])
         threading.Thread.__init__(self, name='coolamqp/ListenerThread')
         self.daemon = True
         self.name = name or 'CoolAMQP'
         self.terminating = False
         self._call_next_io_event = Callable(oneshots=True)
+        self.listener = None
 
     def call_next_io_event(self, callable):
         """
@@ -56,7 +57,9 @@ class ListenerThread(threading.Thread):
 
         self.listener.shutdown()
 
-    def register(self, sock, on_read=lambda data: None, on_fail=lambda: None):
+    def register(self, sock,    # type: socket.socket
+                 on_read=lambda data: None,     # type: tp.Callable[[bytes], None]
+                 on_fail=lambda: None):         # type: tp.Callable[[], None]
         """
         Add a socket to be listened for by the loop.
 

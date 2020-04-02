@@ -353,25 +353,32 @@ class Connection(object):
         else:
             self.watches[watch.channel].append(watch)
 
-    def watch_for_method(self, channel, method, callback, on_fail=None):
-        # type: (int, AMQPMethodPayload, tp.Callable[[AMQPMethodPayload], None],
-        #   tp.Optional[tp.Callable[[AMQPMethodPayload], None]]) -> MethodWatch
+    def watch_for_method(self, channel,  # type: int
+                         method,         # type: AMQPMethodPayload
+                         callback,       # type: tp.Callable[[AMQPMethodPayload], None]
+                         on_fail=None    # type: tp.Callable[[], None]
+                         ):              # type: (...) -> MethodWatch
         """
         :param channel: channel to monitor
         :param method: AMQPMethodPayload class or tuple of AMQPMethodPayload classes
         :param callback: callable(AMQPMethodPayload instance)
+        :param on_fail: callable/0 to call when this connection fails
         """
         mw = MethodWatch(channel, method, callback, on_end=on_fail)
         self.watch(mw)
         return mw
 
-    def method_and_watch(self, channel_id, method_payload, method_or_methods,
-                         callback):
+    def method_and_watch(self, channel_id,  # type: int
+                         method_payload,    # type: AMQPMethodPayload
+                         method_or_methods, # type: tp.List[tp.type[AMQPMethodPayload]]
+                         callback           # type: tp.Callable[[AMQPMethodPayload], None]
+                         ):                 # type: (...) -> MethodWatch
         """
         A syntactic sugar for
 
                 .watch_for_method(channel_id, method_or_methdods, callback)
                 .send([AMQPMethodFrame(channel_id, method_payload)])
         """
-        self.watch_for_method(channel_id, method_or_methods, callback)
+        watch = self.watch_for_method(channel_id, method_or_methods, callback)
         self.send([AMQPMethodFrame(channel_id, method_payload)])
+        return watch

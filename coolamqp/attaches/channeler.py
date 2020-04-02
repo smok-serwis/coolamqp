@@ -190,14 +190,14 @@ class Channeler(Attache):
         """
         self.methods([payload])
 
-    def watch_for_method(self, method, callback, on_fail=None):
+    def watch_for_method(self, method, callback, on_fail=None):  # type: () -> MethodWatch
         """
         Syntactic sugar for
 
         >>> self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
         """
         assert self.channel_id is not None
-        self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
+        return self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
 
     def method_and_watch(self, method_payload, method_classes_to_watch,
                          callable):

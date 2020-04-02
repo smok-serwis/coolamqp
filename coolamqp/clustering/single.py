@@ -5,6 +5,9 @@ import logging
 
 from coolamqp.objects import Callable
 from coolamqp.uplink import Connection
+from coolamqp.uplink.connection import MethodWatch
+
+from coolamqp.framing.definitions import ConnectionUnblocked, ConnectionBlocked
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +34,7 @@ class SingleNodeReconnector(object):
         self.terminating = False
 
         self.on_fail = Callable()  #: public
-
+        self.on_blocked = Callable()    #: public
         self.on_fail.add(self._on_fail)
 
     def is_connected(self):  # type: () -> bool
@@ -48,6 +51,15 @@ class SingleNodeReconnector(object):
         self.attache_group.attach(self.connection)
         self.connection.start(timeout)
         self.connection.finalize.add(self.on_fail)
+
+        # Register the on-blocking watches
+        mw = MethodWatch(0, (ConnectionBlocked, ), lambda: self.on_blocked(True))
+        mw.oneshot = False
+        self.connection.watch(mw)
+
+        mw = MethodWatch(0, (ConnectionUnblocked, ), lambda: self.on_blocked(False))
+        mw.oneshot = False
+        self.connection.watch(mw)
 
     def _on_fail(self):
         if self.terminating:

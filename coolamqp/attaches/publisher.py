@@ -291,13 +291,12 @@ class Publisher(Channeler, Synchronized):
         if isinstance(payload, ChannelOpenOk):
             # Ok, if this has a mode different from MODE_NOACK, we need to additionally set up
             # the functionality.
-            mw = MethodWatch(self.channel_id, ChannelFlow, self.on_flow_control)
+            mw = self.watch_for_method(ChannelFlow, self.on_flow_control)
             mw.oneshot = False
-            self.connection.watch(mw)
 
-            mw = MethodWatch(0, (ConnectionBlocked, ConnectionUnblocked), self.on_connection_blocked)
+            mw = self.connection.watch_for_method(0, (ConnectionBlocked, ConnectionUnblocked),
+                                                  self.on_connection_blocked)
             mw.oneshot = False
-            self.connection.watch(mw)
 
             if self.mode == Publisher.MODE_CNPUB:
                 self.method_and_watch(ConfirmSelect(False), ConfirmSelectOk,

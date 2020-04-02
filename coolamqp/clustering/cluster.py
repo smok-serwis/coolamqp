@@ -44,6 +44,8 @@ class Cluster(object):
     :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
         receives from the broker
     :param name: name to appear in log items and prctl() for the listener thread
+    :param on_blocked: callable to call when ConnectionBlocked/ConnectionUnblocked is received. It will be
+        called with a value of True if connection becomes blocked, and False upon an unblock
     """
 
     # Events you can be informed about
@@ -54,7 +56,8 @@ class Cluster(object):
                  on_fail=None,  # type: tp.Optional[tp.Callable[[], None]]
                  extra_properties=None,  # type: tp.Optional[tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]]
                  log_frames=None,   # type: tp.Optional[FrameLogger]
-                 name=None  # type: tp.Optional[str]
+                 name=None,  # type: tp.Optional[str]
+                 on_blocked=None   # type: tp.Callable[[bool], None]
                  ):
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
@@ -67,6 +70,7 @@ class Cluster(object):
         self.node, = nodes
         self.extra_properties = extra_properties
         self.log_frames = log_frames
+        self.on_blocked = on_blocked
 
         if on_fail is not None:
             def decorated():
@@ -221,6 +225,9 @@ class Cluster(object):
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)
+
+        if self.on_blocked is not None:
+            self.snr.on_blocked.add(self.on_blocked)
 
         # Spawn a transactional publisher and a noack publisher
         self.pub_tr = Publisher(Publisher.MODE_CNPUB)
