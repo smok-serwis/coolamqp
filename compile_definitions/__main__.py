@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 
 import six
 
-from compile_definitions.utilities import ffmt, to_docstring, pythonify_name, to_code_binary, frepr, \
+from compile_definitions.utilities import f_fmt, to_docstring, pythonify_name, to_code_binary, f_repr, \
     format_method_class_name, name_class, get_size
 from coolamqp.framing.compilation.utilities import format_field_name
 from .xml_tags import Constant, Class, Domain
@@ -75,7 +75,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 '''.encode('utf8'))
 
     def line(data, *args, **kwargs):
-        out.write(ffmt(data, *args, sane=True).encode('utf8'))
+        out.write(f_fmt(data, *args, sane=True).encode('utf8'))
 
     # Output core ones
     FRAME_END = None
@@ -96,13 +96,13 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                     line(u' # %s\n', ln)
         if pythonify_name(constant.name) == 'FRAME_END':
             FRAME_END = constant.value
-        g = ffmt('%s = %s\n', pythonify_name(constant.name), constant.value)
+        g = f_fmt('%s = %s\n', pythonify_name(constant.name), constant.value)
         line(g)
         if 0 <= constant.value <= 255:
             z = repr(six.int2byte(constant.value))
             if not z.startswith(u'b'):
                 z = u'b' + z
-            g = ffmt('%s_BYTE = %s\n', pythonify_name(constant.name), z)
+            g = f_fmt('%s_BYTE = %s\n', pythonify_name(constant.name), z)
             line(g)
 
         if was_docs_output:
@@ -124,8 +124,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     domain_to_basic_type = {}
     line('\n\n\nDOMAIN_TO_BASIC_TYPE = {\n')
     for domain in Domain.findall(xml):
-        line(u'    %s: %s,\n', frepr(domain.name),
-             frepr(None if domain.elementary else domain.type))
+        line(u'    %s: %s,\n', f_repr(domain.name),
+             f_repr(None if domain.elementary else domain.type))
         domain_to_basic_type[domain.name] = domain.type
 
     line('}\n')
@@ -151,7 +151,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
 ''',
              name_class(cls.name), to_docstring(None, cls.docs),
-             frepr(cls.name), cls.index)
+             f_repr(cls.name), cls.index)
 
         if len(cls.properties) > 0:
             class_id_to_contentpropertylist[cls.index] = name_class(
@@ -165,7 +165,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 ''',
 
                  name_class(cls.name), to_docstring(None, cls.docs),
-                 frepr(cls.name), cls.index, name_class(cls.name))
+                 f_repr(cls.name), cls.index, name_class(cls.name))
 
             is_static = all(
                 property.basic_type not in ('table', 'longstr', 'shortstr') for
@@ -175,9 +175,9 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 if property.basic_type == 'bit':
                     raise ValueError('bit properties are not supported!'
                                      )
-                line('        Field(%s, %s, %s, %s),\n', frepr(property.name),
-                     frepr(property.type),
-                     frepr(property.basic_type), repr(property.reserved))
+                line('        Field(%s, %s, %s, %s),\n', f_repr(property.name),
+                     f_repr(property.type),
+                     f_repr(property.basic_type), repr(property.reserved))
             line('''    ]
     # A dictionary from a zero property list to a class typized with
     # some fields
@@ -380,7 +380,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                 slots = u''
             else:
                 slots = (u', '.join(
-                    map(lambda f: frepr(format_field_name(f.name)),
+                    map(lambda f: f_repr(format_field_name(f.name)),
                         non_reserved_fields))) + u', '
 
             line('''\nclass %s(AMQPMethodPayload):
@@ -414,8 +414,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     IS_CONTENT_STATIC = %s  # this means that argument part has always the same content
 ''',
                  slots,
-                 frepr(cls.name + '.' + method.name),
-                 frepr(cls.index), frepr(method.index),
+                 f_repr(cls.name + '.' + method.name),
+                 f_repr(cls.index), f_repr(method.index),
                  to_code_binary(struct.pack("!HH", cls.index, method.index)),
                  repr(method.sent_by_client),
                  repr(method.sent_by_server),
@@ -449,8 +449,8 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
                 for field in method.fields:
                     line('        Field(%s, %s, %s, reserved=%s),\n',
-                         frepr(field.name), frepr(field.type),
-                         frepr(field.basic_type), repr(field.reserved))
+                         f_repr(field.name), f_repr(field.type),
+                         f_repr(field.basic_type), repr(field.reserved))
 
                 line('    ]\n')
 

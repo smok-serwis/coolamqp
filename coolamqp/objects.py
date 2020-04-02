@@ -79,27 +79,29 @@ class Message(object):
     Properties is a highly regularized class - see
     coolamqp.framing.definitions.BasicContentPropertyList
     for a list of possible properties.
+
+    :param body: stream of octets
+    :type body: anything with a buffer interface
+    :param properties: AMQP properties to be sent along.
+                       default is 'no properties at all'
+                       You can pass a dict - it will be passed to
+                       MessageProperties,
+                       but it's slow - don't do that.
+    :type properties: MessageProperties instance, None or a dict (SLOW!)
+
     """
     __slots__ = ('body', 'properties')
 
     Properties = MessageProperties  # an alias for easier use
 
-    def __init__(self, body,  # type: bytes
-                 properties=None):
+    def __init__(self, body,         # type: bytes
+                 properties=None     # type: tp.Optional[MessageProperties]
+                 ):
         """
         Create a Message object.
 
         Please take care with passing empty bodies, as py-amqp has some
         failure on it.
-
-        :param body: stream of octets
-        :type body: anything with a buffer interface
-        :param properties: AMQP properties to be sent along.
-                           default is 'no properties at all'
-                           You can pass a dict - it will be passed to
-                           MessageProperties,
-                           but it's slow - don't do that.
-        :type properties: MessageProperties instance, None or a dict (SLOW!)
         """
         if isinstance(body, six.text_type):
             raise TypeError(u'body cannot be a text type!')
@@ -128,7 +130,7 @@ class ReceivedMessage(Message):
     Note that if the consumer that generated this message was no_ack, .ack()
     and .nack() are no-ops.
     """
-    __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', 'ack', 'nack')
+    __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', '_ack', '_nack')
 
     def __init__(self, body,  # type: tp.Union[str, bytes, bytearray, tp.List[memoryview]]
                  exchange_name,  # type: memoryview
@@ -161,8 +163,25 @@ class ReceivedMessage(Message):
         self.exchange_name = exchange_name
         self.routing_key = routing_key
 
-        self.ack = ack or LAMBDA_NONE
-        self.nack = nack or LAMBDA_NONE
+        self._ack = ack or LAMBDA_NONE
+        self._nack = nack or LAMBDA_NONE
+
+    def ack(self):
+        """
+        Acknowledge reception of this message.
+
+        This is a no-op if a Consumer was called with no_ack=True
+        """
+        self._ack()
+
+    def nack(self):
+        """
+        Negatively acknowledge reception of this message.
+
+        This is a no-op if a Consumer was called with no_ack=True. If no_ack was False,
+        the message will be requeued and redelivered by the broker
+        """
+        self._nack()
 
 
 class Exchange(object):

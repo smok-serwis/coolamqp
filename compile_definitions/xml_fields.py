@@ -12,17 +12,17 @@ def nop(x):
     return x
 
 
-def _get_tagchild(elem, tag):
+def get_tag_child(elem, tag):
     return [e for e in list(elem) if e.tag == tag]
 
 
 __all__ = [
-    '_name', '_docs', '_ComputedField', '_ValueField', '_SimpleField',
-    '_docs_with_label', '_get_tagchild', '_ChildField'
+    '_name', '_docs', 'ComputedField', 'ValueField', 'SimpleField',
+    '_docs_with_label', 'get_tag_child', 'ChildField'
 ]
 
 
-class _Field(object):
+class BaseField(object):
     """Base field object"""
 
     def set(self, obj, elem):
@@ -35,18 +35,18 @@ class _Field(object):
         raise NotImplementedError('abstract')
 
 
-class _ComputedField(_Field):
+class ComputedField(BaseField):
     """
     There's no corresponding XML attribute name - value must
     be computed from element
     """
 
     def __init__(self, field_name, find_fun):
-        super(_ComputedField, self).__init__(field_name)
+        super(ComputedField, self).__init__(field_name)
         self.find = find_fun
 
 
-class _ValueField(_Field):
+class ValueField(BaseField):
     """
     Can hide under a pick of different XML attribute names.
     Has a type, can have a default value.
@@ -79,21 +79,21 @@ class _ValueField(_Field):
                 return self.default
 
 
-class _SimpleField(_ValueField):
+class SimpleField(ValueField):
     """XML attribute is the same as name, has a type and can be default"""
 
     def __init__(self, name, field_type=nop, default=_Required):
-        super(_SimpleField, self).__init__(name, name, field_type, default)
+        super(SimpleField, self).__init__(name, name, field_type, default)
 
 
-class _ChildField(_ComputedField):
+class ChildField(ComputedField):
     """
     List of other properties
     """
 
-    def __init__(self, name, xml_tag, fun, postexec=nop):
-        super(_ChildField, self).__init__(name, lambda elem: \
-            postexec([fun(c) for c in _get_tagchild(elem, xml_tag)]))
+    def __init__(self, name, xml_tag, fun, post_exec=nop):
+        super(ChildField, self).__init__(name, lambda elem: \
+                                         post_exec([fun(c) for c in get_tag_child(elem, xml_tag)]))
 
 
 def get_docs(elem, label):
@@ -110,6 +110,6 @@ def get_docs(elem, label):
         return elem.attrib.get('label', None)
 
 
-_name = _SimpleField('name', six.text_type)
-_docs = _ComputedField('docs', lambda elem: get_docs(elem, False))
-_docs_with_label = _ComputedField('docs', lambda elem: get_docs(elem, True))
+_name = SimpleField('name', six.text_type)
+_docs = ComputedField('docs', lambda elem: get_docs(elem, False))
+_docs_with_label = ComputedField('docs', lambda elem: get_docs(elem, True))

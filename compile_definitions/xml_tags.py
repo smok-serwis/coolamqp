@@ -11,7 +11,7 @@ from coolamqp.framing.base import BASIC_TYPES, DYNAMIC_BASIC_TYPES
 logger = logging.getLogger(__name__)
 
 
-def _boolint(x):
+def bool_int(x):
     return bool(int(x))
 
 
@@ -43,8 +43,8 @@ class Constant(BaseObject):
     NAME = 'constant'
     FIELDS = [
         _name,
-        _SimpleField('value', int),
-        _ValueField('class', 'kind', default=''),
+        SimpleField('value', int),
+        ValueField('class', 'kind', default=''),
         _docs,
     ]
 
@@ -53,10 +53,10 @@ class Field(BaseObject):
     NAME = 'field'
     FIELDS = [
         _name,
-        _ValueField(('domain', 'type'), 'type', str),
-        _SimpleField('label', default=None),
-        _SimpleField('reserved', _boolint, default=0),
-        _ComputedField('basic_type', lambda elem: elem.attrib.get('type',
+        ValueField(('domain', 'type'), 'type', str),
+        SimpleField('label', default=None),
+        SimpleField('reserved', bool_int, default=0),
+        ComputedField('basic_type', lambda elem: elem.attrib.get('type',
                                                                   '') == elem.attrib.get(
             'name', '')),
         _docs
@@ -67,9 +67,9 @@ class Domain(BaseObject):
     NAME = 'domain'
     FIELDS = [
         _name,
-        _SimpleField('type'),
-        _ComputedField('elementary',
-                       lambda a: a.attrib['type'] == a.attrib['name'])
+        SimpleField('type'),
+        ComputedField('elementary',
+                      lambda a: a.attrib['type'] == a.attrib['name'])
     ]
 
 
@@ -77,20 +77,20 @@ class Method(BaseObject):
     NAME = 'method'
     FIELDS = [
         _name,
-        _SimpleField('synchronous', _boolint, default=False),
-        _SimpleField('index', int),
-        _SimpleField('label', default=None),
+        SimpleField('synchronous', bool_int, default=False),
+        SimpleField('index', int),
+        SimpleField('label', default=None),
         _docs,
-        _ChildField('fields', 'field', Field),
-        _ChildField('response', 'response', lambda e: e.attrib['name']),
-        _ChildField('sent_by_client', 'chassis',
-                    lambda e: e.attrib.get('name', '') == 'client',
-                    postexec=any),
-        _ChildField('sent_by_server', 'chassis',
-                    lambda e: e.attrib.get('name', '') == 'server',
-                    postexec=any),
-        _ChildField('constant', 'field', lambda e: Field(e).reserved,
-                    postexec=all)
+        ChildField('fields', 'field', Field),
+        ChildField('response', 'response', lambda e: e.attrib['name']),
+        ChildField('sent_by_client', 'chassis',
+                   lambda e: e.attrib.get('name', '') == 'client',
+                   post_exec=any),
+        ChildField('sent_by_server', 'chassis',
+                   lambda e: e.attrib.get('name', '') == 'server',
+                   post_exec=any),
+        ChildField('constant', 'field', lambda e: Field(e).reserved,
+                   post_exec=all)
     ]
 
     def get_static_body(self):  # only arguments part
@@ -121,9 +121,9 @@ class Class(BaseObject):
     NAME = 'class'
     FIELDS = [
         _name,
-        _SimpleField('index', int),
+        SimpleField('index', int),
         _docs_with_label,
-        _ChildField('methods', 'method', Method, postexec= \
+        ChildField('methods', 'method', Method, post_exec= \
             _cls_method_postexec),
-        _ChildField('properties', 'field', Field)
+        ChildField('properties', 'field', Field)
     ]
