@@ -13,10 +13,9 @@ def as_unicode(callable):
 
     return roll
 
+
 @as_unicode
 def format_field_name(field):
     if field in (u'global', u'type'):
         field = field + '_'
     return field.replace('-', '_')
-
-

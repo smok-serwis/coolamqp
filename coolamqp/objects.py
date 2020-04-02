@@ -2,15 +2,15 @@
 """
 Core objects used in CoolAMQP
 """
-import typing as tp
 import logging
+import typing as tp
 import uuid
 
 import six
 
+from coolamqp.framing.base import AMQPFrame
 from coolamqp.framing.definitions import \
     BasicContentPropertyList as MessageProperties
-from coolamqp.framing.base import AMQPFrame
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,9 @@ def tobytes(q):
 
 
 class FrameLogger(Protocol):
-    def on_frame(self, timestamp,   # type: float
-                 frame,             # type: AMQPFrame
-                 direction          # type: str
+    def on_frame(self, timestamp,  # type: float
+                 frame,  # type: AMQPFrame
+                 direction  # type: str
                  ):
         """
         Log a frame
@@ -84,7 +84,7 @@ class Message(object):
 
     Properties = MessageProperties  # an alias for easier use
 
-    def __init__(self, body,    # type: bytes
+    def __init__(self, body,  # type: bytes
                  properties=None):
         """
         Create a Message object.
@@ -130,13 +130,13 @@ class ReceivedMessage(Message):
     """
     __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', 'ack', 'nack')
 
-    def __init__(self, body,         # type: tp.Union[str, bytes, bytearray, tp.List[memoryview]]
-                 exchange_name,      # type: memoryview
-                 routing_key,        # type: memoryview
+    def __init__(self, body,  # type: tp.Union[str, bytes, bytearray, tp.List[memoryview]]
+                 exchange_name,  # type: memoryview
+                 routing_key,  # type: memoryview
                  properties=None,
                  delivery_tag=None,  # type: int
-                 ack=None,           # type: tp.Callable[[], None]
-                 nack=None           # type: tp.Callable[[], None]
+                 ack=None,  # type: tp.Callable[[], None]
+                 nack=None  # type: tp.Callable[[], None]
                  ):
         """
         :param body: message body. A stream of octets.
@@ -174,9 +174,9 @@ class Exchange(object):
 
     direct = None  # the direct exchange
 
-    def __init__(self, name=u'',    # type: tp.Union[str, bytes]
-                 type=b'direct',    # type: tp.Union[str, bytes]
-                 durable=True,      # type: bool
+    def __init__(self, name=u'',  # type: tp.Union[str, bytes]
+                 type=b'direct',  # type: tp.Union[str, bytes]
+                 durable=True,  # type: bool
                  auto_delete=False  # type: bool
                  ):
         """
@@ -213,10 +213,10 @@ class Queue(object):
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag')
 
-    def __init__(self, name=b'',    # type: tp.Union[str, bytes]
-                 durable=False,     # type: bool
-                 exchange=None,     # type: tp.Optional[Exchange]
-                 exclusive=False,   # type: bool
+    def __init__(self, name=b'',  # type: tp.Union[str, bytes]
+                 durable=False,  # type: bool
+                 exchange=None,  # type: tp.Optional[Exchange]
+                 exclusive=False,  # type: bool
                  auto_delete=False  # type: bool
                  ):
         """

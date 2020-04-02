@@ -2,6 +2,7 @@
 from __future__ import division, absolute_import, print_function
 
 import math
+
 import six
 
 from coolamqp.framing.base import BASIC_TYPES

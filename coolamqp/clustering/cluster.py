@@ -6,12 +6,12 @@ from __future__ import print_function, absolute_import, division
 
 import logging
 import time
+import typing as tp
 import warnings
+from concurrent.futures import Future
 
 import monotonic
 import six
-import typing as tp
-from concurrent.futures import Future
 
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
@@ -52,12 +52,12 @@ class Cluster(object):
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes,   # type: tp.Union[NodeDefinition, tp.List[NodeDefinition]]
+    def __init__(self, nodes,  # type: tp.Union[NodeDefinition, tp.List[NodeDefinition]]
                  on_fail=None,  # type: tp.Optional[tp.Callable[[], None]]
                  extra_properties=None,  # type: tp.Optional[tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]]
-                 log_frames=None,   # type: tp.Optional[FrameLogger]
+                 log_frames=None,  # type: tp.Optional[FrameLogger]
                  name=None,  # type: tp.Optional[str]
-                 on_blocked=None   # type: tp.Callable[[bool], None]
+                 on_blocked=None  # type: tp.Callable[[bool], None]
                  ):
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
@@ -82,8 +82,8 @@ class Cluster(object):
             self.on_fail = None
 
     def declare(self, obj,  # type: tp.Union[Queue, Exchange]
-                persistent=False    # type: bool
-    ):   # type: (...) -> concurrent.futures.Future
+                persistent=False  # type: bool
+                ):  # type: (...) -> concurrent.futures.Future
         """
         Declare a Queue/Exchange
 
@@ -144,9 +144,9 @@ class Cluster(object):
 
     def publish(self, message,  # type: Message
                 exchange=None,  # type: tp.Union[Exchange, str, bytes]
-                routing_key=u'',    # type: tp.Union[str, bytes]
-                tx=None,            # type: tp.Optional[bool]
-                confirm=None        # type: tp.Optional[bool]
+                routing_key=u'',  # type: tp.Union[str, bytes]
+                tx=None,  # type: tp.Optional[bool]
+                confirm=None  # type: tp.Optional[bool]
                 ):  # type: (...) -> tp.Optional[Future]
         """
         Publish a message.

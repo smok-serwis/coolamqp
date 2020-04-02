@@ -50,16 +50,16 @@ class ListenerThread(threading.Thread):
         except ImportError:
             pass
         else:
-            prctl.set_name(self.name+' - AMQP listener thread')
+            prctl.set_name(self.name + ' - AMQP listener thread')
 
         while not self.terminating:
             self.listener.wait(timeout=1)
 
         self.listener.shutdown()
 
-    def register(self, sock,    # type: socket.socket
-                 on_read=lambda data: None,     # type: tp.Callable[[bytes], None]
-                 on_fail=lambda: None):         # type: tp.Callable[[], None]
+    def register(self, sock,  # type: socket.socket
+                 on_read=lambda data: None,  # type: tp.Callable[[bytes], None]
+                 on_fail=lambda: None):  # type: tp.Callable[[], None]
         """
         Add a socket to be listened for by the loop.
 

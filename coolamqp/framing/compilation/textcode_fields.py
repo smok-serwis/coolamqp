@@ -69,7 +69,7 @@ def get_counter(fields, prefix=u'', indent_level=2):
         u' + '.join([str(accumulator)] + parts)) + u'\n'
 
 
- # type: (...) -> tp.Tuple[str, dict]
+# type: (...) -> tp.Tuple[str, dict]
 def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
     """
     Emit code that collects values from buf:offset, updating offset as progressing.
@@ -112,7 +112,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
 
         del bits[:]
 
-    def emit_structures(dont_do_bits=False): # type: (bool) -> dict
+    def emit_structures(dont_do_bits=False):  # type: (bool) -> dict
         if not dont_do_bits:
             emit_bits()
         if len(to_struct) == 0:
@@ -180,7 +180,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
     return u''.join(code), structers
 
 
-def get_serializer(fields, prefix='', indent_level=2):      # type: (list, str) -> str, dict
+def get_serializer(fields, prefix='', indent_level=2):  # type: (list, str) -> str, dict
     """
     Emit code that serializes the fields into buf at offset
 

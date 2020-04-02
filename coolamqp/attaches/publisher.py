@@ -164,11 +164,11 @@ class Publisher(Channeler, Synchronized):
             self.connection.send(frames_to_send)
 
             if len(bodies) > 1:
-                while self.content_flow  and not self.blocked and len(bodies) > 0:
+                while self.content_flow and not self.blocked and len(bodies) > 0:
                     self.connection.send([AMQPBodyFrame(self.channel_id, bodies[0])])
                     del bodies[0]
 
-                if not self.content_flow  and not self.blocked and len(bodies) > 0:
+                if not self.content_flow and not self.blocked and len(bodies) > 0:
                     for body in bodies:
                         self.frames_to_send.append(AMQPBodyFrame(self.channel_id, body))
         else:

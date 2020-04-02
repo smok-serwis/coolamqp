@@ -74,7 +74,7 @@ class _ValueField(_Field):
             if self.default is _Required:
                 raise TypeError(
                     'Did not find field %s in elem tag %s, looked for names %s' % (
-                    self.field_name, elem.tag, self.xml_names))
+                        self.field_name, elem.tag, self.xml_names))
             else:
                 return self.default
 

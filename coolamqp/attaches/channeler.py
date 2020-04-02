@@ -63,7 +63,7 @@ class Channeler(Attache):
                                          but ordering it to do anything is pointless, because it will not get done
                                          until attach() with new connection is called.
     """
-    __slots__ = ('channel_id', )
+    __slots__ = ('channel_id',)
 
     def __init__(self):
         """
@@ -140,7 +140,7 @@ class Channeler(Attache):
         self.state = ST_OFFLINE
 
         if not isinstance(payload, (ChannelClose, ChannelCloseOk)) and (
-                    payload is not None):
+                payload is not None):
             # I do not know how to handle that!
             return
 

@@ -1,5 +1,6 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import
+
 """
 A Python version of the AMQP machine-readable specification.
 
@@ -209,7 +210,7 @@ class ConnectionBlocked(AMQPMethodPayload):
 
     :type reason: binary type (max length 255) (shortstr in AMQP)
     """
-    __slots__ = (u'reason', )
+    __slots__ = (u'reason',)
 
     NAME = u'connection.blocked'
 
@@ -404,7 +405,7 @@ class ConnectionOpen(AMQPMethodPayload):
             The name of the virtual host to work with.
     :type virtual_host: binary type (max length 255) (path in AMQP)
     """
-    __slots__ = (u'virtual_host', )
+    __slots__ = (u'virtual_host',)
 
     NAME = u'connection.open'
 
@@ -649,7 +650,7 @@ class ConnectionSecure(AMQPMethodPayload):
             mechanism.
     :type challenge: binary type (longstr in AMQP)
     """
-    __slots__ = (u'challenge', )
+    __slots__ = (u'challenge',)
 
     NAME = u'connection.secure'
 
@@ -827,7 +828,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
             data are defined by the SASL security mechanism.
     :type response: binary type (longstr in AMQP)
     """
-    __slots__ = (u'response', )
+    __slots__ = (u'response',)
 
     NAME = u'connection.secure-ok'
 
@@ -1080,7 +1081,7 @@ class ConnectionUnblocked(AMQPMethodPayload):
 
     @classmethod
     def from_buffer(
-        cls, buf, start_offset):  # type: (buffer, int) -> ConnectionUnblocked
+            cls, buf, start_offset):  # type: (buffer, int) -> ConnectionUnblocked
         offset = start_offset
         return cls()
 
@@ -1244,7 +1245,7 @@ class ChannelFlow(AMQPMethodPayload):
             content frames.
     :type active: bool (bit in AMQP)
     """
-    __slots__ = (u'active', )
+    __slots__ = (u'active',)
 
     NAME = u'channel.flow'
 
@@ -1306,7 +1307,7 @@ class ChannelFlowOk(AMQPMethodPayload):
             not.
     :type active: bool (bit in AMQP)
     """
-    __slots__ = (u'active', )
+    __slots__ = (u'active',)
 
     NAME = u'channel.flow-ok'
 
@@ -2589,7 +2590,7 @@ class QueueDeleteOk(AMQPMethodPayload):
     :param message_count: Reports the number of messages deleted.
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     """
-    __slots__ = (u'message_count', )
+    __slots__ = (u'message_count',)
 
     NAME = u'queue.delete-ok'
 
@@ -2719,7 +2720,7 @@ class QueuePurgeOk(AMQPMethodPayload):
     :param message_count: Reports the number of messages purged.
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     """
-    __slots__ = (u'message_count', )
+    __slots__ = (u'message_count',)
 
     NAME = u'queue.purge-ok'
 
@@ -3047,7 +3048,7 @@ class BasicContentPropertyList(AMQPContentPropertyList):
             while buf[offset + pfl - 1] & 1:
                 pfl += 2
         zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset +
-                                                               pfl]).tobytes()
+                                                                      pfl]).tobytes()
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[
                 zpf].from_buffer(buf, offset)
@@ -3363,7 +3364,7 @@ class BasicConsumeOk(AMQPMethodPayload):
             by the server.
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     """
-    __slots__ = (u'consumer_tag', )
+    __slots__ = (u'consumer_tag',)
 
     NAME = u'basic.consume-ok'
 
@@ -3421,7 +3422,7 @@ class BasicCancelOk(AMQPMethodPayload):
 
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     """
-    __slots__ = (u'consumer_tag', )
+    __slots__ = (u'consumer_tag',)
 
     NAME = u'basic.cancel-ok'
 
@@ -4361,7 +4362,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
             potentially then delivering it to an alternative subscriber.
     :type requeue: bool (bit in AMQP)
     """
-    __slots__ = (u'requeue', )
+    __slots__ = (u'requeue',)
 
     NAME = u'basic.recover-async'
 
@@ -4427,7 +4428,7 @@ class BasicRecover(AMQPMethodPayload):
             potentially then delivering it to an alternative subscriber.
     :type requeue: bool (bit in AMQP)
     """
-    __slots__ = (u'requeue', )
+    __slots__ = (u'requeue',)
 
     NAME = u'basic.recover'
 
@@ -4799,7 +4800,7 @@ class ConfirmSelect(AMQPMethodPayload):
             method it will raise a channel or connection exception.
     :type nowait: bool (bit in AMQP)
     """
-    __slots__ = (u'nowait', )
+    __slots__ = (u'nowait',)
 
     NAME = u'confirm.select'
 

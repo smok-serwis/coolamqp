@@ -3,7 +3,6 @@ from __future__ import print_function, absolute_import, division
 
 import copy
 import logging
-
 import math
 
 from compile_definitions.xml_fields import *

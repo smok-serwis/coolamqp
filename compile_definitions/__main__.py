@@ -1,11 +1,11 @@
 from __future__ import division
 
 import collections
+import math
 import struct
 import subprocess
 from xml.etree import ElementTree
 
-import math
 import six
 
 from compile_definitions.utilities import ffmt, to_docstring, pythonify_name, to_code_binary, frepr, \
@@ -140,7 +140,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
     for cls in Class.findall(xml):
 
         cls.properties = [p._replace(basic_type=domain_to_basic_type[p.type]) for
-                        p in cls.properties]
+                          p in cls.properties]
 
         line('''\nclass %s(AMQPClass):
     """
@@ -218,7 +218,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                         pass  # zero anyway
                     else:
                         byte_chunk.append(u"(('%s' in kwargs) << %s)" % (
-                        format_field_name(field.name), piece_index))
+                            format_field_name(field.name), piece_index))
                     piece_index -= 1
                 else:
                     if first_byte:
@@ -226,7 +226,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                             pass  # zero anyway
                         else:
                             byte_chunk.append(u"int('%s' in kwargs)" % (
-                            format_field_name(field.name),))
+                                format_field_name(field.name),))
                     else:
                         # this is the "do we need moar flags" section
                         byte_chunk.append(u"kwargs['%s']" % (
@@ -291,7 +291,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                         pass  # zero
                     else:
                         byte_chunk.append(u"(('%s' in fields) << %s)" % (
-                        format_field_name(field.name), piece_index))
+                            format_field_name(field.name), piece_index))
                     piece_index -= 1
                 else:
                     if first_byte:
@@ -299,7 +299,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                             pass  # zero
                         else:
                             byte_chunk.append(u"int('%s' in kwargs)" % (
-                            format_field_name(field.name),))
+                                format_field_name(field.name),))
                     else:
                         # this is the "do we need moar flags" section
                         byte_chunk.append(u"kwargs['%s']" % (
@@ -359,7 +359,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         # ============================================ Do methods for this class
         for method in cls.methods:
             full_class_name = u'%s%s' % (
-            name_class(cls.name), format_method_class_name(method.name))
+                name_class(cls.name), format_method_class_name(method.name))
 
             # annotate types
             method.fields = [
@@ -463,7 +463,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
         """
         return '%s(%S)' % (', '.join(map(repr, [%s])))''',
                  full_class_name,
-                 u", ".join(['self.'+format_field_name(field.name) for field in non_reserved_fields]))
+                 u", ".join(['self.' + format_field_name(field.name) for field in non_reserved_fields]))
 
             if len(non_reserved_fields) > 0:
 
@@ -504,7 +504,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 ''', full_class_name)
 
             line_, new_structers = get_from_buffer(method.fields, '', 2,
-                                 remark=(method.name == 'deliver'))
+                                                   remark=(method.name == 'deliver'))
             line(line_)
             structers.update(new_structers)
 

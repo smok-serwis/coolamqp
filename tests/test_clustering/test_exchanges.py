@@ -1,14 +1,13 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import, division
-import six
-import unittest
+
+import logging
 import os
-import time, logging, threading
-from coolamqp.objects import Message, MessageProperties, NodeDefinition, Queue, \
-    ReceivedMessage, Exchange
+import unittest
+
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
-from coolamqp.exceptions import AMQPError
-import time
+from coolamqp.objects import Message, NodeDefinition, Queue, \
+    Exchange
 
 # todo handle bad auth
 NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
