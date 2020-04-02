@@ -24,7 +24,7 @@ from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, \
 try:
     # these extensions will be available
     from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk, \
-        BasicNack
+        BasicNack, ChannelFlow
 except ImportError:
     pass
 
@@ -96,11 +96,23 @@ class Publisher(Channeler, Synchronized):
         self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
 
         self.critically_failed = False
+        self.content_flow = True
+        self.frames_to_send = []
 
     @Synchronized.synchronized
     def attach(self, connection):
         Channeler.attach(self, connection)
         connection.watch(FailWatch(self.on_fail))
+
+    def on_flow_control(self, payload):
+        """Called on ChannelFlow"""
+        assert isinstance(ChannelFlow, payload)
+
+        self.content_flow = payload.active
+
+        if payload.active:
+            self.connection.send(self.frames_to_send)
+            self.frames_to_send = []
 
     @Synchronized.synchronized
     def on_fail(self):
@@ -122,23 +134,35 @@ class Publisher(Channeler, Synchronized):
         bodies = []
 
         body = memoryview(message.body)
-        max_body_size = self.connection.frame_max - AMQPBodyFrame.FRAME_SIZE_WITHOUT_PAYLOAD
+        max_body_size = self.connection.frame_max - AMQPBodyFrame.FRAME_SIZE_WITHOUT_PAYLOAD - 16
         while len(body) > 0:
             bodies.append(body[:max_body_size])
             body = body[max_body_size:]
 
-        self.connection.send([
-            AMQPMethodFrame(self.channel_id,
-                            BasicPublish(exchange_name, routing_key, False,
-                                         False)),
-            AMQPHeaderFrame(self.channel_id, Basic.INDEX, 0, len(message.body),
-                            message.properties)
-        ])
+        frames_to_send = [AMQPMethodFrame(self.channel_id,
+                                          BasicPublish(exchange_name, routing_key, False, False)),
+                          AMQPHeaderFrame(self.channel_id, Basic.INDEX, 0, len(message.body),
+                                          message.properties)]
 
-        # todo optimize it - if there's only one frame it can with previous send
-        # no frames will be sent if body.length == 0
-        for body in bodies:
-            self.connection.send([AMQPBodyFrame(self.channel_id, body)])
+        if len(bodies) == 1:
+            frames_to_send.append(AMQPBodyFrame(self.channel_id, bodies[0]))
+
+        if self.content_flow:
+            self.connection.send(frames_to_send)
+
+            if len(bodies) > 1:
+                while self.content_flow and len(bodies) > 0:
+                    self.connection.send([AMQPBodyFrame(self.channel_id, bodies[0])])
+                    del bodies[0]
+
+                if not self.content_flow and len(bodies) > 0:
+                    for body in bodies:
+                        self.frames_to_send.append(AMQPBodyFrame(self.channel_id, body))
+        else:
+            self.frames_to_send.extend(frames_to_send)
+            if len(bodies) > 1:
+                for body in bodies:
+                    self.frames_to_send.append(AMQPBodyFrame(self.channel_id, body))
 
     def _mode_cnpub_process_deliveries(self):
         """
@@ -254,7 +278,7 @@ class Publisher(Channeler, Synchronized):
         if isinstance(payload, ChannelOpenOk):
             # Ok, if this has a mode different from MODE_NOACK, we need to additionally set up
             # the functionality.
-
+            self.watch_for_method(ChannelFlow, self.on_flow_control)
             if self.mode == Publisher.MODE_CNPUB:
                 self.method_and_watch(ConfirmSelect(False), ConfirmSelectOk,
                                       self.on_setup)

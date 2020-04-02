@@ -190,6 +190,15 @@ class Channeler(Attache):
         """
         self.methods([payload])
 
+    def watch_for_method(self, method, callback, on_fail=None):
+        """
+        Syntactic sugar for
+
+        >>> self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
+        """
+        assert self.channel_id is not None
+        self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
+
     def method_and_watch(self, method_payload, method_classes_to_watch,
                          callable):
         # type: (coolamqp.framing.base.AMQPMethodPayload,
@@ -197,10 +206,10 @@ class Channeler(Attache):
         """
         Syntactic sugar for
 
-            self.connection.method_and_watch(self.channel_id,
-                                             method_payload,
-                                             method_classes_to_watch,
-                                             callable)
+        >>> self.connection.method_and_watch(self.channel_id,
+        >>>                                  method_payload,
+        >>>                                  method_classes_to_watch,
+        >>>                                  callable)
         """
         assert self.channel_id is not None
         self.connection.method_and_watch(self.channel_id, method_payload,

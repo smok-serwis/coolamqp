@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 class Watch(object):
     """
     A watch is placed per-channel, to listen for a particular frame.
+
+    Multiple watches can be registered to listen for a single frame. All watches will be fired then.
     """
 
     class CancelMe(Exception):
