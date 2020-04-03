@@ -18,7 +18,7 @@ script:
   - python setup.py test
   - python -m stress_tests
 install:
-  - pip install -r requirements.txt
+  - python setup.py install
   - pip install -r stress_tests/requirements.txt
   - pip install yapf nose2 mock coverage nose2[coverage_plugin]
 after_success:

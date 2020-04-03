@@ -1,3 +1,9 @@
+# v1.0.2:
+
+* **bugfix release** due to some bad flags in setup.py it was impossible
+  to install CoolAMQP on Python 3
+
+
 # v1.0.1:
 
 * added support for channel flow control and blocking and 
