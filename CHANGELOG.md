@@ -1,3 +1,7 @@
+# v1.0.3:
+
+* _TBA_
+
 # v1.0.2:
 
 * **bugfix release** due to some bad flags in setup.py it was impossible
