@@ -1,6 +1,6 @@
 # v1.0.4:
 
-* _TBA_
+* add missing locals, which rendered CoolAMQP to be unable to process some messages
 
 # v1.0.3:
 

@@ -1,6 +1,8 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
+from coolamqp.framing.field_table import deframe_table
+
 """Generate serializers/unserializers/length getters for given property_flags"""
 import six
 import struct
@@ -152,7 +154,8 @@ def compile_particular_content_property_list_class(zpf, fields):
 
     q, structers = _compile_particular_content_property_list_class(zpf, fields)
     locals_ = {
-        'AMQPContentPropertyList': AMQPContentPropertyList
+        'AMQPContentPropertyList': AMQPContentPropertyList,
+        'deframe_table': deframe_table,
     }
     for structer in structers:
         if structer not in STRUCTERS_FOR_NOW:
