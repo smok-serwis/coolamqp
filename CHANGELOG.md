@@ -1,3 +1,7 @@
+# v1.0.4:
+
+* _TBA_
+
 # v1.0.3:
 
 * declare *connection.blocked* in *capabilities*
