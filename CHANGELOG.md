@@ -1,12 +1,11 @@
 # v1.0.3:
 
-* _TBA_
+* declare *connection.blocked* in *capabilities*
 
 # v1.0.2:
 
 * **bugfix release** due to some bad flags in setup.py it was impossible
   to install CoolAMQP on Python 3
-
 
 # v1.0.1:
 

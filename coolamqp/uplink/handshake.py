@@ -17,10 +17,12 @@ from coolamqp import __version__
 
 PUBLISHER_CONFIRMS = b'publisher_confirms'
 CONSUMER_CANCEL_NOTIFY = b'consumer_cancel_notify'
+CONNECTION_BLOCKED = b'connection.blocked'
 
 SUPPORTED_EXTENSIONS = [
     PUBLISHER_CONFIRMS,
-    CONSUMER_CANCEL_NOTIFY
+    CONSUMER_CANCEL_NOTIFY,
+    CONNECTION_BLOCKED
     # half assed support - we just .cancel the consumer, see #12
 ]
 
