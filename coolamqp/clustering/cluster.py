@@ -222,7 +222,7 @@ class Cluster(object):
 
         self.snr = SingleNodeReconnector(self.node, self.attache_group,
                                          self.listener, self.extra_properties,
-                                         log_frames, self.name, self)
+                                         log_frames, self.name)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)
