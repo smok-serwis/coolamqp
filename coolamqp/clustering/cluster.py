@@ -259,7 +259,7 @@ class Cluster(object):
         :param wait: block until this is done
         :raise RuntimeError: if called without start() being called first
         """
-
+        self.connected = False
         try:
             self.listener
         except AttributeError:
