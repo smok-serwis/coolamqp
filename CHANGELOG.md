@@ -1,3 +1,8 @@
+# v1.0.5:
+
+* `on_fail` will be called only if the Cluster has been
+  connected at least once
+
 # v1.0.4:
 
 * add missing locals, which rendered CoolAMQP to be unable to process some messages

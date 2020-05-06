@@ -80,7 +80,7 @@ class Publisher(Channeler, Synchronized):
     class UnusablePublisher(Exception):
         """This publisher will never work (eg. MODE_CNPUB on a broker not supporting publisher confirms)"""
 
-    def __init__(self, mode):
+    def __init__(self, mode, cluster_to_set_connected_upon_first_connect=None):
         Channeler.__init__(self)
         Synchronized.__init__(self)
 
@@ -94,7 +94,7 @@ class Publisher(Channeler, Synchronized):
         #           Future to confirm or None, flags as tuple|empty tuple
 
         self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
-
+        self.cluster_to_set_connected_upon_first_connect = cluster_to_set_connected_upon_first_connect
         self.critically_failed = False
         self.content_flow = True
         self.blocked = False
@@ -312,6 +312,16 @@ class Publisher(Channeler, Synchronized):
             self.tagger = AtomicTagger()
             self.state = ST_ONLINE
             self.on_operational(True)
+
+            # inform the cluster that we've been connected
+            try:
+                self.cluster_to_set_connected_upon_first_connect
+            except AttributeError:
+                pass
+            else:
+                if self.cluster_to_set_connected_upon_first_connect is not None:
+                    self.cluster_to_set_connected_upon_first_connect.connected = True
+                    del self.cluster_to_set_connected_upon_first_connect
 
             # now we need to listen for BasicAck and BasicNack
 
