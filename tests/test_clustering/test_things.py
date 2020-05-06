@@ -17,13 +17,14 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestConnecting(unittest.TestCase):
     def test_on_fail(self):
+        """Assert that on_fail doesn't fire if the cluster fails to connect"""
         q = {'failed': False}
         c = Cluster(
             NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'xguest', 'xguest', heartbeat=20),
             on_fail=lambda: q.update(failed=True))
         self.assertRaises(ConnectionDead, c.start)
         c.shutdown()
-        self.assertTrue(q['failed'])
+        self.assertFalse(q['failed'])
 
     def test_on_clean(self):
         q = {'failed': False}
