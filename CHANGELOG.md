@@ -1,3 +1,7 @@
+# v1.0.6:
+
+* _TBA_
+
 # v1.0.5:
 
 * `on_fail` will be called only if the Cluster has been
