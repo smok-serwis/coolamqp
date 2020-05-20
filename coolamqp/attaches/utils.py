@@ -9,7 +9,7 @@ from concurrent.futures import Future
 logger = logging.getLogger(__name__)
 
 
-def close_future(fut: Future, span):  # type: (Future, opentracing.Span) -> Future
+def close_future(fut, span):  # type: (Future, opentracing.Span) -> Future
     """
     To be called as a Future callback, means to close the span
     """
@@ -18,7 +18,7 @@ def close_future(fut: Future, span):  # type: (Future, opentracing.Span) -> Futu
     except ImportError:
         return fut
 
-    def inner_close(fut):
+    def inner_close(fut):   # type: (Future) -> None
         exc = fut.exception()
         if exc is not None:
             from opentracing import Span
