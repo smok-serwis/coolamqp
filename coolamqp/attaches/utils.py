@@ -18,6 +18,9 @@ def close_future(fut, span):  # type: (Future, opentracing.Span) -> Future
     except ImportError:
         return fut
 
+    if span is None:
+        return fut
+
     def inner_close(fut):   # type: (Future) -> None
         exc = fut.exception()
         if exc is not None:
