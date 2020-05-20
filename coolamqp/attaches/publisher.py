@@ -212,8 +212,8 @@ class Publisher(Channeler, Synchronized):
 
             if not fut.set_running_or_notify_cancel():
                 if span_enqueued is not None:
-                    import opentracing
-                    span_enqueued.log_kv({opentracing.logs.EVENT: 'Cancelled'})
+                    from opentracing import logs
+                    span_enqueued.log_kv({logs.EVENT: 'Cancelled'})
                     span_enqueued.finish()
                     parent_span.finish()
                 continue  # cancelled

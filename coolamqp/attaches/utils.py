@@ -135,8 +135,7 @@ class AtomicTagger(object):
                 i = len(self.tags) - 1  # start index
 
                 while i > 0:  # this will terminate at i=0
-                    if self.tags[i][
-                        0] > tag:  # this means we should insert it here...
+                    if self.tags[i][0] > tag:  # this means we should insert it here...
                         break
                     i -= 1  # previousl index
 

@@ -45,14 +45,23 @@ class Operation(object):
 
     def span_exception(self, exception):
         if self.parent_span is not None:
-            if self.processing_span is not None:
+            if self.enqueued_span is None:
                 from opentracing import tags, logs
-                self.processing_span.set_tag(tags.ERROR, True)
-                self.processing_span.log_kv({logs.EVENT: tags.ERROR,
+                self.enqueued_span.set_tag(tags.ERROR, True)
+                self.enqueued_span.log_kv({logs.EVENT: tags.ERROR,
                                              logs.ERROR_KIND: exception,
                                              logs.ERROR_OBJECT: exception})
-                self.processing_span.finish()
-                self.processing_span = None
+                self.enqueued_span.finish()
+                self.enqueued_span = None
+
+                if self.processing_span is not None:
+                    from opentracing import tags, logs
+                    self.processing_span.set_tag(tags.ERROR, True)
+                    self.processing_span.log_kv({logs.EVENT: tags.ERROR,
+                                                 logs.ERROR_KIND: exception,
+                                                 logs.ERROR_OBJECT: exception})
+                    self.processing_span.finish()
+                    self.processing_span = None
             if self.enqueued_span is not None:
                 self.enqueued_span.finish()
                 self.enqueued_span = None
@@ -73,10 +82,12 @@ class Operation(object):
             self.processing_span = self.declarer.cluster.tracer.start_span('Declaring',
                                                                            child_of=self.parent_span,
                                                                            references=follows_from(self.enqueued_span))
+            self.enqueued_span = None
 
     def span_finished(self):
-        if self.parent_span is None:
+        if self.processing_span is None:
             self.processing_span.finish()
+            self.processing_span = None
 
     def span_begin(self):
         if self.enqueued_span is not None:
