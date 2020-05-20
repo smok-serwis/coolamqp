@@ -12,6 +12,7 @@ CoolAMQP
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 A **magical** AMQP 0.9.1  client, that uses **heavy sorcery** to achieve speeds that other pure-Python AMQP clients cannot even hope to match.
+Additionally, it's traceable using **opentracing**.
 
 Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
 
