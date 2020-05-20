@@ -85,7 +85,7 @@ class Operation(object):
             self.enqueued_span = None
 
     def span_finished(self):
-        if self.processing_span is None:
+        if self.processing_span is not None:
             self.processing_span.finish()
             self.processing_span = None
 
