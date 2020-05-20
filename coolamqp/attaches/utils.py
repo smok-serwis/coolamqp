@@ -4,8 +4,23 @@ from __future__ import print_function, absolute_import, division
 import functools
 import logging
 import threading
+from concurrent.futures import Future
 
 logger = logging.getLogger(__name__)
+
+
+def close_future(fut: Future, span):  # type: (Future, opentracing.Span) -> Future
+    """
+    To be called as a Future callback, means to close the span
+    """
+    def inner_close(fut):
+        exc = fut.exception()
+        if exc is not None:
+            from opentracing import Span
+            Span._on_error(span, type(exc), exc, '<unavailable>')
+        span.finish()
+    fut.add_done_callback(inner_close)
+    return fut
 
 
 class ConfirmableRejectable(object):
@@ -90,7 +105,7 @@ class AtomicTagger(object):
         # they remain to be acked/nacked
         # invariant: FOR EACH i, j: (i>j) => (tags[i][0] > tags[j][0])
 
-    def deposit(self, tag, obj):
+    def deposit(self, tag, obj, span=None):
         """
         Put a tag into the tag list.
 
@@ -102,7 +117,7 @@ class AtomicTagger(object):
                     until you call .ack() or .nack().
         """
         assert tag >= 0
-        opt = (tag, obj)
+        opt = (tag, obj, span)
 
         with self.lock:
             if len(self.tags) == 0:
@@ -163,11 +178,20 @@ class AtomicTagger(object):
             items = self.tags[start:stop]
             del self.tags[start:stop]
 
-        for tag, cr in items:
+        for tag, cr, span in items:
+            if span is not None:
+                from opentracing import logs
+
             if ack:
                 cr.confirm()
+                if span is not None:
+                    span.log_kv({logs.EVENT: 'Ack'})
+                    span.finish()
             else:
                 cr.reject()
+                if span is not None:
+                    span.log_kv({logs.EVENT: 'Nack'})
+                    span.finish()
 
     def ack(self, tag, multiple):
         """

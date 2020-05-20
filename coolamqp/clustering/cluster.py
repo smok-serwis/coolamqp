@@ -14,6 +14,7 @@ import monotonic
 import six
 
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
+from coolamqp.attaches.utils import close_future
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
     NothingMuch, Event
 from coolamqp.clustering.single import SingleNodeReconnector
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 THE_POPE_OF_NOPE = NothingMuch()
 
 
+# If any spans are spawn here, it's Cluster's job to finish them, except for publish()
 class Cluster(object):
     """
     Frontend for your AMQP needs.
@@ -46,6 +48,7 @@ class Cluster(object):
     :param name: name to appear in log items and prctl() for the listener thread
     :param on_blocked: callable to call when ConnectionBlocked/ConnectionUnblocked is received. It will be
         called with a value of True if connection becomes blocked, and False upon an unblock
+    :param tracer: tracer, if opentracing is installed
     """
 
     # Events you can be informed about
@@ -57,7 +60,8 @@ class Cluster(object):
                  extra_properties=None,  # type: tp.Optional[tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]]
                  log_frames=None,  # type: tp.Optional[FrameLogger]
                  name=None,  # type: tp.Optional[str]
-                 on_blocked=None  # type: tp.Callable[[bool], None]
+                 on_blocked=None,  # type: tp.Callable[[bool], None],
+                 tracer=None        # type: opentracing.Traccer
                  ):
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
@@ -66,6 +70,13 @@ class Cluster(object):
         if len(nodes) > 1:
             raise NotImplementedError(u'Multiple nodes not supported yet')
 
+        if tracer is not None:
+            try:
+                import opentracing
+            except ImportError:
+                raise RuntimeError('tracer given, but opentracing is not installed!')
+
+        self.tracer = tracer
         self.name = name or 'CoolAMQP'
         self.node, = nodes
         self.extra_properties = extra_properties
@@ -83,33 +94,57 @@ class Cluster(object):
             self.on_fail = None
 
     def declare(self, obj,  # type: tp.Union[Queue, Exchange]
-                persistent=False  # type: bool
+                persistent=False,  # type: bool
+                span=None       # type: tp.Optional[opentracing.Span]
                 ):  # type: (...) -> concurrent.futures.Future
         """
         Declare a Queue/Exchange
 
         :param obj: Queue/Exchange object
         :param persistent: should it be redefined upon reconnect?
+        :param span: optional parent span, if opentracing is installed
         :return: Future
         """
-        return self.decl.declare(obj, persistent=persistent)
+        if span is not None:
+            child_span = self._make_span('declare', span)
+        else:
+            child_span = None
+        fut = self.decl.declare(obj, persistent=persistent, span=child_span)
+        return close_future(fut, child_span)
 
-    def drain(self, timeout):  # type: (float) -> Event
+    def drain(self, timeout, span=None):  # type: (float) -> Event
         """
         Return an Event.
 
         :param timeout: time to wait for an event. 0 means return immediately. None means block forever
+        :para span: optional parent span, if opentracing is installed
         :return: an Event instance. NothingMuch is returned when there's nothing within a given timoeout
         """
-        try:
-            if timeout == 0:
-                return self.events.get_nowait()
-            else:
-                return self.events.get(True, timeout)
-        except six.moves.queue.Empty:
-            return THE_POPE_OF_NOPE
+        def fetch():
+            try:
+                if timeout == 0:
+                    return self.events.get_nowait()
+                else:
+                    return self.events.get(True, timeout)
+            except six.moves.queue.Empty:
+                return THE_POPE_OF_NOPE
 
-    def consume(self, queue, on_message=None, *args, **kwargs):
+        if span is not None:
+            from opentracing import tags
+            parent_span = self.tracer.start_active_span('AMQP call',
+                                                        child_of=span,
+                                          tags={
+                                          tags.SPAN_KIND: tags.SPAN_KIND_RPC_CLIENT,
+                                          tags.DATABASE_TYPE: 'amqp',
+                                          tags.DATABASE_STATEMENT: 'drain'
+            })
+
+            with parent_span:
+                return fetch()
+        else:
+            return fetch()
+
+    def consume(self, queue, on_message=None, span=None, *args, **kwargs):
         # type: (Queue, tp.Callable[[MessageReceived], None] -> tp.Tuple[Consumer, Future]
         """
         Start consuming from a queue.
@@ -123,16 +158,21 @@ class Cluster(object):
             Note that name of anonymous queue might change at any time!
         :param on_message: callable that will process incoming messages
                            if you leave it at None, messages will be .put into self.events
+        :param span: optional span, if opentracing is installed
         :return: a tuple (Consumer instance, and a Future), that tells, when consumer is ready
         """
+        if span is not None:
+            child_span = self._make_span('consume', span)
+        else:
+            child_span = None
         fut = Future()
         fut.set_running_or_notify_cancel()  # it's running right now
         on_message = on_message or (
             lambda rmsg: self.events.put_nowait(MessageReceived(rmsg)))
-        con = Consumer(queue, on_message, future_to_notify=fut, *args,
+        con = Consumer(queue, on_message, future_to_notify=fut, span=span, *args,
                        **kwargs)
         self.attache_group.add(con)
-        return con, fut
+        return con, close_future(fut, child_span)
 
     def delete_queue(self, queue):  # type: (coolamqp.objects.Queue) -> Future
         """
@@ -143,11 +183,26 @@ class Cluster(object):
         """
         return self.decl.delete_queue(queue)
 
+    def _make_span(self, call, span):
+        try:
+            from opentracing import tags
+        except ImportError:
+            pass
+        else:
+            return self.tracer.start_span('AMQP call',
+                                          child_of=span,
+                                          tags={
+                                              tags.SPAN_KIND: tags.SPAN_KIND_RPC_CLIENT,
+                                              tags.DATABASE_TYPE: 'amqp',
+                                              tags.DATABASE_STATEMENT: call
+                                          })
+
     def publish(self, message,  # type: Message
                 exchange=None,  # type: tp.Union[Exchange, str, bytes]
                 routing_key=u'',  # type: tp.Union[str, bytes]
                 tx=None,  # type: tp.Optional[bool]
-                confirm=None  # type: tp.Optional[bool]
+                confirm=None,  # type: tp.Optional[bool]
+                span=None       # type: tp.Optional[opentracing.Span]
                 ):  # type: (...) -> tp.Optional[Future]
         """
         Publish a message.
@@ -161,8 +216,12 @@ class Cluster(object):
                         Note that if tx if False, and message cannot be delivered to broker at once,
                         it will be discarded
         :param tx: deprecated, alias for confirm
+        :param span: optionally, current span, if opentracing is installed
         :return: Future to be finished on completion or None, is confirm/tx was not chosen
         """
+        if self.tracer is not None:
+            span = self._make_span('publish', span)
+
         if isinstance(exchange, Exchange):
             exchange = exchange.name.encode('utf8')
         elif exchange is None:
@@ -187,7 +246,8 @@ class Cluster(object):
         try:
             return (self.pub_tr if tx else self.pub_na).publish(message,
                                                                 exchange,
-                                                                routing_key)
+                                                                routing_key,
+                                                                span)
         except Publisher.UnusablePublisher:
             raise NotImplementedError(
                 u'Sorry, this functionality is not yet implemented!')
@@ -231,9 +291,9 @@ class Cluster(object):
             self.snr.on_blocked.add(self.on_blocked)
 
         # Spawn a transactional publisher and a noack publisher
-        self.pub_tr = Publisher(Publisher.MODE_CNPUB, cluster_to_set_connected_upon_first_connect=self)
-        self.pub_na = Publisher(Publisher.MODE_NOACK)
-        self.decl = Declarer()
+        self.pub_tr = Publisher(Publisher.MODE_CNPUB, self)
+        self.pub_na = Publisher(Publisher.MODE_NOACK, self)
+        self.decl = Declarer(self)
 
         self.attache_group.add(self.pub_tr)
         self.attache_group.add(self.pub_na)

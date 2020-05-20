@@ -41,7 +41,8 @@ logger = logging.getLogger(__name__)
 # for holding messages when MODE_CNPUB and link is down
 CnpubMessageSendOrder = collections.namedtuple('CnpubMessageSendOrder',
                                                ('message', 'exchange_name',
-                                                'routing_key', 'future'))
+                                                'routing_key', 'future',
+                                                'parent_span', 'span_enqueued'))
 
 
 # todo what if publisher in MODE_CNPUB fails mid message? they dont seem to be recovered
@@ -80,7 +81,7 @@ class Publisher(Channeler, Synchronized):
     class UnusablePublisher(Exception):
         """This publisher will never work (eg. MODE_CNPUB on a broker not supporting publisher confirms)"""
 
-    def __init__(self, mode, cluster_to_set_connected_upon_first_connect=None):
+    def __init__(self, mode, cluster=None):
         Channeler.__init__(self)
         Synchronized.__init__(self)
 
@@ -94,7 +95,8 @@ class Publisher(Channeler, Synchronized):
         #           Future to confirm or None, flags as tuple|empty tuple
 
         self.tagger = None  # None, or AtomicTagger instance id MODE_CNPUB
-        self.cluster_to_set_connected_upon_first_connect = cluster_to_set_connected_upon_first_connect
+        self.set_connected = False
+        self.cluster = cluster
         self.critically_failed = False
         self.content_flow = True
         self.blocked = False
@@ -131,7 +133,8 @@ class Publisher(Channeler, Synchronized):
     def on_fail(self):
         self.state = ST_OFFLINE
 
-    def _pub(self, message, exchange_name, routing_key):
+    def _pub(self, message, exchange_name, routing_key, parent_span=None, span_enqueued=None,
+             dont_close_span=False):
         """
         Just send the message. Sends BasicDeliver + header + body.
 
@@ -143,6 +146,13 @@ class Publisher(Channeler, Synchronized):
         :type exchange_name: bytes
         :param routing_key: bytes
         """
+        span = None
+        if parent_span is not None:
+            import opentracing
+            span_enqueued.finish()
+            span = self.cluster.tracer.start_span('Sending',
+                                                  child_of=parent_span,
+                                                  references=opentracing.follows_from(span_enqueued))
         # Break down large bodies
         bodies = []
 
@@ -177,6 +187,12 @@ class Publisher(Channeler, Synchronized):
                 for body in bodies:
                     self.frames_to_send.append(AMQPBodyFrame(self.channel_id, body))
 
+        if span is not None:
+            span.finish()
+
+        if parent_span is not None and not dont_close_span:
+            parent_span.finish()
+
     def _mode_cnpub_process_deliveries(self):
         """
         Dispatch all frames that are waiting to be sent
@@ -189,18 +205,24 @@ class Publisher(Channeler, Synchronized):
 
         while len(self.messages) > 0:
             try:
-                msg, xchg, rk, fut = self.messages.popleft()
+                msg, xchg, rk, fut, parent_span, span_enqueued = self.messages.popleft()
             except IndexError:
                 # todo see docs/casefile-0001
                 break
 
             if not fut.set_running_or_notify_cancel():
+                if span_enqueued is not None:
+                    import opentracing
+                    span_enqueued.log_kv({opentracing.logs.EVENT: 'Cancelled'})
+                    span_enqueued.finish()
+                    parent_span.finish()
                 continue  # cancelled
 
             self.tagger.deposit(self.tagger.get_key(),
-                                FutureConfirmableRejectable(fut))
+                                FutureConfirmableRejectable(fut),
+                                parent_span)
             assert isinstance(xchg, (six.binary_type, six.text_type))
-            self._pub(msg, xchg, rk)
+            self._pub(msg, xchg, rk, parent_span, span_enqueued, dont_close_span=True)
 
     def _on_cnpub_delivery(self, payload):
         """
@@ -214,7 +236,7 @@ class Publisher(Channeler, Synchronized):
             self.tagger.nack(payload.delivery_tag, payload.multiple)
 
     @Synchronized.synchronized
-    def publish(self, message, exchange=b'', routing_key=b''):
+    def publish(self, message, exchange=b'', routing_key=b'', span=None):
         """
         Schedule to have a message published.
 
@@ -232,9 +254,14 @@ class Publisher(Channeler, Synchronized):
         :param exchange: exchange name to use. Default direct exchange by default. Can also be an Exchange object.
         :type exchange: bytes, str or Exchange instance
         :param routing_key: routing key to use
+        :param span: optional span, if opentracing is installed
         :return: a Future instance, or None
         :raise Publisher.UnusablePublisher: this publisher will never work (eg. MODE_CNPUB on Non-RabbitMQ)
         """
+        if span is not None:
+            span_enqueued = self.cluster.tracer.start_span('Enqueued', child_of=span)
+        else:
+            span_enqueued = None
 
         if isinstance(exchange, Exchange):
             exchange = exchange.name.encode('utf8')
@@ -250,13 +277,13 @@ class Publisher(Channeler, Synchronized):
                 logger.debug(
                     u'Publish request, but not connected - dropping the message')
             else:
-                self._pub(message, exchange, routing_key)
+                self._pub(message, exchange, routing_key, span, span_enqueued)
 
         elif self.mode == Publisher.MODE_CNPUB:
             fut = Future()
 
             # todo can optimize this not to create an object if ST_ONLINE already
-            cnpo = CnpubMessageSendOrder(message, exchange, routing_key, fut)
+            cnpo = CnpubMessageSendOrder(message, exchange, routing_key, fut, span, span_enqueued)
             self.messages.append(cnpo)
 
             if self.state == ST_ONLINE:
@@ -314,14 +341,9 @@ class Publisher(Channeler, Synchronized):
             self.on_operational(True)
 
             # inform the cluster that we've been connected
-            try:
-                self.cluster_to_set_connected_upon_first_connect
-            except AttributeError:
-                pass
-            else:
-                if self.cluster_to_set_connected_upon_first_connect is not None:
-                    self.cluster_to_set_connected_upon_first_connect.connected = True
-                    del self.cluster_to_set_connected_upon_first_connect
+            if not self.set_connected:
+                self.cluster.connected = True
+                self.set_connected = True
 
             # now we need to listen for BasicAck and BasicNack
 

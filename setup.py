@@ -13,6 +13,7 @@ setup(keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availabilit
       test_suite='nose2.collector.collector',
       extras_require={
           ':python_version == "2.7"': ['futures', 'typing'],
-          'prctl': ['prctl']
+          'prctl': ['prctl'],
+          'opentracing': ['opentracing'],
       }
       )

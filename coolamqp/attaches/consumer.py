@@ -80,6 +80,7 @@ class Consumer(Channeler):
     :type queue: coolamqp.objects.Queue
     :param on_message: callable that will process incoming messages
     :type on_message: callable(ReceivedMessage instance)
+    :param span: optional span, if opentracing is installed
     :param no_ack: Will this consumer require acknowledges from messages?
     :type no_ack: bool
     :param qos: a tuple of (prefetch size, prefetch window) for this
@@ -113,9 +114,10 @@ class Consumer(Channeler):
                  'future_to_notify', 'future_to_notify_on_dead',
                  'fail_on_first_time_resource_locked', 'cancel_on_failure',
                  'body_receive_mode', 'consumer_tag', 'on_cancel', 'on_broker_cancel',
-                 'hb_watch', 'deliver_watch')
+                 'hb_watch', 'deliver_watch', 'span')
 
-    def __init__(self, queue, on_message, no_ack=True, qos=None,
+    def __init__(self, queue, on_message, span=None,
+                 no_ack=True, qos=None,
                  cancel_on_failure=False,
                  future_to_notify=None,
                  fail_on_first_time_resource_locked=False,
@@ -128,6 +130,7 @@ class Consumer(Channeler):
         """
         super(Consumer, self).__init__()
 
+        self.span = span
         self.queue = queue
         self.no_ack = no_ack
 
@@ -298,7 +301,16 @@ class Consumer(Channeler):
                     should_retry = True
 
             if self.future_to_notify:
-                self.future_to_notify.set_exception(AMQPError(payload))
+                err = AMQPError(payload)
+                if self.span is not None:
+                    from opentracing import logs, tags
+                    self.span.set_tag(tags.ERROR, True)
+                    self.span.log_kv({logs.EVENT: tags.ERROR,
+                                      logs.ERROR_OBJECT: err,
+                                      logs.ERROR_KIND: type(err)})
+                    self.span = None
+
+                self.future_to_notify.set_exception(err)
                 self.future_to_notify = None
                 logger.debug('Notifying connection closed with %s', payload)
 
@@ -316,6 +328,10 @@ class Consumer(Channeler):
             self.future_to_notify_on_dead.set_result(None)
             self.future_to_notify_on_dead = None
         if should_retry:
+            if self.span is not None:
+                from opentracing import logs
+                self.span.log_kv({logs.EVENT: 'Retrying'})
+
             if old_con.state == ST_ONLINE:
                 logger.info('Retrying with %s', self.queue.name)
                 self.attach(old_con)
@@ -424,8 +440,11 @@ class Consumer(Channeler):
             )
         elif isinstance(payload, BasicConsumeOk):
             # AWWW RIGHT~!!! We're good.
-            self.on_operational(True)
             consumer_tag = self.consumer_tag
+            if self.span is not None:
+                self.span.set_tag('consumer.tag', consumer_tag)
+
+            self.on_operational(True)
 
             # Register watches for receiving shit
             # this is multi-shot by default
