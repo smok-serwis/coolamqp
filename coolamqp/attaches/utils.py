@@ -13,6 +13,11 @@ def close_future(fut: Future, span):  # type: (Future, opentracing.Span) -> Futu
     """
     To be called as a Future callback, means to close the span
     """
+    try:
+        import opentracing
+    except ImportError:
+        return fut
+
     def inner_close(fut):
         exc = fut.exception()
         if exc is not None:
