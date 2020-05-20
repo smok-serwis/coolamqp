@@ -1,6 +1,6 @@
-# v1.0.6:
+# v1.1
 
-* _TBA_
+* added optional tracing via opentracing
 
 # v1.0.5:
 
