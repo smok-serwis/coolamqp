@@ -16,7 +16,10 @@ def get_listener_class():
     except AttributeError:
         return SelectListener   # we're running on Windows
 
-    import gevent.socket
+    try:
+        import gevent.socket
+    except ImportError:
+        return EpollListener
     import socket
 
     if socket.socket is gevent.socket.socket:
