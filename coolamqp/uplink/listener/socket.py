@@ -149,3 +149,10 @@ class BaseSocket(object):
     def close(self):
         """Close this socket"""
         self.sock.close()
+
+    def __hash__(self):
+        return self.sock.fileno()
+
+    def __eq__(self, other):     # type: (BaseSocket) -> bool
+        return self.sock.fileno() == other.fileno()
+

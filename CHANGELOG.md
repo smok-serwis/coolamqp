@@ -1,6 +1,7 @@
 # v1.1.1
 
-* _TBA_
+* added `SelectListener`, which means CoolAMQP can 
+  run now on Windows and in gevent environments
 
 # v1.1
 

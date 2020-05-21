@@ -6,6 +6,23 @@ import typing as tp
 
 from coolamqp.objects import Callable
 from coolamqp.uplink.listener.epoll_listener import EpollListener
+from coolamqp.uplink.listener.select_listener import SelectListener
+
+
+def get_listener_class():
+    try:
+        import select
+        select.epoll
+    except AttributeError:
+        return SelectListener   # we're running on Windows
+
+    import gevent.socket
+    import socket
+
+    if socket.socket is gevent.socket.socket:
+        return SelectListener     # gevent is active
+
+    return EpollListener
 
 
 class ListenerThread(threading.Thread):
@@ -39,7 +56,7 @@ class ListenerThread(threading.Thread):
 
     def init(self):
         """Called before start. It is not safe to fork after this"""
-        self.listener = EpollListener()
+        self.listener = get_listener_class()()
 
     def activate(self, sock):
         self.listener.activate(sock)
@@ -59,7 +76,8 @@ class ListenerThread(threading.Thread):
 
     def register(self, sock,  # type: socket.socket
                  on_read=lambda data: None,  # type: tp.Callable[[bytes], None]
-                 on_fail=lambda: None):  # type: tp.Callable[[], None]
+                 on_fail=lambda: None      # type: tp.Callable[[], None]
+                 ):
         """
         Add a socket to be listened for by the loop.
 
