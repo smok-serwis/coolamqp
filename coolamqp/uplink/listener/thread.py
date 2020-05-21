@@ -44,8 +44,7 @@ class ListenerThread(threading.Thread):
     """
 
     def __init__(self, name=None):  # type: (tp.Optional[str])
-        threading.Thread.__init__(self, name=name or 'coolamqp/ListenerThread')
-        self.daemon = True
+        threading.Thread.__init__(self, name=name or 'coolamqp/ListenerThread', daemon=True)
         self.name = name or 'CoolAMQP'
         self.terminating = False
         self._call_next_io_event = Callable(oneshots=True)
