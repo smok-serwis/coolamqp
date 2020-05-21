@@ -135,7 +135,6 @@ class SelectListener(object):
             sock.close()
 
         self.fd_to_sock = {}
-        self.epoll.close()
 
     def oneshot(self, sock, delta, callback):
         """
