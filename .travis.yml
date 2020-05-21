@@ -16,8 +16,8 @@ before_script:
   - pip install nose2 coverage
 script:
   - coverage run -m compile_definitions
-  - coverage run --append -m nose2
-  - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m nose2
+  - coverage run --append -m nose2 -vv
+  - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m nose2 -vv
   - coverage run --append -m stress_tests
 install:
   - python setup.py install
