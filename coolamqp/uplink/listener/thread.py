@@ -9,6 +9,7 @@ from coolamqp.objects import Callable
 from coolamqp.uplink.listener.epoll_listener import EpollListener
 from coolamqp.uplink.listener.select_listener import SelectListener
 from coolamqp.uplink.listener.base_listener import BaseListener
+from coolamqp.utils import prctl_set_name
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +75,7 @@ class ListenerThread(threading.Thread):
         self.listener.activate(sock)
 
     def run(self):
-        try:
-            import prctl
-        except ImportError:
-            pass
-        else:
-            prctl.set_name(self.name + ' - AMQP listener thread')
+        prctl_set_name(self.name + '- listener thread')
 
         while not self.terminating:
             self.listener.wait()
