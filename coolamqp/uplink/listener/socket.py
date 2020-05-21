@@ -73,13 +73,14 @@ class BaseSocket(object):
             self.data_to_send.append(data)
 
     @abstractmethod
-    def oneshot(self, seconds_after, callable):
+    def oneshot(self, seconds_after,    # type: float
+                callable                # type: tp.Callable[[], None]
+                ):                      # type: () -> none
         """
         Set to fire a callable N seconds after
         :param seconds_after: seconds after this
         :param callable: callable/0
         """
-        raise Exception('Abstract; listener should override that')
 
     @abstractmethod
     def noshot(self):
@@ -89,9 +90,10 @@ class BaseSocket(object):
         This will make no time-delayed callables delivered if ran in listener thread
         """
 
-    def on_read(self):
+    def on_read(self):      # type: () -> None
         """Socket is readable, called by Listener"""
-        if self.is_failed: return
+        if self.is_failed:
+            return
         try:
             data = self.sock.recv(2048)
         except (IOError, socket.error) as e:
@@ -108,13 +110,14 @@ class BaseSocket(object):
     def wants_to_send_data(self):  # type: () -> bool
         return not (len(self.data_to_send) == 0 and len(self.priority_queue) == 0)
 
-    def on_write(self):
+    def on_write(self):      # type: () -> None
         """
         Socket is writable, called by Listener
         :raises SocketFailed: on socket error
         :return: True if I'm done sending shit for now
         """
-        if self.is_failed: return False
+        if self.is_failed:
+            return False
 
         while True:
             if len(self.data_to_send) == 0:
@@ -152,10 +155,3 @@ class BaseSocket(object):
     def close(self):
         """Close this socket"""
         self.sock.close()
-
-    def __hash__(self):
-        return self.sock.fileno()
-
-    def __eq__(self, other):     # type: (BaseSocket) -> bool
-        return self.sock.fileno() == other.fileno()
-
