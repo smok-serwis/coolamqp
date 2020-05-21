@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import select
+import socket
 
 import six
 
@@ -40,11 +41,11 @@ class SelectListener(BaseListener):
 
         try:
             rds, wrs, exs = select.select(rds_and_exs, wrs, rds_and_exs, timeout)
-        except select.error:
+        except (select.error, socket.error, IOError):
             for sock in rds_and_exs:
                 try:
                     select.select([sock], [], [], timeout=0)
-                except select.error:
+                except (select.error, socket.error, IOError):
                     self.close_socket(sock)
                     return
             else:
