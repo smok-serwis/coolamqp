@@ -104,12 +104,12 @@ class Handshaker(object):
         self.connection.watchdog(WATCHDOG_TIMEOUT, self.on_watchdog)
         self.connection.watch_for_method(0, ConnectionTune,
                                          self.on_connection_tune)
-        global CLIENT_DATA
-        CLIENT_DATA = copy.copy(CLIENT_DATA)
-        CLIENT_DATA.extend(self.EXTRA_PROPERTIES)
+
+        CLIENT_DATA_c = copy.copy(CLIENT_DATA)
+        CLIENT_DATA_c.extend(self.EXTRA_PROPERTIES)
         self.connection.send([
             AMQPMethodFrame(0,
-                            ConnectionStartOk(CLIENT_DATA, b'PLAIN',
+                            ConnectionStartOk(CLIENT_DATA_c, b'PLAIN',
                                               b'\x00' + self.login + b'\x00' + self.password,
                                               locale_supported[0]
                                               ))
