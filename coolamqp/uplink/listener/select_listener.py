@@ -85,7 +85,7 @@ class SelectListener(object):
                 wrs.append(sock)
 
         try:
-            rds, wrs, exs = select.select(rds_and_exs, wrs, rds_and_exs, timeout=timeout)
+            rds, wrs, exs = select.select(rds_and_exs, wrs, rds_and_exs, timeout)
         except select.error:
             for sock in rds_and_exs:
                 try:
