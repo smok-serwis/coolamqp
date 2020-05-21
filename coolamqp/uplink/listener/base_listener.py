@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
-import monotonic
 import heapq
 import typing as tp
 import six
+from coolamqp.utils import monotonic
 
 
 class BaseListener(object):
@@ -14,7 +14,7 @@ class BaseListener(object):
 
     def do_timer_events(self):
         # Timer events
-        mono = monotonic.monotonic()
+        mono = monotonic()
         while len(self.time_events) > 0 and (self.time_events[0][0] < mono):
             ts, fd, callback = heapq.heappop(self.time_events)
             callback()
@@ -27,7 +27,7 @@ class BaseListener(object):
         :param callback: callable/0
         """
         if sock.fileno() in self.fd_to_sock:
-            heapq.heappush(self.time_events, (monotonic.monotonic() + delta,
+            heapq.heappush(self.time_events, (monotonic() + delta,
                                               sock.fileno(),
                                               callback
                                               ))
@@ -76,7 +76,7 @@ class BaseListener(object):
         :param callback: callable/0
         """
         if sock.fileno() in self.fd_to_sock:
-            heapq.heappush(self.time_events, (monotonic.monotonic() + delta,
+            heapq.heappush(self.time_events, (monotonic() + delta,
                                               sock.fileno(),
                                               callback
                                               ))

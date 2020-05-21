@@ -1,13 +1,10 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-import collections
-import heapq
 import logging
 import select
 import socket
 
-import monotonic
 import six
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket

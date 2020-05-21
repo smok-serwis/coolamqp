@@ -10,7 +10,7 @@ import typing as tp
 import warnings
 from concurrent.futures import Future
 
-import monotonic
+from coolamqp.utils import monotonic
 import six
 
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
@@ -305,8 +305,8 @@ class Cluster(object):
 
         if wait:
             # this is only going to take a short amount of time, so we're fine with polling
-            start_at = monotonic.monotonic()
-            while not self.connected and monotonic.monotonic() - start_at < timeout:
+            start_at = monotonic()
+            while not self.connected and monotonic() - start_at < timeout:
                 time.sleep(0.1)
             if not self.connected:
                 raise ConnectionDead(

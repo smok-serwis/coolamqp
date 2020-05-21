@@ -6,6 +6,7 @@ import os
 import socket
 import time
 import unittest
+import six
 
 import monotonic
 from coolamqp.backends.base import AMQPBackend, ConnectionFailedError
