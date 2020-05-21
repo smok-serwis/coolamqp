@@ -16,14 +16,6 @@ RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
 RW = RO | select.EPOLLOUT
 
 
-class SelectSocket(BaseSocket):
-    def send(self, data, priority=False):
-        """
-        This can actually get called not by ListenerThread.
-        """
-        BaseSocket.send(self, data, priority=priority)
-
-
 class SelectListener(BaseListener):
     """
     A listener using select
@@ -80,4 +72,4 @@ class SelectListener(BaseListener):
 
         :return: a BaseSocket instance to use instead of this socket
         """
-        return SelectSocket(sock, on_read, on_fail=on_fail, listener=self)
+        return BaseSocket(sock, on_read, on_fail=on_fail, listener=self)
