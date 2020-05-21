@@ -199,10 +199,10 @@ class Channeler(Attache):
         assert self.channel_id is not None
         return self.connection.watch_for_method(self.channel_id, method, callback, on_fail=on_fail)
 
-    def method_and_watch(self, method_payload, method_classes_to_watch,
-                         callable):
-        # type: (coolamqp.framing.base.AMQPMethodPayload,
-        # tp.Iterable[type], tp.Callable[[coolamqp.framing.base.AMQPMethodPayload], None]) -> None
+    def method_and_watch(self, method_payload,      # type: coolamqp.framing.base.AMQPMethodPayload,
+                         method_classes_to_watch,   # type: tp.Iterable[tp.Type[AMQPMethodPayload]]
+                         callable                   # type: tp.Callable[[AMQPMethodPayload], None]
+                         ):     # type: () -> None
         """
         Syntactic sugar for
 

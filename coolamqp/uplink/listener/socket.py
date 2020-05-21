@@ -114,7 +114,9 @@ class BaseSocket(object):
     def on_write(self):      # type: () -> None
         """
         Socket is writable, called by Listener
+
         :raises SocketFailed: on socket error
+
         :return: True if I'm done sending shit for now
         """
         if self.is_failed:
@@ -153,6 +155,6 @@ class BaseSocket(object):
         """Return descriptor number"""
         return self.sock.fileno()
 
-    def close(self):
+    def close(self):    # type: () -> None
         """Close this socket"""
         self.sock.close()

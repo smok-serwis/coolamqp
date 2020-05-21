@@ -114,4 +114,4 @@ class EpollListener(BaseListener):
 
         :return: a BaseSocket instance to use instead of this socket
         """
-        return EpollSocket(sock, on_read, on_fail, self)
+        return EpollSocket(sock, on_read, on_fail=on_fail, listener=self)

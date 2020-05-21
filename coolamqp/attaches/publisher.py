@@ -224,7 +224,7 @@ class Publisher(Channeler, Synchronized):
             assert isinstance(xchg, (six.binary_type, six.text_type))
             self._pub(msg, xchg, rk, parent_span, span_enqueued, dont_close_span=True)
 
-    def _on_cnpub_delivery(self, payload):
+    def _on_cnpub_delivery(self, payload):  # type: (AMQPMethodPayload) -> None
         """
         This gets called on BasicAck and BasicNack, if mode is MODE_CNPUB
         """
@@ -293,7 +293,7 @@ class Publisher(Channeler, Synchronized):
         else:
             raise Exception(u'Invalid mode')
 
-    def on_operational(self, operational):
+    def on_operational(self, operational):      # type: (bool) -> None
         state = {True: u'up', False: u'down'}[operational]
         mode = \
             {Publisher.MODE_NOACK: u'noack', Publisher.MODE_CNPUB: u'cnpub'}[

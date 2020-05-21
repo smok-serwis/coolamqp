@@ -79,4 +79,4 @@ class SelectListener(BaseListener):
 
         :return: a BaseSocket instance to use instead of this socket
         """
-        return SelectSocket(sock, on_read, on_fail, self)
+        return SelectSocket(sock, on_read, on_fail=on_fail, listener=self)
