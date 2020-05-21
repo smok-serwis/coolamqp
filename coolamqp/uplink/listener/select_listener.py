@@ -71,6 +71,9 @@ class SelectListener(object):
         sock.close()
         del self.fd_to_sock[file_no]
 
+    def activate(self, obj):
+        pass
+
     def wait(self, timeout=1):
         for socket_to_activate in self.sockets_to_activate:
             logger.debug('Activating fd %s', (socket_to_activate.fileno(),))
