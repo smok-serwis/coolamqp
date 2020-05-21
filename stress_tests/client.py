@@ -10,7 +10,7 @@ from satella.coding.concurrent import TerminableThread
 
 from coolamqp.clustering.events import ReceivedMessage, NothingMuch
 from coolamqp.objects import Queue, Message
-from ..settings import connect, queue_names, LogFramesToFile
+from .settings import connect, queue_names, LogFramesToFile
 
 logger = logging.getLogger(__name__)
 
