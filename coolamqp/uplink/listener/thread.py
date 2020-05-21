@@ -69,7 +69,7 @@ class ListenerThread(threading.Thread):
         """Called before start. It is not safe to fork after this"""
         listener_class = get_listener_class()
         logger.info('Using %s as a listener' % (listener_class, ))
-        self.listener = listener_class
+        self.listener = listener_class()
 
     def activate(self, sock):
         self.listener.activate(sock)

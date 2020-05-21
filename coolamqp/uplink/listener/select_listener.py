@@ -26,7 +26,7 @@ class SelectSocket(BaseSocket):
     """
 
     def __init__(self, sock, on_read, on_fail, listener):
-        BaseSocket.__init__(self, sock, on_read=on_read, on_fail=on_fail)
+        super(SelectSocket, self).__init__(sock, on_read=on_read, on_fail=on_fail)
         self.listener = listener
 
     def send(self, data, priority=False):
