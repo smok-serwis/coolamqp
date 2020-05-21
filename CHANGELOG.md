@@ -1,3 +1,7 @@
+# v1.1.2
+
+* _TBA_
+
 # v1.1.1
 
 * added `SelectListener`, which means CoolAMQP can 
