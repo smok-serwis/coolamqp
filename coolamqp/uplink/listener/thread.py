@@ -77,7 +77,7 @@ class ListenerThread(threading.Thread):
             prctl.set_name(self.name + ' - AMQP listener thread')
 
         while not self.terminating:
-            self.listener.wait(timeout=1)
+            self.listener.wait()
 
         self.listener.shutdown()
 
