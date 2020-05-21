@@ -163,5 +163,4 @@ class SelectListener(object):
         """
         sock = SelectSocket(sock, on_read, on_fail, self)
         self.sockets_to_activate.append(sock)
-        self.activate(sock)
         return sock
