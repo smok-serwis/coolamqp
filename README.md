@@ -46,11 +46,13 @@ _Watch out for memoryviews!_ They're here to stay.
 Assertions are sprinkled throughout the code. You may wish to run with optimizations enabled
 if you need every CPU cycle you can get.
 
+Note that if you define the environment variable of `COOLAMQP_FORCE_SELECT_LISTENER`, 
+CoolAMQP will use select-based networking instead of epoll based.
+
 ## Current limitations
 
 * channel flow mechanism is not supported (#11)
 * _confirm=True_ is not available if you're not RabbitMQ (#8)
-* no Windows support (#9)
 
 
 ## Copyright holder change

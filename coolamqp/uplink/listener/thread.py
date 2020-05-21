@@ -3,13 +3,17 @@ from __future__ import absolute_import, division, print_function
 
 import threading
 import typing as tp
-
+import os
 from coolamqp.objects import Callable
 from coolamqp.uplink.listener.epoll_listener import EpollListener
 from coolamqp.uplink.listener.select_listener import SelectListener
 
 
 def get_listener_class():
+
+    if 'COOLAMQP_FORCE_SELECT_LISTENER' in os.environ:
+        return SelectListener
+
     try:
         import select
         select.epoll

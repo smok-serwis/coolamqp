@@ -16,6 +16,7 @@ before_script:
 script:
   - python -m compile_definitions
   - python setup.py test
+  - COOLAMQP_FORCE_SELECT_LISTENER=1 python setup.py test
   - python -m stress_tests
 install:
   - python setup.py install
