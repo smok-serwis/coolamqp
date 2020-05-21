@@ -60,14 +60,7 @@ class SelectListener(BaseListener):
     A listener using select
     """
 
-    def __init__(self):
-        self.fd_to_sock = {}
-        self.time_events = []
-        self.sockets_to_activate = []
-
     def wait(self, timeout=1):
-        self.sockets_to_activate = []
-
         rds_and_exs = []        # waiting both for read and for exception
         wrs = []                # waiting for write
         for sock in six.itervalues(self.fd_to_sock):

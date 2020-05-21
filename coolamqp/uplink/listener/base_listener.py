@@ -9,9 +9,8 @@ class BaseListener(object):
     __metaclass__ = ABCMeta
 
     def __init__(self):
-        self.fd_to_sock = {}
-        self.time_events = []
-        self.sockets_to_activate = []
+        self.fd_to_sock = {}    # type: tp.Dict[int, BaseSocket]
+        self.time_events = []  # type: tp.List[tp.Tuple[float, int, tp.Callable[[], None]]]
 
     def do_timer_events(self):
         # Timer events
@@ -19,9 +18,6 @@ class BaseListener(object):
         while len(self.time_events) > 0 and (self.time_events[0][0] < mono):
             ts, fd, callback = heapq.heappop(self.time_events)
             callback()
-
-    def activate(self, sock):   # type: (BaseSocket) -> None
-        pass
 
     def oneshot(self, sock, delta, callback):
         """
@@ -86,7 +82,6 @@ class BaseListener(object):
                                               ))
 
     def activate(self, sock):  # type: (BaseSocket) -> None
-        self.sockets_to_activate.append(sock)
         self.fd_to_sock[sock.fileno()] = sock
 
     @abstractmethod

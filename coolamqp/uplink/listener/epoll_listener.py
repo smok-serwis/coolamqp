@@ -65,6 +65,7 @@ class EpollListener(BaseListener):
 
     def __init__(self):
         self.epoll = select.epoll()
+        self.sockets_to_activate = []
         super(EpollListener, self).__init__()
 
     def wait(self, timeout=1):
@@ -119,9 +120,9 @@ class EpollListener(BaseListener):
         super(EpollListener, self).shutdown()
         self.epoll.close()
 
-    def activate(self, sock):  # type: (coolamqp.uplink.listener.epoll_listener.EpollSocket) -> None
-        self.fd_to_sock[sock.fileno()] = sock
-        super(EpollListener, self).sockets_to_activate.append(sock)
+    def activate(self, sock):  # type: (BaseSocket) -> None
+        super(EpollListener, self).activate(sock)
+        self.sockets_to_activate.append(sock)
 
     def register(self, sock, on_read=lambda data: None,
                  on_fail=lambda: None):
