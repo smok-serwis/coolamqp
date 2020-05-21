@@ -151,7 +151,7 @@ class Connection(object):
         while len(self.callables_on_connected) > 0:
             self.callables_on_connected.pop()()
 
-    def start(self, timeout):
+    def start(self, timeout=None):
         """
         Start processing events for this connect. Create the socket,
         transmit 'AMQP\x00\x00\x09\x01' and roll.
@@ -167,8 +167,9 @@ class Connection(object):
                     (self.node_definition.host, self.node_definition.port))
             except socket.error as e:
                 time.sleep(0.5)  # Connection refused? Very bad things?
-                if monotonic() - start_at > timeout:
-                    raise ConnectionDead()
+                if timeout is not None:
+                    if monotonic() - start_at > timeout:
+                        raise ConnectionDead()
             else:
                 break
 

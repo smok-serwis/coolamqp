@@ -2,6 +2,7 @@
 from __future__ import print_function, absolute_import, division
 
 import six
+from abc import ABCMeta, abstractmethod
 
 
 class _Required(object):
@@ -24,6 +25,7 @@ __all__ = [
 
 class BaseField(object):
     """Base field object"""
+    __metaclass__ = ABCMeta
 
     def set(self, obj, elem):
         obj.__dict__[self.field_name] = self.find(elem)
@@ -31,8 +33,9 @@ class BaseField(object):
     def __init__(self, field_name):
         self.field_name = field_name
 
+    @abstractmethod
     def find(self, elem):
-        raise NotImplementedError('abstract')
+        pass
 
 
 class ComputedField(BaseField):
