@@ -11,6 +11,7 @@ import monotonic
 import six
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
+from coolamqp.uplink.listener.base_listener import BaseListener
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class SelectSocket(BaseSocket):
         self.listener.noshot(self)
 
 
-class SelectListener(object):
+class SelectListener(BaseListener):
     """
     A listener using select
     """
@@ -64,20 +65,7 @@ class SelectListener(object):
         self.time_events = []
         self.sockets_to_activate = []
 
-    def close_socket(self, sock):  # type: (BaseSocket) -> None
-        file_no = sock.fileno()
-        sock.on_fail()
-        self.noshot(sock)
-        sock.close()
-        del self.fd_to_sock[file_no]
-
-    def activate(self, obj):
-        pass
-
     def wait(self, timeout=1):
-        for socket_to_activate in self.sockets_to_activate:
-            logger.debug('Activating fd %s', (socket_to_activate.fileno(),))
-            self.fd_to_sock[socket_to_activate.fileno()] = socket_to_activate
         self.sockets_to_activate = []
 
         rds_and_exs = []        # waiting both for read and for exception
@@ -86,6 +74,8 @@ class SelectListener(object):
             rds_and_exs.append(sock)
             if sock.wants_to_send_data():
                 wrs.append(sock)
+
+        self.do_timer_events()
 
         try:
             rds, wrs, exs = select.select(rds_and_exs, wrs, rds_and_exs, timeout)
@@ -117,41 +107,6 @@ class SelectListener(object):
             except SocketFailed:
                 return self.close_socket(sock_ex)
 
-    def noshot(self, sock):
-        """
-        Clear all one-shots for a socket
-        :param sock: BaseSocket instance
-        """
-        fd = sock.fileno()
-        self.time_events = [q for q in self.time_events if q[1] != fd]
-
-    def shutdown(self):
-        """
-        Forcibly close all sockets that this manages (calling their on_fail's),
-        and close the object.
-
-        This object is unusable after this call.
-        """
-        self.time_events = []
-        for sock in list(six.itervalues(self.fd_to_sock)):
-            sock.on_fail()
-            sock.close()
-
-        self.fd_to_sock = {}
-
-    def oneshot(self, sock, delta, callback):
-        """
-        A socket registers a time callback
-        :param sock: BaseSocket instance
-        :param delta: "this seconds after now"
-        :param callback: callable/0
-        """
-        if sock.fileno() in self.fd_to_sock:
-            heapq.heappush(self.time_events, (monotonic.monotonic() + delta,
-                                              sock.fileno(),
-                                              callback
-                                              ))
-
     def register(self, sock, on_read=lambda data: None,
                  on_fail=lambda: None):
         """
@@ -163,6 +118,4 @@ class SelectListener(object):
 
         :return: a BaseSocket instance to use instead of this socket
         """
-        sock = SelectSocket(sock, on_read, on_fail, self)
-        self.sockets_to_activate.append(sock)
-        return sock
+        return SelectSocket(sock, on_read, on_fail, self)

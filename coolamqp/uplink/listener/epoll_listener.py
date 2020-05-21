@@ -2,15 +2,13 @@
 from __future__ import absolute_import, division, print_function
 
 import collections
-import heapq
 import logging
 import select
 import socket
 
-import monotonic
-import six
-
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
+from coolamqp.uplink.listener.base_listener import BaseListener
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,16 +58,14 @@ class EpollSocket(BaseSocket):
         self.listener.noshot(self)
 
 
-class EpollListener(object):
+class EpollListener(BaseListener):
     """
     A listener using epoll.
     """
 
     def __init__(self):
         self.epoll = select.epoll()
-        self.fd_to_sock = {}
-        self.time_events = []
-        self.sockets_to_activate = []
+        super(EpollListener, self).__init__()
 
     def wait(self, timeout=1):
         for socket_to_activate in self.sockets_to_activate:
@@ -79,11 +75,7 @@ class EpollListener(object):
 
         events = self.epoll.poll(timeout=timeout)
 
-        # Timer events
-        mono = monotonic.monotonic()
-        while len(self.time_events) > 0 and (self.time_events[0][0] < mono):
-            ts, fd, callback = heapq.heappop(self.time_events)
-            callback()
+        self.do_timer_events()
 
         for fd, event in events:
             sock = self.fd_to_sock[fd]
@@ -98,7 +90,6 @@ class EpollListener(object):
                     sock.on_read()
 
                 if event & select.EPOLLOUT:
-
                     sock.on_write()
                     # I'm done with sending for now
                     if len(sock.data_to_send) == 0 and len(
@@ -107,24 +98,16 @@ class EpollListener(object):
 
             except SocketFailed as e:
                 logger.debug('Socket %s has raised %s', fd, e)
-                self.epoll.unregister(fd)
-                del self.fd_to_sock[fd]
-                sock.on_fail()
-                self.noshot(sock)
-                sock.close()
+                self.close_socket(sock)
 
         # Do any of the sockets want to send data Re-register them
-        for socket in self.fd_to_sock.values():
-            if socket.wants_to_send_data():
-                self.epoll.modify(socket.fileno(), RW)
+        for sock in self.fd_to_sock.values():
+            if sock.wants_to_send_data():
+                self.epoll.modify(sock.fileno(), RW)
 
-    def noshot(self, sock):
-        """
-        Clear all one-shots for a socket
-        :param sock: BaseSocket instance
-        """
-        fd = sock.fileno()
-        self.time_events = [q for q in self.time_events if q[1] != fd]
+    def close_socket(self, sock):  # type: (BaseSocket) -> None
+        self.epoll.unregister(sock.fileno())
+        super(EpollListener, self).close_socket(sock)
 
     def shutdown(self):
         """
@@ -133,34 +116,19 @@ class EpollListener(object):
 
         This object is unusable after this call.
         """
-        self.time_events = []
-        for sock in list(six.itervalues(self.fd_to_sock)):
-            sock.on_fail()
-            sock.close()
-
-        self.fd_to_sock = {}
+        super(EpollListener, self).shutdown()
         self.epoll.close()
 
-    def oneshot(self, sock, delta, callback):
-        """
-        A socket registers a time callback
-        :param sock: BaseSocket instance
-        :param delta: "this seconds after now"
-        :param callback: callable/0
-        """
-        if sock.fileno() in self.fd_to_sock:
-            heapq.heappush(self.time_events, (monotonic.monotonic() + delta,
-                                              sock.fileno(),
-                                              callback
-                                              ))
-
     def activate(self, sock):  # type: (coolamqp.uplink.listener.epoll_listener.EpollSocket) -> None
-        self.sockets_to_activate.append(sock)
+        self.fd_to_sock[sock.fileno()] = sock
+        super(EpollListener, self).sockets_to_activate.append(sock)
 
     def register(self, sock, on_read=lambda data: None,
                  on_fail=lambda: None):
         """
         Add a socket to be listened for by the loop.
+
+        Please note that .activate() will be later called on this socket.
 
         :param sock: a socket instance (as returned by socket module)
         :param on_read: callable(data) to be called with received data
@@ -168,7 +136,4 @@ class EpollListener(object):
 
         :return: a BaseSocket instance to use instead of this socket
         """
-        sock = EpollSocket(sock, on_read, on_fail, self)
-        self.fd_to_sock[sock.fileno()] = sock
-
-        return sock
+        return EpollSocket(sock, on_read, on_fail, self)

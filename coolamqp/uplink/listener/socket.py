@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 import collections
 import logging
+from abc import ABCMeta, abstractmethod
 import socket
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class BaseSocket(object):
 
     To be instantiated only by Listeners.
     """
+    __metaclass__ = ABCMeta
 
     def __init__(self, sock, on_read=lambda data: None,
                  on_time=lambda: None,
@@ -70,6 +72,7 @@ class BaseSocket(object):
         else:
             self.data_to_send.append(data)
 
+    @abstractmethod
     def oneshot(self, seconds_after, callable):
         """
         Set to fire a callable N seconds after
@@ -78,13 +81,13 @@ class BaseSocket(object):
         """
         raise Exception('Abstract; listener should override that')
 
+    @abstractmethod
     def noshot(self):
         """
         Clear all time-delayed callables.
 
         This will make no time-delayed callables delivered if ran in listener thread
         """
-        raise Exception('Abstract; listener should override that')
 
     def on_read(self):
         """Socket is readable, called by Listener"""
