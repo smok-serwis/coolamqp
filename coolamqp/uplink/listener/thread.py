@@ -7,9 +7,10 @@ import os
 from coolamqp.objects import Callable
 from coolamqp.uplink.listener.epoll_listener import EpollListener
 from coolamqp.uplink.listener.select_listener import SelectListener
+from coolamqp.uplink.listener.base_listener import BaseListener
 
 
-def get_listener_class():
+def get_listener_class():   # type: () -> tp.Type[BaseListener]
 
     if 'COOLAMQP_FORCE_SELECT_LISTENER' in os.environ:
         return SelectListener
@@ -18,7 +19,7 @@ def get_listener_class():
         import select
         select.epoll
     except AttributeError:
-        return SelectListener   # we're running on Windows
+        return SelectListener   # we're running on a platform that doesn't support epoll
 
     try:
         import gevent.socket
@@ -40,12 +41,12 @@ class ListenerThread(threading.Thread):
     """
 
     def __init__(self, name=None):  # type: (tp.Optional[str])
-        threading.Thread.__init__(self, name='coolamqp/ListenerThread')
+        threading.Thread.__init__(self, name=name or 'coolamqp/ListenerThread')
         self.daemon = True
         self.name = name or 'CoolAMQP'
         self.terminating = False
         self._call_next_io_event = Callable(oneshots=True)
-        self.listener = None
+        self.listener = None        # type: BaseListener
 
     def call_next_io_event(self, callable):
         """
@@ -56,7 +57,7 @@ class ListenerThread(threading.Thread):
         all these are done.
         :param callable: callable/0
         """
-        self._call_next_io_event()
+        self._call_next_io_event.add(callable)
 
     def terminate(self):
         self.terminating = True
@@ -78,6 +79,7 @@ class ListenerThread(threading.Thread):
 
         while not self.terminating:
             self.listener.wait()
+            self._call_next_io_event()
 
         self.listener.shutdown()
 
