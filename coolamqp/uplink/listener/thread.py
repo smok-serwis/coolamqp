@@ -2,12 +2,15 @@
 from __future__ import absolute_import, division, print_function
 
 import threading
+import logging
 import typing as tp
 import os
 from coolamqp.objects import Callable
 from coolamqp.uplink.listener.epoll_listener import EpollListener
 from coolamqp.uplink.listener.select_listener import SelectListener
 from coolamqp.uplink.listener.base_listener import BaseListener
+
+logger = logging.getLogger(__name__)
 
 
 def get_listener_class():   # type: () -> tp.Type[BaseListener]
@@ -64,7 +67,9 @@ class ListenerThread(threading.Thread):
 
     def init(self):
         """Called before start. It is not safe to fork after this"""
-        self.listener = get_listener_class()()
+        listener_class = get_listener_class()
+        logger.info('Using %s as a listener' % (listener_class, ))
+        self.listener = listener_class
 
     def activate(self, sock):
         self.listener.activate(sock)
