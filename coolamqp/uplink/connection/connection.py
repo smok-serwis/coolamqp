@@ -151,7 +151,7 @@ class Connection(object):
         while len(self.callables_on_connected) > 0:
             self.callables_on_connected.pop()()
 
-    def start(self, timeout=None):
+    def start(self, timeout=None):  # type: (tp.Optional[float]) -> None
         """
         Start processing events for this connect. Create the socket,
         transmit 'AMQP\x00\x00\x09\x01' and roll.
