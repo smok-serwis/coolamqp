@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 import collections
 import logging
+from abc import ABCMeta, abstractmethod
 import socket
 
 logger = logging.getLogger(__name__)
@@ -20,10 +21,12 @@ class BaseSocket(object):
 
     To be instantiated only by Listeners.
     """
+    __metaclass__ = ABCMeta
 
     def __init__(self, sock, on_read=lambda data: None,
                  on_time=lambda: None,
-                 on_fail=lambda: None):
+                 on_fail=lambda: None,
+                 listener=None):
         """
 
         :param sock: socketobject
@@ -35,6 +38,7 @@ class BaseSocket(object):
             Listener thread context.
             Socket descriptor will be handled by listener.
             This should not
+        :param listener: listener that registered this socket
         """
         assert sock is not None
         self.sock = sock
@@ -44,6 +48,7 @@ class BaseSocket(object):
         self._on_fail = on_fail
         self.on_time = on_time
         self.is_failed = False
+        self.listener = listener
 
     def on_fail(self):
         self.is_failed = True
@@ -76,7 +81,7 @@ class BaseSocket(object):
         :param seconds_after: seconds after this
         :param callable: callable/0
         """
-        raise Exception('Abstract; listener should override that')
+        self.listener.oneshot(self, seconds_after, callable)
 
     def noshot(self):
         """
@@ -84,11 +89,12 @@ class BaseSocket(object):
 
         This will make no time-delayed callables delivered if ran in listener thread
         """
-        raise Exception('Abstract; listener should override that')
+        self.listener.noshot(self)
 
-    def on_read(self):
+    def on_read(self):      # type: () -> None
         """Socket is readable, called by Listener"""
-        if self.is_failed: return
+        if self.is_failed:
+            return
         try:
             data = self.sock.recv(2048)
         except (IOError, socket.error) as e:
@@ -105,13 +111,16 @@ class BaseSocket(object):
     def wants_to_send_data(self):  # type: () -> bool
         return not (len(self.data_to_send) == 0 and len(self.priority_queue) == 0)
 
-    def on_write(self):
+    def on_write(self):      # type: () -> None
         """
         Socket is writable, called by Listener
+
         :raises SocketFailed: on socket error
+
         :return: True if I'm done sending shit for now
         """
-        if self.is_failed: return False
+        if self.is_failed:
+            return False
 
         while True:
             if len(self.data_to_send) == 0:
@@ -146,6 +155,6 @@ class BaseSocket(object):
         """Return descriptor number"""
         return self.sock.fileno()
 
-    def close(self):
+    def close(self):    # type: () -> None
         """Close this socket"""
         self.sock.close()

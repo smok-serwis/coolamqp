@@ -8,7 +8,7 @@ import time
 import typing as tp
 import uuid
 
-import monotonic
+from coolamqp.utils import monotonic
 
 from coolamqp.exceptions import ConnectionDead
 from coolamqp.framing.base import AMQPMethodPayload
@@ -151,7 +151,7 @@ class Connection(object):
         while len(self.callables_on_connected) > 0:
             self.callables_on_connected.pop()()
 
-    def start(self, timeout):
+    def start(self, timeout=None):  # type: (tp.Optional[float]) -> None
         """
         Start processing events for this connect. Create the socket,
         transmit 'AMQP\x00\x00\x09\x01' and roll.
@@ -160,15 +160,16 @@ class Connection(object):
         """
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        start_at = monotonic.monotonic()
+        start_at = monotonic()
         while True:
             try:
                 sock.connect(
                     (self.node_definition.host, self.node_definition.port))
             except socket.error as e:
                 time.sleep(0.5)  # Connection refused? Very bad things?
-                if monotonic.monotonic() - start_at > timeout:
-                    raise ConnectionDead()
+                if timeout is not None:
+                    if monotonic() - start_at > timeout:
+                        raise ConnectionDead()
             else:
                 break
 
@@ -260,7 +261,7 @@ class Connection(object):
         """
         if self.log_frames is not None:
             for frame in frames:
-                self.log_frames.on_frame(time.monotonic(), frame, 'to_server')
+                self.log_frames.on_frame(monotonic(), frame, 'to_server')
 
         if frames is not None:
             self.sendf.send(frames, priority=priority)
@@ -280,7 +281,7 @@ class Connection(object):
         :param frame: AMQPFrame that was received
         """
         if self.log_frames is not None:
-            self.log_frames.on_frame(time.monotonic(), frame, 'to_client')
+            self.log_frames.on_frame(monotonic(), frame, 'to_client')
 
         watch_handled = False  # True if ANY watch handled this
 

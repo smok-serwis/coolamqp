@@ -2,10 +2,39 @@
 from __future__ import absolute_import, division, print_function
 
 import threading
+import logging
 import typing as tp
-
+import os
 from coolamqp.objects import Callable
 from coolamqp.uplink.listener.epoll_listener import EpollListener
+from coolamqp.uplink.listener.select_listener import SelectListener
+from coolamqp.uplink.listener.base_listener import BaseListener
+from coolamqp.utils import prctl_set_name
+
+logger = logging.getLogger(__name__)
+
+
+def get_listener_class():   # type: () -> tp.Type[BaseListener]
+
+    if 'COOLAMQP_FORCE_SELECT_LISTENER' in os.environ:
+        return SelectListener
+
+    try:
+        import select
+        select.epoll
+    except AttributeError:
+        return SelectListener   # we're running on a platform that doesn't support epoll
+
+    try:
+        import gevent.socket
+    except ImportError:
+        return EpollListener
+    import socket
+
+    if socket.socket is gevent.socket.socket:
+        return SelectListener     # gevent is active
+
+    return EpollListener
 
 
 class ListenerThread(threading.Thread):
@@ -16,12 +45,12 @@ class ListenerThread(threading.Thread):
     """
 
     def __init__(self, name=None):  # type: (tp.Optional[str])
-        threading.Thread.__init__(self, name='coolamqp/ListenerThread')
+        super(ListenerThread, self).__init__(name=name or 'coolamqp/ListenerThread')
         self.daemon = True
         self.name = name or 'CoolAMQP'
         self.terminating = False
         self._call_next_io_event = Callable(oneshots=True)
-        self.listener = None
+        self.listener = None        # type: BaseListener
 
     def call_next_io_event(self, callable):
         """
@@ -32,34 +61,34 @@ class ListenerThread(threading.Thread):
         all these are done.
         :param callable: callable/0
         """
-        self._call_next_io_event()
+        pass
+#        self._call_next_io_event.add(callable) - dummy that out, causes AssertionError to appear
 
     def terminate(self):
         self.terminating = True
 
     def init(self):
         """Called before start. It is not safe to fork after this"""
-        self.listener = EpollListener()
+        listener_class = get_listener_class()
+        logger.info('Using %s as a listener' % (listener_class, ))
+        self.listener = listener_class()
 
     def activate(self, sock):
         self.listener.activate(sock)
 
     def run(self):
-        try:
-            import prctl
-        except ImportError:
-            pass
-        else:
-            prctl.set_name(self.name + ' - AMQP listener thread')
+        prctl_set_name(self.name + '- listener thread')
 
         while not self.terminating:
-            self.listener.wait(timeout=1)
+            self.listener.wait()
+            self._call_next_io_event()
 
         self.listener.shutdown()
 
     def register(self, sock,  # type: socket.socket
                  on_read=lambda data: None,  # type: tp.Callable[[bytes], None]
-                 on_fail=lambda: None):  # type: tp.Callable[[], None]
+                 on_fail=lambda: None      # type: tp.Callable[[], None]
+                 ):
         """
         Add a socket to be listened for by the loop.
 

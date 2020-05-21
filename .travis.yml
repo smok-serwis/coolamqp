@@ -13,10 +13,12 @@ before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
+  - pip install nose2 coverage
 script:
-  - python -m compile_definitions
-  - python setup.py test
-  - python -m stress_tests
+  - coverage run -m compile_definitions
+  - coverage run --append -m nose2 -vv
+  - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m nose2 -vv
+  - coverage run --append -m stress_tests
 install:
   - python setup.py install
   - pip install -r stress_tests/requirements.txt

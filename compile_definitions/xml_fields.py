@@ -32,7 +32,7 @@ class BaseField(object):
         self.field_name = field_name
 
     def find(self, elem):
-        raise NotImplementedError('abstract')
+        raise NotImplementedError('Abstract method!')
 
 
 class ComputedField(BaseField):

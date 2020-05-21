@@ -2,6 +2,7 @@
 from __future__ import print_function, absolute_import, division
 
 import logging
+import typing as tp
 
 from coolamqp.framing.definitions import ConnectionUnblocked, ConnectionBlocked
 from coolamqp.objects import Callable
@@ -31,6 +32,7 @@ class SingleNodeReconnector(object):
         self.name = name or 'CoolAMQP'
 
         self.terminating = False
+        self.timeout = None
 
         self.on_fail = Callable()  #: public
         self.on_blocked = Callable()  #: public
@@ -39,8 +41,11 @@ class SingleNodeReconnector(object):
     def is_connected(self):  # type: () -> bool
         return self.connection is not None
 
-    def connect(self, timeout):  # type: (float) -> None
+    def connect(self, timeout=None):  # type: (tp.Optional[float]) -> None
         assert self.connection is None
+
+        timeout = timeout or self.timeout
+        self.timeout = timeout
 
         # Initiate connecting - this order is very important!
         self.connection = Connection(self.node_def, self.listener_thread,
