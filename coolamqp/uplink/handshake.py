@@ -21,9 +21,8 @@ CONNECTION_BLOCKED = b'connection.blocked'
 
 SUPPORTED_EXTENSIONS = [
     PUBLISHER_CONFIRMS,
-    CONSUMER_CANCEL_NOTIFY,
+    CONSUMER_CANCEL_NOTIFY,     # half assed support - we just .cancel the consumer, see #12
     CONNECTION_BLOCKED
-    # half assed support - we just .cancel the consumer, see #12
 ]
 
 CLIENT_DATA = [
