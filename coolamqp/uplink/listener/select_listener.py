@@ -79,7 +79,7 @@ class SelectListener(object):
 
         rds_and_exs = []        # waiting both for read and for exception
         wrs = []                # waiting for write
-        for sock in six.itervalues(self.sockets_to_activate.values()):
+        for sock in six.itervalues(self.fd_to_sock):
             rds_and_exs.append(sock)
             if sock.wants_to_send_data():
                 wrs.append(sock)
