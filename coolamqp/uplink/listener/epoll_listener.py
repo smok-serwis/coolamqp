@@ -5,6 +5,9 @@ import collections
 import logging
 import select
 import socket
+import threading
+
+import six
 
 from coolamqp.uplink.listener.socket import SocketFailed, BaseSocket
 from coolamqp.uplink.listener.base_listener import BaseListener
@@ -65,14 +68,16 @@ class EpollListener(BaseListener):
 
     def __init__(self):
         self.epoll = select.epoll()
+        self.socket_activation_lock = threading.Lock()
         self.sockets_to_activate = []
         super(EpollListener, self).__init__()
 
     def wait(self, timeout=1):
-        for socket_to_activate in self.sockets_to_activate:
-            logger.debug('Activating fd %s', (socket_to_activate.fileno(),))
-            self.epoll.register(socket_to_activate.fileno(), RW)
-        self.sockets_to_activate = []
+        with self.socket_activation_lock:
+            for socket_to_activate in self.sockets_to_activate:
+                logger.debug('Activating fd %s', (socket_to_activate.fileno(),))
+                self.epoll.register(socket_to_activate.fileno(), RW)
+            self.sockets_to_activate = []
 
         events = self.epoll.poll(timeout=timeout)
 
@@ -102,7 +107,7 @@ class EpollListener(BaseListener):
                 self.close_socket(sock)
 
         # Do any of the sockets want to send data Re-register them
-        for sock in self.fd_to_sock.values():
+        for sock in six.itervalues(self.fd_to_sock):
             if sock.wants_to_send_data():
                 self.epoll.modify(sock.fileno(), RW)
 
@@ -122,7 +127,8 @@ class EpollListener(BaseListener):
 
     def activate(self, sock):  # type: (BaseSocket) -> None
         super(EpollListener, self).activate(sock)
-        self.sockets_to_activate.append(sock)
+        with self.socket_activation_lock:
+            self.sockets_to_activate.append(sock)
 
     def register(self, sock, on_read=lambda data: None,
                  on_fail=lambda: None):
