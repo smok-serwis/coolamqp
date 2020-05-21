@@ -25,7 +25,8 @@ class BaseSocket(object):
 
     def __init__(self, sock, on_read=lambda data: None,
                  on_time=lambda: None,
-                 on_fail=lambda: None):
+                 on_fail=lambda: None,
+                 listener=None):
         """
 
         :param sock: socketobject
@@ -37,6 +38,7 @@ class BaseSocket(object):
             Listener thread context.
             Socket descriptor will be handled by listener.
             This should not
+        :param listener: listener that registered this socket
         """
         assert sock is not None
         self.sock = sock
@@ -46,6 +48,7 @@ class BaseSocket(object):
         self._on_fail = on_fail
         self.on_time = on_time
         self.is_failed = False
+        self.listener = listener
 
     def on_fail(self):
         self.is_failed = True
@@ -72,23 +75,21 @@ class BaseSocket(object):
         else:
             self.data_to_send.append(data)
 
-    @abstractmethod
-    def oneshot(self, seconds_after,    # type: float
-                callable                # type: tp.Callable[[], None]
-                ):                      # type: () -> none
+    def oneshot(self, seconds_after, callable):
         """
         Set to fire a callable N seconds after
         :param seconds_after: seconds after this
         :param callable: callable/0
         """
+        self.listener.oneshot(self, seconds_after, callable)
 
-    @abstractmethod
     def noshot(self):
         """
         Clear all time-delayed callables.
 
         This will make no time-delayed callables delivered if ran in listener thread
         """
+        self.listener.noshot(self)
 
     def on_read(self):      # type: () -> None
         """Socket is readable, called by Listener"""

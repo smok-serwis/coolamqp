@@ -1,7 +1,6 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-import collections
 import logging
 import select
 import socket
@@ -20,18 +19,6 @@ RW = RO | select.EPOLLOUT
 
 
 class EpollSocket(BaseSocket):
-    """
-    EpollListener substitutes your BaseSockets with this
-    :type sock: socket.socket
-    :type on_read: tp.Callable[[bytes], None]
-    :type on_fail: tp.Callable[[], None]
-    :type listener: coolamqp.uplink.listener.ListenerThread
-    """
-
-    def __init__(self, sock, on_read, on_fail, listener):
-        BaseSocket.__init__(self, sock, on_read=on_read, on_fail=on_fail)
-        self.listener = listener
-        self.priority_queue = collections.deque()
 
     def send(self, data, priority=False):
         """
@@ -43,22 +30,6 @@ class EpollSocket(BaseSocket):
         except socket.error:
             # silence. If there are errors, it's gonna get nuked soon.
             pass
-
-    def oneshot(self, seconds_after, callable):
-        """
-        Set to fire a callable N seconds after
-        :param seconds_after: seconds after this
-        :param callable: callable/0
-        """
-        self.listener.oneshot(self, seconds_after, callable)
-
-    def noshot(self):
-        """
-        Clear all time-delayed callables.
-
-        This will make no time-delayed callables delivered if ran in listener thread
-        """
-        self.listener.noshot(self)
 
 
 class EpollListener(BaseListener):
