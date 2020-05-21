@@ -9,7 +9,7 @@ import os
 import time
 import unittest
 
-import monotonic
+from coolamqp.utils import monotonic
 import six
 
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
@@ -52,11 +52,11 @@ class TestA(unittest.TestCase):
     #        self.assertEquals(rmsg.body, data)
 
     def test_actually_waits(self):
-        a = monotonic.monotonic()
+        a = monotonic()
 
         self.c.drain(5)
 
-        self.assertTrue(monotonic.monotonic() - a >= 4)
+        self.assertGreaterEqual(monotonic() - a, 4)
 
     def test_set_qos_but_later(self):
         con, fut = self.c.consume(Queue(u'hello2', exclusive=True))

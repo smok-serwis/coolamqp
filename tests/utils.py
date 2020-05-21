@@ -8,7 +8,7 @@ import time
 import unittest
 import six
 
-import monotonic
+from coolamqp.utils import monotonic
 from coolamqp.backends.base import AMQPBackend, ConnectionFailedError
 
 from coolamqp import Cluster, ClusterNode, ConnectionDown, \
@@ -48,9 +48,9 @@ class CoolAMQPTestCase(unittest.TestCase):
     def drainToAny(self, types, timeout, forbidden=[]):
         """Assert that messages with types, in any order, are found within timeout.
         Fail if any type from forbidden is found"""
-        start = monotonic.monotonic()
+        start = monotonic()
         types = set(types)
-        while monotonic.monotonic() - start < timeout:
+        while monotonic() - start < timeout:
             q = self.amqp.drain(1)
             if type(q) in forbidden:
                 self.fail('%s found', type(q))
@@ -74,8 +74,8 @@ class CoolAMQPTestCase(unittest.TestCase):
                     self.fail('Found %s but forbidden', type(p))
             return p
 
-        start = monotonic.monotonic()
-        while monotonic.monotonic() - start < timeout:
+        start = monotonic()
+        while monotonic() - start < timeout:
             q = self.amqp.drain(1)
             if isinstance(q, type_):
                 return q
