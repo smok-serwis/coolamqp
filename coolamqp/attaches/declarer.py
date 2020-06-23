@@ -284,7 +284,7 @@ class Declarer(Channeler, Synchronized):
         """
         if isinstance(obj, Queue):
             if obj.anonymous:
-                raise ValueError('Cannot declare anonymous queue')
+                raise ValueError('Cannot declare anonymous queue, use consume to have the name filled in!')
 
         if span is not None:
             enqueued_span = self.cluster.tracer.start_span('Enqueued', child_of=span)
