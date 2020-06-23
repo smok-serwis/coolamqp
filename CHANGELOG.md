@@ -1,6 +1,7 @@
-# v1.1.2
+# v1.2
 
-* _TBA_
+* queue's name will be filled in upon being declared
+* added queue.bind
 
 # v1.1.1
 

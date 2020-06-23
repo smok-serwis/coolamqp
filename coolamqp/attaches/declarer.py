@@ -13,8 +13,8 @@ from coolamqp.attaches.utils import Synchronized
 from coolamqp.exceptions import AMQPError, ConnectionDead
 from coolamqp.framing.definitions import ChannelOpenOk, ExchangeDeclare, \
     ExchangeDeclareOk, QueueDeclare, \
-    QueueDeclareOk, ChannelClose, QueueDelete, QueueDeleteOk
-from coolamqp.objects import Exchange, Queue, Callable
+    QueueDeclareOk, ChannelClose, QueueDelete, QueueDeleteOk, QueueBind, QueueBindOk
+from coolamqp.objects import Exchange, Queue, Callable, QueueBind as CommandQueueBind
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +115,12 @@ class Operation(object):
                              obj.auto_delete, False, []),
                 (QueueDeclareOk, ChannelClose),
                 self._callback)
+        elif isinstance(obj, CommandQueueBind):
+            self.declarer.method_and_watch(
+                QueueBind(obj.queue, obj.exchange, obj.routing_key, False, []),
+                (QueueBindOk, ChannelClose),
+                self._callback
+            )
 
     def _callback(self, payload):
         assert not self.done
@@ -132,6 +138,9 @@ class Operation(object):
                         self.obj)  # todo access not threadsafe
                     self.declarer.on_discard(self.obj)
         else:
+            if isinstance(payload, QueueDeclareOk):
+                self.obj.name = payload.queue
+
             self.span_finished()
             if self.fut is not None:
                 self.fut.set_result(None)

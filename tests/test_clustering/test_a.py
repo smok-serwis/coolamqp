@@ -28,6 +28,20 @@ class TestA(unittest.TestCase):
     def tearDown(self):
         self.c.shutdown()
 
+    def test_queue_bind(self):
+        queue = Queue('my-queue')
+        exchange = Exchange('my-exchange', type='topic')
+        self.c.declare(queue).result()
+        self.c.declare(exchange).result()
+        self.c.bind(queue, exchange, 'test').result()
+        q = six.moves.queue.Queue()
+        cons, fut = self.c.consume(queue, on_message=lambda msg: q.put(msg), no_ack=True)
+        fut.result()
+        self.c.publish(Message(b'test'), exchange=exchange, routing_key='test', confirm=True).result()
+        msg_v = q.get(block=True, timeout=5)
+        self.assertEqual(msg_v.body, b'test')
+        cons.cancel()
+
     def test_delete_queue(self):
         # that's how it's written, due to http://www.rabbitmq.com/specification.html#method-status-queue.delete
         self.c.delete_queue(Queue(u'i-do-not-exist')).result()
@@ -78,6 +92,8 @@ class TestA(unittest.TestCase):
         c, f = self.c.consume(q)
 
         f.result()
+
+        self.assertIsNotNone(q.name)
 
     def test_send_recv_zerolen(self):
         P = {'q': False}

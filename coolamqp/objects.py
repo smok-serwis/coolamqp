@@ -274,6 +274,21 @@ class Queue(object):
         return hash(self.name)
 
 
+class QueueBind(object):
+    """An order to be declared which binds a given queue to an exchange"""
+    def __init__(self, queue,   # type: tp.Union[Queue, bytes, unicode]
+                 exchange,      # type: tp.Union[Exchange, bytes, unicode]
+                 routing_key    # type: tp.Union[bytes, unicode]
+                 ):
+        if isinstance(queue, Queue):
+            queue = queue.name
+        self.queue = tobytes(queue)        # type: bytes
+        if isinstance(exchange, Exchange):
+            exchange = exchange.name
+        self.exchange = tobytes(exchange)   # type: bytes
+        self.routing_key = tobytes(routing_key)     # type: bytes
+
+
 class NodeDefinition(object):
     """
     Definition of a reachable AMQP node.

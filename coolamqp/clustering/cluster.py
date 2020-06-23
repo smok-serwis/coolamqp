@@ -19,7 +19,7 @@ from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
     NothingMuch, Event
 from coolamqp.clustering.single import SingleNodeReconnector
 from coolamqp.exceptions import ConnectionDead
-from coolamqp.objects import Exchange, Message, Queue, FrameLogger
+from coolamqp.objects import Exchange, Message, Queue, FrameLogger, QueueBind
 from coolamqp.uplink import ListenerThread
 
 logger = logging.getLogger(__name__)
@@ -92,6 +92,19 @@ class Cluster(object):
             self.on_fail = decorated
         else:
             self.on_fail = None
+
+    def bind(self, queue, exchange, routing_key, persistent=False, span=None):
+        """
+        Bind a queue to an exchange
+        """
+        if span is not None:
+            child_span = self._make_span('bind', span)
+        else:
+            child_span = None
+        fut = self.decl.declare(QueueBind(queue, exchange, routing_key),
+                                persistent=persistent,
+                                span=child_span)
+        return close_future(fut, child_span)
 
     def declare(self, obj,  # type: tp.Union[Queue, Exchange]
                 persistent=False,  # type: bool
