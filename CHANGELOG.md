@@ -1,6 +1,5 @@
 # v1.2
 
-* queue's name will be filled in upon being declared
 * added queue.bind
 
 # v1.1.1

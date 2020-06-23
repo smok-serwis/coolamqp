@@ -138,9 +138,6 @@ class Operation(object):
                         self.obj)  # todo access not threadsafe
                     self.declarer.on_discard(self.obj)
         else:
-            if isinstance(payload, QueueDeclareOk):
-                self.obj.name = payload.queue
-
             self.span_finished()
             if self.fut is not None:
                 self.fut.set_result(None)
