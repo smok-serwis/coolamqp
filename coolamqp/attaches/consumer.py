@@ -408,14 +408,15 @@ class Consumer(Channeler):
 
             # We need any form of binding.
             if self.queue.exchange is not None:
-                self.method_and_watch(
-                    QueueBind(
-                        self.queue.name,
-                        self.queue.exchange.name.encode('utf8'),
-                        b'', False, []),
-                    QueueBindOk,
-                    self.on_setup
-                )
+                if self.queue.exchange.type != 'topic':
+                    self.method_and_watch(
+                        QueueBind(
+                            self.queue.name,
+                            self.queue.exchange.name.encode('utf8'),
+                            b'', False, []),
+                        QueueBindOk,
+                        self.on_setup
+                    )
             else:
                 # default exchange, pretend it was bind ok
                 self.on_setup(QueueBindOk())

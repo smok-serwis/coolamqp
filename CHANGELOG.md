@@ -1,6 +1,6 @@
 # v1.2.2
 
-* _TBA_
+* bugfix release: don't bind if queue is topic
 
 # v1.2.1
 
