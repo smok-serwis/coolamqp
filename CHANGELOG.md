@@ -1,3 +1,7 @@
+# v1.2.2
+
+* _TBA_
+
 # v1.2.1
 
 * enabled declaring anonymous queues
