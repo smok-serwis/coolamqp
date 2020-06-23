@@ -60,11 +60,6 @@ class TestA(unittest.TestCase):
         self.c.publish(Message(data), routing_key=b'hello',
                        confirm=True).result()
 
-    #        rmsg = self.c.drain(3)
-    #        rmsg.ack()
-
-    #        self.assertEquals(rmsg.body, data)
-
     def test_actually_waits(self):
         a = monotonic()
 
@@ -85,6 +80,13 @@ class TestA(unittest.TestCase):
         time.sleep(1)
         self.assertEquals(con.qos, (0, 110))
 
+    def test_declare_anonymous(self):
+        xchg = Exchange('wtfzomg', type='fanout')
+        q = Queue(exchange=xchg)
+        self.c.declare(xchg).result()
+        self.c.declare(q).result()
+        self.assertTrue(q.name)
+
     def test_anonymq(self):
         q = Queue(exchange=Exchange(u'ooo', type=b'fanout', auto_delete=True),
                   auto_delete=True)
@@ -93,7 +95,7 @@ class TestA(unittest.TestCase):
 
         f.result()
 
-        self.assertIsNotNone(q.name)
+        self.assertTrue(q.name)
 
     def test_send_recv_zerolen(self):
         P = {'q': False}

@@ -288,6 +288,12 @@ class QueueBind(object):
         self.exchange = tobytes(exchange)   # type: bytes
         self.routing_key = tobytes(routing_key)     # type: bytes
 
+    def __eq__(self, other):
+        return self.queue == other.queue and self.exchange == other.exchange and self.routing_key == other.routing_key
+
+    def __hash__(self):
+        return hash(self.queue) ^ hash(self.exchange) ^ hash(self.routing_key)
+
 
 class NodeDefinition(object):
     """

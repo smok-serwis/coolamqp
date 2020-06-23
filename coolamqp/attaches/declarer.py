@@ -138,6 +138,9 @@ class Operation(object):
                         self.obj)  # todo access not threadsafe
                     self.declarer.on_discard(self.obj)
         else:
+            if isinstance(payload, QueueDeclareOk) and self.obj.anonymous:
+                self.obj.name = payload.queue
+
             self.span_finished()
             if self.fut is not None:
                 self.fut.set_result(None)
@@ -282,10 +285,6 @@ class Declarer(Channeler, Synchronized):
         :return: a Future instance
         :raise ValueError: tried to declare anonymous queue
         """
-        if isinstance(obj, Queue):
-            if obj.anonymous:
-                raise ValueError('Cannot declare anonymous queue, use consume to have the name filled in!')
-
         if span is not None:
             enqueued_span = self.cluster.tracer.start_span('Enqueued', child_of=span)
         else:
