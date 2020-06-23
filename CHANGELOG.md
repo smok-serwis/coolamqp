@@ -1,3 +1,7 @@
+# v1.2.1
+
+* _TBA_
+
 # v1.2
 
 * added queue.bind
