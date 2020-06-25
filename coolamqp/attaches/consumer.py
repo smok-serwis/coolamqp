@@ -406,9 +406,11 @@ class Consumer(Channeler):
             if self.queue.anonymous:
                 self.queue.name = payload.queue.tobytes()
 
+            queue_declared = False
             # We need any form of binding.
             if self.queue.exchange is not None:
                 if self.queue.exchange.type != b'topic':
+                    queue_declared = True
                     self.method_and_watch(
                         QueueBind(
                             self.queue.name,
@@ -417,7 +419,8 @@ class Consumer(Channeler):
                         QueueBindOk,
                         self.on_setup
                     )
-            else:
+
+            if not queue_declared:
                 # default exchange, pretend it was bind ok
                 self.on_setup(QueueBindOk())
         elif isinstance(payload, QueueBindOk):

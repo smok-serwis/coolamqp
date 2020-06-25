@@ -1,6 +1,6 @@
 # v1.2.4
 
-* _TBA_
+* bugfix release
 
 # v1.2.3
 
