@@ -408,7 +408,7 @@ class Consumer(Channeler):
 
             # We need any form of binding.
             if self.queue.exchange is not None:
-                if self.queue.exchange.type != 'topic':
+                if self.queue.exchange.type != b'topic':
                     self.method_and_watch(
                         QueueBind(
                             self.queue.name,
