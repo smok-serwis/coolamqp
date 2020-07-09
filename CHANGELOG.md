@@ -4,5 +4,4 @@ have been made so far, between releases.
 
 # v1.2.6
 
-* __repr__ improved
 
