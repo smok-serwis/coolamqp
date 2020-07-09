@@ -1,6 +1,8 @@
 # v1.2.5
 
 * bugfix: fixed `log_frames` in `Cluster`
+* improved Travis build pipeline
+* added stress tests for `SelectListener`
 
 # v1.2.4
 

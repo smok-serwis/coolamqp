@@ -187,7 +187,7 @@ class TestA(unittest.TestCase):
         self.assertTrue(P['q'])
 
     def test_send_recv_nonzerolen_memoryview(self):
-        """single and multi frame"""
+        """single and multi frame in MEMORYVIEW mode"""
         from coolamqp.attaches import BodyReceiveMode
 
         con, fut = self.c.consume(Queue(u'hello7', exclusive=True), no_ack=True,
@@ -210,7 +210,7 @@ class TestA(unittest.TestCase):
         self.assertEquals(m.body.tobytes(), data)
 
     def test_send_recv_nonzerolen_listofmemoryview(self):
-        """single and multi frame"""
+        """single and multi frame in LIST_OF_MEMORYVIEW mode"""
         from coolamqp.attaches import BodyReceiveMode
 
         con, fut = self.c.consume(Queue(u'hello8', exclusive=True), no_ack=True,

@@ -109,7 +109,7 @@ The default username used is guest, and password is guest.
 You can also run unit tests from Docker, if you wish so. To launch the unit test suite:
 
 ```bash
-docker-compose up tests
+docker-compose up unittest
 ```
 
 To launch the stress test suite
