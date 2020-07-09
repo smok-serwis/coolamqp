@@ -39,7 +39,8 @@ Enjoy!
 _Watch out for memoryviews!_ They're here to stay.
 
 [Short'n'sweet contributing guide](CONTRIBUTING.md)
-[Change log](CHANGELOG.md)
+[Change log for past versions](https://github.com/smok-serwis/coolamqp/releases/)
+[Change log in this, unreleased version](CHANGELOG.md)
 
 
 ## Notes
