@@ -403,7 +403,7 @@ class Consumer(Channeler):
 
         elif isinstance(payload, QueueDeclareOk):
             # did we need an anonymous name?
-            if self.queue.anonymous:
+            if not self.queue.name:
                 self.queue.name = payload.queue.tobytes()
 
             queue_declared = False

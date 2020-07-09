@@ -7,3 +7,5 @@ omit=
   stress_tests/*
   coolamqp/framing/definitions.py
   compile_definitions/*
+  setup.py
+

@@ -2,8 +2,6 @@ The changelog is kept as [release notes](https://github.com/smok-serwis/coolamqp
 on GitHub. This file serves to only note what changes
 have been made so far, between releases.
 
-# v1.2.6
+# v1.2.7
 
-* repr improved for methods that were received from the server and had memoryview's in them
-* is far more friendly on Windows, which doesn't have epoll
-
+* fixed queue being defined as a different one in consumer if it was anonymous

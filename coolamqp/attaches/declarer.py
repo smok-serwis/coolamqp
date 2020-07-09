@@ -140,6 +140,7 @@ class Operation(object):
         else:
             if isinstance(payload, QueueDeclareOk) and self.obj.anonymous:
                 self.obj.name = payload.queue
+                self.obj.anonymous = False
 
             self.span_finished()
             if self.fut is not None:
