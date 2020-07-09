@@ -1,6 +1,5 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import
-
 """
 A Python version of the AMQP machine-readable specification.
 
@@ -35,6 +34,13 @@ from coolamqp.framing.field_table import enframe_table, deframe_table, frame_tab
 from coolamqp.framing.compilation import compile_particular_content_property_list_class
 
 logger = logging.getLogger(__name__)
+
+
+def to_repr(obj):
+    if isinstance(obj, memoryview):
+        obj = obj.tobytes().decode('utf8')
+    return repr(obj)
+
 
 Field = collections.namedtuple('Field',
                                ('name', 'type', 'basic_type', 'reserved'))
@@ -210,7 +216,7 @@ class ConnectionBlocked(AMQPMethodPayload):
 
     :type reason: binary type (max length 255) (shortstr in AMQP)
     """
-    __slots__ = (u'reason',)
+    __slots__ = (u'reason', )
 
     NAME = u'connection.blocked'
 
@@ -233,7 +239,8 @@ class ConnectionBlocked(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConnectionBlocked(%s)' % (', '.join(map(repr, [self.reason])))
+        return 'ConnectionBlocked(%s)' % (', '.join(map(
+            to_repr, [self.reason])))
 
     def __init__(self, reason):
         """
@@ -316,7 +323,7 @@ class ConnectionClose(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ConnectionClose(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.reply_code, self.reply_text, self.class_id, self.method_id
             ])))
 
@@ -379,7 +386,7 @@ class ConnectionCloseOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConnectionCloseOk(%s)' % (', '.join(map(repr, [])))
+        return 'ConnectionCloseOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -405,7 +412,7 @@ class ConnectionOpen(AMQPMethodPayload):
             The name of the virtual host to work with.
     :type virtual_host: binary type (max length 255) (path in AMQP)
     """
-    __slots__ = (u'virtual_host',)
+    __slots__ = (u'virtual_host', )
 
     NAME = u'connection.open'
 
@@ -430,8 +437,8 @@ class ConnectionOpen(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConnectionOpen(%s)' % (', '.join(map(repr,
-                                                     [self.virtual_host])))
+        return 'ConnectionOpen(%s)' % (', '.join(
+            map(to_repr, [self.virtual_host])))
 
     def __init__(self, virtual_host):
         """
@@ -495,7 +502,7 @@ class ConnectionOpenOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConnectionOpenOk(%s)' % (', '.join(map(repr, [])))
+        return 'ConnectionOpenOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -586,7 +593,7 @@ class ConnectionStart(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ConnectionStart(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.version_major, self.version_minor, self.server_properties,
                 self.mechanisms, self.locales
             ])))
@@ -650,7 +657,7 @@ class ConnectionSecure(AMQPMethodPayload):
             mechanism.
     :type challenge: binary type (longstr in AMQP)
     """
-    __slots__ = (u'challenge',)
+    __slots__ = (u'challenge', )
 
     NAME = u'connection.secure'
 
@@ -673,8 +680,8 @@ class ConnectionSecure(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConnectionSecure(%s)' % (', '.join(map(repr,
-                                                       [self.challenge])))
+        return 'ConnectionSecure(%s)' % (', '.join(
+            map(to_repr, [self.challenge])))
 
     def __init__(self, challenge):
         """
@@ -766,7 +773,7 @@ class ConnectionStartOk(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ConnectionStartOk(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.client_properties, self.mechanism, self.response,
                 self.locale
             ])))
@@ -828,7 +835,7 @@ class ConnectionSecureOk(AMQPMethodPayload):
             data are defined by the SASL security mechanism.
     :type response: binary type (longstr in AMQP)
     """
-    __slots__ = (u'response',)
+    __slots__ = (u'response', )
 
     NAME = u'connection.secure-ok'
 
@@ -851,8 +858,8 @@ class ConnectionSecureOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConnectionSecureOk(%s)' % (', '.join(map(
-            repr, [self.response])))
+        return 'ConnectionSecureOk(%s)' % (', '.join(
+            map(to_repr, [self.response])))
 
     def __init__(self, response):
         """
@@ -937,7 +944,7 @@ class ConnectionTune(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ConnectionTune(%s)' % (', '.join(
-            map(repr, [self.channel_max, self.frame_max, self.heartbeat])))
+            map(to_repr, [self.channel_max, self.frame_max, self.heartbeat])))
 
     def __init__(self, channel_max, frame_max, heartbeat):
         """
@@ -1024,7 +1031,7 @@ class ConnectionTuneOk(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ConnectionTuneOk(%s)' % (', '.join(
-            map(repr, [self.channel_max, self.frame_max, self.heartbeat])))
+            map(to_repr, [self.channel_max, self.frame_max, self.heartbeat])))
 
     def __init__(self, channel_max, frame_max, heartbeat):
         """
@@ -1077,11 +1084,12 @@ class ConnectionUnblocked(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConnectionUnblocked(%s)' % (', '.join(map(repr, [])))
+        return 'ConnectionUnblocked(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(
-            cls, buf, start_offset):  # type: (buffer, int) -> ConnectionUnblocked
+            cls, buf,
+            start_offset):  # type: (buffer, int) -> ConnectionUnblocked
         offset = start_offset
         return cls()
 
@@ -1154,7 +1162,7 @@ class ChannelClose(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ChannelClose(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.reply_code, self.reply_text, self.class_id, self.method_id
             ])))
 
@@ -1216,7 +1224,7 @@ class ChannelCloseOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ChannelCloseOk(%s)' % (', '.join(map(repr, [])))
+        return 'ChannelCloseOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -1245,7 +1253,7 @@ class ChannelFlow(AMQPMethodPayload):
             content frames.
     :type active: bool (bit in AMQP)
     """
-    __slots__ = (u'active',)
+    __slots__ = (u'active', )
 
     NAME = u'channel.flow'
 
@@ -1268,7 +1276,7 @@ class ChannelFlow(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ChannelFlow(%s)' % (', '.join(map(repr, [self.active])))
+        return 'ChannelFlow(%s)' % (', '.join(map(to_repr, [self.active])))
 
     def __init__(self, active):
         """
@@ -1307,7 +1315,7 @@ class ChannelFlowOk(AMQPMethodPayload):
             not.
     :type active: bool (bit in AMQP)
     """
-    __slots__ = (u'active',)
+    __slots__ = (u'active', )
 
     NAME = u'channel.flow-ok'
 
@@ -1330,7 +1338,7 @@ class ChannelFlowOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ChannelFlowOk(%s)' % (', '.join(map(repr, [self.active])))
+        return 'ChannelFlowOk(%s)' % (', '.join(map(to_repr, [self.active])))
 
     def __init__(self, active):
         """
@@ -1386,7 +1394,7 @@ class ChannelOpen(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ChannelOpen(%s)' % (', '.join(map(repr, [])))
+        return 'ChannelOpen(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -1430,7 +1438,7 @@ class ChannelOpenOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ChannelOpenOk(%s)' % (', '.join(map(repr, [])))
+        return 'ChannelOpenOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -1512,7 +1520,7 @@ class ExchangeBind(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ExchangeBind(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.destination, self.source, self.routing_key, self.no_wait,
                 self.arguments
             ])))
@@ -1593,7 +1601,7 @@ class ExchangeBindOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ExchangeBindOk(%s)' % (', '.join(map(repr, [])))
+        return 'ExchangeBindOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -1704,7 +1712,7 @@ class ExchangeDeclare(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ExchangeDeclare(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.exchange, self.type_, self.passive, self.durable,
                 self.auto_delete, self.internal, self.no_wait, self.arguments
             ])))
@@ -1816,7 +1824,7 @@ class ExchangeDelete(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ExchangeDelete(%s)' % (', '.join(
-            map(repr, [self.exchange, self.if_unused, self.no_wait])))
+            map(to_repr, [self.exchange, self.if_unused, self.no_wait])))
 
     def __init__(self, exchange, if_unused, no_wait):
         """
@@ -1879,7 +1887,7 @@ class ExchangeDeclareOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ExchangeDeclareOk(%s)' % (', '.join(map(repr, [])))
+        return 'ExchangeDeclareOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -1914,7 +1922,7 @@ class ExchangeDeleteOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ExchangeDeleteOk(%s)' % (', '.join(map(repr, [])))
+        return 'ExchangeDeleteOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -1976,7 +1984,7 @@ class ExchangeUnbind(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'ExchangeUnbind(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.destination, self.source, self.routing_key, self.no_wait,
                 self.arguments
             ])))
@@ -2057,7 +2065,7 @@ class ExchangeUnbindOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ExchangeUnbindOk(%s)' % (', '.join(map(repr, [])))
+        return 'ExchangeUnbindOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -2156,7 +2164,7 @@ class QueueBind(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'QueueBind(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.queue, self.exchange, self.routing_key, self.no_wait,
                 self.arguments
             ])))
@@ -2237,7 +2245,7 @@ class QueueBindOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'QueueBindOk(%s)' % (', '.join(map(repr, [])))
+        return 'QueueBindOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -2349,7 +2357,7 @@ class QueueDeclare(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'QueueDeclare(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.queue, self.passive, self.durable, self.exclusive,
                 self.auto_delete, self.no_wait, self.arguments
             ])))
@@ -2460,7 +2468,7 @@ class QueueDelete(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'QueueDelete(%s)' % (', '.join(
-            map(repr,
+            map(to_repr,
                 [self.queue, self.if_unused, self.if_empty, self.no_wait])))
 
     def __init__(self, queue, if_unused, if_empty, no_wait):
@@ -2550,7 +2558,8 @@ class QueueDeclareOk(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'QueueDeclareOk(%s)' % (', '.join(
-            map(repr, [self.queue, self.message_count, self.consumer_count])))
+            map(to_repr,
+                [self.queue, self.message_count, self.consumer_count])))
 
     def __init__(self, queue, message_count, consumer_count):
         """
@@ -2590,7 +2599,7 @@ class QueueDeleteOk(AMQPMethodPayload):
     :param message_count: Reports the number of messages deleted.
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     """
-    __slots__ = (u'message_count',)
+    __slots__ = (u'message_count', )
 
     NAME = u'queue.delete-ok'
 
@@ -2613,8 +2622,8 @@ class QueueDeleteOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'QueueDeleteOk(%s)' % (', '.join(map(repr,
-                                                    [self.message_count])))
+        return 'QueueDeleteOk(%s)' % (', '.join(
+            map(to_repr, [self.message_count])))
 
     def __init__(self, message_count):
         """
@@ -2678,7 +2687,7 @@ class QueuePurge(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'QueuePurge(%s)' % (', '.join(
-            map(repr, [self.queue, self.no_wait])))
+            map(to_repr, [self.queue, self.no_wait])))
 
     def __init__(self, queue, no_wait):
         """
@@ -2720,7 +2729,7 @@ class QueuePurgeOk(AMQPMethodPayload):
     :param message_count: Reports the number of messages purged.
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     """
-    __slots__ = (u'message_count',)
+    __slots__ = (u'message_count', )
 
     NAME = u'queue.purge-ok'
 
@@ -2743,8 +2752,8 @@ class QueuePurgeOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'QueuePurgeOk(%s)' % (', '.join(map(repr,
-                                                   [self.message_count])))
+        return 'QueuePurgeOk(%s)' % (', '.join(
+            map(to_repr, [self.message_count])))
 
     def __init__(self, message_count):
         """
@@ -2817,7 +2826,7 @@ class QueueUnbind(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'QueueUnbind(%s)' % (', '.join(
-            map(repr,
+            map(to_repr,
                 [self.queue, self.exchange, self.routing_key, self.arguments
                  ])))
 
@@ -2891,7 +2900,7 @@ class QueueUnbindOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'QueueUnbindOk(%s)' % (', '.join(map(repr, [])))
+        return 'QueueUnbindOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -3048,7 +3057,7 @@ class BasicContentPropertyList(AMQPContentPropertyList):
             while buf[offset + pfl - 1] & 1:
                 pfl += 2
         zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset +
-                                                                      pfl]).tobytes()
+                                                               pfl]).tobytes()
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[
                 zpf].from_buffer(buf, offset)
@@ -3112,7 +3121,7 @@ class BasicAck(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicAck(%s)' % (', '.join(
-            map(repr, [self.delivery_tag, self.multiple])))
+            map(to_repr, [self.delivery_tag, self.multiple])))
 
     def __init__(self, delivery_tag, multiple):
         """
@@ -3208,7 +3217,7 @@ class BasicConsume(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicConsume(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.queue, self.consumer_tag, self.no_local, self.no_ack,
                 self.exclusive, self.no_wait, self.arguments
             ])))
@@ -3320,7 +3329,7 @@ class BasicCancel(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicCancel(%s)' % (', '.join(
-            map(repr, [self.consumer_tag, self.no_wait])))
+            map(to_repr, [self.consumer_tag, self.no_wait])))
 
     def __init__(self, consumer_tag, no_wait):
         """
@@ -3364,7 +3373,7 @@ class BasicConsumeOk(AMQPMethodPayload):
             by the server.
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     """
-    __slots__ = (u'consumer_tag',)
+    __slots__ = (u'consumer_tag', )
 
     NAME = u'basic.consume-ok'
 
@@ -3387,8 +3396,8 @@ class BasicConsumeOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicConsumeOk(%s)' % (', '.join(map(repr,
-                                                     [self.consumer_tag])))
+        return 'BasicConsumeOk(%s)' % (', '.join(
+            map(to_repr, [self.consumer_tag])))
 
     def __init__(self, consumer_tag):
         """
@@ -3422,7 +3431,7 @@ class BasicCancelOk(AMQPMethodPayload):
 
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     """
-    __slots__ = (u'consumer_tag',)
+    __slots__ = (u'consumer_tag', )
 
     NAME = u'basic.cancel-ok'
 
@@ -3445,8 +3454,8 @@ class BasicCancelOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicCancelOk(%s)' % (', '.join(map(repr,
-                                                    [self.consumer_tag])))
+        return 'BasicCancelOk(%s)' % (', '.join(
+            map(to_repr, [self.consumer_tag])))
 
     def __init__(self, consumer_tag):
         """
@@ -3530,7 +3539,7 @@ class BasicDeliver(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicDeliver(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.consumer_tag, self.delivery_tag, self.redelivered,
                 self.exchange, self.routing_key
             ])))
@@ -3626,8 +3635,8 @@ class BasicGet(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicGet(%s)' % (', '.join(map(repr,
-                                               [self.queue, self.no_ack])))
+        return 'BasicGet(%s)' % (', '.join(
+            map(to_repr, [self.queue, self.no_ack])))
 
     def __init__(self, queue, no_ack):
         """
@@ -3715,7 +3724,7 @@ class BasicGetOk(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicGetOk(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.delivery_tag, self.redelivered, self.exchange,
                 self.routing_key, self.message_count
             ])))
@@ -3798,7 +3807,7 @@ class BasicGetEmpty(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicGetEmpty(%s)' % (', '.join(map(repr, [])))
+        return 'BasicGetEmpty(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -3872,7 +3881,7 @@ class BasicNack(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicNack(%s)' % (', '.join(
-            map(repr, [self.delivery_tag, self.multiple, self.requeue])))
+            map(to_repr, [self.delivery_tag, self.multiple, self.requeue])))
 
     def __init__(self, delivery_tag, multiple, requeue):
         """
@@ -3976,7 +3985,7 @@ class BasicPublish(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicPublish(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.exchange, self.routing_key, self.mandatory, self.immediate
             ])))
 
@@ -4103,7 +4112,7 @@ class BasicQos(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicQos(%s)' % (', '.join(
-            map(repr,
+            map(to_repr,
                 [self.prefetch_size, self.prefetch_count, self.global_])))
 
     def __init__(self, prefetch_size, prefetch_count, global_):
@@ -4163,7 +4172,7 @@ class BasicQosOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicQosOk(%s)' % (', '.join(map(repr, [])))
+        return 'BasicQosOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -4227,7 +4236,7 @@ class BasicReturn(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicReturn(%s)' % (', '.join(
-            map(repr, [
+            map(to_repr, [
                 self.reply_code, self.reply_text, self.exchange,
                 self.routing_key
             ])))
@@ -4318,7 +4327,7 @@ class BasicReject(AMQPMethodPayload):
         :return: Python string representation
         """
         return 'BasicReject(%s)' % (', '.join(
-            map(repr, [self.delivery_tag, self.requeue])))
+            map(to_repr, [self.delivery_tag, self.requeue])))
 
     def __init__(self, delivery_tag, requeue):
         """
@@ -4362,7 +4371,7 @@ class BasicRecoverAsync(AMQPMethodPayload):
             potentially then delivering it to an alternative subscriber.
     :type requeue: bool (bit in AMQP)
     """
-    __slots__ = (u'requeue',)
+    __slots__ = (u'requeue', )
 
     NAME = u'basic.recover-async'
 
@@ -4385,7 +4394,8 @@ class BasicRecoverAsync(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicRecoverAsync(%s)' % (', '.join(map(repr, [self.requeue])))
+        return 'BasicRecoverAsync(%s)' % (', '.join(
+            map(to_repr, [self.requeue])))
 
     def __init__(self, requeue):
         """
@@ -4428,7 +4438,7 @@ class BasicRecover(AMQPMethodPayload):
             potentially then delivering it to an alternative subscriber.
     :type requeue: bool (bit in AMQP)
     """
-    __slots__ = (u'requeue',)
+    __slots__ = (u'requeue', )
 
     NAME = u'basic.recover'
 
@@ -4451,7 +4461,7 @@ class BasicRecover(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicRecover(%s)' % (', '.join(map(repr, [self.requeue])))
+        return 'BasicRecover(%s)' % (', '.join(map(to_repr, [self.requeue])))
 
     def __init__(self, requeue):
         """
@@ -4502,7 +4512,7 @@ class BasicRecoverOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'BasicRecoverOk(%s)' % (', '.join(map(repr, [])))
+        return 'BasicRecoverOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -4564,7 +4574,7 @@ class TxCommit(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'TxCommit(%s)' % (', '.join(map(repr, [])))
+        return 'TxCommit(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf, start_offset):  # type: (buffer, int) -> TxCommit
@@ -4600,7 +4610,7 @@ class TxCommitOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'TxCommitOk(%s)' % (', '.join(map(repr, [])))
+        return 'TxCommitOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -4641,7 +4651,7 @@ class TxRollback(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'TxRollback(%s)' % (', '.join(map(repr, [])))
+        return 'TxRollback(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -4678,7 +4688,7 @@ class TxRollbackOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'TxRollbackOk(%s)' % (', '.join(map(repr, [])))
+        return 'TxRollbackOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -4716,7 +4726,7 @@ class TxSelect(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'TxSelect(%s)' % (', '.join(map(repr, [])))
+        return 'TxSelect(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf, start_offset):  # type: (buffer, int) -> TxSelect
@@ -4752,7 +4762,7 @@ class TxSelectOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'TxSelectOk(%s)' % (', '.join(map(repr, [])))
+        return 'TxSelectOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
@@ -4800,7 +4810,7 @@ class ConfirmSelect(AMQPMethodPayload):
             method it will raise a channel or connection exception.
     :type nowait: bool (bit in AMQP)
     """
-    __slots__ = (u'nowait',)
+    __slots__ = (u'nowait', )
 
     NAME = u'confirm.select'
 
@@ -4823,7 +4833,7 @@ class ConfirmSelect(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConfirmSelect(%s)' % (', '.join(map(repr, [self.nowait])))
+        return 'ConfirmSelect(%s)' % (', '.join(map(to_repr, [self.nowait])))
 
     def __init__(self, nowait):
         """
@@ -4875,7 +4885,7 @@ class ConfirmSelectOk(AMQPMethodPayload):
 
         :return: Python string representation
         """
-        return 'ConfirmSelectOk(%s)' % (', '.join(map(repr, [])))
+        return 'ConfirmSelectOk(%s)' % (', '.join(map(to_repr, [])))
 
     @classmethod
     def from_buffer(cls, buf,
