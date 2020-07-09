@@ -27,8 +27,10 @@ class LogFramesToFile:
         self.file.close()
 
     def on_frame(self, timestamp, frame, direction):
-        self.file.write('%s %s %s\n' % (timestamp, frame, direction))
-        self.file.flush()
-
+        try:
+            self.file.write('%s %s %s\n' % (timestamp, frame, direction))
+            self.file.flush()
+        except ValueError:
+            pass
 
 queue_names = (str(v) for v in range(100))
