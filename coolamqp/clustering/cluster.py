@@ -333,9 +333,7 @@ class Cluster(object):
         :raise RuntimeError: if called without start() being called first
         """
         self.connected = False
-        try:
-            self.listener
-        except AttributeError:
+        if not self.started:
             raise RuntimeError(u'shutdown without start')
 
         logger.info('[%s] Commencing shutdown', self.name)
