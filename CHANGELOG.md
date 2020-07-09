@@ -4,4 +4,5 @@ have been made so far, between releases.
 
 # v1.2.6
 
-* _banana banana banana_
+* __repr__ improved
+

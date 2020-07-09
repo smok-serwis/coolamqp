@@ -70,6 +70,11 @@ from coolamqp.framing.compilation import compile_particular_content_property_lis
 
 logger = logging.getLogger(__name__)
 
+def to_repr(obj):
+    if isinstance(obj, memoryview):
+        obj = obj.tobytes().decode('utf8')
+    return repr(obj)
+
 Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved'))
 
 '''.encode('utf8'))
@@ -461,7 +466,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
 
         :return: Python string representation
         """
-        return '%s(%S)' % (', '.join(map(repr, [%s])))''',
+        return '%s(%S)' % (', '.join(map(to_repr, [%s])))''',
                  full_class_name,
                  u", ".join(['self.' + format_field_name(field.name) for field in non_reserved_fields]))
 
