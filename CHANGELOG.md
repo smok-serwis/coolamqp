@@ -4,4 +4,4 @@ have been made so far, between releases.
 
 # v1.2.7
 
-
+* fixed queue being defined as a different one in consumer if it was anonymous

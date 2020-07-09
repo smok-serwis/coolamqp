@@ -384,7 +384,7 @@ class Consumer(Channeler):
         elif isinstance(payload, ExchangeDeclareOk):
             # Declare the queue
 
-            name = b'' if self.queue.anonymous else self.queue.name
+            name = self.queue.name
 
             self.connection.method_and_watch(
                 self.channel_id,
@@ -403,7 +403,7 @@ class Consumer(Channeler):
 
         elif isinstance(payload, QueueDeclareOk):
             # did we need an anonymous name?
-            if self.queue.anonymous:
+            if not self.queue.name:
                 self.queue.name = payload.queue.tobytes()
 
             queue_declared = False
