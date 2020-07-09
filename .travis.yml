@@ -1,32 +1,47 @@
 language: python
-python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
-  - "3.7"
-  - "3.8"
-  - "nightly"
-  - "pypy"
-  - "pypy3.5"
+stages:
+  - name: test
+  - name: deploy
+    if: branch = master
 cache: pip
-before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
-  - pip install nose2 coverage
-script:
-  - coverage run -m compile_definitions
-  - coverage run --append -m nose2 -vv
-  - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m nose2 -vv
-  - coverage run --append -m stress_tests
-install:
-  - python setup.py install
-  - pip install -r stress_tests/requirements.txt
-  - pip install yapf nose2 mock coverage nose2[coverage_plugin]
-after_success:
-  - coverage xml
-  - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
-  - bash build.sh
+jobs:
+  include:
+    - stage: test
+      python: "2.7"
+      script:
+        - bash tests/travis_test.sh
+    - stage: test
+      python: "3.5"
+      script:
+        - bash tests/travis_test.sh
+    - stage: test
+      python: "3.6"
+      script:
+        - bash tests/travis_test.sh
+    - stage: test
+      python: "3.7"
+      script:
+        - bash tests/travis_test.sh
+    - stage: test
+      python: "3.8"
+      script:
+        - bash tests/travis_test.sh
+    - stage: test
+      python: "nightly"
+      script:
+        - bash tests/travis_test.sh
+    - stage: test
+      python: "pypy"
+      script:
+        - bash tests/travis_test.sh
+    - stage: test
+      python: "pypy3.5"
+      script:
+        - bash tests/travis_test.sh
+    - stage: deploy
+      python: "3.8"
+      script:
+        - bash tests/travis_build.sh
 services: rabbitmq
 addons:
   apt:
