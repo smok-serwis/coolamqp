@@ -16,7 +16,6 @@ coverage run --append -m nose2 -vv
 COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m nose2 -vv
 coverage run --append -m stress_tests
 
-coverage combine
 coverage report
 coverage xml
 
