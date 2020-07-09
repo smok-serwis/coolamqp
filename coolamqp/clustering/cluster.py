@@ -76,6 +76,7 @@ class Cluster(object):
             except ImportError:
                 raise RuntimeError('tracer given, but opentracing is not installed!')
 
+        self.started = False
         self.tracer = tracer
         self.name = name or 'CoolAMQP'
         self.node, = nodes
@@ -282,13 +283,9 @@ class Cluster(object):
         :raise RuntimeError: called more than once
         :raise ConnectionDead: failed to connect within timeout
         """
-
-        try:
-            self.listener
-        except AttributeError:
-            pass
-        else:
+        if self.started:
             raise RuntimeError(u'[%s] This was already called!' % (self.name,))
+        self.started = True
 
         self.listener = ListenerThread(name=self.name)
 
