@@ -5,6 +5,7 @@ Welcome to CoolAMQP's documentation!
     :maxdepth: 2
     :caption: Contents
 
+    coolamqp/cluster
     tutorial
     caveats
     frames
