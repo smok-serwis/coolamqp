@@ -5,9 +5,8 @@ import threading
 import logging
 import typing as tp
 import os
-from coolamqp.objects import Callable
-from coolamqp.uplink.listener.epoll_listener import EpollListener
 from coolamqp.uplink.listener.select_listener import SelectListener
+from coolamqp.objects import Callable
 from coolamqp.uplink.listener.base_listener import BaseListener
 from coolamqp.utils import prctl_set_name
 
@@ -28,12 +27,14 @@ def get_listener_class():   # type: () -> tp.Type[BaseListener]
     try:
         import gevent.socket
     except ImportError:
+        from coolamqp.uplink.listener.epoll_listener import EpollListener
         return EpollListener
     import socket
 
     if socket.socket is gevent.socket.socket:
         return SelectListener     # gevent is active
 
+    from coolamqp.uplink.listener.epoll_listener import EpollListener
     return EpollListener
 
 

@@ -4,4 +4,5 @@ have been made so far, between releases.
 
 # v1.2.7
 
+* is far more friendly on Windows, which doesn't have epoll
 
