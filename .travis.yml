@@ -10,6 +10,9 @@ jobs:
       python: "2.7"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
@@ -19,6 +22,9 @@ jobs:
       python: "3.5"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
@@ -28,6 +34,9 @@ jobs:
       python: "3.6"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
@@ -37,6 +46,9 @@ jobs:
       python: "3.7"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
@@ -46,6 +58,9 @@ jobs:
       python: "3.8"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
@@ -55,6 +70,9 @@ jobs:
       python: "nightly"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
@@ -64,6 +82,9 @@ jobs:
       python: "pypy"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
@@ -73,6 +94,9 @@ jobs:
       python: "pypy3.5"
       script:
         - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
       services: rabbitmq
       addons:
         apt:
