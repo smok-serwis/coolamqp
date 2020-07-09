@@ -79,6 +79,6 @@ jobs:
           packages:
             - rabbitmq-server
     - stage: deploy
-        python: "3.8"
-        script:
-          - bash tests/travis_build.sh
+      python: "3.8"
+      script:
+        - bash tests/travis_build.sh
