@@ -1,6 +1,6 @@
 # v1.2.5
 
-* _TBA_
+* bugfix: fixed `log_frames` in `Cluster`
 
 # v1.2.4
 

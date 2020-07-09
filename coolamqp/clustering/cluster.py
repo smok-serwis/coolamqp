@@ -83,6 +83,10 @@ class Cluster(object):
         self.log_frames = log_frames
         self.on_blocked = on_blocked
         self.connected = False
+        self.listener = None
+        self.attache_group = None
+        self.events = None
+        self.snr = None     # type: SingleNodeReconnector
 
         if on_fail is not None:
             def decorated():
@@ -265,7 +269,7 @@ class Cluster(object):
             raise NotImplementedError(
                 u'Sorry, this functionality is not yet implemented!')
 
-    def start(self, wait=True, timeout=10.0, log_frames=None):  # type: (bool, float, bool) -> None
+    def start(self, wait=True, timeout=10.0):  # type: (bool, float, bool) -> None
         """
         Connect to broker. Initialize Cluster.
 
@@ -277,7 +281,6 @@ class Cluster(object):
                         ConnectionDead error will be raised
         :raise RuntimeError: called more than once
         :raise ConnectionDead: failed to connect within timeout
-        :param log_frames: whether to keep a log of sent/received frames in self.log_frames
         """
 
         try:
@@ -295,7 +298,7 @@ class Cluster(object):
 
         self.snr = SingleNodeReconnector(self.node, self.attache_group,
                                          self.listener, self.extra_properties,
-                                         log_frames, self.name)
+                                         self.log_frames, self.name)
         self.snr.on_fail.add(lambda: self.events.put_nowait(ConnectionLost()))
         if self.on_fail is not None:
             self.snr.on_fail.add(self.on_fail)

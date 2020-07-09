@@ -63,4 +63,4 @@ class TestConnecting(unittest.TestCase):
     def test_amqpconnstring_port(self):
         node = NodeDefinition('amqp://lol:lol@lol:4123/vhost')
 
-        self.assertEquals(node.port, 4123)
+        self.assertEqual(node.port, 4123)
