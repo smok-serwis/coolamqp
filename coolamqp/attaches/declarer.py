@@ -138,7 +138,7 @@ class Operation(object):
                         self.obj)  # todo access not threadsafe
                     self.declarer.on_discard(self.obj)
         else:
-            if isinstance(payload, QueueDeclareOk) and not self.obj.name:
+            if isinstance(payload, QueueDeclareOk) and self.obj.anonymous:
                 self.obj.name = payload.queue
                 self.obj.anonymous = False
 
