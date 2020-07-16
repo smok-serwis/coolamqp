@@ -2,7 +2,7 @@ language: python
 stages:
   - name: test
   - name: deploy
-    if: branch = master
+    if: tag is present
 cache: pip
 jobs:
   include:
