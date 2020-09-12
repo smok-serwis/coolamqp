@@ -3,3 +3,5 @@ on GitHub. This file serves to only note what changes
 have been made so far, between releases.
 
 # v1.2.8
+
+* added an option to disable tracing for particular calls

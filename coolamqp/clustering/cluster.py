@@ -99,11 +99,12 @@ class Cluster(object):
         else:
             self.on_fail = None
 
-    def bind(self, queue, exchange, routing_key, persistent=False, span=None):
+    def bind(self, queue, exchange, routing_key, persistent=False, span=None,
+             dont_trace=False):
         """
         Bind a queue to an exchange
         """
-        if span is not None:
+        if span is not None and not dont_trace:
             child_span = self._make_span('bind', span)
         else:
             child_span = None
@@ -114,7 +115,8 @@ class Cluster(object):
 
     def declare(self, obj,  # type: tp.Union[Queue, Exchange]
                 persistent=False,  # type: bool
-                span=None  # type: tp.Optional[opentracing.Span]
+                span=None,  # type: tp.Optional[opentracing.Span]
+                dont_trace=False    # type: bool
                 ):  # type: (...) -> concurrent.futures.Future
         """
         Declare a Queue/Exchange
@@ -122,21 +124,23 @@ class Cluster(object):
         :param obj: Queue/Exchange object
         :param persistent: should it be redefined upon reconnect?
         :param span: optional parent span, if opentracing is installed
+        :param dont_trace: if True, a span won't be output
         :return: Future
         """
-        if span is not None:
+        if span is not None and not dont_trace:
             child_span = self._make_span('declare', span)
         else:
             child_span = None
         fut = self.decl.declare(obj, persistent=persistent, span=child_span)
         return close_future(fut, child_span)
 
-    def drain(self, timeout, span=None):  # type: (float) -> Event
+    def drain(self, timeout, span=None, dont_trace=False):  # type: (float) -> Event
         """
         Return an Event.
 
         :param timeout: time to wait for an event. 0 means return immediately. None means block forever
         :param span: optional parent span, if opentracing is installed
+        :param dont_trace: if True, this span won't be traced
         :return: an Event instance. NothingMuch is returned when there's nothing within a given timoeout
         """
 
@@ -149,7 +153,7 @@ class Cluster(object):
             except six.moves.queue.Empty:
                 return nothing_much
 
-        if span is not None:
+        if span is not None and not dont_trace:
             from opentracing import tags
             parent_span = self.tracer.start_active_span('AMQP call',
                                                         child_of=span,
@@ -164,7 +168,9 @@ class Cluster(object):
         else:
             return fetch()
 
-    def consume(self, queue, on_message=None, span=None, *args, **kwargs):
+    def consume(self, queue, on_message=None, span=None,
+                dont_trace=False,   # type: bool
+                *args, **kwargs):
         # type: (Queue, tp.Callable[[MessageReceived], None]) -> tp.Tuple[Consumer, Future]
         """
         Start consuming from a queue.
@@ -179,9 +185,10 @@ class Cluster(object):
         :param on_message: callable that will process incoming messages
                            if you leave it at None, messages will be .put into self.events
         :param span: optional span, if opentracing is installed
+        :param dont_trace: if True, this won't output a span
         :return: a tuple (Consumer instance, and a Future), that tells, when consumer is ready
         """
-        if span is not None:
+        if span is not None and not dont_trace:
             child_span = self._make_span('consume', span)
         else:
             child_span = None
@@ -222,7 +229,8 @@ class Cluster(object):
                 routing_key=u'',  # type: tp.Union[str, bytes]
                 tx=None,  # type: tp.Optional[bool]
                 confirm=None,  # type: tp.Optional[bool]
-                span=None  # type: tp.Optional[opentracing.Span]
+                span=None,  # type: tp.Optional[opentracing.Span]
+                dont_trace=False    # type: bool
                 ):  # type: (...) -> tp.Optional[Future]
         """
         Publish a message.
@@ -237,9 +245,10 @@ class Cluster(object):
                         it will be discarded
         :param tx: deprecated, alias for confirm
         :param span: optionally, current span, if opentracing is installed
+        :param dont_trace: if set to True, a span won't be generated
         :return: Future to be finished on completion or None, is confirm/tx was not chosen
         """
-        if self.tracer is not None:
+        if self.tracer is not None and not dont_trace:
             span = self._make_span('publish', span)
 
         if isinstance(exchange, Exchange):
