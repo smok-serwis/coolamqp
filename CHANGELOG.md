@@ -3,3 +3,6 @@ on GitHub. This file serves to only note what changes
 have been made so far, between releases.
 
 # v1.2.9
+
+* allow calling ack() and nack() multiple times
+

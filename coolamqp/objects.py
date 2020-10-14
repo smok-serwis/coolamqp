@@ -130,7 +130,8 @@ class ReceivedMessage(Message):
     Note that if the consumer that generated this message was no_ack, .ack()
     and .nack() are no-ops.
     """
-    __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', '_ack', '_nack')
+    __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', '_ack', '_nack',
+                 'acked')
 
     def __init__(self, body,  # type: tp.Union[str, bytes, bytearray, tp.List[memoryview]]
                  exchange_name,  # type: memoryview
@@ -162,7 +163,7 @@ class ReceivedMessage(Message):
         self.delivery_tag = delivery_tag
         self.exchange_name = exchange_name
         self.routing_key = routing_key
-
+        self.acked = False
         self._ack = ack or LAMBDA_NONE
         self._nack = nack or LAMBDA_NONE
 
@@ -170,9 +171,14 @@ class ReceivedMessage(Message):
         """
         Acknowledge reception of this message.
 
-        This is a no-op if a Consumer was called with no_ack=True
+        This is a no-op if a Consumer was called with no_ack=True.
+
+        If called after an ack() or nack() was called, this will be a no-op.
         """
+        if self.acked:
+            return
         self._ack()
+        self.acked = True
 
     def nack(self):
         """
@@ -180,8 +186,13 @@ class ReceivedMessage(Message):
 
         This is a no-op if a Consumer was called with no_ack=True. If no_ack was False,
         the message will be requeued and redelivered by the broker
+
+        If called after an ack() or nack() was called, this will be a no-op.
         """
+        if self.acked:
+            return
         self._nack()
+        self.acked = True
 
 
 class Exchange(object):

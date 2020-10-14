@@ -98,11 +98,11 @@ class TestA(unittest.TestCase):
         self.assertTrue(q.name)
 
     def test_send_recv_zerolen(self):
-        P = {'q': False}
+        p = {'q': False}
 
         def ok(e):
             self.assertIsInstance(e, ReceivedMessage)
-            P['q'] = True
+            p['q'] = True
 
         con, fut = self.c.consume(Queue(u'hello3', exclusive=True),
                                   on_message=ok, no_ack=True)
@@ -111,7 +111,29 @@ class TestA(unittest.TestCase):
 
         time.sleep(1)
 
-        self.assertTrue(P['q'])
+        self.assertTrue(p['q'])
+
+    def test_nacking_and_acking(self):
+        p = {'q': False, 'count': 0}
+
+        def ok(msg):
+            if not p['count']:
+                msg.nack()
+            else:
+                msg.ack()
+            msg.ack()
+            self.assertIsInstance(msg, ReceivedMessage)
+            p['q'] = True
+            p['count'] += 1
+
+        con, fut = self.c.consume(Queue(u'hello3', exclusive=True),
+                                  on_message=ok, no_ack=False)
+        fut.result()
+        self.c.publish(Message(b''), routing_key=u'hello3', tx=True).result()
+
+        time.sleep(1)
+
+        self.assertTrue(p['q'])
 
     def test_message_with_propos_confirm(self):
         P = {'q': False}
