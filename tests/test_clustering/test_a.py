@@ -134,6 +134,7 @@ class TestA(unittest.TestCase):
         time.sleep(1)
 
         self.assertTrue(p['q'])
+        self.assertEquals(p['count'], 2)
 
     def test_message_with_propos_confirm(self):
         P = {'q': False}
