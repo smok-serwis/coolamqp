@@ -138,7 +138,7 @@ class TestA(unittest.TestCase):
         self.assertEquals(p['count'], 2)
 
     def test_message_with_propos_confirm(self):
-        P = {'q': False}
+        p = {'q': False}
 
         def ok(e):
             self.assertIsInstance(e, ReceivedMessage)
@@ -146,7 +146,7 @@ class TestA(unittest.TestCase):
             # bcoz u can compare memoryviews to their providers :D
             self.assertEquals(e.properties.content_type, b'text/plain')
             self.assertEquals(e.properties.content_encoding, b'utf8')
-            P['q'] = True
+            p['q'] = True
 
         con, fut = self.c.consume(Queue(u'hello4', exclusive=True),
                                   on_message=ok, no_ack=True)
@@ -165,10 +165,10 @@ class TestA(unittest.TestCase):
 
         time.sleep(1)
 
-        self.assertTrue(P['q'])
+        self.assertTrue(p['q'])
 
     def test_message_with_propos(self):
-        P = {'q': False}
+        p = {'q': False}
 
         def ok(e):
             self.assertIsInstance(e, ReceivedMessage)
@@ -176,7 +176,7 @@ class TestA(unittest.TestCase):
             # bcoz u can compare memoryviews to their providers :D
             self.assertEquals(e.properties.content_type, b'text/plain')
             self.assertEquals(e.properties.content_encoding, b'utf8')
-            P['q'] = True
+            p['q'] = True
 
         con, fut = self.c.consume(Queue(u'hello5', exclusive=True),
                                   on_message=ok, no_ack=True)
@@ -188,17 +188,17 @@ class TestA(unittest.TestCase):
 
         time.sleep(2)
 
-        self.assertTrue(P['q'])
+        self.assertTrue(p['q'])
 
     def test_send_recv_nonzerolen(self):
         """with callback function"""
 
-        P = {'q': False}
+        p = {'q': False}
 
         def ok(e):
             self.assertIsInstance(e, ReceivedMessage)
             self.assertEquals(e.body, b'hello6')
-            P['q'] = True
+            p['q'] = True
 
         con, fut = self.c.consume(Queue(u'hello6', exclusive=True),
                                   on_message=ok, no_ack=True)
@@ -208,7 +208,7 @@ class TestA(unittest.TestCase):
 
         time.sleep(1)
 
-        self.assertTrue(P['q'])
+        self.assertTrue(p['q'])
 
     def test_send_recv_nonzerolen_memoryview(self):
         """single and multi frame in MEMORYVIEW mode"""
