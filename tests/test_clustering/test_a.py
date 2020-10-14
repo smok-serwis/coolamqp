@@ -119,9 +119,10 @@ class TestA(unittest.TestCase):
         def ok(msg):
             if not p['count']:
                 msg.nack()
+                msg.nack()
             else:
                 msg.ack()
-            msg.ack()
+                msg.ack()
             self.assertIsInstance(msg, ReceivedMessage)
             p['q'] = True
             p['count'] += 1
