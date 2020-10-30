@@ -172,7 +172,7 @@ class Consumer(Channeler):
             self.method(BasicQos(prefetch_size or 0, prefetch_count, False))
         self.qos = prefetch_size or 0, prefetch_count
 
-    def cancel(self):  # type: () -> None
+    def cancel(self):  # type: () -> Future
         """
         Cancel the customer.
 
