@@ -4,3 +4,4 @@ have been made so far, between releases.
 
 # v1.2.10
 
+* made CoolAMQP importable on Windows

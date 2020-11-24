@@ -14,8 +14,13 @@ from coolamqp.uplink.listener.base_listener import BaseListener
 
 logger = logging.getLogger(__name__)
 
-RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
-RW = RO | select.EPOLLOUT
+try:
+    RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
+    RW = RO | select.EPOLLOUT
+except AttributeError:
+    # epoll listener will be unusable anyway
+    RO = 0
+    RW = 1
 
 
 class EpollSocket(BaseSocket):

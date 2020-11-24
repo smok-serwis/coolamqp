@@ -20,6 +20,7 @@ def get_listener_class():   # type: () -> tp.Type[BaseListener]
 
     try:
         import select
+        select.EPOLLIN
         select.epoll
     except AttributeError:
         return SelectListener   # we're running on a platform that doesn't support epoll
