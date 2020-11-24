@@ -12,9 +12,6 @@ from coolamqp.uplink.listener.base_listener import BaseListener
 
 logger = logging.getLogger(__name__)
 
-RO = select.EPOLLIN | select.EPOLLHUP | select.EPOLLERR
-RW = RO | select.EPOLLOUT
-
 
 class SelectListener(BaseListener):
     """
