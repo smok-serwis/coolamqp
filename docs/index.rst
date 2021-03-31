@@ -10,6 +10,7 @@ Welcome to CoolAMQP's documentation!
     caveats
     frames
     basics
+    tracing
 
 Indices and tables
 ==================

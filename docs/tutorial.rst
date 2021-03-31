@@ -1,4 +1,3 @@
-========
 Tutorial
 ========
 
@@ -15,7 +14,7 @@ the AMQP connection string.
 .. autoclass:: coolamqp.objects.NodeDefinition
     :members:
 
-::
+.. code-block:: python
 
     from coolamqp.objects import NodeDefinition
 
@@ -24,7 +23,7 @@ the AMQP connection string.
 Cluster instances are used to interface with the cluster (or a single broker). It
 accepts a list of nodes:
 
-::
+.. code-block:: python
 
     from coolamqp.clustering import Cluster
     cluster = Cluster([node], name='My Cluster')
@@ -47,7 +46,7 @@ Publishing and consuming
 Connecting is boring. After we do, we want to do something! Let's try sending a message, and receiving it. To do that,
 you must first define a queue, and register a consumer.
 
-::
+.. code-block:: python
 
     from coolamqp.objects import Queue
 
@@ -57,7 +56,7 @@ you must first define a queue, and register a consumer.
     consume_confirm.result()    # wait for consuming to start
 
 This will create an auto-delete and exclusive queue. After than, a consumer will be registered for this queue.
-_no_ack=False_ will mean that we have to manually confirm messages. 
+_no_ack=False_ will mean that we have to manually confirm messages.
 
 You can specify a callback, that will be called with a message if one's received by this consumer. Since
 we did not do that, this will go to a generic queue belonging to _Cluster_.
@@ -68,7 +67,7 @@ when AMQP _basic.consume-ok_ is received.
 
 To send a message we need to construct it first, and later publish:
 
-::
+.. code-block:: python
 
     from coolamqp.objects import Message
 
@@ -84,7 +83,7 @@ nor decode, and will always expect and return bytes.
 
 To actually get our message, we need to start a consumer first. To do that, just invoke:
 
-::
+.. code-block:: python
 
     cons, fut = cluster.consume(Queue('name of the queue'), **kwargs)
 

@@ -15,7 +15,7 @@ from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
     NothingMuch, Event
 from coolamqp.clustering.single import SingleNodeReconnector
 from coolamqp.exceptions import ConnectionDead
-from coolamqp.objects import Exchange, Message, Queue, FrameLogger, QueueBind
+from coolamqp.objects import Exchange, Message, Queue, QueueBind
 from coolamqp.uplink import ListenerThread
 from coolamqp.utils import monotonic
 
@@ -42,6 +42,7 @@ class Cluster(object):
         Connection.__init__
     :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
         receives from the broker
+    :type log_frames: tp.Optional[:class:`coolamqp.tracing.BaseFrameTracer`]
     :param name: name to appear in log items and prctl() for the listener thread
     :param on_blocked: callable to call when ConnectionBlocked/ConnectionUnblocked is received. It will be
         called with a value of True if connection becomes blocked, and False upon an unblock
@@ -56,7 +57,7 @@ class Cluster(object):
                  on_fail=None,  # type: tp.Optional[tp.Callable[[], None]]
                  extra_properties=None,
                  # type: tp.Optional[tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]]
-                 log_frames=None,  # type: tp.Optional[FrameLogger]
+                 log_frames=None,
                  name=None,  # type: tp.Optional[str]
                  on_blocked=None,  # type: tp.Callable[[bool], None],
                  tracer=None  # type: opentracing.Traccer
@@ -79,7 +80,7 @@ class Cluster(object):
         self.name = name or 'CoolAMQP'  # type: str
         self.node, = nodes              # type: NodeDefinition
         self.extra_properties = extra_properties
-        self.log_frames = log_frames    # type: tp.Optional[FrameLogger]
+        self.log_frames = log_frames
         self.on_blocked = on_blocked    # type: tp.Optional[tp.Callable[[bool], None]]
         self.connected = False          # type: bool
         self.listener = None            # type: BaseListener

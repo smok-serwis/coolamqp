@@ -10,7 +10,7 @@ Since CoolAMQP tries to be fast, it uses memoryviews everywhere. **ReceivedMessa
 properties therefore, are memoryviews. So, it you wanted to read the routing key a message was sent with,
 or message's encoding, you should do:
 
-::
+.. code-block:: python
 
     received_msg.routing_key.to_bytes()
     received_msg.properties.content_encoding.to_bytes()

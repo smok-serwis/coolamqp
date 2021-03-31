@@ -16,11 +16,6 @@ logger = logging.getLogger(__name__)
 
 EMPTY_PROPERTIES = MessageProperties()
 
-try:
-    Protocol = tp.Protocol
-except AttributeError:
-    Protocol = object
-
 
 def toutf8(q):
     if isinstance(q, six.binary_type):
@@ -32,21 +27,6 @@ def tobytes(q):
     if isinstance(q, six.text_type):
         q = q.encode('utf8')
     return q
-
-
-class FrameLogger(Protocol):
-    def on_frame(self, timestamp,  # type: float
-                 frame,  # type: AMQPFrame
-                 direction  # type: str
-                 ):
-        """
-        Log a frame
-
-        :param timestamp: timestamp in seconds since Unix Epoch
-        :param frame: AMQPFrame to parse
-        :param direction: either 'to_client' when this is frame received from the broker, or
-            'to_server' if it's a frame that's being sent to the broker
-        """
 
 
 class Callable(object):
