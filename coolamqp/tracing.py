@@ -1,5 +1,7 @@
 import logging
 
+from coolamqp.framing.frames import AMQPMethodFrame
+
 
 class BaseFrameTracer(object):
     """An abstract do-nothing frame tracer"""
@@ -30,9 +32,15 @@ class LoggingFrameTracer(BaseFrameTracer):
 
     def on_frame(self, timestamp, frame, direction):
         if direction == 'to_client':
-            self.logger.log(self.log_level, 'RECEIVED %s', frame.payload)
+            if isinstance(frame, AMQPMethodFrame):
+                self.logger.log(self.log_level, 'RECEIVED METHOD %s', frame.payload)
+            else:
+                self.logger.log(self.log_level, 'RECEIVED %s type %s', frame, type(frame))
         else:
-            self.logger.log(self.log_level, 'SENT %s type %s', frame, type(frame))
+            if isinstance(frame, AMQPMethodFrame):
+                self.logger.log(self.log_level, 'SENT METHOD %s', frame.payload)
+            else:
+                self.logger.log(self.log_level, 'SENT %s type %s', frame, type(frame))
 
 
 class HoldingFrameTracer(BaseFrameTracer):
