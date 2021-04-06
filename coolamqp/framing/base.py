@@ -25,6 +25,7 @@ DYNAMIC_BASIC_TYPES = (u'table', u'longstr', u'shortstr')
 
 
 class AMQPFrame(object):  # base class for framing
+    __slots__ = ('channel', )
     FRAME_TYPE = None  # override me!
 
     def __init__(self, channel):  # type: (int) -> None
@@ -96,11 +97,15 @@ class AMQPContentPropertyList(object):
     If YOU create a property list, they will be bytes all right.
     """
     PROPERTIES = []
+    __slots__ = ()
 
     # todo they are immutable, so they could just serialize themselves...
 
     def __str__(self):  # type: () -> str
-        return '<AMQPContentPropertyList>'
+        values = {}
+        for field_name in self.__class__.__slots__():
+            values[field_name] = getattr(self, field_name)
+        return '<AMQPContentPropertyList (%s)>' % (values, )
 
     def get(self, property_name, default=None):
         # type: (str, str) -> tp.Union[memoryview, bytes]

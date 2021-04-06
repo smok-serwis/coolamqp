@@ -23,6 +23,7 @@ STRUCT_BHLB = struct.Struct('!BHLB')
 
 class AMQPMethodFrame(AMQPFrame):
     FRAME_TYPE = FRAME_METHOD
+    __slots__ = ('payload', )
 
     def __init__(self, channel, payload):
         # type: (int, coolamqp.framing.base.AMQPMethodPayload) -> None
@@ -76,6 +77,7 @@ class AMQPHeaderFrame(AMQPFrame):
     :param body_size: size of the body to follow
     :param properties: a suitable AMQPContentPropertyList instance
     """
+    __slots__ = ('class_id', 'weight', 'body_size', 'properties')
     FRAME_TYPE = FRAME_HEADER
 
     def __init__(self, channel, class_id, weight, body_size, properties):
@@ -120,7 +122,7 @@ class AMQPBodyFrame(AMQPFrame):
     :param data: body (or a piece of it) of a message
     :type data: binary
     """
-
+    __slots__ = ('data', )
     FRAME_TYPE = FRAME_BODY
 
     FRAME_SIZE_WITHOUT_PAYLOAD = 8
@@ -151,6 +153,7 @@ class AMQPHeartbeatFrame(AMQPFrame):
     FRAME_TYPE = FRAME_HEARTBEAT
     LENGTH = 8
     DATA = STRUCT_BHLB.pack(FRAME_HEARTBEAT, 0, 0, FRAME_END)
+    __slots__ = ()
 
     def __init__(self):
         AMQPFrame.__init__(self, 0)

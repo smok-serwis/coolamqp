@@ -7,6 +7,11 @@ from coolamqp.objects import NodeDefinition, MessageProperties
 
 
 class TestObjects(unittest.TestCase):
+    def test_message_properties(self):
+        empty_p_msg = MessageProperties()
+        ce_p_msg = MessageProperties(content_encoding=b'wtf')
+        self.assertIn('wtf', str(ce_p_msg))
+
     def test_node_definition_from_amqp(self):
         n1 = NodeDefinition(u'amqp://ala:ma@kota/psa')
 
