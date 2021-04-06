@@ -103,7 +103,7 @@ class AMQPContentPropertyList(object):
 
     def __str__(self):  # type: () -> str
         values = {}
-        for field_name in self.__class__.__slots__():
+        for field_name in self.__class__.__slots__:
             values[field_name] = getattr(self, field_name)
         return '<AMQPContentPropertyList (%s)>' % (values, )
 

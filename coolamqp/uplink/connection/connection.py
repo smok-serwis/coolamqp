@@ -285,9 +285,6 @@ class Connection(object):
 
         watch_handled = False  # True if ANY watch handled this
 
-        if isinstance(frame, AMQPMethodFrame):
-            logger.debug('[%s] Received %s', self.uuid, frame.payload.NAME)
-
         # ==================== process per-channel watches
         #
         #   Note that new watches may arrive while we process existing watches.
