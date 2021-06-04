@@ -67,6 +67,18 @@ jobs:
           packages:
             - rabbitmq-server
     - stage: test
+      python: "3.9"
+      script:
+        - bash tests/travis_test.sh
+      after_script:
+        - coverage xml
+        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
+      services: rabbitmq
+      addons:
+        apt:
+          packages:
+            - rabbitmq-server
+    - stage: test
       python: "nightly"
       script:
         - bash tests/travis_test.sh
