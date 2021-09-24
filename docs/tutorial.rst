@@ -31,10 +31,10 @@ accepts a list of nodes:
 
 *wait=True* will block until connection is completed. After this, you can use other methods.
 
-*name* is optional. If you specify it, and have prctl_ installed, the thread will
+*name* is optional. If you specify it, and have setproctitle_ installed, the thread will
 receive a provided label, postfixed by **AMQP listener thread**.
 
-.. _prctl: https://pypi.org/project/python-prctl/
+.. _setproctitle: https://pypi.org/project/setproctitle/
 
 .. autoclass:: coolamqp.clustering.Cluster
     :members:

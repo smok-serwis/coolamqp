@@ -10,7 +10,7 @@ except IMPORT_ERRORS:
     from monotonic import monotonic
 
 try:
-    from prctl import set_name as prctl_set_name
+    from setproctitle import setproctitle as prctl_set_name
 except IMPORT_ERRORS:
     def prctl_set_name(name):
         pass

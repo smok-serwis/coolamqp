@@ -14,7 +14,7 @@ setup(keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availabilit
       python_requires='!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
       extras_require={
           ':python_version == "2.7"': ['futures', 'typing', 'monotonic'],
-          'prctl': ['prctl'],
+          'setproctitle': ['setproctitle'],
           'opentracing': ['opentracing'],
           'gevent': ['gevent']
       }
