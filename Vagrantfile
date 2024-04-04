@@ -3,7 +3,7 @@
 
 Vagrant.configure("2") do |config|
 
-  config.vm.box = "debian/contrib-stretch64"
+  config.vm.box = "debian/bullseye64"
 
   # Rabbit MQ management
   config.vm.network "forwarded_port", guest: 15672, host: 15672, auto_correct: true
@@ -15,8 +15,8 @@ Vagrant.configure("2") do |config|
     apt-get update
     
     # Python
-    apt-get install -y htop curl python python-setuptools python-pip python-dev build-essential rabbitmq-server python3 python3-pip python3-setuptools
-    sudo python -m pip install --upgrade pip setuptools
+    apt-get install -y htop curl python python-setuptools python3-pip python-dev build-essential rabbitmq-server python3 python3-setuptools
+#     sudo python -m pip install --upgrade pip setuptools
     sudo pip3 install --upgrade pip setuptools
     
     /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management
@@ -27,8 +27,8 @@ Vagrant.configure("2") do |config|
     rabbitmqctl set_user_tags user administrator
     
     # Install deps
-    sudo python -m pip install -r /vagrant/requirements.txt
-    sudo python -m pip install nose coverage mock yapf
+#     sudo python -m pip install -r /vagrant/requirements.txt
+#     sudo python -m pip install nose coverage mock yapf
     sudo pip3 install -r /vagrant/requirements.txt
     sudo pip3 install nose2[coverage_plugin] coverage mock yapf nose2
     
