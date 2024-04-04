@@ -147,7 +147,7 @@ class Cluster(object):
 
         def fetch():
             try:
-                if timeout == 0:
+                if not timeout:
                     return self.events.get_nowait()
                 else:
                     return self.events.get(True, timeout)

@@ -251,8 +251,8 @@ class Queue(object):
         self.auto_delete = auto_delete
         self.exclusive = exclusive
 
-        self.anonymous = len(
-            self.name) == 0  # if this queue is anonymous, it must be regenerated upon reconnect
+        self.anonymous = not len(
+            self.name)  # if this queue is anonymous, it must be regenerated upon reconnect
 
         self.consumer_tag = self.name if not self.anonymous else uuid.uuid4().hex.encode(
             'utf8')  # bytes, consumer tag to use in AMQP comms

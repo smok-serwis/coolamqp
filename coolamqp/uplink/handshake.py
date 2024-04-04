@@ -120,7 +120,7 @@ class Handshaker(object):
         self.connection.frame_max = payload.frame_max
         self.connection.heartbeat = min(payload.heartbeat, self.heartbeat)
         self.connection.free_channels.extend(six.moves.xrange(1, (
-            65535 if payload.channel_max == 0 else payload.channel_max) + 1))
+            65535 if not payload.channel_max else payload.channel_max) + 1))
 
         self.connection.watch_for_method(0, ConnectionOpenOk,
                                          self.on_connection_open_ok)

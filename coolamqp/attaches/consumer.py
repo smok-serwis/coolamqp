@@ -551,7 +551,7 @@ class MessageReceiver(object):
         :return: callable/0
         """
 
-        def callable():
+        def clbl():
             if self.state == 3:
                 return  # Gone!
 
@@ -566,7 +566,7 @@ class MessageReceiver(object):
             else:
                 self.consumer.method(BasicReject(delivery_tag, True))
 
-        return callable
+        return clbl
 
     def on_head(self, frame):
         assert self.state == 1
@@ -574,13 +574,13 @@ class MessageReceiver(object):
         self.message_size = self.data_to_go = frame.body_size
         self.state = 2
 
-        if self.header.body_size == 0:
+        if not self.header.body_size:
             # An empty message is no common guest. It won't have a BODY field
             #  though...
             self.on_body(EMPTY_MEMORYVIEW)  # trigger it manually
 
     def on_basic_deliver(self, payload):
-        assert self.state == 0
+        assert not self.state
         self.bdeliver = payload
         self.state = 1
 
@@ -597,7 +597,7 @@ class MessageReceiver(object):
                 self.offset += len(payload)
             else:
                 # new one
-                if self.data_to_go == 0:  # special case - single frame message
+                if not self.data_to_go:  # special case - single frame message
                     self.body = payload
                 else:
                     self.body = memoryview(bytearray(self.message_size))
@@ -609,7 +609,7 @@ class MessageReceiver(object):
 
         assert self.data_to_go >= 0
 
-        if self.data_to_go == 0:
+        if not self.data_to_go:
             ack_expected = not self.consumer.no_ack
 
             # Message A-OK!

@@ -124,11 +124,11 @@ class AtomicTagger(object):
                     if you put something that isn't a ConfirmableRejectable, you won't get bitten
                     until you call .ack() or .nack().
         """
-        assert tag >= 0
+        assert tag
         opt = (tag, obj, span)
 
         with self.lock:
-            if len(self.tags) == 0:
+            if not self.tags:
                 self.tags.append(opt)
             elif self.tags[-1][0] < tag:
                 self.tags.append(opt)
@@ -154,7 +154,7 @@ class AtomicTagger(object):
             start = 0
             # start and stop will signify the PYTHON SLICE parameters
 
-            if tag > 0:
+            if tag:
 
                 if multiple:
                     # Compute the ranges

@@ -5,3 +5,4 @@ have been made so far, between releases.
 # v1.3.1
 
 * coolamqp.objects.Callable made threadsafe (fixes #22)
+* speed up (lots of if len(data) == 0 replaced with if not data)

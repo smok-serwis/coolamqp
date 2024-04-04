@@ -74,8 +74,7 @@ class EpollListener(BaseListener):
                 if event & select.EPOLLOUT:
                     sock.on_write()
                     # I'm done with sending for now
-                    if len(sock.data_to_send) == 0 and len(
-                            sock.priority_queue) == 0:
+                    if not len(sock.data_to_send) and not len(sock.priority_queue):
                         self.epoll.modify(sock.fileno(), RO)
 
             except SocketFailed as e:

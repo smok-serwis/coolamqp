@@ -91,7 +91,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     mod.append(SPACER)
 
-    if len(present_fields) == 0:
+    if not len(present_fields):
         slots = u''
     else:
         slots = (u', '.join(
@@ -104,7 +104,7 @@ def _compile_particular_content_property_list_class(zpf, fields):
 
     FFN = u', '.join(format_field_name(field.name) for field in present_fields)
 
-    if len(present_fields) > 0:
+    if len(present_fields):
         mod.append(INIT_I % (FFN,))
 
     for field in present_fields:

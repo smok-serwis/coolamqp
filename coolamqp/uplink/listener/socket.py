@@ -100,7 +100,7 @@ class BaseSocket(object):
         except (IOError, socket.error) as e:
             raise SocketFailed(repr(e))
 
-        if len(data) == 0:
+        if not data:
             raise SocketFailed('connection gracefully closed')
 
         try:
@@ -109,7 +109,7 @@ class BaseSocket(object):
             raise SocketFailed(repr(e))
 
     def wants_to_send_data(self):  # type: () -> bool
-        return not (len(self.data_to_send) == 0 and len(self.priority_queue) == 0)
+        return not (not self.data_to_send and not self.priority_queue)
 
     def on_write(self):      # type: () -> None
         """
@@ -123,8 +123,8 @@ class BaseSocket(object):
             return False
 
         while True:
-            if len(self.data_to_send) == 0:
-                if len(self.priority_queue) == 0:
+            if not self.data_to_send:
+                if not self.priority_queue:
                     return True
                 else:
                     self.data_to_send.appendleft(self.priority_queue.popleft())
@@ -147,7 +147,7 @@ class BaseSocket(object):
                 # Looks like everything has been sent
                 self.data_to_send.popleft()  # mark as sent
 
-                if len(self.priority_queue) > 0:
+                if self.priority_queue:
                     # We can send a priority pack
                     self.data_to_send.appendleft(self.priority_queue.popleft())
 

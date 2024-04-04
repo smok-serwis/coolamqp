@@ -94,7 +94,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
     to_struct = []
 
     def emit_bits():
-        if len(bits) == 0:
+        if not len(bits):
             return
         if remark:
             print('Bits are being banged')
@@ -115,7 +115,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
     def emit_structures(dont_do_bits=False):  # type: (bool) -> dict
         if not dont_do_bits:
             emit_bits()
-        if len(to_struct) == 0:
+        if not len(to_struct):
             return {}
         fffnames = [a for a, b in to_struct if a != u'_']  # skip reserved
         ffffmts = [b for a, b in to_struct]
@@ -141,7 +141,7 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
         if BASIC_TYPES[field.basic_type][0] is not None:
             # static type shit has
 
-            assert len(bits) == 0
+            assert not len(bits)
 
             if field.reserved:
                 to_struct.append(
@@ -155,8 +155,8 @@ def get_from_buffer(fields, prefix='', indent_level=2, remark=False):
         elif field.basic_type == u'table':  # oh my god
             structers.update(emit_structures())
 
-            assert len(bits) == 0
-            assert len(to_struct) == 0
+            assert not len(bits)
+            assert not len(to_struct)
 
             emit("%s, delta = deframe_table(buf, offset)", fieldname)
             emit("offset += delta")
