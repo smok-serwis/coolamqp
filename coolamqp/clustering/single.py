@@ -4,10 +4,7 @@ from __future__ import print_function, absolute_import, division
 import logging
 import typing as tp
 
-try:
-    from coolamqp.framing.definitions import ConnectionUnblocked, ConnectionBlocked
-except ImportError:
-    ConnectionBlocked, ConnectionUnblocked = None, None
+from coolamqp.framing.definitions import ConnectionUnblocked, ConnectionBlocked
 
 from coolamqp.objects import Callable
 from coolamqp.uplink import Connection
@@ -61,15 +58,13 @@ class SingleNodeReconnector(object):
         self.connection.finalize.add(self.on_fail)
 
         # Register the on-blocking watches
-        if ConnectionBlocked is not None:
-            mw = MethodWatch(0, (ConnectionBlocked,), lambda: self.on_blocked(True))
-            mw.oneshot = False
-            self.connection.watch(mw)
+        mw = MethodWatch(0, (ConnectionBlocked,), lambda: self.on_blocked(True))
+        mw.oneshot = False
+        self.connection.watch(mw)
 
-        if ConnectionUnblocked is not None:
-            mw = MethodWatch(0, (ConnectionUnblocked,), lambda: self.on_blocked(False))
-            mw.oneshot = False
-            self.connection.watch(mw)
+        mw = MethodWatch(0, (ConnectionUnblocked,), lambda: self.on_blocked(False))
+        mw.oneshot = False
+        self.connection.watch(mw)
 
     def _on_fail(self):
         if self.terminating:

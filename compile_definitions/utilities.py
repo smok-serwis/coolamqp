@@ -73,12 +73,9 @@ def f_repr(p, sop=six.text_type):
 
 @as_unicode
 def format_method_class_name(method_name):
-    if '-' in method_name:
-        i = method_name.find('-')
-        return method_name[0:i].capitalize() + method_name[
-            i + 1].upper() + method_name[i + 2:]
-    else:
-        return method_name.capitalize()
+    opts = method_name.split('-')
+    opts = [opt.capitalize() for opt in opts]
+    return ''.join(opts)
 
 
 @as_unicode

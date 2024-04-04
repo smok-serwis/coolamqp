@@ -2,6 +2,6 @@ The changelog is kept as [release notes](https://github.com/smok-serwis/coolamqp
 on GitHub. This file serves to only note what changes
 have been made so far, between releases.
 
-# v1.2.17
+# v1.3.0
 
-* can support building from XML not containing Connection.Blocked and Connection.Unblocked
+* updated to use latest RabbitMQ AMQP 0-9-1 definition from the RabbitMQ's website

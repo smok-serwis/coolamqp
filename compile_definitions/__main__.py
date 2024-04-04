@@ -37,12 +37,12 @@ TYPE_TRANSLATOR = {
 def get_xml(xml_file):
     """Download XML definition from OASIS's website"""
 
-    r = urlopen('https://raw.githubusercontent.com/postwait/node-amqp/master/amqp-0-9-1-rabbit.xml')
+    r = urlopen(f'https://www.rabbitmq.com/resources/specs/amqp0-9-1.extended.xml')
     with open(xml_file, 'wb') as out:
         out.write(r.read())
 
 
-def compile_definitions(xml_file='resources/amqp0-9-1.xml',
+def compile_definitions(xml_file='amqp0-9-1.extended.xml',
                         out_file='coolamqp/framing/definitions.py'):
     """parse resources/amqp-0-9-1.xml into """
     if not os.path.exists(xml_file):
@@ -591,12 +591,7 @@ REPLIES_FOR = {\n''')
 
 
 if __name__ == '__main__':
-    if '--no-connection-blocked' in sys.argv:
-        xml_file = 'resources/amqp0-9-1.xml'
-        print('Compiling without Connection.Blocked')
-    else:
-        xml_file = 'resources/amqp0-9-1.extended.xml'
-    compile_definitions(xml_file=xml_file)
+    compile_definitions()
     proc = subprocess.check_output(['yapf', 'coolamqp/framing/definitions.py'])
     with open('coolamqp/framing/definitions.py', 'wb') as f_out:
         f_out.write(proc)

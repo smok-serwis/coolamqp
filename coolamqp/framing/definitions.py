@@ -64,25 +64,25 @@ FRAME_END = 206
 FRAME_END_BYTE = b'\xce'
 
 # Indicates that the method completed successfully. This reply code is
-# reserved for future use - the current protocol design does not use
-# positive
+# reserved for future use - the current protocol design does not use positive
 # confirmation and reply codes are sent only in case of an error.
 REPLY_SUCCESS = 200
 REPLY_SUCCESS_BYTE = b'\xc8'
 
-# The client attempted to transfer content larger than the server
-# could accept
+# The client attempted to transfer content larger than the server could accept
 # at the present time. The client may retry at a later time.
 CONTENT_TOO_LARGE = 311
 
-# When the exchange cannot deliver to a consumer when the immediate
-# flag is
+# Returned when RabbitMQ sends back with 'basic.return' when a
+# 'mandatory' message cannot be delivered to any queue.
+NO_ROUTE = 312
+
+# When the exchange cannot deliver to a consumer when the immediate flag is
 # set. As a result of pending data on the queue or the absence of any
 # consumers of the queue.
 NO_CONSUMERS = 313
 
-# An operator intervened to close the connection for some reason. The
-# client
+# An operator intervened to close the connection for some reason. The client
 # may retry at some later date.
 CONNECTION_FORCED = 320
 
@@ -93,58 +93,45 @@ INVALID_PATH = 402
 # access due to security settings.
 ACCESS_REFUSED = 403
 
-# The client attempted to work with a server entity that does not
-# exist.
+# The client attempted to work with a server entity that does not exist.
 NOT_FOUND = 404
 
 # The client attempted to work with a server entity to which it has no
 # access because another client is working with it.
 RESOURCE_LOCKED = 405
 
-# The client requested a method that was not allowed because some
-# precondition
+# The client requested a method that was not allowed because some precondition
 # failed.
 PRECONDITION_FAILED = 406
 
-# The sender sent a malformed frame that the recipient could not
-# decode.
+# The sender sent a malformed frame that the recipient could not decode.
 # This strongly implies a programming error in the sending peer.
 FRAME_ERROR = 501
 
-# The sender sent a frame that contained illegal values for one or
-# more
-# fields. This strongly implies a programming error in the sending
-# peer.
+# The sender sent a frame that contained illegal values for one or more
+# fields. This strongly implies a programming error in the sending peer.
 SYNTAX_ERROR = 502
 
-# The client sent an invalid sequence of frames, attempting to perform
-# an
-# operation that was considered invalid by the server. This usually
-# implies
+# The client sent an invalid sequence of frames, attempting to perform an
+# operation that was considered invalid by the server. This usually implies
 # a programming error in the client.
 COMMAND_INVALID = 503
 
-# The client attempted to work with a channel that had not been
-# correctly
+# The client attempted to work with a channel that had not been correctly
 # opened. This most likely indicates a fault in the client layer.
 CHANNEL_ERROR = 504
 
-# The peer sent a frame that was not expected, usually in the context
-# of
-# a content header and body. This strongly indicates a fault in the
-# peer's
+# The peer sent a frame that was not expected, usually in the context of
+# a content header and body.  This strongly indicates a fault in the peer's
 # content processing.
 UNEXPECTED_FRAME = 505
 
-# The server could not complete the method because it lacked
-# sufficient
-# resources. This may be due to the client creating too many of some
-# type
+# The server could not complete the method because it lacked sufficient
+# resources. This may be due to the client creating too many of some type
 # of entity.
 RESOURCE_ERROR = 506
 
-# The client tried to work with some entity in a manner that is
-# prohibited
+# The client tried to work with some entity in a manner that is prohibited
 # by the server, due to security settings or by some other criteria.
 NOT_ALLOWED = 530
 
@@ -152,15 +139,13 @@ NOT_ALLOWED = 530
 # server.
 NOT_IMPLEMENTED = 540
 
-# The server could not complete the method because of an internal
-# error.
-# The server may require intervention by an operator in order to
-# resume
+# The server could not complete the method because of an internal error.
+# The server may require intervention by an operator in order to resume
 # normal operations.
 INTERNAL_ERROR = 541
 
 SOFT_ERRORS = [
-    CONTENT_TOO_LARGE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND,
+    CONTENT_TOO_LARGE, NO_ROUTE, NO_CONSUMERS, ACCESS_REFUSED, NOT_FOUND,
     RESOURCE_LOCKED, PRECONDITION_FAILED
 ]
 HARD_ERRORS = [
@@ -199,9 +184,8 @@ DOMAIN_TO_BASIC_TYPE = {
 
 class Connection(AMQPClass):
     """
-    The connection class provides methods for a client to establish a
+    The connection class provides methods for a client to establish a network connection to
     
-    network connection to
     a server, and for both peers to operate the connection thereafter.
     """
     NAME = u'connection'
@@ -210,10 +194,13 @@ class Connection(AMQPClass):
 
 class ConnectionBlocked(AMQPMethodPayload):
     """
-    This method indicates that a connection has been blocked
+    Indicate that connection is blocked
     
+    This method indicates that a connection has been blocked
     and does not accept new publishes.
 
+    :param reason: Block reason
+            The reason the connection was blocked.
     :type reason: binary type (max length 255) (shortstr in AMQP)
     """
     __slots__ = (u'reason', )
@@ -270,25 +257,19 @@ class ConnectionClose(AMQPMethodPayload):
     """
     Request a connection close
     
-    This method indicates that the sender wants to close the
-    connection. This may be
-    due to internal conditions (e.g. a forced shut-down) or due to
-    an error handling
-    a specific method, i.e. an exception. When a close is due to an
-    exception, the
-    sender provides the class and method id of the method which
-    caused the exception.
+    This method indicates that the sender wants to close the connection. This may be
+    due to internal conditions (e.g. a forced shut-down) or due to an error handling
+    a specific method, i.e. an exception. When a close is due to an exception, the
+    sender provides the class and method id of the method which caused the exception.
 
     :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
     :type reply_text: binary type (max length 255) (reply-text in AMQP)
     :param class_id: Failing method class
-            When the close is provoked by a method exception, this is
-            the class of the
+            When the close is provoked by a method exception, this is the class of the
             method.
     :type class_id: int, 16 bit unsigned (class-id in AMQP)
     :param method_id: Failing method id
-            When the close is provoked by a method exception, this is
-            the ID of the method.
+            When the close is provoked by a method exception, this is the ID of the method.
     :type method_id: int, 16 bit unsigned (method-id in AMQP)
     """
     __slots__ = (
@@ -361,10 +342,8 @@ class ConnectionCloseOk(AMQPMethodPayload):
     """
     Confirm a connection close
     
-    This method confirms a Connection.Close method and tells the
-    recipient that it is
-    safe to release resources for the connection and close the
-    socket.
+    This method confirms a Connection.Close method and tells the recipient that it is
+    safe to release resources for the connection and close the socket.
 
     """
     __slots__ = ()
@@ -399,14 +378,10 @@ class ConnectionOpen(AMQPMethodPayload):
     """
     Open connection to virtual host
     
-    This method opens a connection to a virtual host, which is a
-    collection of
-    resources, and acts to separate multiple application domains
-    within a server.
-    The server may apply arbitrary limits per virtual host, such as
-    the number
-    of each type of entity that may be used, per connection and/or
-    in total.
+    This method opens a connection to a virtual host, which is a collection of
+    resources, and acts to separate multiple application domains within a server.
+    The server may apply arbitrary limits per virtual host, such as the number
+    of each type of entity that may be used, per connection and/or in total.
 
     :param virtual_host: Virtual host name
             The name of the virtual host to work with.
@@ -474,8 +449,7 @@ class ConnectionOpenOk(AMQPMethodPayload):
     """
     Signal that connection is ready
     
-    This method signals to the client that the connection is ready
-    for use.
+    This method signals to the client that the connection is ready for use.
 
     """
     __slots__ = ()
@@ -518,42 +492,31 @@ class ConnectionStart(AMQPMethodPayload):
     """
     Start connection negotiation
     
-    This method starts the connection negotiation process by telling
-    the client the
-    protocol version that the server proposes, along with a list of
-    security mechanisms
+    This method starts the connection negotiation process by telling the client the
+    protocol version that the server proposes, along with a list of security mechanisms
     which the client can use for authentication.
 
     :param version_major: Protocol major version
-            The major version number can take any value from 0 to 99 as
-            defined in the
+            The major version number can take any value from 0 to 99 as defined in the
             AMQP specification.
     :type version_major: int, 8 bit unsigned (octet in AMQP)
     :param version_minor: Protocol minor version
-            The minor version number can take any value from 0 to 99 as
-            defined in the
+            The minor version number can take any value from 0 to 99 as defined in the
             AMQP specification.
     :type version_minor: int, 8 bit unsigned (octet in AMQP)
     :param server_properties: Server properties
-            The properties SHOULD contain at least these fields:
-            "host", specifying the
-            server host name or address, "product", giving the name
-            of the server product,
-            "version", giving the name of the server version,
-            "platform", giving the name
-            of the operating system, "copyright", if appropriate,
-            and "information", giving
+            The properties SHOULD contain at least these fields: "host", specifying the
+            server host name or address, "product", giving the name of the server product,
+            "version", giving the name of the server version, "platform", giving the name
+            of the operating system, "copyright", if appropriate, and "information", giving
             other general information.
     :type server_properties: table. See coolamqp.uplink.framing.field_table (peer-properties in AMQP)
     :param mechanisms: Available security mechanisms
-            A list of the security mechanisms that the server supports,
-            delimited by spaces.
+            A list of the security mechanisms that the server supports, delimited by spaces.
     :type mechanisms: binary type (longstr in AMQP)
     :param locales: Available message locales
-            A list of the message locales that the server supports,
-            delimited by spaces. The
-            locale defines the language in which the server will send
-            reply texts.
+            A list of the message locales that the server supports, delimited by spaces. The
+            locale defines the language in which the server will send reply texts.
     :type locales: binary type (longstr in AMQP)
     """
     __slots__ = (
@@ -645,15 +608,12 @@ class ConnectionSecure(AMQPMethodPayload):
     """
     Security mechanism challenge
     
-    The SASL protocol works by exchanging challenges and responses
-    until both peers have
-    received sufficient information to authenticate each other. This
-    method challenges
+    The SASL protocol works by exchanging challenges and responses until both peers have
+    received sufficient information to authenticate each other. This method challenges
     the client to provide more information.
 
     :param challenge: Security challenge data
-            Challenge information, a block of opaque binary data passed
-            to the security
+            Challenge information, a block of opaque binary data passed to the security
             mechanism.
     :type challenge: binary type (longstr in AMQP)
     """
@@ -714,27 +674,21 @@ class ConnectionStartOk(AMQPMethodPayload):
     This method selects a SASL security mechanism.
 
     :param client_properties: Client properties
-            The properties SHOULD contain at least these fields:
-            "product", giving the name
-            of the client product, "version", giving the name of the
-            client version, "platform",
-            giving the name of the operating system, "copyright", if
-            appropriate, and
+            The properties SHOULD contain at least these fields: "product", giving the name
+            of the client product, "version", giving the name of the client version, "platform",
+            giving the name of the operating system, "copyright", if appropriate, and
             "information", giving other general information.
     :type client_properties: table. See coolamqp.uplink.framing.field_table (peer-properties in AMQP)
     :param mechanism: Selected security mechanism
-            A single security mechanisms selected by the client, which
-            must be one of those
+            A single security mechanisms selected by the client, which must be one of those
             specified by the server.
     :type mechanism: binary type (max length 255) (shortstr in AMQP)
     :param response: Security response data
-            A block of opaque data passed to the security mechanism. The
-            contents of this
+            A block of opaque data passed to the security mechanism. The contents of this
             data are defined by the SASL security mechanism.
     :type response: binary type (longstr in AMQP)
     :param locale: Selected message locale
-            A single message locale selected by the client, which must
-            be one of those
+            A single message locale selected by the client, which must be one of those
             specified by the server.
     :type locale: binary type (max length 255) (shortstr in AMQP)
     """
@@ -825,13 +779,11 @@ class ConnectionSecureOk(AMQPMethodPayload):
     """
     Security mechanism response
     
-    This method attempts to authenticate, passing a block of SASL
-    data for the security
+    This method attempts to authenticate, passing a block of SASL data for the security
     mechanism at the server side.
 
     :param response: Security response data
-            A block of opaque data passed to the security mechanism. The
-            contents of this
+            A block of opaque data passed to the security mechanism. The contents of this
             data are defined by the SASL security mechanism.
     :type response: binary type (longstr in AMQP)
     """
@@ -889,28 +841,21 @@ class ConnectionTune(AMQPMethodPayload):
     """
     Propose connection tuning parameters
     
-    This method proposes a set of connection configuration values to
-    the client. The
+    This method proposes a set of connection configuration values to the client. The
     client can accept and/or adjust these.
 
     :param channel_max: Proposed maximum channels
-            Specifies highest channel number that the server permits.
-            Usable channel numbers
-            are in the range 1..channel-max. Zero indicates no specified
-            limit.
+            Specifies highest channel number that the server permits.  Usable channel numbers
+            are in the range 1..channel-max.  Zero indicates no specified limit.
     :type channel_max: int, 16 bit unsigned (short in AMQP)
     :param frame_max: Proposed maximum frame size
-            The largest frame size that the server proposes for the
-            connection, including
-            frame header and end-byte. The client can negotiate a lower
-            value. Zero means
-            that the server does not impose any specific limit but may
-            reject very large
+            The largest frame size that the server proposes for the connection, including
+            frame header and end-byte.  The client can negotiate a lower value. Zero means
+            that the server does not impose any specific limit but may reject very large
             frames if it cannot allocate resources for them.
     :type frame_max: int, 32 bit unsigned (long in AMQP)
     :param heartbeat: Desired heartbeat delay
-            The delay, in seconds, of the connection heartbeat that the
-            server wants.
+            The delay, in seconds, of the connection heartbeat that the server wants.
             Zero means the server does not want a heartbeat.
     :type heartbeat: int, 16 bit unsigned (short in AMQP)
     """
@@ -975,29 +920,21 @@ class ConnectionTuneOk(AMQPMethodPayload):
     """
     Negotiate connection tuning parameters
     
-    This method sends the client's connection tuning parameters to
-    the server.
-    Certain fields are negotiated, others provide capability
-    information.
+    This method sends the client's connection tuning parameters to the server.
+    Certain fields are negotiated, others provide capability information.
 
     :param channel_max: Negotiated maximum channels
-            The maximum total number of channels that the client will
-            use per connection.
+            The maximum total number of channels that the client will use per connection.
     :type channel_max: int, 16 bit unsigned (short in AMQP)
     :param frame_max: Negotiated maximum frame size
-            The largest frame size that the client and server will use
-            for the connection.
-            Zero means that the client does not impose any specific
-            limit but may reject
-            very large frames if it cannot allocate resources for them.
-            Note that the
-            frame-max limit applies principally to content frames, where
-            large contents can
+            The largest frame size that the client and server will use for the connection.
+            Zero means that the client does not impose any specific limit but may reject
+            very large frames if it cannot allocate resources for them. Note that the
+            frame-max limit applies principally to content frames, where large contents can
             be broken into frames of arbitrary size.
     :type frame_max: int, 32 bit unsigned (long in AMQP)
     :param heartbeat: Desired heartbeat delay
-            The delay, in seconds, of the connection heartbeat that the
-            client wants. Zero
+            The delay, in seconds, of the connection heartbeat that the client wants. Zero
             means the client does not want a heartbeat.
     :type heartbeat: int, 16 bit unsigned (short in AMQP)
     """
@@ -1058,10 +995,87 @@ class ConnectionTuneOk(AMQPMethodPayload):
         return cls(channel_max, frame_max, heartbeat)
 
 
+class ConnectionUpdateSecret(AMQPMethodPayload):
+    """
+    Update secret
+    
+    This method updates the secret used to authenticate this connection. It is used
+    when secrets have an expiration date and need to be renewed, like OAuth 2 tokens.
+
+    :param new_secret: New secret
+            The new secret.
+    :type new_secret: binary type (longstr in AMQP)
+    :param reason: Reason
+            The reason for the secret update.
+    :type reason: binary type (max length 255) (shortstr in AMQP)
+    """
+    __slots__ = (
+        u'new_secret',
+        u'reason',
+    )
+
+    NAME = u'connection.update-secret'
+
+    INDEX = (10, 70)  # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x46'  # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = True, False
+
+    IS_SIZE_STATIC = False  # this means that argument part has always the same length
+    IS_CONTENT_STATIC = False  # this means that argument part has always the same content
+
+    # See constructor pydoc for details
+    FIELDS = [
+        Field(u'new-secret', u'longstr', u'longstr', reserved=False),
+        Field(u'reason', u'shortstr', u'shortstr', reserved=False),
+    ]
+
+    def __repr__(self):  # type: () -> str
+        """
+        Convert the frame to a Python-representable string
+
+        :return: Python string representation
+        """
+        return 'ConnectionUpdateSecret(%s)' % (', '.join(
+            map(to_repr, [self.new_secret, self.reason])))
+
+    def __init__(self, new_secret, reason):
+        """
+        Create frame connection.update-secret
+        """
+        self.new_secret = new_secret
+        self.reason = reason
+
+    def write_arguments(self, buf):  # type: (tp.BinaryIO) -> None
+        buf.write(STRUCT_I.pack(len(self.new_secret)))
+        buf.write(self.new_secret)
+        buf.write(STRUCT_B.pack(len(self.reason)))
+        buf.write(self.reason)
+
+    def get_size(self):  # type: () -> int
+        return 5 + len(self.new_secret) + len(self.reason)
+
+    @classmethod
+    def from_buffer(
+            cls, buf,
+            start_offset):  # type: (buffer, int) -> ConnectionUpdateSecret
+        offset = start_offset
+        s_len, = STRUCT_L.unpack_from(buf, offset)
+        offset += 4
+        new_secret = buf[offset:offset + s_len]
+        offset += s_len
+        s_len, = STRUCT_B.unpack_from(buf, offset)
+        offset += 1
+        reason = buf[offset:offset + s_len]
+        offset += s_len
+        return cls(new_secret, reason)
+
+
 class ConnectionUnblocked(AMQPMethodPayload):
     """
-    This method indicates that a connection has been unblocked
+    Indicate that connection is unblocked
     
+    This method indicates that a connection has been unblocked
     and now accepts publishes.
 
     """
@@ -1094,11 +1108,46 @@ class ConnectionUnblocked(AMQPMethodPayload):
         return cls()
 
 
+class ConnectionUpdateSecretOk(AMQPMethodPayload):
+    """
+    Update secret response
+    
+    This method confirms the updated secret is valid.
+
+    """
+    __slots__ = ()
+
+    NAME = u'connection.update-secret-ok'
+
+    INDEX = (10, 71)  # (Class ID, Method ID)
+    BINARY_HEADER = b'\x00\x0A\x00\x47'  # CLASS ID + METHOD ID
+
+    SENT_BY_CLIENT, SENT_BY_SERVER = False, True
+
+    IS_SIZE_STATIC = True  # this means that argument part has always the same length
+    IS_CONTENT_STATIC = True  # this means that argument part has always the same content
+    STATIC_CONTENT = b'\x00\x00\x00\x04\x00\x0A\x00\x47\xCE'  # spans LENGTH, CLASS ID, METHOD ID, ....., FRAME_END
+
+    def __repr__(self):  # type: () -> str
+        """
+        Convert the frame to a Python-representable string
+
+        :return: Python string representation
+        """
+        return 'ConnectionUpdateSecretOk(%s)' % (', '.join(map(to_repr, [])))
+
+    @classmethod
+    def from_buffer(
+            cls, buf,
+            start_offset):  # type: (buffer, int) -> ConnectionUpdateSecretOk
+        offset = start_offset
+        return cls()
+
+
 class Channel(AMQPClass):
     """
-    The channel class provides methods for a client to establish a
+    The channel class provides methods for a client to establish a channel to a
     
-    channel to a
     server and for both peers to operate the channel thereafter.
     """
     NAME = u'channel'
@@ -1109,25 +1158,19 @@ class ChannelClose(AMQPMethodPayload):
     """
     Request a channel close
     
-    This method indicates that the sender wants to close the
-    channel. This may be due to
-    internal conditions (e.g. a forced shut-down) or due to an error
-    handling a specific
-    method, i.e. an exception. When a close is due to an exception,
-    the sender provides
-    the class and method id of the method which caused the
-    exception.
+    This method indicates that the sender wants to close the channel. This may be due to
+    internal conditions (e.g. a forced shut-down) or due to an error handling a specific
+    method, i.e. an exception. When a close is due to an exception, the sender provides
+    the class and method id of the method which caused the exception.
 
     :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
     :type reply_text: binary type (max length 255) (reply-text in AMQP)
     :param class_id: Failing method class
-            When the close is provoked by a method exception, this is
-            the class of the
+            When the close is provoked by a method exception, this is the class of the
             method.
     :type class_id: int, 16 bit unsigned (class-id in AMQP)
     :param method_id: Failing method id
-            When the close is provoked by a method exception, this is
-            the ID of the method.
+            When the close is provoked by a method exception, this is the ID of the method.
     :type method_id: int, 16 bit unsigned (method-id in AMQP)
     """
     __slots__ = (
@@ -1200,8 +1243,7 @@ class ChannelCloseOk(AMQPMethodPayload):
     """
     Confirm a channel close
     
-    This method confirms a Channel.Close method and tells the
-    recipient that it is safe
+    This method confirms a Channel.Close method and tells the recipient that it is safe
     to release resources for the channel.
 
     """
@@ -1237,19 +1279,14 @@ class ChannelFlow(AMQPMethodPayload):
     """
     Enable/disable flow from peer
     
-    This method asks the peer to pause or restart the flow of
-    content data sent by
-    a consumer. This is a simple flow-control mechanism that a peer
-    can use to avoid
-    overflowing its queues or otherwise finding itself receiving
-    more messages than
-    it can process. Note that this method is not intended for window
-    control. It does
+    This method asks the peer to pause or restart the flow of content data sent by
+    a consumer. This is a simple flow-control mechanism that a peer can use to avoid
+    overflowing its queues or otherwise finding itself receiving more messages than
+    it can process. Note that this method is not intended for window control. It does
     not affect contents returned by Basic.Get-Ok methods.
 
     :param active: Start/stop content frames
-            If 1, the peer starts sending content frames. If 0, the peer
-            stops sending
+            If 1, the peer starts sending content frames. If 0, the peer stops sending
             content frames.
     :type active: bool (bit in AMQP)
     """
@@ -1305,14 +1342,11 @@ class ChannelFlowOk(AMQPMethodPayload):
     """
     Confirm a flow method
     
-    Confirms to the peer that a flow command was received and
-    processed.
+    Confirms to the peer that a flow command was received and processed.
 
     :param active: Current flow setting
-            Confirms the setting of the processed flow method: 1 means
-            the peer will start
-            sending or continue to send content frames; 0 means it will
-            not.
+            Confirms the setting of the processed flow method: 1 means the peer will start
+            sending or continue to send content frames; 0 means it will not.
     :type active: bool (bit in AMQP)
     """
     __slots__ = (u'active', )
@@ -1410,8 +1444,7 @@ class ChannelOpenOk(AMQPMethodPayload):
     """
     Signal that the channel is ready
     
-    This method signals to the client that the channel is ready for
-    use.
+    This method signals to the client that the channel is ready for use.
 
     """
     __slots__ = ()
@@ -1452,9 +1485,8 @@ class ChannelOpenOk(AMQPMethodPayload):
 
 class Exchange(AMQPClass):
     """
-    Exchanges match and distribute messages across queues. exchanges can
+    Exchanges match and distribute messages across queues. exchanges can be configured in
     
-    be configured in
     the server or declared at runtime.
     """
     NAME = u'exchange'
@@ -1614,44 +1646,30 @@ class ExchangeDeclare(AMQPMethodPayload):
     """
     Verify exchange exists, create if needed
     
-    This method creates an exchange if it does not already exist,
-    and if the exchange
+    This method creates an exchange if it does not already exist, and if the exchange
     exists, verifies that it is of the correct and expected class.
 
-    :param exchange: Exchange names starting with "amq." are reserved for
-            pre-declared and
-            standardised exchanges. The client MAY declare an
-            exchange starting with
-            "amq." if the passive option is set, or the exchange
-            already exists.
+    :param exchange: Exchange names starting with "amq." are reserved for pre-declared and
+            standardised exchanges. The client MAY declare an exchange starting with
+            "amq." if the passive option is set, or the exchange already exists.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
     :param type_: Exchange type
-            Each exchange belongs to one of a set of exchange types
-            implemented by the
-            server. The exchange types define the functionality of the
-            exchange - i.e. how
-            messages are routed through it. It is not valid or
-            meaningful to attempt to
+            Each exchange belongs to one of a set of exchange types implemented by the
+            server. The exchange types define the functionality of the exchange - i.e. how
+            messages are routed through it. It is not valid or meaningful to attempt to
             change the type of an existing exchange.
     :type type_: binary type (max length 255) (shortstr in AMQP)
     :param passive: Do not create exchange
-            If set, the server will reply with Declare-Ok if the
-            exchange already
-            exists with the same name, and raise an error if not. The
-            client can
-            use this to check whether an exchange exists without
-            modifying the
-            server state. When set, all other method fields except name
-            and no-wait
-            are ignored. A declare with both passive and no-wait has no
-            effect.
+            If set, the server will reply with Declare-Ok if the exchange already
+            exists with the same name, and raise an error if not.  The client can
+            use this to check whether an exchange exists without modifying the
+            server state. When set, all other method fields except name and no-wait
+            are ignored.  A declare with both passive and no-wait has no effect.
             Arguments are compared for semantic equivalence.
     :type passive: bool (bit in AMQP)
     :param durable: Request a durable exchange
-            If set when creating a new exchange, the exchange will be
-            marked as durable.
-            Durable exchanges remain active when a server restarts.
-            Non-durable exchanges
+            If set when creating a new exchange, the exchange will be marked as durable.
+            Durable exchanges remain active when a server restarts. Non-durable exchanges
             (transient exchanges) are purged if/when a server restarts.
     :type durable: bool (bit in AMQP)
     :param auto_delete: Auto-delete when unused
@@ -1666,8 +1684,7 @@ class ExchangeDeclare(AMQPMethodPayload):
     :type internal: bool (bit in AMQP)
     :type no_wait: bool (no-wait in AMQP)
     :param arguments: Arguments for declaration
-            A set of arguments for the declaration. The syntax and
-            semantics of these
+            A set of arguments for the declaration. The syntax and semantics of these
             arguments depends on the server implementation.
     :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
     """
@@ -1777,18 +1794,14 @@ class ExchangeDelete(AMQPMethodPayload):
     """
     Delete an exchange
     
-    This method deletes an exchange. When an exchange is deleted all
-    queue bindings on
+    This method deletes an exchange. When an exchange is deleted all queue bindings on
     the exchange are cancelled.
 
-    :param exchange: The client must not attempt to delete an exchange that
-            does not exist.
+    :param exchange: The client must not attempt to delete an exchange that does not exist.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
     :param if_unused: Delete only if unused
-            If set, the server will only delete the exchange if it has
-            no queue bindings. If
-            the exchange has queue bindings the server does not delete
-            it but raises a
+            If set, the server will only delete the exchange if it has no queue bindings. If
+            the exchange has queue bindings the server does not delete it but raises a
             channel exception instead.
     :type if_unused: bool (bit in AMQP)
     :type no_wait: bool (no-wait in AMQP)
@@ -1863,8 +1876,7 @@ class ExchangeDeclareOk(AMQPMethodPayload):
     """
     Confirm exchange declaration
     
-    This method confirms a Declare method and confirms the name of
-    the exchange,
+    This method confirms a Declare method and confirms the name of the exchange,
     essential for automatically-named exchanges.
 
     """
@@ -2076,11 +2088,9 @@ class ExchangeUnbindOk(AMQPMethodPayload):
 
 class Queue(AMQPClass):
     """
-    Queues store and forward messages. queues can be configured in the
+    Queues store and forward messages. queues can be configured in the server or created at
     
-    server or created at
-    runtime. Queues must be attached to at least one exchange in order
-    to receive messages
+    runtime. Queues must be attached to at least one exchange in order to receive messages
     from publishers.
     """
     NAME = u'queue'
@@ -2091,41 +2101,29 @@ class QueueBind(AMQPMethodPayload):
     """
     Bind queue to an exchange
     
-    This method binds a queue to an exchange. Until a queue is bound
-    it will not
-    receive any messages. In a classic messaging model,
-    store-and-forward queues
-    are bound to a direct exchange and subscription queues are bound
-    to a topic
+    This method binds a queue to an exchange. Until a queue is bound it will not
+    receive any messages. In a classic messaging model, store-and-forward queues
+    are bound to a direct exchange and subscription queues are bound to a topic
     exchange.
 
     :param queue: Specifies the name of the queue to bind.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :param exchange: Name of the exchange to bind to
-            A client MUST NOT be allowed to bind a queue to a
-            non-existent exchange.
+            A client MUST NOT be allowed to bind a queue to a non-existent exchange.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
     :param routing_key: Message routing key
-            Specifies the routing key for the binding. The routing key
-            is used for routing
-            messages depending on the exchange configuration. Not all
-            exchanges use a
-            routing key - refer to the specific exchange documentation.
-            If the queue name
-            is empty, the server uses the last queue declared on the
-            channel. If the
-            routing key is also empty, the server uses this queue name
-            for the routing
-            key as well. If the queue name is provided but the routing
-            key is empty, the
-            server does the binding with that empty routing key. The
-            meaning of empty
+            Specifies the routing key for the binding. The routing key is used for routing
+            messages depending on the exchange configuration. Not all exchanges use a
+            routing key - refer to the specific exchange documentation.  If the queue name
+            is empty, the server uses the last queue declared on the channel.  If the
+            routing key is also empty, the server uses this queue name for the routing
+            key as well.  If the queue name is provided but the routing key is empty, the
+            server does the binding with that empty routing key.  The meaning of empty
             routing keys depends on the exchange implementation.
     :type routing_key: binary type (max length 255) (shortstr in AMQP)
     :type no_wait: bool (no-wait in AMQP)
     :param arguments: Arguments for binding
-            A set of arguments for the binding. The syntax and semantics
-            of these arguments
+            A set of arguments for the binding. The syntax and semantics of these arguments
             depends on the exchange class.
     :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
     """
@@ -2258,63 +2256,43 @@ class QueueDeclare(AMQPMethodPayload):
     """
     Declare queue, create if needed
     
-    This method creates or checks a queue. When creating a new queue
-    the client can
-    specify various properties that control the durability of the
-    queue and its
+    This method creates or checks a queue. When creating a new queue the client can
+    specify various properties that control the durability of the queue and its
     contents, and the level of sharing for the queue.
 
-    :param queue: The queue name may be empty, in which case the server
-            MUST create a new
-            queue with a unique generated name and return this to
-            the client in the
+    :param queue: The queue name may be empty, in which case the server must create a new
+            queue with a unique generated name and return this to the client in the
             Declare-Ok method.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :param passive: Do not create queue
-            If set, the server will reply with Declare-Ok if the queue
-            already
-            exists with the same name, and raise an error if not. The
-            client can
-            use this to check whether a queue exists without modifying
-            the
-            server state. When set, all other method fields except name
-            and no-wait
-            are ignored. A declare with both passive and no-wait has no
-            effect.
+            If set, the server will reply with Declare-Ok if the queue already
+            exists with the same name, and raise an error if not.  The client can
+            use this to check whether a queue exists without modifying the
+            server state.  When set, all other method fields except name and no-wait
+            are ignored.  A declare with both passive and no-wait has no effect.
             Arguments are compared for semantic equivalence.
     :type passive: bool (bit in AMQP)
     :param durable: Request a durable queue
-            If set when creating a new queue, the queue will be marked
-            as durable. Durable
-            queues remain active when a server restarts. Non-durable
-            queues (transient
-            queues) are purged if/when a server restarts. Note that
-            durable queues do not
-            necessarily hold persistent messages, although it does not
-            make sense to send
+            If set when creating a new queue, the queue will be marked as durable. Durable
+            queues remain active when a server restarts. Non-durable queues (transient
+            queues) are purged if/when a server restarts. Note that durable queues do not
+            necessarily hold persistent messages, although it does not make sense to send
             persistent messages to a transient queue.
     :type durable: bool (bit in AMQP)
     :param exclusive: Request an exclusive queue
-            Exclusive queues may only be accessed by the current
-            connection, and are
-            deleted when that connection closes. Passive declaration of
-            an exclusive
+            Exclusive queues may only be accessed by the current connection, and are
+            deleted when that connection closes.  Passive declaration of an exclusive
             queue by other connections are not allowed.
     :type exclusive: bool (bit in AMQP)
     :param auto_delete: Auto-delete queue when unused
-            If set, the queue is deleted when all consumers have
-            finished using it. The last
-            consumer can be cancelled either explicitly or because its
-            channel is closed. If
-            there was no consumer ever on the queue, it won't be
-            deleted. Applications can
-            explicitly delete auto-delete queues using the Delete method
-            as normal.
+            If set, the queue is deleted when all consumers have finished using it.  The last
+            consumer can be cancelled either explicitly or because its channel is closed. If
+            there was no consumer ever on the queue, it won't be deleted.  Applications can
+            explicitly delete auto-delete queues using the Delete method as normal.
     :type auto_delete: bool (bit in AMQP)
     :type no_wait: bool (no-wait in AMQP)
     :param arguments: Arguments for declaration
-            A set of arguments for the declaration. The syntax and
-            semantics of these
+            A set of arguments for the declaration. The syntax and semantics of these
             arguments depends on the server implementation.
     :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
     """
@@ -2414,24 +2392,19 @@ class QueueDelete(AMQPMethodPayload):
     """
     Delete a queue
     
-    This method deletes a queue. When a queue is deleted any pending
-    messages are sent
-    to a dead-letter queue if this is defined in the server
-    configuration, and all
+    This method deletes a queue. When a queue is deleted any pending messages are sent
+    to a dead-letter queue if this is defined in the server configuration, and all
     consumers on the queue are cancelled.
 
     :param queue: Specifies the name of the queue to delete.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :param if_unused: Delete only if unused
-            If set, the server will only delete the queue if it has no
-            consumers. If the
-            queue has consumers the server does does not delete it but
-            raises a channel
+            If set, the server will only delete the queue if it has no consumers. If the
+            queue has consumers the server does does not delete it but raises a channel
             exception instead.
     :type if_unused: bool (bit in AMQP)
     :param if_empty: Delete only if empty
-            If set, the server will only delete the queue if it has no
-            messages.
+            If set, the server will only delete the queue if it has no messages.
     :type if_empty: bool (bit in AMQP)
     :type no_wait: bool (no-wait in AMQP)
     """
@@ -2512,20 +2485,16 @@ class QueueDeclareOk(AMQPMethodPayload):
     """
     Confirms a queue definition
     
-    This method confirms a Declare method and confirms the name of
-    the queue, essential
+    This method confirms a Declare method and confirms the name of the queue, essential
     for automatically-named queues.
 
-    :param queue: Reports the name of the queue. if the server generated a
-            queue name, this field
+    :param queue: Reports the name of the queue. if the server generated a queue name, this field
             contains that name.
     :type queue: binary type (max length 255) (queue-name in AMQP)
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     :param consumer_count: Number of consumers
-            Reports the number of active consumers for the queue. Note
-            that consumers can
-            suspend activity (Channel.Flow) in which case they do not
-            appear in this count.
+            Reports the number of active consumers for the queue. Note that consumers can
+            suspend activity (Channel.Flow) in which case they do not appear in this count.
     :type consumer_count: int, 32 bit unsigned (long in AMQP)
     """
     __slots__ = (
@@ -2650,8 +2619,7 @@ class QueuePurge(AMQPMethodPayload):
     """
     Purge a queue
     
-    This method removes all messages from a queue which are not
-    awaiting
+    This method removes all messages from a queue which are not awaiting
     acknowledgment.
 
     :param queue: Specifies the name of the queue to purge.
@@ -2911,9 +2879,7 @@ class QueueUnbindOk(AMQPMethodPayload):
 
 class Basic(AMQPClass):
     """
-    The basic class provides methods that support an industry-standard
-    
-    messaging model.
+    The basic class provides methods that support an industry-standard messaging model.
     """
     NAME = u'basic'
     INDEX = 60
@@ -2921,9 +2887,7 @@ class Basic(AMQPClass):
 
 class BasicContentPropertyList(AMQPContentPropertyList):
     """
-    The basic class provides methods that support an industry-standard
-    
-    messaging model.
+    The basic class provides methods that support an industry-standard messaging model.
     """
     FIELDS = [
         Field(u'content-type', u'shortstr', u'shortstr', False),
@@ -3150,31 +3114,25 @@ class BasicConsume(AMQPMethodPayload):
     """
     Start a queue consumer
     
-    This method asks the server to start a "consumer", which is a
-    transient request for
-    messages from a specific queue. Consumers last as long as the
-    channel they were
+    This method asks the server to start a "consumer", which is a transient request for
+    messages from a specific queue. Consumers last as long as the channel they were
     declared on, or until the client cancels them.
 
     :param queue: Specifies the name of the queue to consume from.
     :type queue: binary type (max length 255) (queue-name in AMQP)
-    :param consumer_tag: Specifies the identifier for the consumer. the consumer tag
-            is local to a
-            channel, so two clients can use the same consumer tags. If
-            this field is
+    :param consumer_tag: Specifies the identifier for the consumer. the consumer tag is local to a
+            channel, so two clients can use the same consumer tags. If this field is
             empty the server will generate a unique tag.
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     :type no_local: bool (no-local in AMQP)
     :type no_ack: bool (no-ack in AMQP)
     :param exclusive: Request exclusive access
-            Request exclusive consumer access, meaning only this
-            consumer can access the
+            Request exclusive consumer access, meaning only this consumer can access the
             queue.
     :type exclusive: bool (bit in AMQP)
     :type no_wait: bool (no-wait in AMQP)
     :param arguments: Arguments for declaration
-            A set of arguments for the consume. The syntax and semantics
-            of these
+            A set of arguments for the consume. The syntax and semantics of these
             arguments depends on the server implementation.
     :type arguments: table. See coolamqp.uplink.framing.field_table (table in AMQP)
     """
@@ -3279,14 +3237,10 @@ class BasicCancel(AMQPMethodPayload):
     """
     End a queue consumer
     
-    This method cancels a consumer. This does not affect already
-    delivered
-    messages, but it does mean the server will not send any more
-    messages for
-    that consumer. The client may receive an arbitrary number of
-    messages in
-    between sending the cancel method and receiving the cancel-ok
-    reply.
+    This method cancels a consumer. This does not affect already delivered
+    messages, but it does mean the server will not send any more messages for
+    that consumer. The client may receive an arbitrary number of messages in
+    between sending the cancel method and receiving the cancel-ok reply.
     It may also be sent from the server to the client in the event
     of the consumer being unexpectedly cancelled (i.e. cancelled
     for any reason other than the server receiving the
@@ -3365,12 +3319,10 @@ class BasicConsumeOk(AMQPMethodPayload):
     """
     Confirm a new consumer
     
-    The server provides the client with a consumer tag, which is
-    used by the client
+    The server provides the client with a consumer tag, which is used by the client
     for methods called on the consumer at a later stage.
 
-    :param consumer_tag: Holds the consumer tag specified by the client or provided
-            by the server.
+    :param consumer_tag: Holds the consumer tag specified by the client or provided by the server.
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     """
     __slots__ = (u'consumer_tag', )
@@ -3485,24 +3437,19 @@ class BasicDeliver(AMQPMethodPayload):
     """
     Notify the client of a consumer message
     
-    This method delivers a message to the client, via a consumer. In
-    the asynchronous
-    message delivery model, the client starts a consumer using the
-    Consume method, then
-    the server responds with Deliver methods as and when messages
-    arrive for that
+    This method delivers a message to the client, via a consumer. In the asynchronous
+    message delivery model, the client starts a consumer using the Consume method, then
+    the server responds with Deliver methods as and when messages arrive for that
     consumer.
 
     :type consumer_tag: binary type (max length 255) (consumer-tag in AMQP)
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :type redelivered: bool (redelivered in AMQP)
-    :param exchange: Specifies the name of the exchange that the message was
-            originally published to.
+    :param exchange: Specifies the name of the exchange that the message was originally published to.
             May be empty, indicating the default exchange.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
     :param routing_key: Message routing key
-            Specifies the routing key name specified when the message
-            was published.
+            Specifies the routing key name specified when the message was published.
     :type routing_key: binary type (max length 255) (shortstr in AMQP)
     """
     __slots__ = (
@@ -3597,10 +3544,8 @@ class BasicGet(AMQPMethodPayload):
     """
     Direct access to a queue
     
-    This method provides a direct access to the messages in a queue
-    using a synchronous
-    dialogue that is designed for specific types of application
-    where synchronous
+    This method provides a direct access to the messages in a queue using a synchronous
+    dialogue that is designed for specific types of application where synchronous
     functionality is more important than performance.
 
     :param queue: Specifies the name of the queue to get a message from.
@@ -3672,21 +3617,17 @@ class BasicGetOk(AMQPMethodPayload):
     """
     Provide client with a message
     
-    This method delivers a message to the client following a get
-    method. A message
-    delivered by 'get-ok' must be acknowledged unless the no-ack
-    option was set in the
+    This method delivers a message to the client following a get method. A message
+    delivered by 'get-ok' must be acknowledged unless the no-ack option was set in the
     get method.
 
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :type redelivered: bool (redelivered in AMQP)
-    :param exchange: Specifies the name of the exchange that the message was
-            originally published to.
+    :param exchange: Specifies the name of the exchange that the message was originally published to.
             If empty, the message was published to the default exchange.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
     :param routing_key: Message routing key
-            Specifies the routing key name specified when the message
-            was published.
+            Specifies the routing key name specified when the message was published.
     :type routing_key: binary type (max length 255) (shortstr in AMQP)
     :type message_count: int, 32 bit unsigned (message-count in AMQP)
     """
@@ -3778,8 +3719,7 @@ class BasicGetEmpty(AMQPMethodPayload):
     """
     Indicate no messages available
     
-    This method tells the client that the queue has no messages
-    available for the
+    This method tells the client that the queue has no messages available for the
     client.
 
     """
@@ -3823,15 +3763,11 @@ class BasicNack(AMQPMethodPayload):
     """
     Reject one or more incoming messages
     
-    This method allows a client to reject one or more incoming
-    messages. It can be
-    used to interrupt and cancel large incoming messages, or return
-    untreatable
+    This method allows a client to reject one or more incoming messages. It can be
+    used to interrupt and cancel large incoming messages, or return untreatable
     messages to their original queue.
-    This method is also used by the server to inform publishers on
-    channels in
-    confirm mode of unhandled messages. If a publisher receives this
-    method, it
+    This method is also used by the server to inform publishers on channels in
+    confirm mode of unhandled messages.  If a publisher receives this method, it
     probably needs to republish the offending messages.
 
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
@@ -3844,10 +3780,8 @@ class BasicNack(AMQPMethodPayload):
             all outstanding messages.
     :type multiple: bool (bit in AMQP)
     :param requeue: Requeue the message
-            If requeue is true, the server will attempt to requeue the
-            message. If requeue
-            is false or the requeue attempt fails the messages are
-            discarded or dead-lettered.
+            If requeue is true, the server will attempt to requeue the message.  If requeue
+            is false or the requeue  attempt fails the messages are discarded or dead-lettered.
             Clients receiving the Nack methods should ignore this flag.
     :type requeue: bool (bit in AMQP)
     """
@@ -3915,41 +3849,28 @@ class BasicPublish(AMQPMethodPayload):
     """
     Publish a message
     
-    This method publishes a message to a specific exchange. The
-    message will be routed
-    to queues as defined by the exchange configuration and
-    distributed to any active
+    This method publishes a message to a specific exchange. The message will be routed
+    to queues as defined by the exchange configuration and distributed to any active
     consumers when the transaction, if any, is committed.
 
-    :param exchange: Specifies the name of the exchange to publish to. the
-            exchange name can be
-            empty, meaning the default exchange. If the exchange name is
-            specified, and that
-            exchange does not exist, the server will raise a channel
-            exception.
+    :param exchange: Specifies the name of the exchange to publish to. the exchange name can be
+            empty, meaning the default exchange. If the exchange name is specified, and that
+            exchange does not exist, the server will raise a channel exception.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
     :param routing_key: Message routing key
-            Specifies the routing key for the message. The routing key
-            is used for routing
+            Specifies the routing key for the message. The routing key is used for routing
             messages depending on the exchange configuration.
     :type routing_key: binary type (max length 255) (shortstr in AMQP)
     :param mandatory: Indicate mandatory routing
-            This flag tells the server how to react if the message
-            cannot be routed to a
-            queue. If this flag is set, the server will return an
-            unroutable message with a
-            Return method. If this flag is zero, the server silently
-            drops the message.
+            This flag tells the server how to react if the message cannot be routed to a
+            queue. If this flag is set, the server will return an unroutable message with a
+            Return method. If this flag is zero, the server silently drops the message.
     :type mandatory: bool (bit in AMQP)
     :param immediate: Request immediate delivery
-            This flag tells the server how to react if the message
-            cannot be routed to a
-            queue consumer immediately. If this flag is set, the server
-            will return an
-            undeliverable message with a Return method. If this flag is
-            zero, the server
-            will queue the message, but with no guarantee that it will
-            ever be consumed.
+            This flag tells the server how to react if the message cannot be routed to a
+            queue consumer immediately. If this flag is set, the server will return an
+            undeliverable message with a Return method. If this flag is zero, the server
+            will queue the message, but with no guarantee that it will ever be consumed.
     :type immediate: bool (bit in AMQP)
     """
     __slots__ = (
@@ -4033,43 +3954,27 @@ class BasicQos(AMQPMethodPayload):
     """
     Specify quality of service
     
-    This method requests a specific quality of service. The QoS can
-    be specified for the
-    current channel or for all channels on the connection. The
-    particular properties and
-    semantics of a qos method always depend on the content class
-    semantics. Though the
-    qos method could in principle apply to both peers, it is
-    currently meaningful only
+    This method requests a specific quality of service. The QoS can be specified for the
+    current channel or for all channels on the connection. The particular properties and
+    semantics of a qos method always depend on the content class semantics. Though the
+    qos method could in principle apply to both peers, it is currently meaningful only
     for the server.
 
     :param prefetch_size: Prefetch window in octets
-            The client can request that messages be sent in advance so
-            that when the client
-            finishes processing a message, the following message is
-            already held locally,
-            rather than needing to be sent down the channel. Prefetching
-            gives a performance
-            improvement. This field specifies the prefetch window size
-            in octets. The server
-            will send a message in advance if it is equal to or smaller
-            in size than the
-            available prefetch size (and also falls into other prefetch
-            limits). May be set
-            to zero, meaning "no specific limit", although other
-            prefetch limits may still
-            apply. The prefetch-size is ignored if the no-ack option is
-            set.
+            The client can request that messages be sent in advance so that when the client
+            finishes processing a message, the following message is already held locally,
+            rather than needing to be sent down the channel. Prefetching gives a performance
+            improvement. This field specifies the prefetch window size in octets. The server
+            will send a message in advance if it is equal to or smaller in size than the
+            available prefetch size (and also falls into other prefetch limits). May be set
+            to zero, meaning "no specific limit", although other prefetch limits may still
+            apply. The prefetch-size is ignored if the no-ack option is set.
     :type prefetch_size: int, 32 bit unsigned (long in AMQP)
     :param prefetch_count: Prefetch window in messages
-            Specifies a prefetch window in terms of whole messages. This
-            field may be used
-            in combination with the prefetch-size field; a message will
-            only be sent in
-            advance if both prefetch windows (and those at the channel
-            and connection level)
-            allow it. The prefetch-count is ignored if the no-ack option
-            is set.
+            Specifies a prefetch window in terms of whole messages. This field may be used
+            in combination with the prefetch-size field; a message will only be sent in
+            advance if both prefetch windows (and those at the channel and connection level)
+            allow it. The prefetch-count is ignored if the no-ack option is set.
     :type prefetch_count: int, 16 bit unsigned (short in AMQP)
     :param global_: Apply to entire connection
             RabbitMQ has reinterpreted this field. The original
@@ -4146,10 +4051,8 @@ class BasicQosOk(AMQPMethodPayload):
     """
     Confirm the requested qos
     
-    This method tells the client that the requested QoS levels could
-    be handled by the
-    server. The requested QoS applies to all active consumers until
-    a new QoS is
+    This method tells the client that the requested QoS levels could be handled by the
+    server. The requested QoS applies to all active consumers until a new QoS is
     defined.
 
     """
@@ -4185,23 +4088,18 @@ class BasicReturn(AMQPMethodPayload):
     """
     Return a failed message
     
-    This method returns an undeliverable message that was published
-    with the "immediate"
-    flag set, or an unroutable message published with the
-    "mandatory" flag set. The
-    reply code and text provide information about the reason that
-    the message was
+    This method returns an undeliverable message that was published with the "immediate"
+    flag set, or an unroutable message published with the "mandatory" flag set. The
+    reply code and text provide information about the reason that the message was
     undeliverable.
 
     :type reply_code: int, 16 bit unsigned (reply-code in AMQP)
     :type reply_text: binary type (max length 255) (reply-text in AMQP)
-    :param exchange: Specifies the name of the exchange that the message was
-            originally published
-            to. May be empty, meaning the default exchange.
+    :param exchange: Specifies the name of the exchange that the message was originally published
+            to.  May be empty, meaning the default exchange.
     :type exchange: binary type (max length 255) (exchange-name in AMQP)
     :param routing_key: Message routing key
-            Specifies the routing key name specified when the message
-            was published.
+            Specifies the routing key name specified when the message was published.
     :type routing_key: binary type (max length 255) (shortstr in AMQP)
     """
     __slots__ = (
@@ -4285,18 +4183,14 @@ class BasicReject(AMQPMethodPayload):
     """
     Reject an incoming message
     
-    This method allows a client to reject a message. It can be used
-    to interrupt and
-    cancel large incoming messages, or return untreatable messages
-    to their original
+    This method allows a client to reject a message. It can be used to interrupt and
+    cancel large incoming messages, or return untreatable messages to their original
     queue.
 
     :type delivery_tag: int, 64 bit unsigned (delivery-tag in AMQP)
     :param requeue: Requeue the message
-            If requeue is true, the server will attempt to requeue the
-            message. If requeue
-            is false or the requeue attempt fails the messages are
-            discarded or dead-lettered.
+            If requeue is true, the server will attempt to requeue the message.  If requeue
+            is false or the requeue  attempt fails the messages are discarded or dead-lettered.
     :type requeue: bool (bit in AMQP)
     """
     __slots__ = (
@@ -4357,17 +4251,13 @@ class BasicRecoverAsync(AMQPMethodPayload):
     """
     Redeliver unacknowledged messages
     
-    This method asks the server to redeliver all unacknowledged
-    messages on a
-    specified channel. Zero or more messages may be redelivered.
-    This method
+    This method asks the server to redeliver all unacknowledged messages on a
+    specified channel. Zero or more messages may be redelivered.  This method
     is deprecated in favour of the synchronous Recover/Recover-Ok.
 
     :param requeue: Requeue the message
-            If this field is zero, the message will be redelivered to
-            the original
-            recipient. If this bit is 1, the server will attempt to
-            requeue the message,
+            If this field is zero, the message will be redelivered to the original
+            recipient. If this bit is 1, the server will attempt to requeue the message,
             potentially then delivering it to an alternative subscriber.
     :type requeue: bool (bit in AMQP)
     """
@@ -4424,17 +4314,13 @@ class BasicRecover(AMQPMethodPayload):
     """
     Redeliver unacknowledged messages
     
-    This method asks the server to redeliver all unacknowledged
-    messages on a
-    specified channel. Zero or more messages may be redelivered.
-    This method
+    This method asks the server to redeliver all unacknowledged messages on a
+    specified channel. Zero or more messages may be redelivered.  This method
     replaces the asynchronous Recover.
 
     :param requeue: Requeue the message
-            If this field is zero, the message will be redelivered to
-            the original
-            recipient. If this bit is 1, the server will attempt to
-            requeue the message,
+            If this field is zero, the message will be redelivered to the original
+            recipient. If this bit is 1, the server will attempt to requeue the message,
             potentially then delivering it to an alternative subscriber.
     :type requeue: bool (bit in AMQP)
     """
@@ -4523,22 +4409,15 @@ class BasicRecoverOk(AMQPMethodPayload):
 
 class Tx(AMQPClass):
     """
-    The tx class allows publish and ack operations to be batched into
+    The tx class allows publish and ack operations to be batched into atomic
     
-    atomic
-    units of work. The intention is that all publish and ack requests
-    issued
-    within a transaction will complete successfully or none of them
-    will.
-    Servers SHOULD implement atomic transactions at least where all
-    publish
-    or ack requests affect a single queue. Transactions that cover
-    multiple
-    queues may be non-atomic, given that queues can be created and
-    destroyed
+    units of work.  The intention is that all publish and ack requests issued
+    within a transaction will complete successfully or none of them will.
+    Servers SHOULD implement atomic transactions at least where all publish
+    or ack requests affect a single queue.  Transactions that cover multiple
+    queues may be non-atomic, given that queues can be created and destroyed
     asynchronously, and such events do not form part of any transaction.
-    Further, the behaviour of transactions with respect to the immediate
-    and
+    Further, the behaviour of transactions with respect to the immediate and
     mandatory flags on Basic.Publish methods is not defined.
     """
     NAME = u'tx'
@@ -4549,10 +4428,8 @@ class TxCommit(AMQPMethodPayload):
     """
     Commit the current transaction
     
-    This method commits all message publications and acknowledgments
-    performed in
-    the current transaction. A new transaction starts immediately
-    after a commit.
+    This method commits all message publications and acknowledgments performed in
+    the current transaction.  A new transaction starts immediately after a commit.
 
     """
     __slots__ = ()
@@ -4586,8 +4463,7 @@ class TxCommitOk(AMQPMethodPayload):
     """
     Confirm a successful commit
     
-    This method confirms to the client that the commit succeeded.
-    Note that if a commit
+    This method confirms to the client that the commit succeeded. Note that if a commit
     fails, the server raises a channel exception.
 
     """
@@ -4623,12 +4499,9 @@ class TxRollback(AMQPMethodPayload):
     """
     Abandon the current transaction
     
-    This method abandons all message publications and
-    acknowledgments performed in
-    the current transaction. A new transaction starts immediately
-    after a rollback.
-    Note that unacked messages will not be automatically redelivered
-    by rollback;
+    This method abandons all message publications and acknowledgments performed in
+    the current transaction. A new transaction starts immediately after a rollback.
+    Note that unacked messages will not be automatically redelivered by rollback;
     if that is required an explicit recover call should be issued.
 
     """
@@ -4664,8 +4537,7 @@ class TxRollbackOk(AMQPMethodPayload):
     """
     Confirm successful rollback
     
-    This method confirms to the client that the rollback succeeded.
-    Note that if an
+    This method confirms to the client that the rollback succeeded. Note that if an
     rollback fails, the server raises a channel exception.
 
     """
@@ -4701,10 +4573,8 @@ class TxSelect(AMQPMethodPayload):
     """
     Select standard transaction mode
     
-    This method sets the channel to use standard transactions. The
-    client must use this
-    method at least once on a channel before using the Commit or
-    Rollback methods.
+    This method sets the channel to use standard transactions. The client must use this
+    method at least once on a channel before using the Commit or Rollback methods.
 
     """
     __slots__ = ()
@@ -4738,8 +4608,7 @@ class TxSelectOk(AMQPMethodPayload):
     """
     Confirm transaction mode
     
-    This method confirms to the client that the channel was
-    successfully set to use
+    This method confirms to the client that the channel was successfully set to use
     standard transactions.
 
     """
@@ -4776,9 +4645,9 @@ class Confirm(AMQPClass):
     The confirm class allows publishers to put the channel in
     
     confirm mode and subsequently be notified when messages have been
-    handled by the broker. The intention is that all messages
+    handled by the broker.  The intention is that all messages
     published on a channel in confirm mode will be acknowledged at
-    some point. By acknowledging a message the broker assumes
+    some point.  By acknowledging a message the broker assumes
     responsibility for it and indicates that it has done something
     it deems reasonable with it.
     Unroutable mandatory or immediate messages are acknowledged
@@ -4803,12 +4672,7 @@ class ConfirmSelect(AMQPMethodPayload):
     The client can only use this method on a non-transactional
     channel.
 
-    :param nowait: If set, the server will not respond to the method. the
-            client should
-            not wait for a reply method. If the server could not
-            complete the
-            method it will raise a channel or connection exception.
-    :type nowait: bool (bit in AMQP)
+    :type nowait: bool (no-wait in AMQP)
     """
     __slots__ = (u'nowait', )
 
@@ -4824,7 +4688,7 @@ class ConfirmSelect(AMQPMethodPayload):
 
     # See constructor pydoc for details
     FIELDS = [
-        Field(u'nowait', u'bit', u'bit', reserved=False),
+        Field(u'nowait', u'no-wait', u'bit', reserved=False),
     ]
 
     def __repr__(self):  # type: () -> str
@@ -4860,9 +4724,8 @@ class ConfirmSelect(AMQPMethodPayload):
 
 class ConfirmSelectOk(AMQPMethodPayload):
     """
-    This method confirms to the client that the channel was
+    This method confirms to the client that the channel was successfully
     
-    successfully
     set to use publisher acknowledgements.
 
     """
@@ -4906,7 +4769,9 @@ IDENT_TO_METHOD = {
     (10, 21): ConnectionSecureOk,
     (10, 30): ConnectionTune,
     (10, 31): ConnectionTuneOk,
+    (10, 70): ConnectionUpdateSecret,
     (10, 61): ConnectionUnblocked,
+    (10, 71): ConnectionUpdateSecretOk,
     (20, 40): ChannelClose,
     (20, 41): ChannelCloseOk,
     (20, 20): ChannelFlow,
@@ -4971,7 +4836,9 @@ BINARY_HEADER_TO_METHOD = {
     b'\x00\x0A\x00\x15': ConnectionSecureOk,
     b'\x00\x0A\x00\x1E': ConnectionTune,
     b'\x00\x0A\x00\x1F': ConnectionTuneOk,
+    b'\x00\x0A\x00\x46': ConnectionUpdateSecret,
     b'\x00\x0A\x00\x3D': ConnectionUnblocked,
+    b'\x00\x0A\x00\x47': ConnectionUpdateSecretOk,
     b'\x00\x14\x00\x28': ChannelClose,
     b'\x00\x14\x00\x29': ChannelCloseOk,
     b'\x00\x14\x00\x14': ChannelFlow,
@@ -5037,6 +4904,7 @@ REPLY_REASONS_FOR = {
     ConnectionStartOk: ConnectionStart,
     ConnectionSecureOk: ConnectionSecure,
     ConnectionTuneOk: ConnectionTune,
+    ConnectionUpdateSecretOk: ConnectionUpdateSecret,
     ChannelCloseOk: ChannelClose,
     ChannelFlowOk: ChannelFlow,
     ChannelOpenOk: ChannelOpen,
@@ -5075,7 +4943,9 @@ REPLIES_FOR = {
     ConnectionSecureOk: [],
     ConnectionTune: [ConnectionTuneOk],
     ConnectionTuneOk: [],
+    ConnectionUpdateSecret: [ConnectionUpdateSecretOk],
     ConnectionUnblocked: [],
+    ConnectionUpdateSecretOk: [],
     ChannelClose: [ChannelCloseOk],
     ChannelCloseOk: [],
     ChannelFlow: [ChannelFlowOk],

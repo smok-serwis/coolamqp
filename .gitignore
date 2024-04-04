@@ -36,7 +36,7 @@ var/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-resources/amqp0-9-1.xml
+amqp0-9-1.extended.xml
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt

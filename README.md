@@ -17,7 +17,10 @@ Why CoolAMQP?
 * AMQP 0.9.1 client that's native Python
 * heavily optimized for speed
 * geared towards interfacing with [RabbitMQ](https://www.rabbitmq.com/
-  * supports custom RabbitMQ commands and Connection.Blocked and Connection.Unblocked
+  * supports custom RabbitMQ commands, such as
+    * [Connection blocking](https://www.rabbitmq.com/docs/connection-blocked)
+    * [Publisher confirms](https://www.rabbitmq.com/docs/confirms#publisher-confirms)
+    * [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack)
 * traceable using [opentracing](https://opentracing.io/)
 
 Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
@@ -44,9 +47,9 @@ Enjoy!
 
 _Watch out for memoryviews!_ They're here to stay.
 
-[Short'n'sweet contributing guide](CONTRIBUTING.md)
-[Change log for past versions](https://github.com/smok-serwis/coolamqp/releases/)
-[Change log in this, unreleased version](CHANGELOG.md)
+* [Short'n'sweet contributing guide](CONTRIBUTING.md)
+* [Change log for past versions](https://github.com/smok-serwis/coolamqp/releases/)
+* [Change log in this, unreleased version](CHANGELOG.md)
 
 
 ## Notes
@@ -85,8 +88,8 @@ A series of unit tests that need an AMQP server listening.
 
 ### [compile_definitions](compile_definitions/)
 
-A tool to generate [definitions.py](coolamqp/framing/definitions.py)
-from [amqp-0-9-1.xml](resources/amqp0-9-1.xml)
+A tool to generate [definitions.py](coolamqp/framing/definitions.py) from the AMQP specification 
+[XML](https://www.rabbitmq.com/resources/specs/amqp0-9-1.extended.xml).
 
 In order to compile the definitions:
 
@@ -95,17 +98,9 @@ In order to compile the definitions:
   ```python
   python -m compile_definitions
   ```
-* you can alternatively perform
-  ```python
-  python -m compile_definitions --no-connection-blocked
-  ```
-  To generate a variant not supporting Connection.Blocked and Connection.Unblocked commands
+
 and you're all set. The only files modified is
 [definitions.py](coolamqp/framing/definitions.py).
-
-### [resources](resources/)
-
-A downloaded from OASIS machine-readable AMQP 0.9.1 specification.
 
 ### [docs](docs/)
 
