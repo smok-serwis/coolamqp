@@ -30,7 +30,7 @@ CLIENT_DATA = [
     # these fields to be of type short-string
     (b'product', (b'CoolAMQP', 'S')),
     (b'version', (__version__.encode('utf8'), 'S')),
-    (b'copyright', (b'Copyright (C) 2016-2021 SMOK sp. z o.o.', 'S')),
+    (b'copyright', (b'Copyright (C) 2016-2024 SMOK sp. z o.o.', 'S')),
     (
         b'information', (
             b'Licensed under the MIT License.\nSee https://github.com/smok-serwis/coolamqp for details',
