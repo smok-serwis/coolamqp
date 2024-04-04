@@ -9,12 +9,12 @@ import os
 import time
 import unittest
 
-from coolamqp.utils import monotonic
 import six
 
 from coolamqp.clustering import Cluster, MessageReceived, NothingMuch
 from coolamqp.objects import Message, NodeDefinition, Queue, \
     ReceivedMessage, Exchange
+from coolamqp.utils import monotonic
 
 NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
@@ -230,7 +230,6 @@ class TestA(unittest.TestCase):
         m = self.c.drain(9)
         self.assertIsInstance(m, MessageReceived)
         self.assertIsInstance(m.body, memoryview)
-        print(len(m.body))
         self.assertEquals(m.body.tobytes(), data)
 
     def test_send_recv_nonzerolen_listofmemoryview(self):
