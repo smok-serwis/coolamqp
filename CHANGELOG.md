@@ -4,3 +4,4 @@ have been made so far, between releases.
 
 # v1.3.1
 
+* coolamqp.objects.Callable made threadsafe (fixes #22)

@@ -3,6 +3,7 @@
 Core objects used in CoolAMQP
 """
 import logging
+import threading
 import typing as tp
 import uuid
 
@@ -33,23 +34,24 @@ class Callable(object):
     """
     Add a bunch of callables to one list, and just invoke'm.
     INTERNAL USE ONLY
-    #todo not thread safe
     """
-    __slots__ = ('callables', 'oneshots')
+    __slots__ = ('callables', 'oneshots', 'lock')
 
     def __init__(self, oneshots=False):
         """:param oneshots: if True, callables will be called and discarded"""
         self.callables = []
+        self.lock = threading.Lock()
         self.oneshots = oneshots
 
-    def add(self, callable):
-        self.callables.append(callable)
+    def add(self, clbl):
+        self.callables.append(clbl)
 
     def __call__(self, *args, **kwargs):
-        for callable in self.callables:
-            callable(*args, **kwargs)
-        if self.oneshots:
-            self.callables = []
+        with self.lock:
+            for clbl in self.callables:
+                clbl(*args, **kwargs)
+            if self.oneshots:
+                self.callables = []
 
 
 class Message(object):
