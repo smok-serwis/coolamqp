@@ -1,7 +1,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2016-2018 DMS Serwis s. c.
-Copyright (c) 2018-2020 SMOK sp. z o. o.
+Copyright (c) 2018-2024 SMOK sp. z o. o.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
