@@ -1,10 +1,18 @@
 from __future__ import division
 
+import os
+import sys
+if sys.version.startswith('2.'):
+    raise RuntimeError('Cannot run under Python 2.7')
+
+from urllib.request import urlopen
 import collections
 import math
 import struct
 import subprocess
+from io import BytesIO
 from xml.etree import ElementTree
+from zipfile import ZipFile
 
 import six
 
@@ -26,11 +34,26 @@ TYPE_TRANSLATOR = {
 }
 
 
-def compile_definitions(xml_file='resources/amqp0-9-1.extended.xml',
+def get_xml(xml_file):
+    """Download XML definition from OASIS's website"""
+
+    r = urlopen('https://raw.githubusercontent.com/postwait/node-amqp/master/amqp-0-9-1-rabbit.xml')
+    with open(xml_file, 'wb') as out:
+        out.write(r.read())
+
+
+def compile_definitions(xml_file='resources/amqp0-9-1.xml',
                         out_file='coolamqp/framing/definitions.py'):
     """parse resources/amqp-0-9-1.xml into """
+    if not os.path.exists(xml_file):
+        get_xml(xml_file)
 
-    xml = ElementTree.parse(xml_file)
+    try:
+        xml = ElementTree.parse(xml_file)
+    except ElementTree.ParseError:
+        get_xml(xml_file)
+        xml = ElementTree.parse(xml_file)
+
     out = open(out_file, 'wb')
 
     out.write(u'''# coding=UTF-8
@@ -568,7 +591,12 @@ REPLIES_FOR = {\n''')
 
 
 if __name__ == '__main__':
-    compile_definitions()
+    if '--no-connection-blocked' in sys.argv:
+        xml_file = 'resources/amqp0-9-1.xml'
+        print('Compiling without Connection.Blocked')
+    else:
+        xml_file = 'resources/amqp0-9-1.extended.xml'
+    compile_definitions(xml_file=xml_file)
     proc = subprocess.check_output(['yapf', 'coolamqp/framing/definitions.py'])
     with open('coolamqp/framing/definitions.py', 'wb') as f_out:
         f_out.write(proc)

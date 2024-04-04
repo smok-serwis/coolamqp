@@ -11,8 +11,14 @@ CoolAMQP
 [![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=develop)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-A **magical** AMQP 0.9.1  client, that uses **heavy sorcery** to achieve speeds that other pure-Python AMQP clients cannot even hope to match.
-Additionally, it's traceable using **opentracing**.
+Why CoolAMQP?
+-------------
+
+* AMQP 0.9.1 client that's native Python
+* heavily optimized for speed
+* geared towards interfacing with [RabbitMQ](https://www.rabbitmq.com/
+  * supports custom RabbitMQ commands and Connection.Blocked and Connection.Unblocked
+* traceable using [opentracing](https://opentracing.io/)
 
 Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
 
@@ -89,6 +95,11 @@ In order to compile the definitions:
   ```python
   python -m compile_definitions
   ```
+* you can alternatively perform
+  ```python
+  python -m compile_definitions --no-connection-blocked
+  ```
+  To generate a variant not supporting Connection.Blocked and Connection.Unblocked commands
 and you're all set. The only files modified is
 [definitions.py](coolamqp/framing/definitions.py).
 

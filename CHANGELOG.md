@@ -4,3 +4,4 @@ have been made so far, between releases.
 
 # v1.2.17
 
+* can support building from XML not containing Connection.Blocked and Connection.Unblocked

@@ -23,11 +23,11 @@ class LoggingFrameTracer(BaseFrameTracer):
     """
     A frame tracer that outputs each frame to log
 
-    :param logger: the logger to log onto
+    :param logger: the logger to log onto (defaults to logging.getLogger(__name__))
     :param log_level: the level of logging to log with
     """
-    def __init__(self, logger, log_level=logging.WARNING):
-        self.logger = logger
+    def __init__(self, logger=None, log_level=logging.WARNING):
+        self.logger = logger or logging.getLogger(__name__)
         self.log_level = log_level
 
     def on_frame(self, timestamp, frame, direction):

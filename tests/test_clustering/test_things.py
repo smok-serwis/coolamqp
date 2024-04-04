@@ -16,6 +16,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 class TestConnecting(unittest.TestCase):
+
+    def test_connection_blocked(self):
+        try:
+            from coolamqp.framing.definitions import ConnectionBlocked
+        except ImportError:
+            self.skipTest('ConnectionBlocked not supported!')
+
     def test_on_fail(self):
         """Assert that on_fail doesn't fire if the cluster fails to connect"""
         q = {'failed': False}

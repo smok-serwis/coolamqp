@@ -24,9 +24,14 @@ from coolamqp.framing.frames import AMQPMethodFrame, AMQPBodyFrame, \
 try:
     # these extensions will be available
     from coolamqp.framing.definitions import ConfirmSelect, ConfirmSelectOk, \
-        BasicNack, ChannelFlow, ChannelFlowOk, ConnectionBlocked, ConnectionUnblocked
+        BasicNack, ChannelFlow, ChannelFlowOk
 except ImportError:
     pass
+
+try:
+    from coolamqp.framing.definitions import ConnectionUnblocked, ConnectionBlocked
+except ImportError:
+    ConnectionBlocked, ConnectionUnblocked = None, None
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
 from coolamqp.uplink import PUBLISHER_CONFIRMS, MethodWatch, FailWatch
@@ -108,9 +113,9 @@ class Publisher(Channeler, Synchronized):
         connection.watch(FailWatch(self.on_fail))
 
     def on_connection_blocked(self, payload):
-        if isinstance(payload, ConnectionBlocked):
+        if ConnectionBlocked is not None and isinstance(payload, ConnectionBlocked):
             self.blocked = True
-        elif isinstance(payload, ConnectionUnblocked):
+        elif ConnectionUnblocked is not None and isinstance(payload, ConnectionUnblocked):
             self.blocked = False
 
             if self.content_flow:
@@ -321,9 +326,10 @@ class Publisher(Channeler, Synchronized):
             mw = self.watch_for_method(ChannelFlow, self.on_flow_control)
             mw.oneshot = False
 
-            mw = self.connection.watch_for_method(0, (ConnectionBlocked, ConnectionUnblocked),
-                                                  self.on_connection_blocked)
-            mw.oneshot = False
+            if ConnectionBlocked is not None:
+                mw = self.connection.watch_for_method(0, (ConnectionBlocked, ConnectionUnblocked),
+                                                      self.on_connection_blocked)
+                mw.oneshot = False
 
             if self.mode == Publisher.MODE_CNPUB:
                 self.method_and_watch(ConfirmSelect(False), ConfirmSelectOk,
