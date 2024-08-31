@@ -112,21 +112,15 @@ class ReceivedMessage(Message):
     Note that if the consumer that generated this message was no_ack, .ack()
     and .nack() are no-ops.
 
-    :ivar body: message body. A stream of octets.
-    :type body: str (py2) or bytes (py3) or a list of memoryviews, if
-        particular disabled-by-default option is turned on, or a single memoryview
-    :param exchange_name: name of exchange this message was submitted to or a memoryview
-    :param routing_key: routing key with which this message was sent
+    :ivar body: message body. A stream of octets. str (py2) or bytes (py3) or a list of memoryviews, if
+                particular option is set during consume, or a single memoryview
+    :ivar exchange_name: name of exchange this message was submitted (a memoryview)
+    :param routing_key: routing key with which this message was sent (a memoryview)
     :param properties: a suitable BasicContentPropertyList subinstance.
                        be prepared that value of properties that are
                        strings will be memoryviews
     :param delivery_tag: delivery tag assigned by AMQP broker to confirm
         this message
-    :param ack: a callable to call when you want to ack (via basic.ack)
-        this message. None if received by the no-ack mechanism
-    :param nack: a callable to call when you want to nack
-        (via basic.reject) this message. None if received by the no-ack
-         mechanism
     """
     __slots__ = ('delivery_tag', 'exchange_name', 'routing_key', '_ack', '_nack',
                  'acked')
