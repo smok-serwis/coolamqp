@@ -187,6 +187,8 @@ class Cluster(object):
                            if you leave it at None, messages will be .put into self.events
         :param span: optional span, if opentracing is installed
         :param dont_trace: if True, this won't output a span
+        :param body_receive_mode: a :class:`coolamqp.attaches.consumer.BodyReceiveMode` to signal how to build the received
+            `                     :class:`coolamqp.objects.ReceivedMessage`
         :return: a tuple (Consumer instance, and a Future), that tells, when consumer is ready
         """
         if span is not None and not dont_trace:
