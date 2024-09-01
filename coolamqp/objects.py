@@ -216,17 +216,15 @@ class Queue(object):
     This object represents a Queue that applications consume from or publish to.
     Create a queue definition.
 
-    :param name: name of the queue.
-        Take special care if this is empty. If empty, this will be filled-in by the broker
-        upon declaration. If a disconnect happens, and connection to other node is
-        reestablished, this name will CHANGE AGAIN, and be reflected in this object.
-        This change will be done before CoolAMQP signals reconnection.
+    :param name: name of the queue. Generates a random uuid.uuid4().hex if not given. Note that this kind of queue
+                 will probably require to be declared.
     :param durable: Is the queue durable?
     :param exchange: Exchange for this queue to bind to. None for no binding.
     :param exclusive: Is this queue exclusive?
     :param auto_delete: Is this queue auto_delete ?
 
-    .. warning:: If a queue name is not given, and it will be allocated by the server, it will be a memoryview!
+    .. warning:: Anonymous queues are not supported, because due to how CoolAMQP works there's no guarantee that
+                 they will be subscribed to over the channel that they are declared.
     """
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag')
@@ -237,6 +235,8 @@ class Queue(object):
                  exclusive=False,  # type: bool
                  auto_delete=False  # type: bool
                  ):
+        if not name:
+            name = uuid.uuid4().hex
         self.name = tobytes(name)  #: public, must be bytes
         # if name is '', this will be filled in with broker-generated name upon declaration
         self.durable = durable
