@@ -1,9 +1,7 @@
-The changelog is kept as [release notes](https://github.com/smok-serwis/coolamqp/releases/)
+The changelog is kept as [release notes](https://git.dms-serwis.com.pl/smokserwis/coolamqp/-/releases)
 on GitHub. This file serves to only note what changes
 have been made so far, between releases.
 
-# v1.3.1
+# v1.3.2
 
-* anonymous queues will now get CoolAMQP-made names
-* coolamqp.objects.Callable made threadsafe (fixes #22)
-* speed up (lots of if len(data) == 0 replaced with if not data)
+* _TBA_
