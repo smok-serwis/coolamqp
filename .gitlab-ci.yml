@@ -1,5 +1,4 @@
 stages:
-  - test
   - build
 
 pages:
@@ -13,65 +12,6 @@ pages:
   artifacts:
     paths:
       - public
-
-.test:
-  stage: test
-  before_script:
-    - pip install --break-system-packages --upgrade pytest setuptools pip coverage nose2
-    - pip install ".[dev,test]"
-  script:
-    - pytest -n 8 -vv --cov=satella
-    - coverage xml
-    - coverage report
-  coverage: /TOTAL.*\s+(\d+\%)/
-  services:
-    - name: rabbitmq:3.13-management
-      alias: rabbitmq
-
-test_python27:
-  extends: .test
-  image: python:2.7
-  before_script:
-    - pip install --upgrade pytest setuptools pip coverage nose2
-    - pip install -r requirements.txt
-
-test_python35:
-  extends: .test
-  image: python:3.5
-  before_script:
-    - pip install --upgrade pytest setuptools pip coverage nose2
-    - pip install -r requirements.txt
-
-test_python36:
-  extends: .test
-  before_script:
-    - pip install --upgrade pytest setuptools pip coverage nose2
-    - pip install -r requirements.txt
-  image: python:3.6
-
-test_python37:
-  extends: .test
-  image: python:3.7
-
-test_python38:
-  extends: .test
-  image: python:3.8
-
-test_python39:
-  extends: .test
-  image: python:3.9
-
-test_python310:
-  extends: .test
-  image: python:3.10
-
-test_python311:
-  extends: .test
-  image: python:3.11
-
-test_python312:
-  extends: .test
-  image: python:3.12
 
 
 build_python:

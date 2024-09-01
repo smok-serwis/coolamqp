@@ -222,9 +222,6 @@ class Queue(object):
     :param exchange: Exchange for this queue to bind to. None for no binding.
     :param exclusive: Is this queue exclusive?
     :param auto_delete: Is this queue auto_delete ?
-
-    .. warning:: Anonymous queues are not supported, because due to how CoolAMQP works there's no guarantee that
-                 they will be subscribed to over the channel that they are declared.
     """
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag')

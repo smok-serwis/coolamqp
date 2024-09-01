@@ -4,5 +4,6 @@ have been made so far, between releases.
 
 # v1.3.1
 
+* anonymous queues will now get CoolAMQP-made names
 * coolamqp.objects.Callable made threadsafe (fixes #22)
 * speed up (lots of if len(data) == 0 replaced with if not data)
