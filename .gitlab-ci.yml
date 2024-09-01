@@ -24,17 +24,29 @@ pages:
     - coverage xml
     - coverage report
   coverage: /TOTAL.*\s+(\d+\%)/
+  services:
+    - name: rabbitmq:3.13-management
+      alias: rabbitmq
 
 test_python27:
   extends: .test
   image: python:2.7
+  before_script:
+    - pip install --upgrade pytest setuptools pip coverage nose2
+    - pip install -r requirements.txt
 
 test_python35:
   extends: .test
   image: python:3.5
+  before_script:
+    - pip install --upgrade pytest setuptools pip coverage nose2
+    - pip install -r requirements.txt
 
 test_python36:
   extends: .test
+  before_script:
+    - pip install --upgrade pytest setuptools pip coverage nose2
+    - pip install -r requirements.txt
   image: python:3.6
 
 test_python37:

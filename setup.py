@@ -9,7 +9,7 @@ setup(keywords=['amqp', 'rabbitmq', 'client', 'network', 'ha', 'high availabilit
       packages=find_packages(include=['coolamqp', 'coolamqp.*']),
       install_requires=['six'],
       # per coverage version for codeclimate-reporter
-      tests_require=["nose2", "coverage", "nose2[coverage_plugin]"],
+      tests_require=["pytest", "coverage"],
       test_suite='nose2.collector.collector',
       python_requires='!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
       extras_require={

@@ -16,7 +16,7 @@ from coolamqp import Cluster, ClusterNode, ConnectionDown, \
 
 
 def getamqp():
-    amqp = Cluster([ClusterNode(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest')], extra_properties=[
+    amqp = Cluster([ClusterNode(os.environ.get('AMQP_HOST', 'rabbitmq'), 'guest', 'guest')], extra_properties=[
         (b'mode', (b'Testing', 'S')),
     ])
     amqp.start()
