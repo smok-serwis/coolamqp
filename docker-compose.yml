@@ -1,13 +1,15 @@
 version: '3.2'
 services:
   amqp:
-    image: rabbitmq
+    image: rabbitmq:3-management
   unittest:
     build:
       context: .
       dockerfile: tests/Dockerfile
     depends_on:
       - amqp
+    environment:
+      AMQP_HOST: "amqp"
   stress_tests:
     build:
       context: .
@@ -15,3 +17,5 @@ services:
     command: python -m stress_tests
     depends_on:
       - amqp
+    environment:
+      AMQP_HOST: "amqp"

@@ -33,6 +33,7 @@ unittest:
     - coverage run --append -m compile_definitions
   script:
     - coverage run --append -m nose2 -F -vv
+    - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m nose2 -F -vv
   after_script:
     - mv .coverage .coverage.units
   variables:
