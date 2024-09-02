@@ -3,7 +3,8 @@ CoolAMQP
 [![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://smokserwis.docs.smok5.co/coolamqp)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-**Warning!!** Since v1.3.1 development has been moved to this GitLab.
+**Warning!!** Since v1.3.1 development has been moved 
+from [GitHub](https://github.com/smok-serwis/coolamqp) to this GitLab.
 To install CoolAMQP please use
 
 ```bash
@@ -28,8 +29,9 @@ Why CoolAMQP?
     * [Publisher confirms](https://www.rabbitmq.com/docs/confirms#publisher-confirms)
     * [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack)
 * traceable using [opentracing](https://opentracing.io/)
+* code coverage is 80% at the moment
 
-Documentation (WIP) is available at [Read the Docs](http://coolamqp.readthedocs.io/).
+Documentation (WIP) is available at [our site](http://smokserwis.docs.smok.co/coolamqp).
 
 CoolAMQP uses [semantic versioning 2.0](https://semver.org/spec/v2.0.0.html).
 
@@ -101,9 +103,9 @@ In order to compile the definitions:
 
 * Make sure that you have `yapf` and `requests` installed
 * then perform:
-  ```python
-  python -m compile_definitions
-  ```
+```python
+python -m compile_definitions
+```
 
 and you're all set. The only files modified is
 [definitions.py](coolamqp/framing/definitions.py).
