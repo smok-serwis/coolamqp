@@ -1,14 +1,21 @@
 CoolAMQP
 ========
-[![Test Coverage](https://codeclimate.com/github/smok-serwis/coolamqp/badges/coverage.svg)](https://codeclimate.com/github/smok-serwis/coolamqp/coverage)
-[![Code Climate](https://codeclimate.com/github/smok-serwis/coolamqp/badges/gpa.svg)](https://codeclimate.com/github/smok-serwis/coolamqp)
-[![Issue Count](https://codeclimate.com/github/smok-serwis/coolamqp/badges/issue_count.svg)](https://codeclimate.com/github/smok-serwis/coolamqp)
-[![PyPI version](https://badge.fury.io/py/CoolAMQP.svg)](https://badge.fury.io/py/CoolAMQP)
-[![PyPI](https://img.shields.io/pypi/pyversions/CoolAMQP.svg)]()
-[![PyPI](https://img.shields.io/pypi/implementation/CoolAMQP.svg)]()
-[![PyPI](https://img.shields.io/pypi/wheel/CoolAMQP.svg)]()
-[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://coolamqp.readthedocs.io/en/latest/?badge=develop)
+[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://smokserwis.docs.smok5.co/coolamqp)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
+
+**Warning!!** Since v1.3.1 development has been moved to this GitLab.
+To install CoolAMQP please use
+
+```bash
+pip install --extra-index-url https://git.dms-serwis.com.pl/api/v4/groups/330/-/packages/pypi/simple coolamqp
+```
+
+Or state it at the beginning of your `requirements.txt`:
+
+```python
+--extra-index-url https://git.dms-serwis.com.pl/api/v4/groups/330/-/packages/pypi/simple
+coolamqp
+```
 
 Why CoolAMQP?
 -------------

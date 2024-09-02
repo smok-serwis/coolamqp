@@ -1,5 +1,17 @@
 stages:
+  - test
   - build
+
+stress_test:
+  stage: test
+  services:
+    - name: rabbitmq:3-management
+      alias: rabbitmq
+  before_script:
+    - python setup.py install
+  script:
+    - coverage run --append -m stress_tests
+    - coverage report
 
 pages:
   image: zoo.smok.co/build/build:latest

@@ -4,4 +4,4 @@ have been made so far, between releases.
 
 # v1.3.2
 
-* _TBA_
+* removed the requirement for a Queue that for it to be equal to other Queue if their types do match

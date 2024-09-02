@@ -251,7 +251,7 @@ class Queue(object):
         assert isinstance(self.consumer_tag, six.binary_type)
 
     def __eq__(self, other):
-        return (self.name == other.name) and (type(self) == type(other))
+        return self.name == other.name
 
     def __hash__(self):
         return hash(self.name)
