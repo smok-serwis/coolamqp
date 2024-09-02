@@ -10,7 +10,7 @@ stages:
       alias: rabbitmq
   before_script:
     - python setup.py install
-    - pip install --break-system-packages nose2 coverage requests yapf unittest2
+    - pip install --break-system-packages nose2 coverage requests yapf
     - coverage run --append -m compile_definitions
   artifacts:
     paths:
@@ -56,10 +56,10 @@ unittest_epoll_python27:
   extends: .before_test
   image: python:2.7
   before_script:
-    - pip install nose2 coverage unittest2
+    - pip install nose2
     - python setup.py install
   script:
-    - coverage run --append -m nose2 -F -vv
+    - nose2 -F -vv
   variables:
     AMQP_HOST: "rabbitmq"
   after_script:

@@ -1,21 +1,24 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import, division
 
-import unittest2
-import sys
+import unittest
+import warnings
 
 from coolamqp.objects import NodeDefinition, MessageProperties, Queue
 
 
-class TestObjects(unittest2.TestCase):
+class TestObjects(unittest.TestCase):
     def test_message_properties(self):
         empty_p_msg = MessageProperties()
         ce_p_msg = MessageProperties(content_encoding=b'wtf')
         self.assertIn('wtf', str(ce_p_msg))
 
     def test_warning(self):
-        with self.assertWarns(PendingDeprecationWarning):
+        warnings.resetwarnings()
+        with warnings.catch_warnings(record=True) as w:
             Queue(auto_delete=True, exclusive=False)
+        self.assertEqual(len(w), 1)
+        self.assertTrue(issubclass(w[0].category, PendingDeprecationWarning))
 
     def test_node_definition_from_amqp(self):
         n1 = NodeDefinition(u'amqp://ala:ma@kota/psa')
