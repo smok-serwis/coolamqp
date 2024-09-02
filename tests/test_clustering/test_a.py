@@ -74,11 +74,11 @@ class TestA(unittest.TestCase):
 
         con.set_qos(100, 100)
         time.sleep(1)
-        self.assertEquals(con.qos, (100, 100))
+        self.assertEqual(con.qos, (100, 100))
 
         con.set_qos(None, 110)
         time.sleep(1)
-        self.assertEquals(con.qos, (0, 110))
+        self.assertEqual(con.qos, (0, 110))
 
     def test_declare_anonymous(self):
         xchg = Exchange('wtfzomg', type='fanout')
@@ -135,17 +135,17 @@ class TestA(unittest.TestCase):
         time.sleep(1)
 
         self.assertTrue(p['q'])
-        self.assertEquals(p['count'], 2)
+        self.assertEqual(p['count'], 2)
 
     def test_message_with_propos_confirm(self):
         p = {'q': False}
 
         def ok(e):
             self.assertIsInstance(e, ReceivedMessage)
-            self.assertEquals(e.body, b'hello4')
+            self.assertEqual(e.body, b'hello4')
             # bcoz u can compare memoryviews to their providers :D
-            self.assertEquals(e.properties.content_type, b'text/plain')
-            self.assertEquals(e.properties.content_encoding, b'utf8')
+            self.assertEqual(e.properties.content_type, b'text/plain')
+            self.assertEqual(e.properties.content_encoding, b'utf8')
             p['q'] = True
 
         con, fut = self.c.consume(Queue(u'hello4', exclusive=True),
@@ -172,10 +172,10 @@ class TestA(unittest.TestCase):
 
         def ok(e):
             self.assertIsInstance(e, ReceivedMessage)
-            self.assertEquals(e.body, b'hello5')
+            self.assertEqual(e.body, b'hello5')
             # bcoz u can compare memoryviews to their providers :D
-            self.assertEquals(e.properties.content_type, b'text/plain')
-            self.assertEquals(e.properties.content_encoding, b'utf8')
+            self.assertEqual(e.properties.content_type, b'text/plain')
+            self.assertEqual(e.properties.content_encoding, b'utf8')
             p['q'] = True
 
         con, fut = self.c.consume(Queue(u'hello5', exclusive=True),
@@ -197,7 +197,7 @@ class TestA(unittest.TestCase):
 
         def ok(e):
             self.assertIsInstance(e, ReceivedMessage)
-            self.assertEquals(e.body, b'hello6')
+            self.assertEqual(e.body, b'hello6')
             p['q'] = True
 
         con, fut = self.c.consume(Queue(u'hello6', exclusive=True),
@@ -223,14 +223,14 @@ class TestA(unittest.TestCase):
         m = self.c.drain(2)
         self.assertIsInstance(m, MessageReceived)
         self.assertIsInstance(m.body, memoryview)
-        self.assertEquals(m.body, data)
+        self.assertEqual(m.body, data)
 
         data = six.binary_type(os.urandom(512 * 1024))
         self.c.publish(Message(data), routing_key=u'hello7', confirm=True)
         m = self.c.drain(9)
         self.assertIsInstance(m, MessageReceived)
         self.assertIsInstance(m.body, memoryview)
-        self.assertEquals(m.body.tobytes(), data)
+        self.assertEqual(m.body.tobytes(), data)
 
     def test_send_recv_nonzerolen_listofmemoryview(self):
         """single and multi frame in LIST_OF_MEMORYVIEW mode"""
@@ -245,14 +245,14 @@ class TestA(unittest.TestCase):
         m = self.c.drain(1)
         self.assertIsInstance(m, MessageReceived)
         self.assertIsInstance(m.body[0], memoryview)
-        self.assertEquals(m.body[0], data)
+        self.assertEqual(m.body[0], data)
 
         data = six.binary_type(os.urandom(512 * 1024))
         self.c.publish(Message(data), routing_key=u'hello8', confirm=True)
         m = self.c.drain(5)
         self.assertIsInstance(m, MessageReceived)
         self.assertTrue(all([isinstance(x, memoryview) for x in m.body]))
-        self.assertEquals(b''.join(x.tobytes() for x in m.body), data)
+        self.assertEqual(b''.join(x.tobytes() for x in m.body), data)
 
     def test_consumer_cancel(self):
         con, fut = self.c.consume(

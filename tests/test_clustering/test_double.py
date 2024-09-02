@@ -62,7 +62,7 @@ class TestDouble(unittest.TestCase):
                                          fail_on_first_time_resource_locked=True)
             fut2.result(timeout=20)
         except AMQPError as e:
-            self.assertEquals(e.reply_code, RESOURCE_LOCKED)
+            self.assertEqual(e.reply_code, RESOURCE_LOCKED)
             self.assertFalse(e.is_hard_error())
         else:
             self.fail('Expected exception')

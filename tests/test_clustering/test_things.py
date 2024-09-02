@@ -19,21 +19,31 @@ class TestConnecting(unittest.TestCase):
 
 
     def test_argumented_exchange(self):
-        xchg = Exchange('test', auto_delete=True)
+        xchg = Exchange('test-wer', durable=True)
         c = Cluster([NODE])
         c.start(wait=True, timeout=None)
         c.declare(xchg).result()
-        xchg2 = Exchange('test2', auto_delete=True, arguments={'alternate-exchange': 'test'})
-        c.declare(xchg).result()
+        xchg2 = Exchange('test2-werwer', durable=True, arguments={'alternate-exchange': 'test-wer'})
+        c.declare(xchg2).result()
         c.shutdown(True)
 
     def test_argumented_queue(self):
-        que = Queue(auto_delete=True, arguments=[(b'x-max-priority', 10)])
-        que2 = Queue(auto_delete=True, arguments={'x-max-priority': 10})
+        que = Queue(auto_delete=True, exclusive=True, arguments=[(b'x-max-priority', 10)])
+        que2 = Queue(auto_delete=True, exclusive=True, arguments={'x-max-priority': 10})
         c = Cluster([NODE])
         c.start(wait=True, timeout=None)
         c.declare(que).result()
         c.declare(que2).result()
+        c.shutdown(True)
+
+    def test_argumented_bind(self):
+        c = Cluster([NODE])
+        c.start(wait=True, timeout=None)
+        que = Queue(auto_delete=True, exclusive=True, arguments=[(b'x-max-priority', 10)])
+        xchg = Exchange('test3-wertest', type='headers', durable=True)
+        c.declare(que).result()
+        c.declare(xchg).result()
+        c.bind(que, xchg, routing_key=b'', arguments={'x-match': 'all', 'format': 'pdf'}).result()
         c.shutdown(True)
 
     def test_connection_blocked(self):
@@ -80,8 +90,8 @@ class TestConnecting(unittest.TestCase):
         q2 = Queue(b'lolwut')
         q3 = Queue(u'not')
 
-        self.assertEquals(q1, q2)
-        self.assertEquals(hash(q1), hash(q2))
+        self.assertEqual(q1, q2)
+        self.assertEqual(hash(q1), hash(q2))
         self.assertNotEqual(q1, q3)
 
     def test_node_with_kwargs(self):
@@ -89,7 +99,7 @@ class TestConnecting(unittest.TestCase):
                               user='guest',
                               password='guest')
 
-        self.assertEquals(node.virtual_host, '/')  # default
+        self.assertEqual(node.virtual_host, '/')  # default
 
     def test_amqpconnstring_port(self):
         node = NodeDefinition('amqp://lol:lol@lol:4123/vhost')

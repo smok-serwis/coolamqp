@@ -6,12 +6,14 @@ import logging
 import threading
 import typing as tp
 import uuid
+import warnings
 
 import six
 
 from coolamqp.framing.base import AMQPFrame
 from coolamqp.framing.definitions import \
     BasicContentPropertyList as MessageProperties
+from coolamqp.framing.field_table import get_type_for
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +26,14 @@ def argumentify(arguments):
     args = []
     if isinstance(arguments, dict):
         for key, value in arguments.items():
-            if not isinstance(value, six.string_types):
-                value = str(value)
-            if not isinstance(value, six.binary_type):
-                value = value.encode('utf8')
-            args.append((key, value))
+            if not isinstance(key, six.binary_type):
+                key = key.encode('utf-8')
+            args.append((key, (value, get_type_for(value))))
     else:
         for key, value in arguments:
-            if not isinstance(value, six.string_types):
-                value = str(value)
-            if not isinstance(value, six.binary_type):
-                value = value.encode('utf8')
-            args.append((key, value))
+            if not isinstance(key, six.binary_type):
+                key = key.encode('utf-8')
+            args.append((key, (value, get_type_for(value))))
 
     return args
 
@@ -196,6 +194,9 @@ class Exchange(object):
     """
     This represents an Exchange used in AMQP.
     This is hashable.
+
+    :param name: exchange name
+    :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument
     """
     __slots__ = ('name', 'type', 'durable', 'auto_delete', 'arguments')
 
@@ -207,10 +208,6 @@ class Exchange(object):
                  auto_delete=False,  # type: bool
                  arguments=None
                  ):
-        """
-        :type name: unicode is preferred, binary type will get decoded to
-             unicode with utf8
-        """
         self.name = toutf8(name)  # must be unicode
         self.type = tobytes(type)  # must be bytes
         self.durable = durable
@@ -246,6 +243,8 @@ class Queue(object):
     :param exchange: Exchange for this queue to bind to. None for no binding.
     :param exclusive: Is this queue exclusive?
     :param auto_delete: Is this queue auto_delete ?
+    :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument
+    :warn DeprecationWarning: if a non-exclusive auto_delete queue is created
     """
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag', 'arguments')
@@ -266,6 +265,8 @@ class Queue(object):
         self.auto_delete = auto_delete
         self.exclusive = exclusive
         self.arguments = argumentify(arguments)
+        if self.auto_delete and not self.exclusive:
+            warnings.warn('This will be removed in RabbitMQ 4.0', DeprecationWarning)
 
         self.anonymous = not len(
             self.name)  # if this queue is anonymous, it must be regenerated upon reconnect

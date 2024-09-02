@@ -53,6 +53,8 @@ def deframe_shortstr(buf, offset):  # -> value, bytes_eaten
 
 
 def enframe_shortstr(buf, value):
+    if not isinstance(value, six.binary_type):
+        value = value.encode('utf-8')
     _tobufv(buf, value, '!B', len(value))
 
 
@@ -62,6 +64,8 @@ def deframe_longstr(buf, offset):  # -> value, bytes_eaten
 
 
 def enframe_longstr(buf, value):
+    if not isinstance(value, six.binary_type):
+        value = value.encode('utf-8')
     _tobufv(buf, value, '!I', len(value))
 
 
@@ -103,6 +107,32 @@ if six.PY3:
     chrpy3 = chr
 else:
     chrpy3 = lambda x: x
+
+
+def get_type_for(val):
+    if isinstance(val, six.string_types):
+        return 'S'
+    elif isinstance(val, bool):
+        return 't'
+    elif isinstance(val, int):
+        if -128 <= val <= 127:
+            return 'b'
+        elif 0 <= val <= 255:
+            return 'B'
+        elif -32768 <= val <= 32767:
+            return 'u'
+        elif 0 <= val <= 65535:
+            return 'U'
+        elif -0x80000000 <= val <= 0x7FFFFFFF:
+            return 'i'
+        elif 0 <= val <= 0xFFFFFFFF:
+            return 'I'
+        else:
+            return 'l'
+    elif isinstance(val, float):
+        return 'd'
+    else:
+        raise ValueError('Undeterminable type')
 
 
 def enframe_field_value(buf, fv):
