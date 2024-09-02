@@ -23,14 +23,14 @@ Why CoolAMQP?
 
 * AMQP 0.9.1 client that's native Python
 * heavily optimized for speed
-* geared towards interfacing with [RabbitMQ](https://www.rabbitmq.com/
+* geared towards interfacing with [RabbitMQ](https://www.rabbitmq.com/)
   * supports custom RabbitMQ commands, such as
     * [Connection blocking](https://www.rabbitmq.com/docs/connection-blocked)
     * [Publisher confirms](https://www.rabbitmq.com/docs/confirms#publisher-confirms)
     * [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack)
 * traceable using [opentracing](https://opentracing.io/)
 * code coverage is 80% at the moment
-* stress tests are part of each release
+* 120 second stress tests are part of each release
 
 Documentation (WIP) is available at [our site](http://smokserwis.docs.smok.co/coolamqp).
 

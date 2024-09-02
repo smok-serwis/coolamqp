@@ -7,4 +7,4 @@ have been made so far, between releases.
 * removed the requirement for a Queue that for it to be equal to other Queue if their types do match
 * compile_definitions will now depend on requests
 * added support for infinite (None) timeouts during start
-* stress tests will run for 60 seconds now
+* stress tests will run for 120 seconds now
