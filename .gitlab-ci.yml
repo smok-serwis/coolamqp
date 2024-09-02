@@ -1,29 +1,10 @@
 stages:
-  - test
+  - unittest
   - build
 
-stress_test:
-  stage: test
-  services:
-    - name: rabbitmq:3-management
-      alias: rabbitmq
-  before_script:
-    - python setup.py install
-    - coverage run --append -m compile_definitions
-  script:
-    - coverage run --append -m stress_tests
-    - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m stress_tests
-  variables:
-    AMQP_HOST: "rabbitmq"
-  after_script:
-    - mv .coverage .coverage.stress
-  artifacts:
-    paths:
-      - ".coverage.stress"
 
-unittest:
-  stage: test
-  image: python:3.11      # Default image might have already CoolAMQP installed
+.before_test:
+  stage: unittest
   services:
     - name: rabbitmq:3-management
       alias: rabbitmq
@@ -31,23 +12,60 @@ unittest:
     - python setup.py install
     - pip install --break-system-packages nose2 coverage requests yapf
     - coverage run --append -m compile_definitions
-  script:
-    - coverage run --append -m nose2 -F -vv
-    - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m nose2 -F -vv
-  after_script:
-    - mv .coverage .coverage.units
-  variables:
-    AMQP_HOST: "rabbitmq"
   artifacts:
     paths:
-      - ".coverage.units"
+      - ".coverage.*"
+  variables:
+    AMQP_HOST: "rabbitmq"
 
+
+stresstest_select:
+  extends: .before_test
+  script:
+    - coverage run --append -m stress_tests
+  variables:
+    COOLAMQP_FORCE_SELECT_LISTENER: "1"
+    AMQP_HOST: "rabbitmq"
+  after_script:
+    - mv .coverage .coverage.stressselect
+
+
+
+stresstest_epoll:
+  extends: .before_test
+  script:
+    - coverage run --append -m stress_tests
+  after_script:
+    - mv .coverage .coverage.stressepoll
+
+
+
+unittest_select:
+  extends: .before_test
+  script:
+    - coverage run --append -m nose2 -F -vv
+  variables:
+    COOLAMQP_FORCE_SELECT_LISTENER: "1"
+    AMQP_HOST: "rabbitmq"
+  after_script:
+    - mv .coverage .coverage.unitselect
+      
+      
+unittest_epoll:
+  extends: .before_test
+  script:
+    - coverage run --append -m nose2 -F -vv
+  after_script:
+    - mv .coverage .coverage.unitepoll
+      
 
 calc_coverage:
   stage: build
   dependencies:
-    - unittest
-    - stress_test
+    - unittest_epoll
+    - unittest_select
+    - stresstest_epoll
+    - stresstest_select
   script:
     - coverage combine
     - coverage xml
