@@ -30,6 +30,7 @@ Why CoolAMQP?
     * [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack)
 * traceable using [opentracing](https://opentracing.io/)
 * code coverage is 80% at the moment
+* stress tests are part of each release
 
 Documentation (WIP) is available at [our site](http://smokserwis.docs.smok.co/coolamqp).
 
