@@ -1,8 +1,7 @@
 # Contributing guide
 
-1. Keep it unit tested.
-    1.1. If it's cool af, you don't have to.
-2. Exhaustive pydoc.
+1. Keep it unit tested, so that coverage doesn't fall down too much.
+2. Exhaustive pydoc. Remember to update the [docs/](docs/).
 3. If you introduce any gotchas, document them in [docs/](docs/).
 4. We aim to support Python 2.7 as long as possible, keep that in account.
 

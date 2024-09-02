@@ -1,6 +1,5 @@
-The changelog is kept as [release notes](https://git.dms-serwis.com.pl/smokserwis/coolamqp/-/releases)
-on GitHub. This file serves to only note what changes
-have been made so far, between releases.
+Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
+Since v1.3.2 they'll be put here and in release description.
 
 # v1.3.2
 
@@ -8,3 +7,4 @@ have been made so far, between releases.
 * compile_definitions will now depend on requests
 * added support for infinite (None) timeouts during start
 * stress tests will run for 120 seconds now
+* stress tests will be harder

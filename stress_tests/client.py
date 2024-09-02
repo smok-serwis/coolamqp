@@ -6,7 +6,7 @@ import uuid
 from collections import deque
 from queue import Empty
 
-from satella.coding.concurrent import TerminableThread
+from satella.coding.concurrent import TerminableThread, ThreadCollection
 
 from coolamqp.clustering.events import ReceivedMessage, NothingMuch
 from coolamqp.objects import Queue, Message
@@ -116,9 +116,13 @@ def run(client_notify, result_client, server_notify, server_result):
 
     lftf = LogFramesToFile('client.txt')
     amqp = connect(on_fail=result_client, log_frames=lftf)
-    cad = ConnectAndDisconnectThread(amqp)
 
-    cad.start()
+    tc = ThreadCollection()
+    for i in range(3):
+        cad = ConnectAndDisconnectThread(amqp)
+        tc.add(cad)
+
+    tc.start()
     started_at = time.monotonic()
     terminating = False
     while not terminating and (time.monotonic() < started_at + RUNNING_INTERVAL):  # run for however long is required
@@ -130,6 +134,7 @@ def run(client_notify, result_client, server_notify, server_result):
         except KeyboardInterrupt:
             break
 
+    tc.terminate().join()
     server_notify.put(None)
 
     lftf.close()
