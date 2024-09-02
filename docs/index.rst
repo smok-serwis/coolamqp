@@ -11,6 +11,7 @@ Welcome to CoolAMQP's documentation!
     frames
     basics
     tracing
+    advanced
 
 Quick FAQ
 =========

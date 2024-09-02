@@ -38,8 +38,7 @@ class Cluster(object):
     :param nodes: list of nodes, or a single node. For now, only one is supported.
     :param on_fail: callable/0 to call when connection fails in an
         unclean way. This is a one-shot
-    :param extra_properties: refer to documentation in [/coolamqp/connection/connection.py]
-        Connection.__init__
+    :param extra_properties: refer to :class:`coolamqp.uplink.connection.Connection`
     :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
         receives from the broker
     :type log_frames: tp.Optional[:class:`coolamqp.tracing.BaseFrameTracer`]
