@@ -58,6 +58,12 @@ you must first define a queue, and register a consumer.
 This will create an auto-delete and exclusive queue. After than, a consumer will be registered for this queue.
 _no_ack=False_ will mean that we have to manually confirm messages.
 
+.. warning:: if you declare a :class:`coolamqp.objects.Queue` without a name, this client will automatically
+             generate an UUID-name for you, and verify the queue is auto_delete. Since RabbitMQ supports
+             `automatic queue name generation <https://www.rabbitmq.com/docs/queues#names>`_,
+             this client does not use it, because the queue is valid only for the channel that declared it,
+             and CoolAMQP declares things with a dedicated channel.
+
 You can specify a callback, that will be called with a message if one's received by this consumer. Since
 we did not do that, this will go to a generic queue belonging to _Cluster_.
 

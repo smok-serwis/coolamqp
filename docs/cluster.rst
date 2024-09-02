@@ -4,6 +4,7 @@ CoolAMQP cluster
 .. autoclass:: coolamqp.clustering.Cluster
     :members:
 
+.. note:: If environment variable :code:`COOLAMQP_FORCE_SELECT_LISTENER` is defined, select will be used instead of epoll.
 
 Publisher
 ---------

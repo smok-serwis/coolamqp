@@ -23,6 +23,11 @@ class TestConnecting(unittest.TestCase):
         except ImportError:
             self.skipTest('ConnectionBlocked not supported!')
 
+    def test_wait_timeout_none(self):
+        c = Cluster([NODE])
+        c.start(wait=True, timeout=None)
+        c.shutdown(wait=True)
+
     def test_on_fail(self):
         """Assert that on_fail doesn't fire if the cluster fails to connect"""
         q = {'failed': False}

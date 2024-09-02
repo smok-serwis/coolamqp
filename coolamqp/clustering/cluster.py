@@ -120,7 +120,7 @@ class Cluster(object):
                 dont_trace=False    # type: bool
                 ):  # type: (...) -> concurrent.futures.Future
         """
-        Declare a Queue/Exchange
+        Declare a Queue/Exchange.
 
         :param obj: Queue/Exchange object
         :param persistent: should it be redefined upon reconnect?
@@ -285,16 +285,18 @@ class Cluster(object):
             raise NotImplementedError(
                 u'Sorry, this functionality is not yet implemented!')
 
-    def start(self, wait=True, timeout=10.0):  # type: (bool, float, bool) -> None
+    def start(self, wait=True, timeout=10.0):
         """
         Connect to broker. Initialize Cluster.
 
         Only after this call is Cluster usable.
         It is not safe to fork after this.
 
-        :param wait: block until connection is ready
+        :param wait: block until connection is ready. If None is given, then start will block as long as necessary.
+        :type wait: bool
         :param timeout: timeout to wait until the connection is ready. If it is not, a
                         ConnectionDead error will be raised
+        :type timeout: float | int | None
         :raise RuntimeError: called more than once
         :raise ConnectionDead: failed to connect within timeout
         """
@@ -334,11 +336,15 @@ class Cluster(object):
         if wait:
             # this is only going to take a short amount of time, so we're fine with polling
             start_at = monotonic()
-            while not self.connected and monotonic() - start_at < timeout:
-                time.sleep(0.1)
-            if not self.connected:
-                raise ConnectionDead(
-                    '[%s] Could not connect within %s seconds' % (self.name, timeout,))
+            if timeout is None:
+                while not self.connected:
+                    time.sleep(0.2)
+            else:
+                while not self.connected and monotonic() - start_at < timeout:
+                    time.sleep(0.1)
+                if not self.connected:
+                    raise ConnectionDead(
+                        '[%s] Could not connect within %s seconds' % (self.name, timeout,))
 
     def shutdown(self, wait=True):  # type: (bool) -> None
         """
