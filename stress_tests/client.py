@@ -19,6 +19,9 @@ CONNECTIONS_PER_SECOND = 0.9
 DISCONNECTS_PER_SECOND_PER_CONNECTION = 0.1
 ANSWER_PROBABILITY = 0.7
 
+RUNNING_INTERVAL = 60       # run for 60 seconds
+
+
 
 def run_multiple_if_probability(probability: float, callable: tp.Callable[[], None]) -> None:
     prob = random.random()
@@ -118,7 +121,7 @@ def run(client_notify, result_client, server_notify, server_result):
     cad.start()
     started_at = time.monotonic()
     terminating = False
-    while not terminating and (time.monotonic() < started_at + 40):  # run for 40 seconds
+    while not terminating and (time.monotonic() < started_at + RUNNING_INTERVAL):  # run for however long is required
         try:
             client_notify.get(timeout=1.0)
             terminating = True
