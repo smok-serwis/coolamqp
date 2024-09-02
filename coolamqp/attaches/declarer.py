@@ -184,7 +184,6 @@ class Declarer(Channeler, Synchronized):
 
     This also maintains a list of declared queues/exchanges, and redeclares them on each reconnect.
     """
-    __slots__ = ('in_process', 'on_discard', 'left_to_declare', 'declared', 'cluster')
 
     def __init__(self, cluster):
         """
