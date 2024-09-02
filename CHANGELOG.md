@@ -8,3 +8,4 @@ Since v1.3.2 they'll be put here and in release description.
 * added support for infinite (None) timeouts during start
 * stress tests will run for 120 seconds now
 * stress tests will be harder, and use more queues
+* added extra __slots__ in Declarer

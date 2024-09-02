@@ -13,12 +13,12 @@ def close_future(fut, span):  # type: (Future, opentracing.Span) -> Future
     """
     To be called as a Future callback, means to close the span
     """
+    if span is None:
+        return fut
+
     try:
         import opentracing
     except ImportError:
-        return fut
-
-    if span is None:
         return fut
 
     def inner_close(fut):   # type: (Future) -> None
@@ -251,6 +251,7 @@ class Synchronized(object):
             ...
 
     """
+    __slots__ = ('_monitor_lock', )
 
     def __init__(self):
         self._monitor_lock = threading.Lock()

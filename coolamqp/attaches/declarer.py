@@ -150,6 +150,9 @@ class Operation(object):
 
 
 class DeleteQueue(Operation):
+
+    __slots__ = ()
+
     def __init__(self, declarer, queue, fut, span_parent=None, span_enqueued=None):
         super(DeleteQueue, self).__init__(declarer, queue, fut=fut, span_parent=span_parent,
                                           span_enqueued=span_enqueued)
@@ -181,6 +184,7 @@ class Declarer(Channeler, Synchronized):
 
     This also maintains a list of declared queues/exchanges, and redeclares them on each reconnect.
     """
+    __slots__ = ('in_process', 'on_discard', 'left_to_declare', 'declared', 'cluster')
 
     def __init__(self, cluster):
         """
