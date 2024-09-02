@@ -5,3 +5,4 @@ have been made so far, between releases.
 # v1.3.2
 
 * removed the requirement for a Queue that for it to be equal to other Queue if their types do match
+* compile_definitions will now depend on requests

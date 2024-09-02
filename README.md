@@ -99,7 +99,7 @@ A tool to generate [definitions.py](coolamqp/framing/definitions.py) from the AM
 
 In order to compile the definitions:
 
-* Make sure that you have `yapf` installed
+* Make sure that you have `yapf` and `requests` installed
 * then perform:
   ```python
   python -m compile_definitions

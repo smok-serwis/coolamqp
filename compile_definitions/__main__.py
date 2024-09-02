@@ -5,14 +5,12 @@ import sys
 if sys.version.startswith('2.'):
     raise RuntimeError('Cannot run under Python 2.7')
 
-from urllib.request import urlopen
+import requests
 import collections
 import math
 import struct
 import subprocess
-from io import BytesIO
 from xml.etree import ElementTree
-from zipfile import ZipFile
 
 import six
 
@@ -37,9 +35,10 @@ TYPE_TRANSLATOR = {
 def get_xml(xml_file):
     """Download XML definition from OASIS's website"""
 
-    r = urlopen(f'https://www.rabbitmq.com/resources/specs/amqp0-9-1.extended.xml')
+    r = requests.get('https://www.rabbitmq.com/resources/specs/amqp0-9-1.extended.xml')
+    r.raise_for_status()
     with open(xml_file, 'wb') as out:
-        out.write(r.read())
+        out.write(r.content)
 
 
 def compile_definitions(xml_file='amqp0-9-1.extended.xml',
