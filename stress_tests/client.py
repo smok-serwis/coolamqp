@@ -54,7 +54,6 @@ class Connection:
         try:
             self.name = self.cad_thread.free_names.popleft()
         except IndexError:
-            logger.warning('Ran out of free names')
             raise ValueError('Cannot create a connection %s - ran out of free names',
                              Connection.CONNECTION_COUNTER)
         self.consumer, future = cad_thread.amqp.consume(Queue(self.name))

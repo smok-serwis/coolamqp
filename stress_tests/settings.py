@@ -33,4 +33,4 @@ class LogFramesToFile:
         except ValueError:
             pass
 
-queue_names = (str(v) for v in range(100))
+queue_names = [str(v) for v in range(1000)]

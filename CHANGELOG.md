@@ -7,4 +7,4 @@ Since v1.3.2 they'll be put here and in release description.
 * compile_definitions will now depend on requests
 * added support for infinite (None) timeouts during start
 * stress tests will run for 120 seconds now
-* stress tests will be harder
+* stress tests will be harder, and use more queues
