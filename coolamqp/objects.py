@@ -244,7 +244,7 @@ class Queue(object):
     :param exclusive: Is this queue exclusive?
     :param auto_delete: Is this queue auto_delete ?
     :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument
-    :warn DeprecationWarning: if a non-exclusive auto_delete queue is created
+    :warn PendingDeprecationWarning: if a non-exclusive auto_delete queue is created
     """
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag', 'arguments')
@@ -266,7 +266,7 @@ class Queue(object):
         self.exclusive = exclusive
         self.arguments = argumentify(arguments)
         if self.auto_delete and not self.exclusive:
-            warnings.warn('This will be removed in RabbitMQ 4.0', DeprecationWarning)
+            warnings.warn('This will be removed in RabbitMQ 4.0', PendingDeprecationWarning)
 
         self.anonymous = not len(
             self.name)  # if this queue is anonymous, it must be regenerated upon reconnect
