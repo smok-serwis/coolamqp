@@ -9,12 +9,43 @@ stress_test:
       alias: rabbitmq
   before_script:
     - python setup.py install
+    - coverage run --append -m compile_definitions
   script:
-    - coverage run -m stress_tests
+    - coverage run --append -m stress_tests
     - COOLAMQP_FORCE_SELECT_LISTENER=1 coverage run --append -m stress_tests
+  after_script:
+    - mv .coverage .coverage.stress
+  artifacts:
+    paths:
+      - ".coverage.stress"
+
+unittest:
+  stage: test
+  services:
+    - name: rabbitmq:3-management
+      alias: rabbitmq
+  before_script:
+    - coverage run --append -m compile_definitions
+  script:
+    - coverage run --append -m nose2 -vv
+  after_script:
+    - mv .coverage .coverage.units
+  artifacts:
+    paths:
+      - ".coverage.units"
+
+
+calc_coverage:
+  stage: build
+  dependencies:
+    - unittest
+    - stress_test
+  script:
+    - coverage combine
     - coverage xml
     - coverage report
   coverage: /TOTAL.*\s+(\d+\%)/
+
 
 pages:
   image: zoo.smok.co/build/build:latest
