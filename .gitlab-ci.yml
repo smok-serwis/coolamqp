@@ -21,13 +21,16 @@ stress_test:
 
 unittest:
   stage: test
+  image: python:3.11
   services:
     - name: rabbitmq:3-management
       alias: rabbitmq
   before_script:
+    - python setup.py install
+    - pip install --break-system-packages nose2 coverage
     - coverage run --append -m compile_definitions
   script:
-    - coverage run --append -m nose2 -vv
+    - coverage run --append -m nose2 -F -vv
   after_script:
     - mv .coverage .coverage.units
   artifacts:
