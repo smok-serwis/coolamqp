@@ -100,7 +100,7 @@ class Cluster(object):
             self.on_fail = None
 
     def bind(self, queue, exchange, routing_key, persistent=False, span=None,
-             dont_trace=False):
+             dont_trace=False, arguments=None):
         """
         Bind a queue to an exchange
         """
@@ -108,7 +108,7 @@ class Cluster(object):
             child_span = self._make_span('bind', span)
         else:
             child_span = None
-        fut = self.decl.declare(QueueBind(queue, exchange, routing_key),
+        fut = self.decl.declare(QueueBind(queue, exchange, routing_key, arguments),
                                 persistent=persistent,
                                 span=child_span)
         return close_future(fut, child_span)

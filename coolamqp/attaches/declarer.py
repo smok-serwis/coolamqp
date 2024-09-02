@@ -106,18 +106,18 @@ class Operation(object):
             self.declarer.method_and_watch(
                 ExchangeDeclare(self.obj.name.encode('utf8'), obj.type, False,
                                 obj.durable,
-                                obj.auto_delete, False, False, []),
+                                obj.auto_delete, False, False, obj.arguments or []),
                 (ExchangeDeclareOk, ChannelClose),
                 self._callback)
         elif isinstance(obj, Queue):
             self.declarer.method_and_watch(
                 QueueDeclare(obj.name, False, obj.durable, obj.exclusive,
-                             obj.auto_delete, False, []),
+                             obj.auto_delete, False, obj.arguments or []),
                 (QueueDeclareOk, ChannelClose),
                 self._callback)
         elif isinstance(obj, CommandQueueBind):
             self.declarer.method_and_watch(
-                QueueBind(obj.queue, obj.exchange, obj.routing_key, False, []),
+                QueueBind(obj.queue, obj.exchange, obj.routing_key, False, obj.arguments or []),
                 (QueueBindOk, ChannelClose),
                 self._callback
             )

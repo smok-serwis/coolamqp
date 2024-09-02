@@ -9,13 +9,32 @@ import unittest
 
 from coolamqp.clustering import Cluster
 from coolamqp.exceptions import ConnectionDead
-from coolamqp.objects import NodeDefinition, Queue
+from coolamqp.objects import NodeDefinition, Queue, Exchange
 
 NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
 
 
 class TestConnecting(unittest.TestCase):
+
+
+    def test_argumented_exchange(self):
+        xchg = Exchange('test', auto_delete=True)
+        c = Cluster([NODE])
+        c.start(wait=True, timeout=None)
+        c.declare(xchg).result()
+        xchg2 = Exchange('test2', auto_delete=True, arguments={'alternate-exchange': 'test'})
+        c.declare(xchg).result()
+        c.shutdown(True)
+
+    def test_argumented_queue(self):
+        que = Queue(auto_delete=True, arguments=[(b'x-max-priority', 10)])
+        que2 = Queue(auto_delete=True, arguments={'x-max-priority': 10})
+        c = Cluster([NODE])
+        c.start(wait=True, timeout=None)
+        c.declare(que).result()
+        c.declare(que2).result()
+        c.shutdown(True)
 
     def test_connection_blocked(self):
         try:

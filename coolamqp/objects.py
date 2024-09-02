@@ -18,6 +18,28 @@ logger = logging.getLogger(__name__)
 EMPTY_PROPERTIES = MessageProperties()
 
 
+def argumentify(arguments):
+    if arguments is None:
+        return None
+    args = []
+    if isinstance(arguments, dict):
+        for key, value in arguments.items():
+            if not isinstance(value, six.string_types):
+                value = str(value)
+            if not isinstance(value, six.binary_type):
+                value = value.encode('utf8')
+            args.append((key, value))
+    else:
+        for key, value in arguments:
+            if not isinstance(value, six.string_types):
+                value = str(value)
+            if not isinstance(value, six.binary_type):
+                value = value.encode('utf8')
+            args.append((key, value))
+
+    return args
+
+
 def toutf8(q):
     if isinstance(q, six.binary_type):
         q = q.decode('utf8')
@@ -175,14 +197,15 @@ class Exchange(object):
     This represents an Exchange used in AMQP.
     This is hashable.
     """
-    __slots__ = ('name', 'type', 'durable', 'auto_delete')
+    __slots__ = ('name', 'type', 'durable', 'auto_delete', 'arguments')
 
     direct = None  # the direct exchange
 
     def __init__(self, name=u'',  # type: tp.Union[str, bytes]
                  type=b'direct',  # type: tp.Union[str, bytes]
                  durable=True,  # type: bool
-                 auto_delete=False  # type: bool
+                 auto_delete=False,  # type: bool
+                 arguments=None
                  ):
         """
         :type name: unicode is preferred, binary type will get decoded to
@@ -192,6 +215,7 @@ class Exchange(object):
         self.type = tobytes(type)  # must be bytes
         self.durable = durable
         self.auto_delete = auto_delete
+        self.arguments = argumentify(arguments)
 
         assert isinstance(self.name, six.text_type)
         assert isinstance(self.type, six.binary_type)
@@ -224,13 +248,14 @@ class Queue(object):
     :param auto_delete: Is this queue auto_delete ?
     """
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
-                 'anonymous', 'consumer_tag')
+                 'anonymous', 'consumer_tag', 'arguments')
 
     def __init__(self, name=b'',  # type: tp.Union[str, bytes]
                  durable=False,  # type: bool
                  exchange=None,  # type: tp.Optional[Exchange]
                  exclusive=False,  # type: bool
-                 auto_delete=False  # type: bool
+                 auto_delete=False,  # type: bool
+                 arguments=None     # type: tp.Union[tp.List[bytes, tp.Any], tp.Dict[str, tp.Any]]
                  ):
         if not name:
             name = uuid.uuid4().hex
@@ -240,6 +265,7 @@ class Queue(object):
         self.exchange = exchange
         self.auto_delete = auto_delete
         self.exclusive = exclusive
+        self.arguments = argumentify(arguments)
 
         self.anonymous = not len(
             self.name)  # if this queue is anonymous, it must be regenerated upon reconnect
@@ -259,9 +285,13 @@ class Queue(object):
 
 class QueueBind(object):
     """An order to be declared which binds a given queue to an exchange"""
+
+    __slots__ = ('queue', 'exchange', 'routing_key', 'arguments')
+
     def __init__(self, queue,   # type: tp.Union[Queue, bytes, unicode]
                  exchange,      # type: tp.Union[Exchange, bytes, unicode]
-                 routing_key    # type: tp.Union[bytes, unicode]
+                 routing_key,    # type: tp.Union[bytes, unicode]
+                 arguments=None  # type: tp.Optional[tp.List[tuple[bytes, tp.Any]]]
                  ):
         if isinstance(queue, Queue):
             queue = queue.name
@@ -270,6 +300,7 @@ class QueueBind(object):
             exchange = exchange.name
         self.exchange = tobytes(exchange)   # type: bytes
         self.routing_key = tobytes(routing_key)     # type: bytes
+        self.arguments = argumentify(arguments)
 
     def __eq__(self, other):
         return self.queue == other.queue and self.exchange == other.exchange and self.routing_key == other.routing_key
