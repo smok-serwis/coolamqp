@@ -1,6 +1,6 @@
 # For both unit tests and stress tests
 # refer to docker-compose.yaml and README.md for details
-FROM python:3.7
+FROM python:3.10
 
 ADD requirements.txt /tmp/requirements.txt
 ADD stress_tests/requirements.txt /tmp/requirements2.txt
