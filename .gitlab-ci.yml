@@ -10,7 +10,7 @@ stages:
       alias: rabbitmq
   before_script:
     - python setup.py install
-    - pip install --break-system-packages nose2 coverage requests yapf
+    - pip install --break-system-packages nose2 coverage requests yapf nose2[coverage_plugin]
     - coverage run --append -m compile_definitions
   artifacts:
     paths:
@@ -56,7 +56,7 @@ unittest_epoll_python27:
   extends: .before_test
   image: python:2.7
   before_script:
-    - pip install nose2
+    - pip install nose2 nose2[coverage_plugin]
     - python setup.py install
   script:
     - nose2 -F -vv
