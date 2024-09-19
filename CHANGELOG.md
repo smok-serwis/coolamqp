@@ -1,7 +1,13 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
-# v1.4.0
+# v1.4.1
+=======
+
+* fixed a bug while setting up connection
+
+# v1.2.16
+=========
 
 * removed the requirement for a Queue that for it to be equal to other Queue if their types do match
 * compile_definitions will now depend on requests

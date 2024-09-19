@@ -65,14 +65,14 @@ unittest_epoll_python27:
   after_script:
     - mv .coverage .coverage.python27epoll
 
-      
+
 unittest_epoll:
   extends: .before_test
   script:
     - coverage run --append -m nose2 -F -vv
   after_script:
     - mv .coverage .coverage.unitepoll
-      
+
 
 calc_coverage:
   stage: build
@@ -117,4 +117,3 @@ build_python:
     - tags
   except:
     - branches
-
