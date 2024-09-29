@@ -23,3 +23,7 @@ Consumers
     :members:
     :undoc-members:
 
+Please note that :meth:`coolamqp.clustering.Cluster.consume` passes lot of it's
+args and kwargs directly to the :class:`coolamqp.attaches.consumer.Consumer`.
+
+

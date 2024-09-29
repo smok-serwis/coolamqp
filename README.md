@@ -1,6 +1,6 @@
 CoolAMQP
 ========
-[![Documentation Status](https://readthedocs.org/projects/coolamqp/badge/?version=latest)](http://smokserwis.docs.smok5.co/coolamqp)
+
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 **Warning!!** Since v1.3.1 development has been moved 

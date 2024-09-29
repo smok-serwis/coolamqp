@@ -1,6 +1,11 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
+# v1.4.2
+========
+
+* added docs regarding consume method.
+
 # v1.4.1
 =======
 
