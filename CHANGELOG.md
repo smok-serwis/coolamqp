@@ -5,6 +5,7 @@ Since v1.3.2 they'll be put here and in release description.
 ========
 
 * added docs regarding consume method.
+* added testing topic exchanges
 
 # v1.4.1
 =======
