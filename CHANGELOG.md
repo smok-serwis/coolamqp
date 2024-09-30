@@ -6,10 +6,6 @@ Since v1.3.2 they'll be put here and in release description.
 
 * fixed and unit tested the topic exchanges
 * fixed declare documentation
-
-# v1.4.2
-========
-
 * added docs regarding consume method.
 * added testing topic exchanges
 
