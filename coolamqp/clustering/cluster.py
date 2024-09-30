@@ -121,6 +121,9 @@ class Cluster(object):
         """
         Declare a Queue/Exchange.
 
+        .. note:: Note that if your queue relates to an exchange that has not yet been declared you'll be faced with
+                  AMQP error 404: NOT_FOUND, so try to declare your exchanges before your queues.
+
         :param obj: Queue/Exchange object
         :param persistent: should it be redefined upon reconnect?
         :param span: optional parent span, if opentracing is installed

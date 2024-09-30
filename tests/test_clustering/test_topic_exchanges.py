@@ -9,7 +9,7 @@ from coolamqp.clustering import Cluster
 from coolamqp.objects import Exchange, Queue, NodeDefinition, Message
 
 
-XCHG = Exchange('topic', type='topic', durable=True)
+XCHG = Exchange('smok5.results', type='topic', durable=True)
 QUEUE = Queue(exchange=XCHG, exclusive=True, auto_delete=True)
 
 
@@ -23,12 +23,16 @@ class TestTopic(unittest.TestCase):
         self.c.start()
 
     def tearDown(self):
+        try:
+            self.cons.cancel().result()
+        except AttributeError:
+            pass
         self.c.shutdown()
 
-
     def test_bind_stuff(self):
+        self.c.declare(XCHG).result()
         self.c.declare(QUEUE).result()
-        self.c.bind(QUEUE, XCHG, routing_key='hello-world')
+        self.c.bind(QUEUE, XCHG, routing_key='hello-world').result()
 
         did_receive = False
 
@@ -37,7 +41,7 @@ class TestTopic(unittest.TestCase):
             did_receive = True
             msg.ack()
 
-        cons, fut = self.c.consume(QUEUE, on_message=do, no_ack=False)
+        self.cons, fut = self.c.consume(QUEUE, on_message=do, no_ack=False)
         fut.result()
 
         self.c.publish(Message(b'good boy'), exchange=XCHG, routing_key='hello-world')
@@ -48,4 +52,7 @@ class TestTopic(unittest.TestCase):
             if monotonic.monotonic() - start > 10:
                 self.fail("Message not received within 10 seconds")
 
-        self.cons.cancel.result()
+        did_receive = False
+        self.c.publish(Message(b'good boy', exchange=XCHG, routing_key='helloworld'), confirm=True).result()
+        time.sleep(5)
+        self.assertFalse(did_receive)
