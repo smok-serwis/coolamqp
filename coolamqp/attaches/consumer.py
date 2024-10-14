@@ -5,6 +5,7 @@ import io
 import logging
 import typing as tp
 import uuid
+import warnings
 from concurrent.futures import Future
 
 from coolamqp.attaches.channeler import Channeler, ST_ONLINE, ST_OFFLINE
@@ -168,9 +169,11 @@ class Consumer(Channeler):
         :param prefetch_size: prefetch in octets
         :param prefetch_count: prefetch in whole messages
         """
+        if prefetch_size:
+            warnings.warn('RabbitMQ stopped supporting prefetch_sizes, will use 0 anyway', DeprecationWarning)
         if self.state == ST_ONLINE:
-            self.method(BasicQos(prefetch_size or 0, prefetch_count, False))
-        self.qos = prefetch_size or 0, prefetch_count
+            self.method(BasicQos(0, prefetch_count, False))
+        self.qos = 0, prefetch_count
 
     def cancel(self):  # type: () -> Future
         """
@@ -426,7 +429,7 @@ class Consumer(Channeler):
         elif isinstance(payload, QueueBindOk):
             if self.qos is not None:
                 self.method_and_watch(
-                    BasicQos(self.qos[0], self.qos[1], False),
+                    BasicQos(0, self.qos[1], False),
                     BasicQosOk,
                     self.on_setup
                 )
@@ -472,7 +475,7 @@ class Consumer(Channeler):
 
             # resend QoS, in case of sth
             if self.qos is not None:
-                self.set_qos(self.qos[0], self.qos[1])
+                self.set_qos(0, self.qos[1])
 
 
 def _qosify(qos):

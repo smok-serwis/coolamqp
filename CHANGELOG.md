@@ -8,6 +8,9 @@ Since v1.3.2 they'll be put here and in release description.
 * fixed declare documentation
 * added docs regarding consume method.
 * added testing topic exchanges
+* bugfix regarding deadlettering queues
+* prefetch_size will be forced to 0 to better comply with [RabbitMQ](https://www.rabbitmq.com/docs/specification#method-status-basic.qos)
+    * and a DeprecationWarning will be shown to people who try to set something else. 0 will be forced upon them anyway.
 
 # v1.4.1
 =======

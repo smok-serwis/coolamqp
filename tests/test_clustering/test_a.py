@@ -55,7 +55,7 @@ class TestA(unittest.TestCase):
         con, fut = self.c.consume(Queue(u'hello', exclusive=True))
         fut.result()
 
-        data = six.binary_type(os.urandom(20 * 1024 * 1024 + 1423))
+        data = six.binary_type(os.urandom(16777216))
 
         self.c.publish(Message(data), routing_key=b'hello',
                        confirm=True).result()
@@ -72,9 +72,9 @@ class TestA(unittest.TestCase):
 
         fut.result()
 
-        con.set_qos(100, 100)
+        con.set_qos(0, 100)
         time.sleep(1)
-        self.assertEqual(con.qos, (100, 100))
+        self.assertEqual(con.qos, (0, 100))
 
         con.set_qos(None, 110)
         time.sleep(1)

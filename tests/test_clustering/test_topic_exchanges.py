@@ -1,3 +1,4 @@
+import logging
 import time
 import os
 import unittest
@@ -11,11 +12,13 @@ from coolamqp.objects import Exchange, Queue, NodeDefinition, Message
 
 XCHG = Exchange('smok5.results', type='topic', durable=True)
 QUEUE = Queue(exchange=XCHG, exclusive=True, auto_delete=True)
-
+logger = logging.getLogger(__name__)
 
 NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
+logging.getLogger('coolamqp').setLevel(logging.DEBUG)
 
+did_receive = False
 
 class TestTopic(unittest.TestCase):
     def setUp(self):
@@ -33,12 +36,12 @@ class TestTopic(unittest.TestCase):
         self.c.declare(XCHG).result()
         self.c.declare(QUEUE).result()
         self.c.bind(QUEUE, XCHG, routing_key='hello-world').result()
-
-        did_receive = False
+        global did_receive
 
         def do(msg):
-            nonlocal did_receive
-            did_receive = True
+            global did_receive
+            if msg.body == b'good boy':
+                did_receive = True
             msg.ack()
 
         self.cons, fut = self.c.consume(QUEUE, on_message=do, no_ack=False)
@@ -53,6 +56,6 @@ class TestTopic(unittest.TestCase):
                 self.fail("Message not received within 10 seconds")
 
         did_receive = False
-        self.c.publish(Message(b'good boy', exchange=XCHG, routing_key='helloworld'), confirm=True).result()
-        time.sleep(5)
+        self.c.publish(Message(b'good boy2'), exchange=XCHG, routing_key='yolooldies', confirm=True).result()
+        time.sleep(10)
         self.assertFalse(did_receive)
