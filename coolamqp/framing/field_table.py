@@ -24,6 +24,8 @@ def _tobuf(buf, pattern, *vals):  # type: (io.BytesIO, str, *tp.Any) -> int
 
 
 def _tobufv(buf, value, pattern, *vals):  # type: (io.BytesIO, bytes, str, *tp.Any) -> None
+    if not isinstance(value, six.binary_type):
+        value = value.encode('utf-8')
     _tobuf(buf, pattern, *vals)
     buf.write(value)
 
@@ -175,7 +177,8 @@ def deframe_array(buf, offset):
 
     values = []
     while offset < (start_offset + 1 + ln):
-        v, t, delta = deframe_field_value(buf, offset)
+        vt, delta = deframe_field_value(buf, offset)
+        v, t = vt
         offset += delta
         values.append((v, t))
 
@@ -221,7 +224,11 @@ def deframe_table(buf, start_offset):  # -> (table, bytes_consumed)
         offset += ln
         fv, delta = deframe_field_value(buf, offset)
         offset += delta
-        fields.append((field_name.tobytes(), fv))
+        if isinstance(field_name, memoryview):
+            field_name = field_name.tobytes()
+        elif not isinstance(field_name, six.binary_type):
+            field_name = field_name.encode('utf-8')
+        fields.append((field_name, fv))
 
     if offset > (start_offset + table_length + 4):
         raise ValueError(

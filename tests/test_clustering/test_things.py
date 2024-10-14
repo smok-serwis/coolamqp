@@ -13,10 +13,10 @@ from coolamqp.objects import NodeDefinition, Queue, Exchange
 
 NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
 logging.basicConfig(level=logging.DEBUG)
+logging.getLogger('coolamqp').setLevel(logging.DEBUG)
 
 
 class TestConnecting(unittest.TestCase):
-
 
     def test_argumented_exchange(self):
         xchg = Exchange('test-wer', durable=True)
