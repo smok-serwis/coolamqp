@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'CoolAMQP'
-copyright = u'2016-2020, SMOK sp. z o. o.'
+copyright = u'2016-2024, SMOK sp. z o. o.'
 author = u'SMOK sp. z o. o.'
 
 # The version info for the project you're documenting, acts as replacement for

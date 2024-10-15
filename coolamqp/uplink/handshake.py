@@ -13,6 +13,8 @@ from coolamqp.framing.definitions import ConnectionStart, ConnectionStartOk, \
 from coolamqp.framing.frames import AMQPMethodFrame
 from coolamqp.uplink.connection.states import ST_ONLINE
 from coolamqp.uplink.heartbeat import Heartbeater
+from coolamqp.objects import ServerProperties
+
 from coolamqp import __version__
 
 PUBLISHER_CONFIRMS = b'publisher_confirms'
@@ -100,7 +102,7 @@ class Handshaker(object):
                 if label in SUPPORTED_EXTENSIONS:
                     if fv[0]:
                         self.connection.extensions.append(label)
-
+        self.connection.properties = ServerProperties(payload)
         self.connection.watchdog(WATCHDOG_TIMEOUT, self.on_watchdog)
         self.connection.watch_for_method(0, ConnectionTune,
                                          self.on_connection_tune)
