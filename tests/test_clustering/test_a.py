@@ -265,7 +265,7 @@ class TestA(unittest.TestCase):
             Queue(u'helloA', exclusive=True, auto_delete=True))
         fut.result()
 
-        self.c.publish(Message(b'ioi'), routing_key=u'helloA')
+        self.c.publish(Message(b'ioi'), routing_key=u'helloA', confirm=True).result()
 
         self.assertIsInstance(self.c.drain(2), MessageReceived)
         self.assertIsInstance(self.c.drain(1), NothingMuch)
