@@ -22,6 +22,7 @@ Why CoolAMQP?
 -------------
 
 * tested against all versions of RabbitMQ 3.x (with testing with RabbitMQ 4.x pending)
+  * automatic tests check against RabbitMQ 3.10 and RabbitMQ 4.0
 * AMQP 0.9.1 client that's native Python
 * heavily optimized for speed
 * geared towards interfacing with [RabbitMQ](https://www.rabbitmq.com/)

@@ -19,6 +19,13 @@ stages:
     AMQP_HOST: "rabbitmq"
 
 
+.before_test_rmq4:
+  extends: .before_test
+  services:
+    - name: rabbitmq:4.0-management
+      alias: rabbitmq
+
+
 stresstest_select:
   extends: .before_test
   script:
@@ -74,9 +81,18 @@ unittest_epoll:
     - mv .coverage .coverage.unitepoll
 
 
+unittest_epoll_rmq4:
+  extends: .before_test_rmq4
+  script:
+    - coverage run --append -m nose2 -F -vv
+  after_script:
+    - mv .coverage .coverage.unitepoll_rmq4
+
+
 calc_coverage:
   stage: build
   dependencies:
+    - unittest_epoll_rmq4
     - unittest_epoll
     - unittest_select
     - stresstest_epoll

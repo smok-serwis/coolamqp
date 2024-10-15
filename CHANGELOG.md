@@ -1,6 +1,11 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
+# v1.4.4
+========
+
+* added unit tests for RabbitMQ 4.0
+
 # v1.4.3
 ========
 
