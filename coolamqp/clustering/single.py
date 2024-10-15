@@ -18,6 +18,10 @@ class SingleNodeReconnector(object):
     Connection to one node. It will do it's best to remain alive.
     """
 
+    @property
+    def properties(self):
+        return self.connection.properties
+
     def __init__(self, node_def,  # type: coolamqp.objects.NodeDefinition
                  attache_group,  # type: coolamqp.attaches.AttacheGroup
                  listener_thread,  # type: coolamqp.uplink.ListenerThread

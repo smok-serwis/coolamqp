@@ -119,6 +119,7 @@ class Connection(object):
         self.frame_max = None
         self.heartbeat = None
         self.extensions = []
+        self.properties = None
 
         # To be filled in later
         self.listener_socket = None

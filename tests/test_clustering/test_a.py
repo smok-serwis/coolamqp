@@ -23,10 +23,13 @@ logging.basicConfig(level=logging.DEBUG)
 class TestA(unittest.TestCase):
     def setUp(self):
         self.c = Cluster([NODE])
-        self.c.start()
+        self.c.start(timeout=20)
 
     def tearDown(self):
         self.c.shutdown()
+
+    def test_properties(self):
+        self.assertEqual(self.c.properties.properties['product'], 'RabbitMQ')
 
     def test_queue_bind(self):
         queue = Queue('my-queue')

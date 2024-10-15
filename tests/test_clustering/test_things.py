@@ -77,7 +77,7 @@ class TestConnecting(unittest.TestCase):
 
     def test_start_called_multiple_times(self):
         c = Cluster([NODE])
-        c.start(wait=True)
+        c.start(wait=True, timeout=20)
         self.assertRaises(RuntimeError, lambda: c.start())
         c.shutdown(wait=True)
 

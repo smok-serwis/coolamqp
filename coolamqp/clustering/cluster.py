@@ -348,6 +348,13 @@ class Cluster(object):
                     raise ConnectionDead(
                         '[%s] Could not connect within %s seconds' % (self.name, timeout,))
 
+    @property
+    def properties(self):
+        """
+        Return a :class:`coolamqp.object.ServerProperties` if a connection was established
+        """
+        return self.snr.properties
+
     def shutdown(self, wait=True):  # type: (bool) -> None
         """
         Terminate all connections, release resources - finish the job.

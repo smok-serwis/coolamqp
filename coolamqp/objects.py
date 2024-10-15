@@ -10,7 +10,6 @@ import warnings
 
 import six
 
-from coolamqp.framing.base import AMQPFrame
 from coolamqp.framing.definitions import \
     BasicContentPropertyList as MessageProperties
 from coolamqp.framing.field_table import get_type_for
@@ -230,6 +229,37 @@ class Exchange(object):
 
 
 Exchange.direct = Exchange()
+
+
+
+class ServerProperties(object):
+    """
+    An object describing properties of the target server.
+
+    :ivar version: tuple of (major version, minor version)
+    :ivar properties: dictionary of properties (key str, value any)
+    :ivar mechanisms: a list of strings, supported auth mechanisms
+    :ivar locales: locale in use
+    """
+
+    __slots__ = ('version', 'properties', 'mechanisms', 'locales')
+
+    def __init__(self, data):
+        self.version = data.version_major, data.version_minor
+        self.properties = {}
+        for prop_name, prop_value in data.server_properties:
+            prop_name = toutf8(prop_name)
+            prop_value = prop_value[0]
+            if isinstance(prop_value, memoryview):
+                prop_value = prop_value.tobytes().decode('utf-8')
+            elif isinstance(prop_value, list):
+                prop_value = [toutf8(prop[0]) for prop in prop_value]
+            self.properties[prop_name] = prop_value
+        self.mechanisms = data.mechanisms.tobytes().decode('utf-8').split(' ')
+        self.locales = data.locales.tobytes().decode('utf-8')
+
+    def __str__(self):
+        return '%s %s %s %s' % (self.version, repr(self.properties), self.mechanisms, self.locales)
 
 
 class Queue(object):
