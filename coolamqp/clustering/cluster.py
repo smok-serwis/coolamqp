@@ -351,7 +351,7 @@ class Cluster(object):
     @property
     def properties(self):
         """
-        Return a :class:`coolamqp.object.ServerProperties` if a connection was established
+        Return a :class:`coolamqp.objects.ServerProperties` if a connection was established
         """
         return self.snr.properties
 

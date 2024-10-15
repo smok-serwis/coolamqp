@@ -1,6 +1,11 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
+# v1.5.0
+========
+
+* added properties to identify the server
+
 # v1.4.4
 ========
 
