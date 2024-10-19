@@ -393,9 +393,8 @@ class NodeDefinition(object):
             self.host, self.user, self.password, self.virtual_host = args
         elif len(args) == 1 and isinstance(args[0],
                                            (six.text_type, six.binary_type)):
-            connstr = args[0].decode('utf8') if isinstance(args[0],
-                                                           six.binary_type) else \
-                args[0]
+            connstr = toutf8(args[0])
+
             # AMQP connstring
             if not connstr.startswith(u'amqp://'):
                 raise ValueError(u'should begin with amqp://')
