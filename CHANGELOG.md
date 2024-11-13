@@ -1,25 +1,49 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
-# v1.5.0
-========
+v2.0.0
+======
+
+* **CoolAMQP switches now primarily to support RabbitMQ.** If it by accident supports your server, then that is a 
+  pure coincidence and nothing is guaranteed.
+* changes to Queues:
+  * anonymous queues are back, for usage refer [here](https://smokserwis.docs.smok.co/coolamqp/advanced.html)
+  * changed some default arguments for Queues for them to better make sense
+  * some argument combinations just raise ValueError
+  * PendingDeprecationWarning changed into a DeprecationWarning
+  * added support for headers exchanges
+* changes to Cluster:
+  * declare will refuse to declare an anonymous queue
+  * renamed publish(tx) to publish(confirm)
+  * declare will expect qos to be given as an integer, and will be set as prefetch_count, since RabbitMQ no longer
+    supports prefetch_size
+    * same can be said of Consumer.set_qos(prefetch_count)
+  * added Cluster.
+
+Compatible changes
+------------------
+
+* fixed a bug wherein bad invocation of NodeDefinition would result in an exception
+
+v1.5.0
+======
 
 * added properties to identify the server
 
-# v1.4.4
-========
+v1.4.4
+======
 
 * added unit tests for RabbitMQ 4.0
 
-# v1.4.3
-========
+v1.4.3
+======
 
 * bugfix regarding deadlettering queues
 * prefetch_size will be forced to 0 to better comply with [RabbitMQ](https://www.rabbitmq.com/docs/specification#method-status-basic.qos)
     * and a DeprecationWarning will be shown to people who try to set something else. 0 will be forced upon them anyway.
 
-# v1.4.2
-========
+v1.4.2
+======
 
 * fixed and unit tested the topic exchanges
 * fixed declare documentation
@@ -29,13 +53,13 @@ Since v1.3.2 they'll be put here and in release description.
 * prefetch_size will be forced to 0 to better comply with [RabbitMQ](https://www.rabbitmq.com/docs/specification#method-status-basic.qos)
     * and a DeprecationWarning will be shown to people who try to set something else. 0 will be forced upon them anyway.
 
-# v1.4.1
-=======
+v1.4.1
+======
 
 * fixed a bug while setting up connection
 
-# v1.2.16
-=========
+v1.2.16
+=======
 
 * removed the requirement for a Queue that for it to be equal to other Queue if their types do match
 * compile_definitions will now depend on requests

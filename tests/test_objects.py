@@ -1,5 +1,6 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import, division
+import sys
 import logging
 import unittest
 import io
@@ -7,14 +8,40 @@ import warnings
 
 from coolamqp.framing.definitions import QueueDeclare
 
-from coolamqp.objects import NodeDefinition, MessageProperties, Queue, argumentify
-
+from coolamqp.objects import NodeDefinition, MessageProperties, Queue
+from coolamqp.argumentify import argumentify
 
 logger = logging.getLogger(__name__)
 logging.getLogger('coolamqp').setLevel(logging.DEBUG)
 
+IS_PY3 = sys.version.startswith('3')
+
 
 class TestObjects(unittest.TestCase):
+
+    def test_queue_failures(self):
+        self.assertRaises(ValueError, Queue, None, durable=True)
+        self.assertRaises(ValueError, Queue, 'test', auto_delete=True, durable=True)
+        self.assertRaises(ValueError, Queue, None, auto_delete=False)
+        self.assertRaises(ValueError, Queue, 'test', auto_delete=True, exclusive=False)
+
+    @unittest.skipUnless(sys.version.startswith('3'), 'Needs Python 3.x')
+    def test_queue_warns(self):
+        warnings.resetwarnings()
+
+        with warnings.catch_warnings(record=True) as w:
+            Queue('test', auto_delete=True, exclusive=True)
+            Queue(auto_delete=True, exclusive=False)
+        logger.warning(repr(w))
+        self.assertEqual(len(w), 2 if IS_PY3 else 1)
+        self.assertTrue(issubclass(w[0].category, UserWarning))
+        if IS_PY3:
+            self.assertTrue(issubclass(w[1].category, DeprecationWarning))
+
+    def test_headers(self):
+        msg = MessageProperties(headers={'city': 'sydney'})
+        buf = io.BytesIO()
+        msg.write_to(buf)
 
     def test_queue_declare(self):
         args = argumentify({'x-dead-letter-exchange': 'deadletter',
@@ -31,13 +58,6 @@ class TestObjects(unittest.TestCase):
         empty_p_msg = MessageProperties()
         ce_p_msg = MessageProperties(content_encoding=b'wtf')
         self.assertIn('wtf', str(ce_p_msg))
-
-    def test_warning(self):
-        warnings.resetwarnings()
-        with warnings.catch_warnings(record=True) as w:
-            Queue(auto_delete=True, exclusive=False)
-        self.assertEqual(len(w), 1)
-        self.assertTrue(issubclass(w[0].category, PendingDeprecationWarning))
 
     def test_node_definition_from_amqp(self):
         n1 = NodeDefinition(u'amqp://ala:ma@kota/psa')

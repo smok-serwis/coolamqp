@@ -7,6 +7,7 @@ import struct
 
 import six
 
+import coolamqp.argumentify
 from coolamqp.framing.definitions import FRAME_HEADER, FRAME_HEARTBEAT, \
     FRAME_END, FRAME_METHOD, FRAME_BODY
 from coolamqp.framing.frames import AMQPBodyFrame, AMQPHeaderFrame, \

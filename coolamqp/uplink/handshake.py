@@ -1,6 +1,8 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
+import coolamqp.argumentify
+
 """
 Provides reactors that can authenticate an AQMP session
 """

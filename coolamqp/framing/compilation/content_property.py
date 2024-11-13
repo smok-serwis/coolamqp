@@ -1,7 +1,7 @@
 # coding=UTF-8
 from __future__ import absolute_import, division, print_function
 
-from coolamqp.framing.field_table import deframe_table
+from coolamqp.framing.field_table import deframe_table, frame_table_size, enframe_table
 
 """Generate serializers/unserializers/length getters for given property_flags"""
 import six
@@ -141,7 +141,6 @@ def _compile_particular_content_property_list_class(zpf, fields):
     mod.append(get_counter(present_fields, prefix=u'self.', indent_level=2)[
                :-1])  # skip eol
     mod.append(u' + %s\n' % (zpf_length,))  # account for pf length
-
     return u''.join(mod), structers
 
 
@@ -156,6 +155,8 @@ def compile_particular_content_property_list_class(zpf, fields):
     locals_ = {
         'AMQPContentPropertyList': AMQPContentPropertyList,
         'deframe_table': deframe_table,
+        'frame_table_size': frame_table_size,
+        'enframe_table': enframe_table,
     }
     for structer in structers:
         if structer not in STRUCTERS_FOR_NOW:

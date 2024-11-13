@@ -133,8 +133,12 @@ def get_type_for(val):
             return 'l'
     elif isinstance(val, float):
         return 'd'
+    elif isinstance(val, (tuple, list)):
+        return 'A'
+    elif isinstance(val, dict):
+        return 'F'
     else:
-        raise ValueError('Undeterminable type')
+        raise ValueError('I have zero idea what you have just passed')
 
 
 def enframe_field_value(buf, fv):
@@ -203,8 +207,9 @@ def enframe_table(buf, table):  # type (tp.BinaryIO, table) -> None
     :param buf: target buffer to write to
     :param table: table to write
     """
+    if isinstance(table, tuple) and len(table) > 1 and table[1] == 'F':        # Todo: fix an ugly hack
+        table = table[0]
     _tobuf(buf, '!I', frame_table_size(table) - 4)
-
     for name, fv in table:
         _tobufv(buf, name, '!B', len(name))
         enframe_field_value(buf, fv)
@@ -240,10 +245,14 @@ def deframe_table(buf, start_offset):  # -> (table, bytes_consumed)
 
 def frame_field_value_size(fv):
     v, t = fv
-    if FIELD_TYPES[t][0] is None:
-        return FIELD_TYPES[t][4](v) + 1
-    else:
-        return FIELD_TYPES[t][0] + 1
+    try:
+        if FIELD_TYPES[t][0] is None:
+            return FIELD_TYPES[t][4](v) + 1
+        else:
+            return FIELD_TYPES[t][0] + 1
+    except KeyError:
+        # todo: fix this hack
+        return frame_field_value_size(t)
 
 
 def frame_array_size(array):
@@ -254,6 +263,9 @@ def frame_table_size(table):
     """
     :return: length of table representation, in bytes, INCLUDING length
      header"""
+    if isinstance(table, tuple) and len(table) == 2:
+        table = table[0]
+        # todo: fix this hack
     return 4 + sum(1 + len(k) + frame_field_value_size(fv) for k, fv in table)
 
 

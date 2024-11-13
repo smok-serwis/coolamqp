@@ -5,8 +5,10 @@ Welcome to CoolAMQP's documentation!
     :maxdepth: 2
     :caption: Contents
 
+    whatsnew
     cluster
-    tutorial
+    tutorials/send_and_receive
+    how-to-guide
     caveats
     frames
     basics

@@ -192,9 +192,6 @@ class Declarer(Channeler, Synchronized):
         Channeler.__init__(self)
         Synchronized.__init__(self)
         self.cluster = cluster
-        self.declared = set()  # since Queues and Exchanges are hashable...
-        # anonymous queues aren't, but we reject those
-        # persistent
 
         self.left_to_declare = collections.deque()  # since last disconnect. persistent+transient
         # deque of Operation objects
@@ -218,10 +215,6 @@ class Declarer(Channeler, Synchronized):
             # connection down, panic mode engaged.
             while len(self.left_to_declare) > 0:
                 self.left_to_declare.pop().on_connection_dead()
-
-            # recast current declarations as new operations
-            for dec in self.declared:
-                self.left_to_declare.append(Operation(self, dec))
 
             super(Declarer, self).on_close()
             return
@@ -267,7 +260,7 @@ class Declarer(Channeler, Synchronized):
 
         return fut
 
-    def declare(self, obj, persistent=False, span=None):
+    def declare(self, obj, span=None):
         """
         Schedule to have an object declared.
 
@@ -280,11 +273,7 @@ class Declarer(Channeler, Synchronized):
 
         Queue declarations CAN fail.
 
-        Note that if re-declaring these fails, they will be silently discarded.
-        You can subscribe an on_discard(Exchange | Queue) here.
-
         :param obj: Exchange or Queue instance
-        :param persistent: will be redeclared upon disconnect. To remove, use "undeclare"
         :param span: span if opentracing is installed
         :return: a Future instance
         :raise ValueError: tried to declare anonymous queue
@@ -297,10 +286,6 @@ class Declarer(Channeler, Synchronized):
 
         fut = Future()
         fut.set_running_or_notify_cancel()
-
-        if persistent:
-            if obj not in self.declared:
-                self.declared.add(obj)
 
         self.left_to_declare.append(Operation(self, obj, fut, span, enqueued_span))
         self._do_operations()

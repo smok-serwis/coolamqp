@@ -10,43 +10,21 @@ import warnings
 
 import six
 
-from coolamqp.framing.definitions import \
-    BasicContentPropertyList as MessageProperties
-from coolamqp.framing.field_table import get_type_for
+from coolamqp.argumentify import argumentify, tobytes, toutf8
+from coolamqp.framing.definitions import BasicContentPropertyList
 
 logger = logging.getLogger(__name__)
 
+
+class MessageProperties(BasicContentPropertyList):
+    def __new__(cls, *args, **kwargs):
+        if 'headers' in kwargs:
+            if isinstance(kwargs['headers'], dict):
+                kwargs['headers'] = argumentify(kwargs['headers'])
+        return BasicContentPropertyList.__new__(cls, *args, **kwargs)
+
+
 EMPTY_PROPERTIES = MessageProperties()
-
-
-def argumentify(arguments):
-    if arguments is None:
-        return None
-    args = []
-    if isinstance(arguments, dict):
-        for key, value in arguments.items():
-            if not isinstance(key, six.binary_type):
-                key = key.encode('utf-8')
-            args.append((key, (value, get_type_for(value))))
-    else:
-        for key, value in arguments:
-            if not isinstance(key, six.binary_type):
-                key = key.encode('utf-8')
-            args.append((key, (value, get_type_for(value))))
-
-    return args
-
-
-def toutf8(q):
-    if isinstance(q, six.binary_type):
-        q = q.decode('utf8')
-    return q
-
-
-def tobytes(q):
-    if isinstance(q, six.text_type):
-        q = q.encode('utf8')
-    return q
 
 
 class Callable(object):
@@ -88,8 +66,7 @@ class Message(object):
                        You can pass a dict - it will be passed to
                        MessageProperties,
                        but it's slow - don't do that.
-    :type properties: MessageProperties instance, None or a dict (SLOW!)
-
+    :type properties: :class:`coolamqp.objects.MessageProperties` instance
     """
     __slots__ = ('body', 'properties')
 
@@ -231,7 +208,6 @@ class Exchange(object):
 Exchange.direct = Exchange()
 
 
-
 class ServerProperties(object):
     """
     An object describing properties of the target server.
@@ -255,11 +231,8 @@ class ServerProperties(object):
             elif isinstance(prop_value, list):
                 prop_value = [toutf8(prop[0]) for prop in prop_value]
             self.properties[prop_name] = prop_value
-        self.mechanisms = data.mechanisms.tobytes().decode('utf-8').split(' ')
-        self.locales = data.locales.tobytes().decode('utf-8')
-
-    def __str__(self):
-        return '%s %s %s %s' % (self.version, repr(self.properties), self.mechanisms, self.locales)
+        self.mechanisms = toutf8(data.mechanisms).split(' ')
+        self.locales = toutf8(data.locales)
 
 
 class Queue(object):
@@ -267,56 +240,80 @@ class Queue(object):
     This object represents a Queue that applications consume from or publish to.
     Create a queue definition.
 
-    :param name: name of the queue. Generates a random uuid.uuid4().hex if not given. Note that this kind of queue
-                 will probably require to be declared.
+    :param name: name of the queue.
+        None (default) for autogeneration. Just follow the rules for :ref:`anonymq`.
+        If empty string, a UUID name will be generated, and you won't have an anonymous queue anymore.
     :param durable: Is the queue durable?
     :param exchange: Exchange for this queue to bind to. None for no binding.
-    :param exclusive: Is this queue exclusive?
-    :param auto_delete: Is this queue auto_delete ?
+    :param exclusive: This queue will be deleted when the connection closes
+    :param auto_delete: This queue will be deleted when the last consumer unsubscribes
     :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument
-    :warning PendingDeprecationWarning: if a non-exclusive auto_delete queue is created or some other combinations
+    :param routing_key: routing key that will be used to bind to an exchange. Used only when this
+                        queue is associated with an exchange. Default value of blank should suffice.
+    :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument during
+                      declaration
+    :param arguments_bind: arguments to pass to binding to a (headers, I suppose exchange)
+    :raises ValueError: tried to create a queue that was not durable or auto_delete
+    :raises ValueError: tried to create a queue that was not exclusive or auto_delete and not anonymous
+    :raises ValueError: tried to create a queue that was anonymous and not auto_delete or durable
+    :warning DeprecationWarning: if a non-exclusive auto_delete queue is created or some other combinations
         that will be soon unavailable (eg. RabbitMQ 4.0).
+    :warning UserWarning: if you're declaring an auto_delete or exclusive, anonymous queue
     """
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
-                 'anonymous', 'consumer_tag', 'arguments')
+                 'anonymous', 'consumer_tag', 'arguments', 'routing_key', 'arguments_bind')
 
-    def __init__(self, name=b'',  # type: tp.Union[str, bytes]
+    def __init__(self, name=None,  # type: tp.Union[str, bytes, None]
                  durable=False,  # type: bool
                  exchange=None,  # type: tp.Optional[Exchange]
-                 exclusive=False,  # type: bool
-                 auto_delete=False,  # type: bool
-                 arguments=None     # type: tp.Union[tp.List[bytes, tp.Any], tp.Dict[str, tp.Any]]
+                 exclusive=True,  # type: bool
+                 auto_delete=True,  # type: bool
+                 arguments=None,     # type: tp.Union[tp.List[bytes, tp.Any], tp.Dict[str, tp.Any]],
+                 routing_key=b'',    #: type: tp.Union[str, bytes]
+                 arguments_bind=None,
                  ):
-        if not name:
-            name = uuid.uuid4().hex
-        self.name = tobytes(name)  #: public, must be bytes
-        # if name is '', this will be filled in with broker-generated name upon declaration
+        if name is None:
+            self.name = None
+        else:
+            self.name = tobytes(uuid.uuid4().hex if not name else name)
+
         self.durable = durable
         self.exchange = exchange
+        self.routing_key = tobytes(routing_key)
         self.auto_delete = auto_delete
         self.exclusive = exclusive
         self.arguments = argumentify(arguments)
+        self.arguments_bind = argumentify(arguments_bind)
+        self.anonymous = self.name is None
 
         if self.auto_delete and self.durable:
-            warnings.warn('This will be removed in RabbitMQ 4.0', PendingDeprecationWarning)
+            raise ValueError('Cannot create an auto_delete and durable queue')
 
-        if self.auto_delete and not self.exclusive:
-            warnings.warn('This will be removed in RabbitMQ 4.0', PendingDeprecationWarning)
+        if self.anonymous and (not self.auto_delete or self.durable):
+            raise ValueError('Zero sense to make a anonymous non-auto-delete or durable queue')
 
-        self.anonymous = not len(
-            self.name)  # if this queue is anonymous, it must be regenerated upon reconnect
+        if not self.anonymous and (self.auto_delete or self.exclusive):
+            warnings.warn('This may cause unpredictable behaviour', UserWarning)
 
-        self.consumer_tag = self.name if not self.anonymous else uuid.uuid4().hex.encode(
-            'utf8')  # bytes, consumer tag to use in AMQP comms
+        if self.durable and self.anonymous:
+            raise ValueError('Cannot declare an anonymous durable queue')
 
-        assert isinstance(self.name, six.binary_type)
-        assert isinstance(self.consumer_tag, six.binary_type)
+        if self.auto_delete and not self.exclusive and not self.anonymous:
+            raise ValueError('Cannot create an auto_delete and durable queue non-anonymous')
+
+        self.consumer_tag = self.name if not self.anonymous else tobytes(uuid.uuid4().hex)
+
+        if not self.exclusive and self.auto_delete:
+            warnings.warn('This will be removed in RabbitMQ 4.0', DeprecationWarning)
 
     def __eq__(self, other):
         return self.name == other.name
 
     def __hash__(self):
         return hash(self.name)
+
+    def __repr__(self):
+        return 'Queue(%s, %s, %s, %s, %s, %s' % (self.name, self.durable, self.exchange, self.exclusive, self.arguments)
 
 
 class QueueBind(object):
@@ -336,7 +333,7 @@ class QueueBind(object):
             exchange = exchange.name
         self.exchange = tobytes(exchange)   # type: bytes
         self.routing_key = tobytes(routing_key)     # type: bytes
-        self.arguments = argumentify(arguments)
+        self.arguments = arguments or []
 
     def __eq__(self, other):
         return self.queue == other.queue and self.exchange == other.exchange and self.routing_key == other.routing_key
@@ -379,16 +376,13 @@ class NodeDefinition(object):
     def __init__(self, *args, **kwargs):
         self.heartbeat = kwargs.pop('heartbeat', None)
         self.port = kwargs.pop('port', 5672)
+        self.host = None
+        self.user = None
+        self.password = None
+        self.virtual_host = '/'
 
-        if len(kwargs) > 0:
-            # Prepare arguments for amqp.connection.Connection
-            self.host = kwargs['host']
-            self.user = kwargs['user']
-            self.password = kwargs['password']
-            self.virtual_host = kwargs.get('virtual_host', '/')
-        elif len(args) == 3:
+        if len(args) == 3:
             self.host, self.user, self.password = args
-            self.virtual_host = '/'
         elif len(args) == 4:
             self.host, self.user, self.password, self.virtual_host = args
         elif len(args) == 1 and isinstance(args[0],
@@ -412,8 +406,14 @@ class NodeDefinition(object):
                 host, port = self.host.split(u':', 1)
                 self.port = int(port)
                 # else get that port from kwargs
-        else:
-            raise ValueError(u'What did you exactly pass?')
+
+        if len(kwargs) > 0:
+            # Prepare arguments for amqp.connection.Connection
+            self.host = kwargs.get('host', self.host)
+            self.user = kwargs.get('user', self.user)
+            self.port = kwargs.get('port', self.port)
+            self.password = kwargs.get('password', self.password)
+            self.virtual_host = kwargs.get('virtual_host', self.virtual_host)
 
     def __str__(self):  # type: () -> str
         return six.text_type(

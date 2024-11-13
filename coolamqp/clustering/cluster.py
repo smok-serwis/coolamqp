@@ -9,6 +9,7 @@ from concurrent.futures import Future
 
 import six
 
+from coolamqp.argumentify import argumentify
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.attaches.utils import close_future
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
@@ -89,6 +90,7 @@ class Cluster(object):
         self.pub_tr = None              # type: Publisher
         self.pub_na = None              # type: Publisher
         self.decl = None                # type: Declarer
+        self.on_fail = None
 
         if on_fail is not None:
             def decorated():
@@ -96,45 +98,50 @@ class Cluster(object):
                     on_fail()
 
             self.on_fail = decorated
-        else:
-            self.on_fail = None
 
-    def bind(self, queue, exchange, routing_key, persistent=False, span=None,
+    def bind(self, queue, exchange, routing_key, span=None,
              dont_trace=False, arguments=None):
         """
         Bind a queue to an exchange
+
+        :raise ValueError: cannot bind to anonymous queues
         """
+        if queue.anonymous:
+            raise ValueError('Canoot bind to anonymous queue')
+
         if span is not None and not dont_trace:
             child_span = self._make_span('bind', span)
         else:
             child_span = None
-        fut = self.decl.declare(QueueBind(queue, exchange, routing_key, arguments),
-                                persistent=persistent,
+        fut = self.decl.declare(QueueBind(queue, exchange, routing_key, argumentify(arguments)),
                                 span=child_span)
         return close_future(fut, child_span)
 
     def declare(self, obj,  # type: tp.Union[Queue, Exchange]
-                persistent=False,  # type: bool
                 span=None,  # type: tp.Optional[opentracing.Span]
                 dont_trace=False    # type: bool
                 ):  # type: (...) -> concurrent.futures.Future
         """
         Declare a Queue/Exchange.
 
+        Non-anonymous queues have to be declared. Anonymous can't.
+
         .. note:: Note that if your queue relates to an exchange that has not yet been declared you'll be faced with
                   AMQP error 404: NOT_FOUND, so try to declare your exchanges before your queues.
 
         :param obj: Queue/Exchange object
-        :param persistent: should it be redefined upon reconnect?
         :param span: optional parent span, if opentracing is installed
         :param dont_trace: if True, a span won't be output
         :return: Future
+        :raises ValueError: tried to declare an anonymous queue
         """
+        if isinstance(obj, Queue) and obj.anonymous:
+            raise ValueError('You cannot declare an anonymous queue!')
         if span is not None and not dont_trace:
             child_span = self._make_span('declare', span)
         else:
             child_span = None
-        fut = self.decl.declare(obj, persistent=persistent, span=child_span)
+        fut = self.decl.declare(obj, span=child_span)
         return close_future(fut, child_span)
 
     def drain(self, timeout, span=None, dont_trace=False):  # type: (float) -> Event
@@ -182,6 +189,9 @@ class Cluster(object):
         Don't use future_to_notify - it's done here!
 
         Take care not to lose the Consumer object - it's the only way to cancel a consumer!
+
+        .. note:: You don't need to explicitly declare queues and exchanges that you will be using beforehand,
+                  this will do this for you on the same channel.
 
         :param queue: Queue object, being consumed from right now.
             Note that name of anonymous queue might change at any time!
@@ -232,7 +242,6 @@ class Cluster(object):
     def publish(self, message,  # type: Message
                 exchange=None,  # type: tp.Union[Exchange, str, bytes]
                 routing_key=u'',  # type: tp.Union[str, bytes]
-                tx=None,  # type: tp.Optional[bool]
                 confirm=None,  # type: tp.Optional[bool]
                 span=None,  # type: tp.Optional[opentracing.Span]
                 dont_trace=False    # type: bool
@@ -246,9 +255,8 @@ class Cluster(object):
         :param confirm: Whether to publish it using confirms/transactions.
                         If you choose so, you will receive a Future that can be used
                         to check it broker took responsibility for this message.
-                        Note that if tx if False, and message cannot be delivered to broker at once,
+                        Note that if confirm is False, and message cannot be delivered to broker at once,
                         it will be discarded
-        :param tx: deprecated, alias for confirm
         :param span: optionally, current span, if opentracing is installed
         :param dont_trace: if set to True, a span won't be generated
         :return: Future to be finished on completion or None, is confirm/tx was not chosen
@@ -266,19 +274,8 @@ class Cluster(object):
         if isinstance(routing_key, six.text_type):
             routing_key = routing_key.encode('utf8')
 
-        if tx is not None:  # confirm is a drop-in replacement. tx is unfortunately named
-            warnings.warn(u'Use confirm kwarg instead', DeprecationWarning)
-
-            if confirm is not None:
-                raise RuntimeError(
-                    u'Using both tx= and confirm= at once does not make sense')
-        elif confirm is not None:
-            tx = confirm
-        else:
-            tx = False
-
         try:
-            if tx:
+            if confirm:
                 clb = self.pub_tr
             else:
                 clb = self.pub_na
@@ -371,3 +368,9 @@ class Cluster(object):
         self.listener.terminate()
         if wait:
             self.listener.join()
+
+    def is_shutdown(self):
+        """
+        :return: bool, if this was started and later disconnected.
+        """
+        return self.started and not self.connected

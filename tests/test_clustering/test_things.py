@@ -29,17 +29,15 @@ class TestConnecting(unittest.TestCase):
 
     def test_argumented_queue(self):
         que = Queue(auto_delete=True, exclusive=True, arguments=[(b'x-max-priority', 10)])
-        que2 = Queue(auto_delete=True, exclusive=True, arguments={'x-max-priority': 10})
         c = Cluster([NODE])
         c.start(wait=True, timeout=None)
-        c.declare(que).result()
-        c.declare(que2).result()
+        self.assertRaises(ValueError, c.declare, que)
         c.shutdown(True)
 
     def test_argumented_bind(self):
         c = Cluster([NODE])
         c.start(wait=True, timeout=None)
-        que = Queue(auto_delete=True, exclusive=True, arguments=[(b'x-max-priority', 10)])
+        que = Queue('', auto_delete=True, exclusive=True, arguments=[(b'x-max-priority', 10)])
         xchg = Exchange('test3-wertest', type='headers', durable=True)
         c.declare(que).result()
         c.declare(xchg).result()

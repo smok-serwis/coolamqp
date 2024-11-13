@@ -54,7 +54,7 @@ class TestDouble(unittest.TestCase):
 
         q = Queue(u'yo', exclusive=True, auto_delete=True)
 
-        con, fut = self.c1.consume(q, qos=(None, 20))
+        con, fut = self.c1.consume(q, qos=20)
         fut.result()
 
         try:
