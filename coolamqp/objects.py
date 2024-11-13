@@ -283,14 +283,14 @@ class Queue(object):
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag', 'arguments', 'routing_key', 'arguments_bind')
 
-    def __init__(self, name=None,  # type: tp.Union[str, bytes, None]
+    def __init__(self, name=None,  # type: Union[str, bytes, None]
                  durable=False,  # type: bool
-                 exchange=None,  # type: tp.Optional[Exchange]
+                 exchange=None,  # type: Optional[Exchange]
                  exclusive=True,  # type: bool
                  auto_delete=True,  # type: bool
-                 arguments=None,     # type: tp.Union[tp.List[bytes, tp.Any], tp.Dict[str, tp.Any]],
-                 routing_key=b'',    #: type: tp.Union[str, bytes]
-                 arguments_bind=None,
+                 arguments=None,     # type: Union[List[bytes, Any], Dict[str, Any]],
+                 routing_key=b'',    # type: Union[str, bytes]
+                 arguments_bind=None,   # type: Optional[Dict]
                  ):
         """
         :param name: name of the queue.
