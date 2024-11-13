@@ -1,6 +1,9 @@
 How to guide
 ============
 
+Connecting to a broker
+----------------------
+
 If you want to connect to an AMQP broker, you need:
 * its address (and port)
 * login and password
@@ -26,7 +29,7 @@ accepts a list of nodes:
 .. code-block:: python
 
     from coolamqp.clustering import Cluster
-    cluster = Cluster([node], name='My Cluster')
+    cluster = Cluster(node, name='My Cluster')
     cluster.start(wait=True)
 
 *wait=True* will block until connection is completed. After this, you can use other methods.
@@ -35,10 +38,6 @@ accepts a list of nodes:
 receive a provided label, postfixed by **AMQP listener thread**.
 
 .. _setproctitle: https://pypi.org/project/setproctitle/
-
-.. autoclass:: coolamqp.clustering.Cluster
-    :members:
-
 
 Publishing and consuming
 ------------------------
@@ -58,14 +57,8 @@ you must first define a queue, and register a consumer.
 This will create an auto-delete and exclusive queue. After than, a consumer will be registered for this queue.
 _no_ack=False_ will mean that we have to manually confirm messages.
 
-.. warning:: if you declare a :class:`coolamqp.objects.Queue` without a name, this client will automatically
-             generate an UUID-name for you, and verify the queue is auto_delete. Since RabbitMQ supports
-             `automatic queue name generation <https://www.rabbitmq.com/docs/queues#names>`_,
-             this client does not use it, because the queue is valid only for the channel that declared it,
-             and CoolAMQP declares things with a dedicated channel.
-
-You can specify a callback, that will be called with a message if one's received by this consumer. Since
-we did not do that, this will go to a generic queue belonging to _Cluster_.
+You should specify a callback. It will be executed in receiving thread's context, so it can't block for long.
+If you're looking for receiving messages yourself, familiarize yourself with :meth:`coolamqp.clustering.Cluster.drain`.
 
 _consumer_ is a _Consumer_ object. This allows us to do some things with the consumer (such as setting QoS),
 but most importantly it allows us to cancel it later. _consume_confirm_ is a _Future_, that will succeed
@@ -75,13 +68,12 @@ To send a message we need to construct it first, and later publish:
 
 .. code-block:: python
 
-    from coolamqp.objects import Message
+    from coolamqp.objects import Message, MessageProperties
 
-    msg = Message(b'hello world', properties=Message.Properties())
+    msg = Message(b'hello world', properties=MessageProperties())
     cluster.publish(msg, routing_key=u'my_queue')
 
-.. autoclass:: coolamqp.objects.Message
-    :members:
+The default exchange is the direct exchange, which will target the queue whose name is equal to routing_key.
 
 This creates a message with no properties, and sends it through default (direct) exchange to our queue.
 Note that CoolAMQP simply considers your messages to be bags of bytes + properties. It will not modify them,
@@ -95,9 +87,18 @@ To actually get our message, we need to start a consumer first. To do that, just
 
 Where kwargs are passed directly to Consumer class.
 **cons** is a Consumer object, and **fut** is a Future that will happen when listening has been registered on target
-server.
+server. However, not providing a
 
 .. autoclass:: coolamqp.attaches.Consumer
     :members:
 
+Declaring anonymous queue
+-------------------------
 
+.. _anonymq:
+
+In order to make use of an anonymous queue, you must first :meth:`coolamqp.clustering.Cluster.consume` it, since
+:meth:`coolamqp.clustering.Cluster.declare` will use a separate channel, in which the queue will be invalid. It will
+raise ValueError if you try to do that, anyway.
+
+Anonymous queues must be auto_delete and exclusive, ValueError will be raised otherwise.

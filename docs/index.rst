@@ -11,7 +11,6 @@ Welcome to CoolAMQP's documentation!
     how-to-guide
     caveats
     tracing
-    advanced
     reference
     frames
 
