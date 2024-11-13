@@ -131,5 +131,36 @@ Topic exchanges are a bit harder. Let's try them:
     self.c.publish(Message(b'test'), xchg, routing_key=b'test2', confirm=True).result()
 
 Note that the first message arrived, and the second did not. Also, notice how you didn't have to call
-:meth:`~coolamqp.clustering.Cluster.declare` a single time, :meth:`~coolamqp.clustering.Cluster.consume` did all of that work for you
+:meth:`~coolamqp.clustering.Cluster.declare` a single time, :meth:`~coolamqp.clustering.Cluster.consume` did all of that work for you.
+All you had was to supply the :class:`~coolamqp.objects.Queue` class with :code:`routing_key`.
 
+Headers exchanges
+-----------------
+
+Let's first do the usual setup:
+
+.. code-block:: python
+
+    from coolamqp.clustering import Cluster
+    from coolamqp.objects import NodeDefinition, Exchange
+
+    nd = NodeDefinition('amqp://127.0.0.1:5672/vhost', user='test', password='test', heartbeat=30)
+    c = Cluster(nd)
+    c.start()
+    exchange = Exchange(xchg_name, b'headers')
+    self.c.declare(exchange).result()
+
+You will need to declare exchange headers. Now, you'd probably like to bind some queues to it. Let's do it:
+
+.. code-block:: python
+
+        brisbane = Queue('brisbane', exchange=exchange, arguments_bind={'x-match': 'all', 'location': 'brisbane'})
+        c.declare(brisbane).result()
+        sydney = Queue('sydney', exchange=exchange, arguments_bind={'x-match': 'all', 'location': 'sydney'})
+        c.declare(sydney).result()
+
+And now you can start sending messages:
+
+.. code-block:: python
+
+        c.publish(Message(b'32.3', MessageProperties(headers={'location': 'sydney'})), exchange=exchange, confirm=True).result()
