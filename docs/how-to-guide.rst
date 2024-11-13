@@ -102,3 +102,12 @@ In order to make use of an anonymous queue, you must first :meth:`coolamqp.clust
 raise ValueError if you try to do that, anyway.
 
 Anonymous queues must be auto_delete and exclusive, ValueError will be raised otherwise.
+
+Who am I talking to?
+--------------------
+
+To identify the server you're talking to just connect and use :meth:`coolamqp.clustering.Cluster.properties`,
+which will return the following class:
+
+.. autoclass:: coolamqp.objects.ServerProperties
+    :members:

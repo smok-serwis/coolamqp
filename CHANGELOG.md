@@ -5,6 +5,7 @@ v2.0.1
 ======
 
 * removed extra logging from argumentify
+* user will be notified upon declaring an auto-delete durable exchange
 
 v2.0.0
 ======

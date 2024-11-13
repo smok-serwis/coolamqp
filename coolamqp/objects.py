@@ -37,7 +37,7 @@ class MessageProperties(BasicContentPropertyList):
         :type correlation_id: binary type (max length 255) (AMQP as shortstr)
         :param reply_to: address to reply to
         :type reply_to: binary type (max length 255) (AMQP as shortstr)
-        :param expiration: message expiration specification
+        :param expiration: message expiration specification (in milliseconds)
         :type expiration: binary type (max length 255) (AMQP as shortstr)
         :param message_id: application message identifier
         :type message_id: binary type (max length 255) (AMQP as shortstr)
@@ -207,6 +207,7 @@ class Exchange(object):
 
     :param name: exchange name
     :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument
+    :param type: type of the exchange. So far, valid types are 'direct', 'fanout', 'topic' and 'headers'
     """
     __slots__ = ('name', 'type', 'durable', 'auto_delete', 'arguments')
 
@@ -223,6 +224,9 @@ class Exchange(object):
         self.durable = durable
         self.auto_delete = auto_delete
         self.arguments = argumentify(arguments)
+
+        if self.auto_delete and self.durable:
+            warnings.warn('What is your purpose in declaring a durable auto-delete exchange?', UserWarning)
 
         assert isinstance(self.name, six.text_type)
         assert isinstance(self.type, six.binary_type)
