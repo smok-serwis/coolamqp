@@ -110,7 +110,6 @@ Topic exchanges
 
 Topic exchanges are a bit harder. Let's try them:
 
-
 .. code-block:: python
 
     from coolamqp.cluster import Cluster
@@ -120,3 +119,17 @@ Topic exchanges are a bit harder. Let's try them:
     c = Cluster(nd)
     c.start()
     xchg = Exchange('my-exchange', type='topic')
+
+    def handle_message(msg):
+        print(msg.body.tobytes().encode('utf-8'))
+        msg.ack()
+
+    queue = Queue(exchange=xchg, routing_key=b'test')
+    cons, fut = self.c.consume(queue, no_ack=False, on_message=handle_message)
+    fut.result()
+    self.c.publish(Message(b'test'), xchg, routing_key=b'test', confirm=True).result()
+    self.c.publish(Message(b'test'), xchg, routing_key=b'test2', confirm=True).result()
+
+Note that the first message arrived, and the second did not. Also, notice how you didn't have to call
+:meth:`~coolamqp.clustering.Cluster.declare` a single time, :meth:`~coolamqp.clustering.Cluster.consume` did all of that work for you
+
