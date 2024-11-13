@@ -1,11 +1,13 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
-v2.0.1
+v2.1.0
 ======
 
 * removed extra logging from argumentify
 * user will be notified upon declaring an auto-delete durable exchange
+* deprecated Consumer(fail_on_first_time_resource_locked)
+* we now support [streams](https://www.rabbitmq.com/docs/streams)
 
 v2.0.0
 ======

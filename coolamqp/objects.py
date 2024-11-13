@@ -27,7 +27,7 @@ class MessageProperties(BasicContentPropertyList):
         :type content_type: binary type (max length 255) (AMQP as shortstr)
         :param content_encoding: MIME content encoding
         :type content_encoding: binary type (max length 255) (AMQP as shortstr)
-        :param headers: message header field table
+        :param headers: message header field table. You can pass a dictionary here safely.
         :type headers: table. See coolamqp.uplink.framing.field_table (AMQP as table)
         :param delivery_mode: non-persistent (1) or persistent (2)
         :type delivery_mode: int, 8 bit unsigned (AMQP as octet)
@@ -95,25 +95,26 @@ class Message(object):
 
     :param body: stream of octets
     :type body: anything with a buffer interface
-    :param properties: AMQP properties to be sent along.
-                       default is 'no properties at all'
-                       You can pass a dict - it will be passed to
-                       MessageProperties,
-                       but it's slow - don't do that.
+    :param properties: AMQP properties to be sent along. default is 'no properties at all'.
+                       You can pass a dict - it will be passed to MessageProperties, but it's slow - don't do that.
     :type properties: :class:`coolamqp.objects.MessageProperties` instance
     """
     __slots__ = ('body', 'properties')
 
-    Properties = MessageProperties  # an alias for easier use
+    #: an alias for easier use
+    Properties = MessageProperties
 
-    def __init__(self, body,         # type: bytes
-                 properties=None     # type: tp.Optional[MessageProperties]
+    def __init__(self, body,
+                 properties=None
                  ):
         """
         Create a Message object.
 
         Please take care with passing empty bodies, as py-amqp has some
         failure on it.
+
+        :param body: bytes
+        :param properties: a :class:`~coolamqp.objects.MessageProperties` to send along
         """
         if isinstance(body, six.text_type):
             raise TypeError(u'body cannot be a text type!')
@@ -294,9 +295,9 @@ class Queue(object):
     :raises ValueError: tried to create a queue that was not durable or auto_delete
     :raises ValueError: tried to create a queue that was not exclusive or auto_delete and not anonymous
     :raises ValueError: tried to create a queue that was anonymous and not auto_delete or durable
-    :warning DeprecationWarning: if a non-exclusive auto_delete queue is created or some other combinations
+    :warns DeprecationWarning: if a non-exclusive auto_delete queue is created or some other combinations
         that will be soon unavailable (eg. RabbitMQ 4.0).
-    :warning UserWarning: if you're declaring an auto_delete or exclusive, anonymous queue
+    :warns UserWarning: if you're declaring an auto_delete or exclusive, anonymous queue
     """
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag', 'arguments', 'routing_key', 'arguments_bind')

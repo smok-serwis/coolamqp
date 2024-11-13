@@ -6,10 +6,10 @@ Welcome to CoolAMQP's documentation!
     :caption: Contents
 
     whatsnew
-    cluster
     tutorials
     how-to-guide
     caveats
+    streams
     tracing
     reference
     frames
