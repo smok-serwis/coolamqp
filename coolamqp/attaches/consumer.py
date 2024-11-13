@@ -106,7 +106,7 @@ class Consumer(Channeler):
     :type fail_on_first_time_resource_locked: bool
     :param body_receive_mode: how should message.body be received. This
         has a performance impact
-    :type body_receive_mode: a property of :classs:`BodyReceiveMode`
+    :type body_receive_mode: a property of :class:`BodyReceiveMode`
     :param arguments: a dictionary, extra set of arguments to be provided to RabbitMQ during binding.
         Primarily to support streams.
     """
@@ -231,8 +231,7 @@ class Consumer(Channeler):
             self.receiver.on_gone()
             self.receiver = None
 
-    def on_close(self, payload=None):
-        # type: (tp.Optional[coolamqp.framing.base.AMQPMethodPayload]) -> None
+    def on_close(self, payload=None): # type: (tp.Optional[coolamqp.framing.base.AMQPMethodPayload]) -> None
         """
         Handle closing the channel. It sounds like an exception...
 
@@ -244,7 +243,6 @@ class Consumer(Channeler):
            hannel has been physically torn down
 
         Note, this can be called multiple times, and eventually with None.
-
         """
         if not self.cancelled:
             self.cancelled = True

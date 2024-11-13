@@ -32,4 +32,4 @@ Anonymous queues
 ----------------
 
 They are back. Besides, anything that you will pass to :meth:`coolamqp.clustering.Cluster.consume` will be declared, be
-it an exchange, a queue or such shit. This allows you to declare anonymous queues.
+it an exchange, a queue or such shit. This allows you to declare anonymous queues. Refer to :ref:`anonymq` on how to do it.

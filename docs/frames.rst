@@ -1,6 +1,8 @@
 ===========================
 Glossary of all AMQP frames
 ===========================
+
+Please note that this is automatically generated.
 .. autoclass:: coolamqp.framing.definitions.ConnectionBlocked
     :members:
 
