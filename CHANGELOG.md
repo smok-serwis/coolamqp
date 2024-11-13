@@ -1,6 +1,11 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
+v2.0.1
+======
+
+* removed extra logging from argumentify
+
 v2.0.0
 ======
 

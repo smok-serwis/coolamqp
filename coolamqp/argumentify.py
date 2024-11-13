@@ -24,7 +24,6 @@ def toutf8(q):
 def argumentify(arguments):
     if arguments is None:
         return []
-    logger.warning('Input is %s' % (arguments, ))
     # Was it argumented already?
     # if isinstance(arguments, list):
     #     if len(arguments) >= 1:
@@ -37,7 +36,6 @@ def argumentify(arguments):
         for key, value in arguments.items():
             key = tobytes(key)
             args.append((key, (value, get_type_for(value))))
-        logger.warning('Output is %s', (args, 'F'))
         return (args, 'F')
     elif len(arguments[0]) == 2:
         for key, value in arguments:

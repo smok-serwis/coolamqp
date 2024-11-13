@@ -14,6 +14,14 @@ Welcome to CoolAMQP's documentation!
     reference
     frames
 
+It is highly recommended to set logging level of CoolAMQP to error:
+
+.. code-block:: python
+
+    import logging
+    logging.getLogger('coolamqp').setLevel(logging.ERROR)
+
+
 Quick FAQ
 =========
 
