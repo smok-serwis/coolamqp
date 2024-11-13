@@ -10,10 +10,10 @@ Welcome to CoolAMQP's documentation!
     tutorials
     how-to-guide
     caveats
-    frames
-    basics
     tracing
     advanced
+    reference
+    frames
 
 Quick FAQ
 =========
