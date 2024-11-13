@@ -251,7 +251,7 @@ class ServerProperties(object):
     """
     An object describing properties of the target server.
 
-    :ivar version: tuple of (major version, minor version)
+    :ivar version: tuple of (major version, minor version) of the AMQP protocol in use. Practically always 0, 9.
     :ivar properties: dictionary of properties (key str, value any)
     :ivar mechanisms: a list of strings, supported auth mechanisms
     :ivar locales: locale in use
@@ -278,27 +278,8 @@ class Queue(object):
     """
     This object represents a Queue that applications consume from or publish to.
     Create a queue definition.
-
-    :param name: name of the queue.
-        None (default) for autogeneration. Just follow the rules for :ref:`anonymq`.
-        If empty string, a UUID name will be generated, and you won't have an anonymous queue anymore.
-    :param durable: Is the queue durable?
-    :param exchange: Exchange for this queue to bind to. None for no binding.
-    :param exclusive: This queue will be deleted when the connection closes
-    :param auto_delete: This queue will be deleted when the last consumer unsubscribes
-    :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument
-    :param routing_key: routing key that will be used to bind to an exchange. Used only when this
-                        queue is associated with an exchange. Default value of blank should suffice.
-    :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument during
-                      declaration
-    :param arguments_bind: arguments to pass to binding to a (headers, I suppose exchange)
-    :raises ValueError: tried to create a queue that was not durable or auto_delete
-    :raises ValueError: tried to create a queue that was not exclusive or auto_delete and not anonymous
-    :raises ValueError: tried to create a queue that was anonymous and not auto_delete or durable
-    :warns DeprecationWarning: if a non-exclusive auto_delete queue is created or some other combinations
-        that will be soon unavailable (eg. RabbitMQ 4.0).
-    :warns UserWarning: if you're declaring an auto_delete or exclusive, anonymous queue
     """
+
     __slots__ = ('name', 'durable', 'exchange', 'auto_delete', 'exclusive',
                  'anonymous', 'consumer_tag', 'arguments', 'routing_key', 'arguments_bind')
 
@@ -311,6 +292,30 @@ class Queue(object):
                  routing_key=b'',    #: type: tp.Union[str, bytes]
                  arguments_bind=None,
                  ):
+        """
+        :param name: name of the queue.
+            None (default) for autogeneration. Just follow the rules for :ref:`anonymq`.
+            If empty string, a UUID name will be generated, and you won't have an anonymous queue anymore. This queue
+            will be considered named by all of the other code.
+        :param durable: Is the queue durable?
+        :param exchange: Exchange for this queue to bind to. None for no binding.
+        :param exclusive: This queue will be deleted when the connection closes
+        :param auto_delete: This queue will be deleted when the last consumer unsubscribes
+        :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument
+        :param routing_key: routing key that will be used to bind to an exchange. Used only when this
+                    queue is associated with an exchange. Default value of blank should suffice.
+        :param arguments: either a list of (bytes, values) or a dict of (str, value) to pass as an extra argument during
+                  declaration
+        :param arguments_bind: arguments to pass to binding to a (headers, I suppose exchange)
+        :raises ValueError: tried to create a queue that was not durable or auto_delete
+        :raises ValueError: tried to create a queue that was not exclusive or auto_delete and not anonymous
+        :raises ValueError: tried to create a queue that was anonymous and not auto_delete or durable
+
+        .. warning::
+            If a non-exclusive auto_delete queue is created or some other combinations that will be soon unavailable
+            (eg. RabbitMQ 4.0), a DeprecationWarning will be raised.
+            If you're declaring an auto_delete non-exclusive a UserWarning will be raised instead.
+        """
         if name is None:
             self.name = None
         else:
