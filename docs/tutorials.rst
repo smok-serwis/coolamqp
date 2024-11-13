@@ -104,3 +104,19 @@ And let's try to send something to this exchange:
     c.publish(Message(b'my bag of bytes'), exchange=xchg, confirm=True).result()
 
 And voila, we're done here!
+
+Topic exchanges
+---------------
+
+Topic exchanges are a bit harder. Let's try them:
+
+
+.. code-block:: python
+
+    from coolamqp.cluster import Cluster
+    from coolamqp.objects import NodeDefinition, Exchange
+
+    nd = NodeDefinition('amqp://127.0.0.1:5672/vhost', user='test', password='test', heartbeat=30)
+    c = Cluster(nd)
+    c.start()
+    xchg = Exchange('my-exchange', type='topic')
