@@ -17,6 +17,39 @@ logger = logging.getLogger(__name__)
 
 
 class MessageProperties(BasicContentPropertyList):
+    """
+    Properties you can attach to your messages. Only these keys are valid!
+
+    :param content_type: MIME content type
+    :type content_type: binary type (max length 255) (AMQP as shortstr)
+    :param content_encoding: MIME content encoding
+    :type content_encoding: binary type (max length 255) (AMQP as shortstr)
+    :param headers: message header field table
+    :type headers: table. See coolamqp.uplink.framing.field_table (AMQP as table)
+    :param delivery_mode: non-persistent (1) or persistent (2)
+    :type delivery_mode: int, 8 bit unsigned (AMQP as octet)
+    :param priority: message priority, 0 to 9
+    :type priority: int, 8 bit unsigned (AMQP as octet)
+    :param correlation_id: application correlation identifier
+    :type correlation_id: binary type (max length 255) (AMQP as shortstr)
+    :param reply_to: address to reply to
+    :type reply_to: binary type (max length 255) (AMQP as shortstr)
+    :param expiration: message expiration specification
+    :type expiration: binary type (max length 255) (AMQP as shortstr)
+    :param message_id: application message identifier
+    :type message_id: binary type (max length 255) (AMQP as shortstr)
+    :param timestamp: message timestamp
+    :type timestamp: 64 bit signed POSIX timestamp (in seconds) (AMQP as timestamp)
+    :param type_: message type name
+    :type type_: binary type (max length 255) (AMQP as shortstr)
+    :param user_id: creating user id
+    :type user_id: binary type (max length 255) (AMQP as shortstr)
+    :param app_id: creating application id
+    :type app_id: binary type (max length 255) (AMQP as shortstr)
+    :param reserved: reserved, must be empty
+    :type reserved: binary type (max length 255) (AMQP as shortstr)
+    """
+
     def __new__(cls, *args, **kwargs):
         if 'headers' in kwargs:
             if isinstance(kwargs['headers'], dict):
