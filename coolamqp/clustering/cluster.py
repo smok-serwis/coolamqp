@@ -193,7 +193,7 @@ class Cluster(object):
         Take care not to lose the Consumer object - it's the only way to cancel a consumer!
 
         .. note:: You don't need to explicitly declare queues and exchanges that you will be using beforehand,
-                  this will do this for you on the same channel.
+                  this will do this for you on the same channel, which is also the only way to use anonymous queues.
 
         If accepts more arguments. Consult :class:`coolamqp.attaches.consumer.Consumer` for details.
 

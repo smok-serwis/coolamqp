@@ -54,8 +54,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'CoolAMQP'
-copyright = u'2016-2024, SMOK sp. z o. o.'
-author = u'SMOK sp. z o. o.'
+copyright = u'2016-2024, Piotr Maślanka'
+author = u'Piotr Maślanka'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -73,7 +73,7 @@ release = __version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -102,7 +102,7 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -134,7 +134,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'CoolAMQP.tex', u'CoolAMQP Documentation',
-     u'DMS Serwis s.c.', 'manual'),
+     u'Piotr Maślanka', 'manual'),
 ]
 
 # -- Options for manual page output ---------------------------------------
@@ -173,6 +173,8 @@ with open('frames.rst', 'w') as f_out:
     f_out.write('''===========================
 Glossary of all AMQP frames
 ===========================
+
+Please note that this is automatically generated.
 ''')
     for class_ in BINARY_HEADER_TO_METHOD.values():
         f_out.write('.. autoclass:: coolamqp.framing.definitions.%s\n    :members:\n\n' % (

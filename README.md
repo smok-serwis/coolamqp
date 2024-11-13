@@ -17,6 +17,7 @@ Why CoolAMQP?
     * [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack)
 * traceable using [opentracing](https://opentracing.io/)
 * code coverage is 81% at the moment
+* full support for [streams](https://www.rabbitmq.com/docs/streams)
 * 120 second stress tests are part of each release
 
 
