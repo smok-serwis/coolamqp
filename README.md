@@ -3,30 +3,10 @@ CoolAMQP
 
 **A Python client for RabbitMQ**
 
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
-
-**Warning!!** Since v1.3.1 development has been moved 
-from [GitHub](https://github.com/smok-serwis/coolamqp) to this GitLab.
-To install CoolAMQP please use
-
-```bash
-pip install --extra-index-url https://git.dms-serwis.com.pl/api/v4/groups/330/-/packages/pypi/simple coolamqp
-```
-
-Or state it at the beginning of your `requirements.txt`:
-
-```python
---extra-index-url https://git.dms-serwis.com.pl/api/v4/groups/330/-/packages/pypi/simple
-coolamqp
-```
-
-**Version 2.0** is in [active development](https://git.dms-serwis.com.pl/smokserwis/coolamqp/-/milestones/3)
-
 Why CoolAMQP?
 -------------
-
-It's the best way to talk Python to RabbitMQ with AMQP 0.9.1.
-
+* it supports all types of exchanges
+* it works on Python 2 and on Windows
 * tested against all versions of RabbitMQ 3.x and RabbitMQ 4.0
 * AMQP 0.9.1 client that's native Python
 * heavily optimized for speed
@@ -36,8 +16,19 @@ It's the best way to talk Python to RabbitMQ with AMQP 0.9.1.
     * [Publisher confirms](https://www.rabbitmq.com/docs/confirms#publisher-confirms)
     * [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack)
 * traceable using [opentracing](https://opentracing.io/)
-* code coverage is 80% at the moment
+* code coverage is 81% at the moment
 * 120 second stress tests are part of each release
+
+
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
+
+**Warning!!** Since v1.3.1 development has been moved 
+from [GitHub](https://github.com/smok-serwis/coolamqp) to this GitLab.
+To install CoolAMQP please use
+
+```bash
+pip install coolamqp
+```
 
 Documentation (WIP) is available at [our site](http://smokserwis.docs.smok.co/coolamqp).
 
@@ -48,10 +39,6 @@ tl;dr - [this](coolamqp/framing/definitions.py) is **machine-generated** compile
 and there are memoryviews **_everywhere_**. 
 
 This is borderline absurd.
-
-CoolAMQP is not a direct AMQP client - it also handles reconnections, transactional sending,
-and so on, mostly via Futures. This means it has a certain opinion on how to 
-handle AMQP, but you can feel the spirit of AMQP underneath. *API is stable*.
 
 
 The project is actively maintained and used in a commercial project. Tests can run
