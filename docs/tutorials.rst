@@ -1,5 +1,8 @@
+Tutorials
+=========
+
 Send and receive
-================
+----------------
 
 In this tutorial we'll learn how to declare a named queue and send a message to it with acknowledgement:
 
@@ -57,3 +60,47 @@ and then disconnect from the server
     cons.cancel().result()
     c.shutdown()
 
+Fanout exchanges
+----------------
+
+Now let's try to do a fanout exchange:
+
+
+.. code-block:: python
+
+    from coolamqp.cluster import Cluster
+    from coolamqp.objects import NodeDefinition, Exchange
+
+    nd = NodeDefinition('amqp://127.0.0.1:5672/vhost', user='test', password='test', heartbeat=30)
+    c = Cluster(nd)
+    c.start()
+    xchg = Exchange('my-exchange', type='fanout')
+
+Now let's make two queues that will bind to this queue:
+
+
+.. code-block:: python
+
+    from coolamqp.objects import Queue
+
+    q1 = Queue('my-queue-1', exchange=xchg)
+    q2 = Queue('my-queue-2', exchange=xchg)
+
+    def handle_message(msg):
+        print(msg.body.tobytes().encode('utf-8'))
+        msg.ack()
+
+    c.consume(q1, on_message=handle_message, no_ack=False)
+    c.consume(q2, on_message=handle_message, no_ack=False)
+
+Note how you did not have to call :meth:`coolamqp.cluster.Cluster.declare`. Consume will declare constructs of arbitrary
+complexity, if they can be derived from the queue objects you passed it.
+
+And let's try to send something to this exchange:
+
+.. code-block:: python
+
+    from coolamqp.objects import Message
+    c.publish(Message(b'my bag of bytes'), exchange=xchg, confirm=True).result()
+
+And voila, we're done here!

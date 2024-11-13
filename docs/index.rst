@@ -7,7 +7,7 @@ Welcome to CoolAMQP's documentation!
 
     whatsnew
     cluster
-    tutorials/send_and_receive
+    tutorials
     how-to-guide
     caveats
     frames

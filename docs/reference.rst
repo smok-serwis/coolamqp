@@ -1,5 +1,5 @@
-CoolAMQP cluster
-================
+CoolAMQP cluster reference
+==========================
 
 .. autoclass:: coolamqp.clustering.Cluster
     :members:
