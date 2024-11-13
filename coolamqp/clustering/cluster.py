@@ -195,6 +195,8 @@ class Cluster(object):
         .. note:: You don't need to explicitly declare queues and exchanges that you will be using beforehand,
                   this will do this for you on the same channel.
 
+        If accepts more arguments. Consult :class:`coolamqp.attaches.consumer.Consumer` for details.
+
         :param queue: Queue object, being consumed from right now.
             Note that name of anonymous queue might change at any time!
         :param on_message: callable that will process incoming messages
@@ -261,7 +263,7 @@ class Cluster(object):
                         it will be discarded
         :param span: optionally, current span, if opentracing is installed
         :param dont_trace: if set to True, a span won't be generated
-        :return: Future to be finished on completion or None, is confirm/tx was not chosen
+        :return: Future to be finished on completion or None, is confirm was not chosen
         """
         if self.tracer is not None and not dont_trace:
             span = self._make_span('publish', span)
