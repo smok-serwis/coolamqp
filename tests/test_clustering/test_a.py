@@ -26,7 +26,9 @@ class TestA(unittest.TestCase):
         self.c.start(timeout=20)
 
     def tearDown(self):
+        self.assertFalse(self.c.is_shutdown())
         self.c.shutdown()
+        self.assertTrue(self.c.is_shutdown())
 
     def test_properties(self):
         self.assertEqual(self.c.properties.properties['product'], 'RabbitMQ')
@@ -75,17 +77,17 @@ class TestA(unittest.TestCase):
 
         fut.result()
 
-        con.set_qos(0, 100)
+        con.set_qos(100)
         time.sleep(1)
-        self.assertEqual(con.qos, (0, 100))
+        self.assertEqual(con.qos, 100)
 
-        con.set_qos(None, 110)
+        con.set_qos(110)
         time.sleep(1)
-        self.assertEqual(con.qos, (0, 110))
+        self.assertEqual(con.qos, 110)
 
     def test_declare_anonymous(self):
         xchg = Exchange('wtfzomg', type='fanout')
-        q = Queue(exchange=xchg)
+        q = Queue('', exchange=xchg)
         self.c.declare(xchg).result()
         self.c.declare(q).result()
         self.assertTrue(q.name)
@@ -110,7 +112,7 @@ class TestA(unittest.TestCase):
         con, fut = self.c.consume(Queue(u'hello3', exclusive=True),
                                   on_message=ok, no_ack=True)
         fut.result()
-        self.c.publish(Message(b''), routing_key=u'hello3', tx=True).result()
+        self.c.publish(Message(b''), routing_key=u'hello3', confirm=True).result()
 
         time.sleep(1)
 
@@ -133,7 +135,7 @@ class TestA(unittest.TestCase):
         con, fut = self.c.consume(Queue(u'hello3', exclusive=True),
                                   on_message=ok, no_ack=False)
         fut.result()
-        self.c.publish(Message(b''), routing_key=u'hello3', tx=True).result()
+        self.c.publish(Message(b''), routing_key=u'hello3', confirm=True).result()
 
         time.sleep(1)
 
@@ -159,13 +161,6 @@ class TestA(unittest.TestCase):
             'content_encoding': b'utf8'
         }), routing_key=u'hello4', confirm=True).result()
 
-        self.assertRaises(RuntimeError,
-                          lambda: self.c.publish(Message(b'hello4', properties={
-                              'content_type': b'text/plain',
-                              'content_encoding': b'utf8'
-                          }), routing_key=u'hello4', confirm=True,
-                                                 tx=True).result())
-
         time.sleep(1)
 
         self.assertTrue(p['q'])
@@ -187,7 +182,7 @@ class TestA(unittest.TestCase):
         self.c.publish(Message(b'hello5', properties={
             'content_type': b'text/plain',
             'content_encoding': b'utf8'
-        }), routing_key=u'hello5', tx=True).result()
+        }), routing_key=u'hello5', confirm=True).result()
 
         time.sleep(2)
 
@@ -207,7 +202,7 @@ class TestA(unittest.TestCase):
                                   on_message=ok, no_ack=True)
         fut.result()
         self.c.publish(Message(b'hello6'), routing_key=u'hello6',
-                       tx=True).result()
+                       confirm=True).result()
 
         time.sleep(1)
 

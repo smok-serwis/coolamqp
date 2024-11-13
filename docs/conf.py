@@ -35,6 +35,12 @@ source_parsers = {
 # ones.
 extensions = ['sphinx.ext.autodoc']
 
+autodoc_default_options = {
+    'members': True,
+}
+autodoc_default_flags = [
+    'show-inheritance'
+]
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

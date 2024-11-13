@@ -8,6 +8,7 @@ from __future__ import print_function, absolute_import, division
 import logging
 import typing as tp
 
+import coolamqp.argumentify
 from coolamqp.framing.definitions import ChannelOpen, ChannelOpenOk, \
     ChannelClose, ChannelCloseOk, BasicCancel, \
     BasicCancelOk
@@ -161,8 +162,7 @@ class Channeler(Attache):
         self.channel_id = None
 
         if isinstance(payload, ChannelClose):
-            logger.debug('Channel closed: %s %s', payload.reply_code,
-                         payload.reply_text.tobytes())
+            logger.debug('Channel closed: %s %s', payload.reply_code, payload.reply_text)
 
     def methods(self, payloads):
         # type: (tp.Iterable[coolamqp.framing.base.AMQPMethodPayload]) -> None

@@ -1,6 +1,8 @@
 CoolAMQP
 ========
 
+**A Python client for RabbitMQ**
+
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 **Warning!!** Since v1.3.1 development has been moved 
@@ -17,6 +19,8 @@ Or state it at the beginning of your `requirements.txt`:
 --extra-index-url https://git.dms-serwis.com.pl/api/v4/groups/330/-/packages/pypi/simple
 coolamqp
 ```
+
+**Version 2.0** is in [active development](https://git.dms-serwis.com.pl/smokserwis/coolamqp/-/milestones/3)
 
 Why CoolAMQP?
 -------------
@@ -60,8 +64,8 @@ Enjoy!
 _Watch out for memoryviews!_ They're here to stay.
 
 * [Short'n'sweet contributing guide](CONTRIBUTING.md)
-* [Change log for past versions](https://github.com/smok-serwis/coolamqp/releases/)
-* [Change log in this, unreleased version](CHANGELOG.md)
+* [Change log for past historical versions](https://github.com/smok-serwis/coolamqp/releases/)
+* [Change log for recent versions, unreleased version](CHANGELOG.md)
 
 
 ## Notes

@@ -3,7 +3,7 @@ import unittest
 
 from coolamqp.framing.field_table import enframe_table
 
-from coolamqp.objects import argumentify
+from coolamqp.argumentify import argumentify
 
 
 class TestFraming(unittest.TestCase):

@@ -60,18 +60,18 @@ unittest_select:
 
 
 unittest_epoll_python27:
-  extends: .before_test
+  stage: unittest
   image: python:2.7
+  variables:
+    AMQP_HOST: "rabbitmq"
   before_script:
-    - pip install nose2 nose2[coverage_plugin]
+    - pip install nose2 coverage requests yapf nose2[coverage_plugin]
     - python setup.py install
   script:
     - nose2 -F -vv
-  variables:
-    AMQP_HOST: "rabbitmq"
-  after_script:
-    - mv .coverage .coverage.python27epoll
-
+  services:
+    - name: rabbitmq:3.10-management
+      alias: rabbitmq
 
 unittest_epoll:
   extends: .before_test

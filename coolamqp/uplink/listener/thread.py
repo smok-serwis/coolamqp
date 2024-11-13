@@ -54,18 +54,6 @@ class ListenerThread(threading.Thread):
         self._call_next_io_event = Callable(oneshots=True)
         self.listener = None        # type: BaseListener
 
-    def call_next_io_event(self, callable):
-        """
-        Call callable after current I/O event is fully processed
-
-        sometimes many callables are called in response to single
-        I/O (eg. teardown, startup). This guarantees a call after
-        all these are done.
-        :param callable: callable/0
-        """
-        pass
-#        self._call_next_io_event.add(callable) - dummy that out, causes AssertionError to appear
-
     def terminate(self):
         self.terminating = True
 

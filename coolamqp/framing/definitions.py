@@ -1,5 +1,9 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import
+
+import coolamqp.argumentify
+from coolamqp.argumentify import argumentify
+
 """
 A Python version of the AMQP machine-readable specification.
 
@@ -3021,7 +3025,8 @@ class BasicContentPropertyList(AMQPContentPropertyList):
             while buf[offset + pfl - 1] & 1:
                 pfl += 2
         zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset +
-                                                               pfl]).tobytes()
+                                                                      pfl]).tobytes()
+
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[
                 zpf].from_buffer(buf, offset)

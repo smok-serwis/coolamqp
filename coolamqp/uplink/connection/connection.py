@@ -8,6 +8,7 @@ import time
 import typing as tp
 import uuid
 
+import coolamqp.argumentify
 from coolamqp.utils import monotonic
 
 from coolamqp.exceptions import ConnectionDead
