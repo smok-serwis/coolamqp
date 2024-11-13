@@ -19,8 +19,8 @@ First we need to connect to the server. Let's assume you have configured a virtu
 
 Then we'll need to declare a queue:
 
-
 .. code-block:: python
+
     from coolamqp.objects import Queue
 
     queue = Queue('my-named-queue')
