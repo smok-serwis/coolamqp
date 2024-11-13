@@ -10,7 +10,7 @@ First we need to connect to the server. Let's assume you have configured a virtu
 
 .. code-block:: python
 
-    from coolamqp.cluster import Cluster
+    from coolamqp.clustering import Cluster
     from coolamqp.objects import NodeDefinition
 
     nd = NodeDefinition('amqp://127.0.0.1:5672/vhost', user='test', password='test', heartbeat=30)
@@ -68,7 +68,7 @@ Now let's try to do a fanout exchange:
 
 .. code-block:: python
 
-    from coolamqp.cluster import Cluster
+    from coolamqp.clustering import Cluster
     from coolamqp.objects import NodeDefinition, Exchange
 
     nd = NodeDefinition('amqp://127.0.0.1:5672/vhost', user='test', password='test', heartbeat=30)
@@ -112,7 +112,7 @@ Topic exchanges are a bit harder. Let's try them:
 
 .. code-block:: python
 
-    from coolamqp.cluster import Cluster
+    from coolamqp.clustering import Cluster
     from coolamqp.objects import NodeDefinition, Exchange
 
     nd = NodeDefinition('amqp://127.0.0.1:5672/vhost', user='test', password='test', heartbeat=30)
