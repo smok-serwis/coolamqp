@@ -1,5 +1,5 @@
-Tutorial
-========
+How to guide
+============
 
 If you want to connect to an AMQP broker, you need:
 * its address (and port)

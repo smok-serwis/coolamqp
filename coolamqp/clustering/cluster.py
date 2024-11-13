@@ -35,25 +35,13 @@ class Cluster(object):
     Call .start() to connect to AMQP.
 
     It is not safe to fork() after .start() is called, but it's OK before.
-
-    :param nodes: list of nodes, or a single node. For now, only one is supported.
-    :param on_fail: callable/0 to call when connection fails in an
-        unclean way. This is a one-shot
-    :param extra_properties: refer to :class:`coolamqp.uplink.connection.Connection`
-    :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
-        receives from the broker
-    :type log_frames: tp.Optional[:class:`coolamqp.tracing.BaseFrameTracer`]
-    :param name: name to appear in log items and prctl() for the listener thread
-    :param on_blocked: callable to call when ConnectionBlocked/ConnectionUnblocked is received. It will be
-        called with a value of True if connection becomes blocked, and False upon an unblock
-    :param tracer: tracer, if opentracing is installed
     """
 
     # Events you can be informed about
     ST_LINK_LOST = 0  # Link has been lost
     ST_LINK_REGAINED = 1  # Link has been regained
 
-    def __init__(self, nodes,  # type: tp.Union[NodeDefinition, tp.List[NodeDefinition]]
+    def __init__(self, nodes,  # type: NodeDefinition
                  on_fail=None,  # type: tp.Optional[tp.Callable[[], None]]
                  extra_properties=None,
                  # type: tp.Optional[tp.List[tp.Tuple[bytes, tp.Tuple[bytes, str]]]]
@@ -62,6 +50,20 @@ class Cluster(object):
                  on_blocked=None,  # type: tp.Callable[[bool], None],
                  tracer=None  # type: opentracing.Traccer
                  ):
+        """
+        :param nodes: single node
+        :type nodes: NodeDefinition
+        :param on_fail: callable/0 to call when connection fails in an
+            unclean way. This is a one-shot
+        :param extra_properties: refer to :class:`coolamqp.uplink.connection.Connection`
+        :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
+            receives from the broker
+        :type log_frames: tp.Optional[:class:`coolamqp.tracing.BaseFrameTracer`]
+        :param name: name to appear in log items and prctl() for the listener thread
+        :param on_blocked: callable to call when ConnectionBlocked/ConnectionUnblocked is received. It will be
+            called with a value of True if connection becomes blocked, and False upon an unblock
+        :param tracer: tracer, if opentracing is installed
+        """
         from coolamqp.objects import NodeDefinition
         if isinstance(nodes, NodeDefinition):
             nodes = [nodes]
