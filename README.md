@@ -76,6 +76,8 @@ IP of previous operator of the service, DMS Serwis s.c., which
 continues to operate within it's designated company agreement.
 From there stems the copyright holder name change.
 
+And because I haven't been paid a penny for this work, I've assumed copyright personally.
+
 ## What is here
 
 ### [coolamqp](coolamqp/)
