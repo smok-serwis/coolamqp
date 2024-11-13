@@ -8,4 +8,6 @@ If you specify argument :code:`x-stream-offset` and aim to provide a number, ple
 This will cause your connection to RabbitMQ to crash.
 You can naturally provide "first" or "next" or "last".
 
+Also, streams must be consumed with no_ack=False, otherwise it will fail.
+
 Basically everything works `as documented <https://www.rabbitmq.com/docs/streams#consuming>`_. Happy usage!
