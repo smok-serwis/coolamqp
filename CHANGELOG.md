@@ -11,17 +11,14 @@ v2.0.0
   * changed some default arguments for Queues for them to better make sense
   * some argument combinations just raise ValueError
   * PendingDeprecationWarning changed into a DeprecationWarning
-  * added support for headers exchanges
+  * added support for headers and topic exchanges
 * changes to Cluster:
   * declare will refuse to declare an anonymous queue
   * renamed publish(tx) to publish(confirm)
   * declare will expect qos to be given as an integer, and will be set as prefetch_count, since RabbitMQ no longer
     supports prefetch_size
     * same can be said of Consumer.set_qos(prefetch_count)
-  * added Cluster.
 
-Compatible changes
-------------------
 
 * fixed a bug wherein bad invocation of NodeDefinition would result in an exception
 
