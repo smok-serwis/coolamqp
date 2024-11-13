@@ -45,7 +45,7 @@ Now it's time to send a message:
 .. code-block:: python
 
     from coolamqp.objects import Message
-    c.publish(Message(b'my bag of bytes'), confirm=True).result()
+    c.publish(Message(b'my bag of bytes'), routing_key='my-named-queue', confirm=True).result()
 
 Without the confirm flag, publish would not return the future.
 
