@@ -187,7 +187,7 @@ class Cluster(object):
         """
         Start consuming from a queue.
 
-        args and kwargs will be passed to Consumer constructor (coolamqp.attaches.consumer.Consumer).
+        args and kwargs will be passed to Consumer constructor.
         Don't use future_to_notify - it's done here!
 
         Take care not to lose the Consumer object - it's the only way to cancel a consumer!

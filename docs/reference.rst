@@ -8,14 +8,13 @@ Cluster-related things
     :members:
 
 .. note:: If environment variable :code:`COOLAMQP_FORCE_SELECT_LISTENER` is defined, select will be used instead of epoll.
-
+          This will automatically use select if epoll is not available (eg. Windows).
 
 .. autoclass:: coolamqp.attaches.consumer.BodyReceiveMode
     :members:
 
 .. autoclass:: coolamqp.attaches.consumer.Consumer
     :members:
-    :undoc-members:
 
 Please note that :meth:`coolamqp.clustering.Cluster.consume` passes lot of it's
 args and kwargs directly to the :class:`coolamqp.attaches.consumer.Consumer`.
@@ -23,19 +22,19 @@ args and kwargs directly to the :class:`coolamqp.attaches.consumer.Consumer`.
 Extra objects
 -------------
 
-.. class:: coolamqp.objects.Message
+.. autoclass:: coolamqp.objects.Message
     :members:
 
-.. class:: coolamqp.objects.ReceivedMessage
+.. autoclass:: coolamqp.objects.ReceivedMessage
     :members:
 
-.. class:: coolamqp.objects.MessageProperties
+.. autoclass:: coolamqp.objects.MessageProperties
     :members:
 
-.. class:: coolamqp.objects.Queue
+.. autoclass:: coolamqp.objects.Queue
     :members:
 
-.. class:: coolamqp.objects.Exchange
+.. autoclass:: coolamqp.objects.Exchange
     :members:
 
 
