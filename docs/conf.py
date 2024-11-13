@@ -157,6 +157,16 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
+autodoc_default_options = {
+    'members': True,
+}
+autodoc_default_flags = [
+    'show-inheritance'
+]
+autodoc_typehints = "description"
+autoclass_content = 'both'
+
+
 from coolamqp.framing.definitions import BINARY_HEADER_TO_METHOD
 
 with open('frames.rst', 'w') as f_out:
