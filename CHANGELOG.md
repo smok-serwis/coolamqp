@@ -1,6 +1,13 @@
 Previous release notes are hosted on [GitHub](https://github.com/smok-serwis/coolamqp/releases).
 Since v1.3.2 they'll be put here and in release description.
 
+v2.1.1
+======
+
+* fixed a bug in Queue's __repr__
+* fixed a bug in BasicContentPropertyList.typize
+* removed Vagrantfile
+
 v2.1.0
 ======
 

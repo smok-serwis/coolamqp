@@ -3,7 +3,7 @@ services:
   amqp:
     image: rabbitmq:4.0-management
   unittest:
-    command: nose2 -vv tests.test_clustering.test_streams
+    command: nose2 -vv
     build:
       context: .
       dockerfile: tests/Dockerfile

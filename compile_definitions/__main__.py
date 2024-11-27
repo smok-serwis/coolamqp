@@ -303,6 +303,16 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
             line(u'''
     @staticmethod
     def typize(*fields):        # type: (*str) -> type
+        """
+        Return an autonomous class definition which is a header supporting only particular fields.
+
+        Usage:
+
+        >>> Headers = BasicContentPropertyList.typize('content_type', 'content_encoding')
+        >>> headers = Headers('application/json', 'gzip')
+        
+        The reason for this is speed.
+        """
     ''')
             line(u'    zpf = bytearray([\n')
 
@@ -325,7 +335,7 @@ Field = collections.namedtuple('Field', ('name', 'type', 'basic_type', 'reserved
                         if field.reserved or field.basic_type == 'bit':
                             pass  # zero
                         else:
-                            byte_chunk.append(u"int('%s' in kwargs)" % (
+                            byte_chunk.append(u"int('%s' in fields)" % (
                                 format_field_name(field.name),))
                     else:
                         # this is the "do we need moar flags" section

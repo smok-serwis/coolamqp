@@ -1,9 +1,5 @@
 # coding=UTF-8
 from __future__ import print_function, absolute_import
-
-import coolamqp.argumentify
-from coolamqp.argumentify import argumentify
-
 """
 A Python version of the AMQP machine-readable specification.
 
@@ -2987,12 +2983,22 @@ class BasicContentPropertyList(AMQPContentPropertyList):
 
     @staticmethod
     def typize(*fields):  # type: (*str) -> type
+        """
+        Return an autonomous class definition which is a header supporting only particular fields.
+
+        Usage:
+
+        >>> Headers = BasicContentPropertyList.typize('content_type', 'content_encoding')
+        >>> headers = Headers('application/json', 'gzip')
+        
+        The reason for this is speed.
+        """
         zpf = bytearray([
             (('content_type' in fields) << 7) |
             (('content_encoding' in fields) << 6) |
             (('headers' in fields) << 5) | (('delivery_mode' in fields) << 4) |
             (('priority' in fields) << 3) | (('correlation_id' in fields) << 2)
-            | (('reply_to' in fields) << 1) | int('expiration' in kwargs),
+            | (('reply_to' in fields) << 1) | int('expiration' in fields),
             (('message_id' in fields) << 7) | (('timestamp' in fields) << 6) |
             (('type_' in fields) << 5) | (('user_id' in fields) << 4) |
             (('app_id' in fields) << 3) | (('reserved' in fields) << 2)
@@ -3025,8 +3031,7 @@ class BasicContentPropertyList(AMQPContentPropertyList):
             while buf[offset + pfl - 1] & 1:
                 pfl += 2
         zpf = BasicContentPropertyList.zero_property_flags(buf[offset:offset +
-                                                                      pfl]).tobytes()
-
+                                                               pfl]).tobytes()
         if zpf in BasicContentPropertyList.PARTICULAR_CLASSES:
             return BasicContentPropertyList.PARTICULAR_CLASSES[
                 zpf].from_buffer(buf, offset)

@@ -7,6 +7,8 @@ import os
 import time
 import unittest
 
+from coolamqp.framing.definitions import BasicContentPropertyList
+
 from coolamqp.clustering import Cluster
 from coolamqp.exceptions import ConnectionDead
 from coolamqp.objects import NodeDefinition, Queue, Exchange
@@ -33,6 +35,10 @@ class TestConnecting(unittest.TestCase):
         c.start(wait=True, timeout=None)
         self.assertRaises(ValueError, c.declare, que)
         c.shutdown(True)
+
+    def test_typize(self):
+        bcpl = BasicContentPropertyList.typize('content_type', 'content_encoding')
+        bcpl2 = bcpl('application/json', 'text/plain')
 
     def test_argumented_bind(self):
         c = Cluster([NODE])
