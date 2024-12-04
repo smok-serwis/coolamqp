@@ -24,10 +24,10 @@ Why CoolAMQP?
 
 **Warning!!** Since v1.3.1 development has been moved 
 from [GitHub](https://github.com/smok-serwis/coolamqp) to this [GitLab](https://git.dms-serwis.com.pl/smokserwis/coolamqp).
-To install CoolAMQP please use
+To install the most latest CoolAMQP please use
 
 ```bash
-pip install coolamqp
+pip install --index-url https://git.dms-serwis.com.pl/api/v4/groups/330/-/packages/pypi/simple coolamqp
 ```
 
 Documentation (WIP) is available at [our site](http://smokserwis.docs.smok.co/coolamqp).

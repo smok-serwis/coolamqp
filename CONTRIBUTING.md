@@ -1,3 +1,8 @@
+# Where is the development taking place?
+
+Actual development happens at our corporate GitLab server, but you're most welcome to submit your pull requests here.
+We'll eventually sync them.
+
 # Contributing guide
 
 1. Keep it unit tested, so that coverage doesn't fall down too much.
