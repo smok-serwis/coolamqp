@@ -8,7 +8,7 @@ import warnings
 
 from coolamqp.framing.definitions import QueueDeclare
 
-from coolamqp.objects import NodeDefinition, MessageProperties, Queue
+from coolamqp.objects import NodeDefinition, MessageProperties, Queue, Exchange
 from coolamqp.argumentify import argumentify
 
 logger = logging.getLogger(__name__)
@@ -19,11 +19,24 @@ IS_PY3 = sys.version.startswith('3')
 
 class TestObjects(unittest.TestCase):
 
+    def test_exchange_repr(self):
+        xchg = Exchange()
+        repr(xchg)
+        queue = Queue(exchange=xchg)
+        repr(queue)
+
+        a = {xchg: 5, queue: 3}
+        self.assertEqual(a[xchg], 5)
+        self.assertEqual(a[queue], 3)
+
     def test_queue_failures(self):
-        self.assertRaises(ValueError, Queue, None, durable=True)
+        Queue()
+        Queue('')
+        self.assertRaises(ValueError, Queue, durable=True)
+        self.assertRaises(ValueError, Queue, auto_delete=False, durable=True)
         self.assertRaises(ValueError, Queue, 'test', auto_delete=True, durable=True)
-        self.assertRaises(ValueError, Queue, None, auto_delete=False)
-        self.assertRaises(ValueError, Queue, 'test', auto_delete=True, exclusive=False)
+        self.assertRaises(ValueError, Queue, auto_delete=False)
+        repr(Queue())
 
     def test_queue_repr(self):
         q = Queue('test')

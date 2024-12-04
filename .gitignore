@@ -9,6 +9,7 @@ __pycache__/
 coolamqp/framing/definitions.py
 .pycharm_helpers/
 # Distribution / packaging
+*.xml
 .Python
 env/
 build/

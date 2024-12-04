@@ -233,15 +233,15 @@ class Exchange(object):
         assert isinstance(self.type, six.binary_type)
 
     def __repr__(self):  # type: () -> str
-        return u'Exchange(%s, %s, %s, %s)' % (
+        return u'Exchange(%s, %s, %s, %s, %s)' % (
             repr(self.name), repr(self.type), repr(self.durable),
-            repr(self.auto_delete))
+            repr(self.auto_delete), repr(self.arguments))
 
     def __hash__(self):  # type: () -> int
         return self.name.__hash__()
 
     def __eq__(self, other):  # type: (Exchange) -> bool
-        return (self.name == other.name) and (type(self) == type(other))
+        return (self.name == other.name) and (self.type == other.type) and isinstance(other, self.__class__)
 
 
 Exchange.direct = Exchange()
@@ -342,9 +342,6 @@ class Queue(object):
         if self.durable and self.anonymous:
             raise ValueError('Cannot declare an anonymous durable queue')
 
-        if self.auto_delete and not self.exclusive and not self.anonymous:
-            raise ValueError('Cannot create an auto_delete and durable queue non-anonymous')
-
         self.consumer_tag = self.name if not self.anonymous else tobytes(uuid.uuid4().hex)
 
         if not self.exclusive and self.auto_delete:
@@ -357,7 +354,9 @@ class Queue(object):
         return hash(self.name)
 
     def __repr__(self):
-        return 'Queue(%s, %s, %s, %s, %s, %s' % (self.name, self.durable, self.exchange, self.exclusive, self.arguments)
+        return 'Queue(%s, %s, %s, %s, %s, %s, %s, %s)' % (self.name, self.durable, repr(self.exchange), self.exclusive,
+                                                          self.auto_delete, repr(self.arguments), self.routing_key,
+                                                          repr(self.arguments_bind))
 
 
 class QueueBind(object):

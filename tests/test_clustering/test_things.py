@@ -7,6 +7,8 @@ import os
 import time
 import unittest
 
+from coolamqp.framing.definitions import BasicContentPropertyList
+
 from coolamqp.clustering import Cluster
 from coolamqp.exceptions import ConnectionDead
 from coolamqp.objects import NodeDefinition, Queue, Exchange
@@ -25,6 +27,7 @@ class TestConnecting(unittest.TestCase):
 
     def test_argumented_exchange(self):
         xchg = Exchange('test-wer', durable=True)
+        repr(xchg)
         c = Cluster([NODE])
         c.start(wait=True, timeout=None)
         c.declare(xchg).result()
@@ -34,10 +37,15 @@ class TestConnecting(unittest.TestCase):
 
     def test_argumented_queue(self):
         que = Queue(auto_delete=True, exclusive=True, arguments=[(b'x-max-priority', 10)])
+        repr(que)
         c = Cluster([NODE])
         c.start(wait=True, timeout=None)
         self.assertRaises(ValueError, c.declare, que)
         c.shutdown(True)
+
+    def test_typize(self):
+        bcpl = BasicContentPropertyList.typize('content_type', 'content_encoding')
+        bcpl2 = bcpl('application/json', 'text/plain')
 
     def test_argumented_bind(self):
         c = Cluster([NODE])
