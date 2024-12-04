@@ -79,7 +79,7 @@ class Cluster(object):
 
         if isinstance(extra_properties, dict):
             extra_props = []
-            for key, value in extra_props.items():
+            for key, value in extra_properties.items():
                 extra_props.append((tobytes(key), argumentify(value)))
             extra_properties = extra_props
 

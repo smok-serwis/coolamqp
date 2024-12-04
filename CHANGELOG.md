@@ -5,6 +5,7 @@ v2.1.2
 ======
 
 * extra_properties passed to Cluster might now be a dict
+* basically all arguments can be passed as dicts
 
 v2.1.1
 ======
