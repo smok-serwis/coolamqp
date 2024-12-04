@@ -43,9 +43,9 @@ class TestStreams(unittest.TestCase):
         fut.result()
         time.sleep(3)
         cons.cancel().result()
-        self.assertEqual(test['a'], 6)
+        self.assertGreaterEqual(test['a'], 6)       # might have some messages from previous runs
         cons, fut = c.consume(stream, qos=10, on_message=handle_msg, arguments={'x-stream-offset': 'first'}, no_ack=False)
         fut.result()
         time.sleep(3)
         cons.cancel()
-        self.assertEqual(test['a'], 16)
+        self.assertGreaterEqual(test['a'], 16)       # might have some messages from previous runs

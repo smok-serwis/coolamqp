@@ -17,20 +17,13 @@ def tobytes(q):
 
 def toutf8(q):
     if isinstance(q, memoryview):
-        q = q.tobytes()
+        q = q.tobytes().decode('utf-8')
     return q.decode('utf-8') if isinstance(q, six.binary_type) else q
 
 
 def argumentify(arguments):
     if arguments is None:
         return []
-    # Was it argumented already?
-    # if isinstance(arguments, list):
-    #     if len(arguments) >= 1:
-    #         if isinstance(arguments[0], tuple):
-    #             if isinstance(arguments[0][1], str) and len(arguments[0][1]) == 1:
-    #                 # Looks argumentified already
-    #                 return arguments
     args = []
     if isinstance(arguments, dict):
         for key, value in arguments.items():
@@ -46,6 +39,5 @@ def argumentify(arguments):
         for value in arguments:
             args.append((value, get_type_for(value)))
             return (args, 'A')
-    else:
-        warnings.warn('Unnecessary call to argumentify, see issue #11 for details', UserWarning)
-        return args
+    warnings.warn('Unnecessary call to argumentify, see issue #11 for details', UserWarning)
+    return args

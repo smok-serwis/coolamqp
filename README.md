@@ -16,15 +16,14 @@ Why CoolAMQP?
     * [Publisher confirms](https://www.rabbitmq.com/docs/confirms#publisher-confirms)
     * [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack)
 * traceable using [opentracing](https://opentracing.io/)
-* code coverage is 81% at the moment
+* high coverage
+* tested in production conditions
 * full support for [streams](https://www.rabbitmq.com/docs/streams)
 * 120 second stress tests are part of each release
 
 
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
-
 **Warning!!** Since v1.3.1 development has been moved 
-from [GitHub](https://github.com/smok-serwis/coolamqp) to this GitLab.
+from [GitHub](https://github.com/smok-serwis/coolamqp) to this [GitLab](https://git.dms-serwis.com.pl/smokserwis/coolamqp).
 To install CoolAMQP please use
 
 ```bash
@@ -111,7 +110,7 @@ and you're all set. The only files modified is
 ### [docs](docs/)
 
 Sources for the documentation, available
-[here](https://coolamqp.readthedocs.io/en/latest/).
+[here](http://smokserwis.docs.smok.co/coolamqp).
 
 ## Running unit tests
 
@@ -122,7 +121,7 @@ The default username used is guest, and password is guest.
 You can also run unit tests from Docker, if you wish so. To launch the unit test suite:
 
 ```bash
-docker-compose up unittest
+docker-compose up --build unittest
 ```
 
 To launch the stress test suite

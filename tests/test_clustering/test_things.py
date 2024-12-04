@@ -18,6 +18,11 @@ logging.getLogger('coolamqp').setLevel(logging.DEBUG)
 
 class TestConnecting(unittest.TestCase):
 
+    def test_dict_extra_args(self):
+        c = Cluster([NODE], extra_properties={'test': 'something'})
+        c.start(wait=True, timeout=None)
+        c.shutdown(True)
+
     def test_argumented_exchange(self):
         xchg = Exchange('test-wer', durable=True)
         c = Cluster([NODE])

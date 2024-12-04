@@ -4,12 +4,11 @@ from __future__ import print_function, absolute_import, division
 import logging
 import time
 import typing as tp
-import warnings
 from concurrent.futures import Future
 
 import six
 
-from coolamqp.argumentify import argumentify
+from coolamqp.argumentify import argumentify, tobytes
 from coolamqp.attaches import Publisher, AttacheGroup, Consumer, Declarer
 from coolamqp.attaches.utils import close_future
 from coolamqp.clustering.events import ConnectionLost, MessageReceived, \
@@ -55,7 +54,8 @@ class Cluster(object):
         :type nodes: NodeDefinition
         :param on_fail: callable/0 to call when connection fails in an
             unclean way. This is a one-shot
-        :param extra_properties: refer to :class:`coolamqp.uplink.connection.Connection`
+        :param extra_properties: refer to :class:`coolamqp.uplink.connection.Connection`, or just pass a dictionary
+            of anything you'd like
         :param log_frames: an object that supports logging each and every frame CoolAMQP sends and
             receives from the broker
         :type log_frames: tp.Optional[:class:`coolamqp.tracing.BaseFrameTracer`]
@@ -76,6 +76,12 @@ class Cluster(object):
                 import opentracing
             except ImportError:
                 raise RuntimeError('tracer given, but opentracing is not installed!')
+
+        if isinstance(extra_properties, dict):
+            extra_props = []
+            for key, value in extra_props.items():
+                extra_props.append((tobytes(key), argumentify(value)))
+            extra_properties = extra_props
 
         self.started = False            # type: bool
         self.tracer = tracer

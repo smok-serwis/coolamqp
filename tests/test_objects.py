@@ -25,6 +25,10 @@ class TestObjects(unittest.TestCase):
         self.assertRaises(ValueError, Queue, None, auto_delete=False)
         self.assertRaises(ValueError, Queue, 'test', auto_delete=True, exclusive=False)
 
+    def test_queue_repr(self):
+        q = Queue('test')
+        repr(q)
+
     @unittest.skipUnless(sys.version.startswith('3'), 'Needs Python 3.x')
     def test_queue_warns(self):
         warnings.resetwarnings()
