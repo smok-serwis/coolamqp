@@ -78,10 +78,7 @@ class Cluster(object):
                 raise RuntimeError('tracer given, but opentracing is not installed!')
 
         if isinstance(extra_properties, dict):
-            extra_props = []
-            for key, value in extra_properties.items():
-                extra_props.append((tobytes(key), argumentify(value)))
-            extra_properties = extra_props
+            extra_properties = argumentify(extra_properties)[0]
 
         self.started = False            # type: bool
         self.tracer = tracer

@@ -1,5 +1,3 @@
-import warnings
-
 import six
 
 from coolamqp.framing.field_table import get_type_for
@@ -17,27 +15,27 @@ def tobytes(q):
 
 def toutf8(q):
     if isinstance(q, memoryview):
-        q = q.tobytes().decode('utf-8')
+        q = q.tobytes()
     return q.decode('utf-8') if isinstance(q, six.binary_type) else q
 
 
 def argumentify(arguments):
     if arguments is None:
         return []
+
     args = []
     if isinstance(arguments, dict):
         for key, value in arguments.items():
             key = tobytes(key)
             args.append((key, (value, get_type_for(value))))
-        return (args, 'F')
+        return args, 'F'
     elif len(arguments[0]) == 2:
         for key, value in arguments:
             key = tobytes(key)
             args.append((key, (value, get_type_for(value))))
-            return (args, 'F')
+        return args, 'F'
     elif isinstance(arguments, (list, tuple)):
         for value in arguments:
             args.append((value, get_type_for(value)))
-            return (args, 'A')
-    warnings.warn('Unnecessary call to argumentify, see issue #11 for details', UserWarning)
+        return args, 'A'
     return args

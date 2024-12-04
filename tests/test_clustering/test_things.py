@@ -14,8 +14,11 @@ from coolamqp.exceptions import ConnectionDead
 from coolamqp.objects import NodeDefinition, Queue, Exchange
 
 NODE = NodeDefinition(os.environ.get('AMQP_HOST', '127.0.0.1'), 'guest', 'guest', heartbeat=20)
-logging.basicConfig(level=logging.DEBUG)
 logging.getLogger('coolamqp').setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
+                    datefmt='%Y-%m-%d:%H:%M:%S',)
+
 
 
 class TestConnecting(unittest.TestCase):

@@ -3,7 +3,7 @@ services:
   amqp:
     image: rabbitmq:4.0-management
   unittest:
-    command: nose2 -vv
+    command: coverage run --append -m nose2 -F -vv
     build:
       context: .
       dockerfile: tests/Dockerfile

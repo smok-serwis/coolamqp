@@ -7,6 +7,8 @@ pick their names for themselves.
 It also forbids some combinations of Queue arguments, and makes the default values more palatable, so for example
 a naked :class:`coolamqp.objects.Queue` will be anonymous, non-durable, exclusive and auto-delete.
 
+Also, any arguments marked as arguments or arguments_bind may accept a dictionary safely.
+
 Cluster.publish
 ---------------
 
